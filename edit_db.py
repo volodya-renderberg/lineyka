@@ -611,7 +611,7 @@ class studio:
 		# 2.3 - путь до активити
 		
 		# (1)
-		if c_task.task_type == 'sketch':
+		if c_task.task_type in self.multi_publish_task_types:
 			#
 			if not version is False:
 				# ( 1.1)
@@ -3204,7 +3204,7 @@ class task(studio):
 				return(b,r_look)
 			#
 			r_data['push_path'] = r_push
-			if self.task_type == 'sketch':
+			if self.task_type in self.multi_publish_task_types:
 				r_data['look_path'] = r_look
 			else:
 				r_data['look_path'] = r_push

@@ -657,6 +657,11 @@ class MainWindow(QtGui.QMainWindow):
 			window.version_button.setText('Choice Version')
 			window.horizontalLayout_3.addWidget(window.version_button)
 			window.version_button.clicked.connect(partial(self.push_select_the_version, window))
+		else:
+			window.push_version = QtGui.QLabel()
+			window.push_version.setText('latest')
+			window.horizontalLayout.addWidget(window.push_version)
+			window.push_version.setVisible(False)
 		
 		# edit widget old	
 		window.setWindowTitle('Push description')

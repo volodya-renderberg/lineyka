@@ -6103,7 +6103,18 @@ class MainWindow(QtGui.QMainWindow):
 		if not self.selected_task.task_type in self.selected_task.multi_publish_task_types:
 			return
 		
-		# make widjet
+		def to_viewer(window):
+			path = window.select_from_list_data_list_table.currentItem().path['viewer_path']
+			b,r = self.selected_task.run_file(path, viewer=True)
+			if not b:
+				self.message(r, 2)
+		def to_editor(window):
+			path = window.select_from_list_data_list_table.currentItem().path['editor_path']
+			b,r = self.selected_task.run_file(path, viewer=False)
+			if not b:
+				self.message(r, 2)
+		
+		# **************** MAKE WIDJET ********************
 		ui_path = self.select_from_list_dialog_path
 		# widget
 		loader = QtUiTools.QUiLoader()
@@ -6118,15 +6129,23 @@ class MainWindow(QtGui.QMainWindow):
 		
 		# edit Widget
 		window.select_from_list_cansel_button.clicked.connect(partial(self.close_window, window))
+		window.select_from_list_apply_button.clicked.connect(partial(to_viewer, window))
+		window.select_from_list_apply_button.setText('By Viewer')
+		to_editor_button = QtGui.QPushButton('By Editor')
+		window.horizontalLayout.addWidget(to_editor_button)
+		to_editor_button.clicked.connect(partial(to_editor, window))
 		window.setWindowTitle('Look Branches')
 		
 		# make table
 		headers = ['Branch']
-		look_dict = r[0]['look_path']
-		push_dict = r[0]['push_path']
+		viewer_dict = r[0]['look_path']
+		if action=='push':
+			editor_dict = r[0]['push_path']
+		elif action=='publish':
+			editor_dict = r[0]['publish_path']
 		
 		window.select_from_list_data_list_table.setColumnCount(len(headers))
-		window.select_from_list_data_list_table.setRowCount(len(look_dict))
+		window.select_from_list_data_list_table.setRowCount(len(viewer_dict))
 		window.select_from_list_data_list_table.setHorizontalHeaderLabels(headers)
 		
 		# selection mode   
@@ -6135,18 +6154,12 @@ class MainWindow(QtGui.QMainWindow):
 		window.select_from_list_data_list_table.setSelectionMode(QtGui.QAbstractItemView.SingleSelection)
 		
 		# make tabel
-		for i,key in enumerate(look_dict):
+		for i,branch in enumerate(viewer_dict):
 			for j,key in enumerate(headers):
 				newItem = QtGui.QTableWidgetItem()
-				newItem.path = ()
+				newItem.path = {'viewer_path':viewer_dict[branch], 'editor_path':editor_dict[branch]}
 								
-				if key == 'time':
-					if log.get(key):
-						newItem.setText(str(log.get(key)/3600))
-				elif key == 'date_time':
-					newItem.setText(log[key].strftime("%m/%d/%Y, %H:%M:%S"))
-				else:
-					newItem.setText(str(log[key]))
+				newItem.setText(branch)
 					
 				window.select_from_list_data_list_table.setItem(i, j, newItem)
 				
