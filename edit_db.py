@@ -633,7 +633,7 @@ class studio:
 				return (True, NormPath(os.path.join(c_task.asset.path, c_task.activity)))
 		# (2)
 		else:
-			if version:
+			if not version is False:
 				# ( 2.1)
 				b, str_version = self._template_version_num(version)
 				if not b:
@@ -1856,13 +1856,13 @@ class asset(studio):
 			
 			# -- create activity folders
 			for activity in self.ACTIVITY_FOLDER[asset_type]:
-				folder_path = NormPath(os.path.join(asset_path, self.ACTIVITY_FOLDER[asset_type][activity]))
+				folder_path = NormPath(os.path.join(asset_path, activity))
 				if not os.path.exists(folder_path):
 					os.mkdir(folder_path)
 					
 			# -- create additional folders  self.ADDITIONAL_FOLDERS
 			for activity in self.ADDITIONAL_FOLDERS:
-				folder_path = NormPath(os.path.join(asset_path, self.ADDITIONAL_FOLDERS[activity]))
+				folder_path = NormPath(os.path.join(asset_path, activity))
 				if not os.path.exists(folder_path):
 					os.mkdir(folder_path)
 			
@@ -2189,7 +2189,7 @@ class asset(studio):
 			# -- get activity dir
 			if not key in old_activites:
 				continue
-			src_activity_dir = NormPath(os.path.join(old_path, old_activites[key]))
+			src_activity_dir = NormPath(os.path.join(old_path, key))
 			
 			if not os.path.exists(src_activity_dir):
 				continue
@@ -2204,7 +2204,7 @@ class asset(studio):
 			
 			if key == 'textures' or (key == 'cache' and new_asset_type == 'char'):
 				src_activity_path = src_activity_dir
-				dst_activity_path = NormPath(os.path.join(new_asset_data['path'], activites[key]))
+				dst_activity_path = NormPath(os.path.join(new_asset_data['path'], key))
 				if not os.path.exists(dst_activity_path):
 					os.mkdir(dst_activity_path)
 				
@@ -2220,12 +2220,12 @@ class asset(studio):
 				while not os.listdir(os.path.join(src_activity_dir, int_hex[str(max(numbers))])):
 					numbers.remove(max(numbers))
 				
-				src_activity_path = NormPath(os.path.join(old_path, old_activites[key], int_hex[str(max(numbers))]))
-				dst_activity_path = NormPath(os.path.join(new_asset_data['path'], activites[key], '0000'))
+				src_activity_path = NormPath(os.path.join(old_path, key, int_hex[str(max(numbers))]))
+				dst_activity_path = NormPath(os.path.join(new_asset_data['path'], key, '0000'))
 				
 				# -- -- make new dirs
-				if not os.path.exists(NormPath(os.path.join(new_asset_data['path'], activites[key]))):
-					os.mkdir(NormPath(os.path.join(new_asset_data['path'], activites[key])))
+				if not os.path.exists(NormPath(os.path.join(new_asset_data['path'], key))):
+					os.mkdir(NormPath(os.path.join(new_asset_data['path'], key)))
 				if not os.path.exists(dst_activity_path):
 					os.mkdir(dst_activity_path)
 			
@@ -2242,10 +2242,10 @@ class asset(studio):
 		
 		# (7) copy preview image
 		img_folder_path = NormPath(os.path.join(self.project.path, self.project.folders['preview_images']))
-		old_img_path = NormPath(os.path.join(img_folder_path, (old_name + '.png')))
-		old_img_icon_path = NormPath(os.path.join(img_folder_path, (old_name + '_icon.png')))
-		new_img_path = NormPath(os.path.join(img_folder_path, (new_asset_name + '.png')))
-		new_img_icon_path = NormPath(os.path.join(img_folder_path, (new_asset_name + '_icon.png')))
+		old_img_path = NormPath(os.path.join(img_folder_path, (old_name + self.preview_extension)))
+		old_img_icon_path = NormPath(os.path.join(img_folder_path, (old_name + '_icon%s' % self.preview_extension)))
+		new_img_path = NormPath(os.path.join(img_folder_path, (new_asset_name + self.preview_extension)))
+		new_img_icon_path = NormPath(os.path.join(img_folder_path, (new_asset_name + '_icon%s' % self.preview_extension)))
 		
 		if os.path.exists(old_img_path):
 			shutil.copyfile(old_img_path, new_img_path)
@@ -2953,10 +2953,12 @@ class task(studio):
 					return(True, (version_path, end_log['version']))
 			# (3)
 			elif end_log['action'] == 'push':
-				if self.task_type != 'sketch':
+				if self.task_type not in self.multi_publish_task_types:
 					pass
 					# (4)
-					version_path = self._template_get_work_path(self, version=end_log['source'])
+					b, version_path = self._template_get_work_path(self, version=end_log['source'])
+					if not b:
+						return(b, version_path)
 					if os.path.exists(version_path):
 						return(True, (version_path, end_log['version']))
 					# (5)
@@ -3347,7 +3349,7 @@ class task(studio):
 			b, str_source_version = self._template_version_num(source_version)
 			if not b:
 				return (b, str_source_version)
-			if str_source_version == end_push_log['source']:
+			if end_push_log and str_source_version == end_push_log['source']:
 				return(False, 'This commit version "%s" matches the latest push version!' % str_source_version)
 			# (4.3)
 			b, r = self._template_get_push_path(self, version=new_version)
@@ -3490,8 +3492,7 @@ class task(studio):
 			asset = task_data['asset_name']
 			extension = task_data['extension']
 				
-		folder_name = self.asset.ACTIVITY_FOLDER[asset_type][activity]
-		activity_path = NormPath(os.path.join(asset_path, folder_name))
+		activity_path = NormPath(os.path.join(asset_path, activity))
 		
 		version_file = NormPath(os.path.join(activity_path, version, '%s%s' % (asset, extension)))
 		
@@ -3524,8 +3525,7 @@ class task(studio):
 		asset_path = result[2]
 		
 		# get activity path
-		folder_name = self.asset.ACTIVITY_FOLDER[asset_type][activity]
-		activity_path = NormPath(os.path.join(asset_path, folder_name))
+		activity_path = NormPath(os.path.join(asset_path, activity))
 		# make activity folder
 		if not os.path.exists(activity_path):
 			os.mkdir(activity_path)
@@ -3570,7 +3570,7 @@ class task(studio):
 		if not os.path.exists(publish_dir):
 			return(False, 'in task.get_publish_file_path() - Not Publish Folder! (%s)' % publish_dir)
 		# -- -- get activity_dir
-		activity_dir = NormPath(os.path.join(publish_dir, self.asset.ACTIVITY_FOLDER[self.asset.type][task_data['activity']]))
+		activity_dir = NormPath(os.path.join(publish_dir, task_data['activity']))
 		if not os.path.exists(activity_dir):
 			return(False, 'in task.get_publish_file_path() - Not Publish/Activity Folder! (%s)' % activity_dir)
 		# -- -- get file_path
@@ -3917,6 +3917,7 @@ class task(studio):
 				source_branch = r[2]
 				push_path = r[3]
 				new_version = r[4]
+				#return(False, 'source - %s\npush - %s' % (source_path, push_path))
 				version_dir_path = os.path.dirname(push_path)
 				if not os.path.exists(version_dir_path):
 					os.makedirs(version_dir_path)
@@ -4014,7 +4015,7 @@ class task(studio):
 		
 		asset_path = task_data['asset_path']
 		
-		folder_name = self.ACTIVITY_FOLDER[task_data['asset_type']][activity]
+		folder_name = activity
 		activity_path = NormPath(os.path.join(asset_path, folder_name))
 		activity_path = NormPath(activity_path)
 		cache_dir_path = NormPath(os.path.join(asset_path, folder_name, ob_name))
@@ -4069,7 +4070,7 @@ class task(studio):
 		
 		asset_path = task_data['asset_path']
 		
-		folder_name = self.ACTIVITY_FOLDER[task_data['asset_type']][activity]
+		folder_name = activity
 		activity_path = NormPath(os.path.join(asset_path, folder_name))
 		activity_path = NormPath(activity_path)
 		cache_dir_path = NormPath(os.path.join(asset_path, folder_name, cache_dir_name))
@@ -4132,7 +4133,7 @@ class task(studio):
 		asset_path = task_data['asset_path']
 		
 		# get activity path
-		folder_name = self.ACTIVITY_FOLDER[task_data['asset_type']][activity]
+		folder_name = activity
 		activity_path = NormPath(os.path.join(asset_path, folder_name, cache_dir_name))
 		
 		# make activity folder
@@ -4178,7 +4179,7 @@ class task(studio):
 		
 		asset_path = task_data['asset_path']
 		
-		folder_name = self.ACTIVITY_FOLDER[task_data['asset_type']][activity]
+		folder_name = activity
 		activity_path = NormPath(os.path.join(asset_path, folder_name, cache_dir_name))
 		
 		version_file = NormPath(os.path.join(activity_path, version, (cache_dir_name + extension)))

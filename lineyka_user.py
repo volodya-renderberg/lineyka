@@ -602,7 +602,9 @@ class MainWindow(QtGui.QMainWindow):
 		if not ask:
 			return
 		
-		self.selected_task.push(current_artist=self.db_artist)
+		b, r = self.selected_task.push('my description', current_artist=self.db_artist)
+		if not b:
+			self.message(r, 2)
 	
 	def look_version_ui(self, look = True):
 		versions_list, branches = self.get_versions_list()
