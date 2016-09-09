@@ -17,7 +17,7 @@ import ui
 import edit_db as db
 #import lineyka_publish
 
-# /home/vofka/Yandex.Disk/Lineyka/lineyka_manager.py
+# sudo chmod +x "/home/vofka/Yandex.Disk/Lineyka/lineyka_manager.py"
 
 class MainWindow(QtGui.QMainWindow):
 	def __init__(self, parent = None):
