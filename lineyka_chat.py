@@ -282,9 +282,10 @@ class lineyka_chat:
 		for key in line_data:
 			# GET Img
 			tmp_img_path = line_data[key][0].img_path
-			icon_tmp_img_path = tmp_img_path.replace('.png', '_icon.png')
 			
 			if tmp_img_path and os.path.exists(tmp_img_path):
+				icon_tmp_img_path = tmp_img_path.replace('.png', '_icon.png')
+				
 				# -- copy to img_path
 				rand  = hex(random.randint(0, 1000000000)).replace('0x', '')
 				img_path = os.path.normpath(os.path.join(G.MW.db_chat.chat_img_path, (task_data['task_name'].replace(':','_') + rand + '.png')))
