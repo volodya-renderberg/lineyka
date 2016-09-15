@@ -393,7 +393,7 @@
      </widget>
      <widget class="QWidget" name="tab_3">
       <attribute name="title">
-       <string>Production</string>
+       <string>Task Manager</string>
       </attribute>
       <layout class="QHBoxLayout" name="horizontalLayout_5">
        <item>

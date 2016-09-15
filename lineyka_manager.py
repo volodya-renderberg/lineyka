@@ -5327,7 +5327,7 @@ class MainWindow(QtGui.QMainWindow):
 			
 		asset_list = []
 		for asset in result[1]:
-			if search in asset['name']:
+			if search.lower() in asset['name'].lower():
 				asset_list.append(asset)
 				
 		if not asset_list:
@@ -5465,7 +5465,7 @@ class MainWindow(QtGui.QMainWindow):
 				asset_list = result[1]
 			else:
 				for row in result[1]:
-					if search in row['name']:
+					if search.lower() in row['name'].lower():
 						asset_list.append(row)
 		else:
 			self.message(result[1], 2)
