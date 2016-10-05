@@ -14,33 +14,325 @@ try:
 	from .lineyka_publish import publish
 except:
 	from lineyka_publish import publish
-
+	
+	
 class studio:
 	'''
-	self.set_studio(path) - 
+	METODS:
 	
-	self.set_tmp_dir(path) - 
+	@staticmethod    get_studio()
+		
 	
-	self.get_studio() - 	
+	@staticmethod    set_studio(path)
+	
+	@staticmethod    set_tmp_dir(path)
+		specify the tmp directory
+		if path == '' or 'tmp' - value is recorded in an empty string - which means the use of the system tmp directory
+		fills attribute  studio.tmp_folder
+	
+	@staticmethod    set_convert_exe_path(path)
+		specify the file location convert.exe imagemagick applications
+		fills attribute  studio.convert_exe
+	
+	@staticmethod    set_share_dir()
+		specifies the location of the shared folder for the outsourcer,
+		fills attribute studio.share_dir
+		return(True/False, path or comment)
+	
+	@staticmethod    get_share_dir()
+		returns the location of the shared folder for the outsourcer,
+		fills attribute studio.share_dir
+		return(True/False, path or comment)
+	
+	@staticmethod    get_list_projects()
+		fills attributes:
+			studio.list_projects - dict, keys = name of project, data = dict by studio.projects_keys
+			studio.list_active_projects - a list of names of active projects
+	
+	@staticmethod    get_set_of_tasks_path()
+		finds the location of the file '.set_of_tasks.json' and assigns it to the studio.set_of_tasks_path
+	
+	@staticmethod    get_extension_dict()
+		return(True/False, dict of extensions or comment)
+	
+	@staticmethod    edit_extension_dict(extension, value)
+		edit the "value" of "extension"
+	
+	@staticmethod    edit_extension(extension, action, [value = '', new_extension = False])
+		"action" string in ['ADD', 'REMOVE', 'RENAME', 'EDIT']
+		if "action" = ADD - create new "extension" with value = "value"
+		if "action" = REMOVE - remove the "extension"
+		if "action" = RENAME - rename the "extension"  to the "new_extension"
+		if "action" = EDIT - edit the "value" of "extension"
 	'''
+	#Studio paths
+	studio_folder = False
+	tmp_folder = False
+	
+	#Paths to .db
+	projects_path = False  # studio_folder/.projects.db
+	set_of_tasks_path = False  # studio_folder/.set_of_tasks.json
+	artists_path = False # studio_folder/.artists.db
+	workroom_path = False # studio_folder/.workroom_db
+	statistic_path = False # studio_folder/.statistic.db
+	
+	#Init/Setting
+	init_path = False #~/init_folder/init_file
+	init_folder = '.lineyka'
+	init_file = 'lineyka_init.json'
+	share_dir = False # share_dir of outsource user
+	#--
+	set_path = False
+	set_file = 'user_setting.json'
+	
+	#Apps/Extensions
+	convert_exe = False
+	extensions = ['.blend', '.ma', '.tiff', '.ntp']
+	setting_data = {
+	'extension': {
+		'.tiff':'krita',
+		'.blend': 'blender',
+		'.ntp': 'natron',
+		'.ma': 'maya',
+		'.ods':'libreoffice',
+		}
+	}
+	soft_data = None # setting_data['extension']
+	
+	#Progects
+	list_projects = {} # a list of existing projects
+	list_active_projects = []
+	
+	#Constants
+	farme_offset = 100
+	color_status = {
+	'null':(0.451000005, 0.451000005, 0.451000005),
+	#'ready':(0.7627863884, 0, 1),
+	'ready':(0.826, 0.249, 1),
+	'ready_to_send':(0.9367088675, 0.2608556151, 0.4905878305),
+	'work':(0.520749867, 0.7143493295, 0.8227847815),
+	'work_to_outsorce':(0.2161512673, 0.5213058591, 0.8987341523),
+	#'pause':(0.3417721391, 0.2282493114, 0.1557442695),
+	'pause':(0.670, 0.539, 0.827),
+	'recast':(0.8481012583, 0.1967110634, 0.1502964497),
+	'checking':(1, 0.5872552395, 0.2531645298),
+	'done':(0.175, 0.752, 0.113),
+	#'close':(0.1645569652, 0.08450711519, 0.02499599569)
+	'close':(0.613, 0.373, 0.195)
+	}
+	
+	#Names
+	publish_folder_name = 'publish'
+	set_of_tasks_file = '.set_of_tasks.json'
+	projects_file = '.projects.json'
+	projects_db = '.projects.db'
+	projects_t = 'projects'
+	artists_db = '.artists.db'
+	artists_t = 'artists'
+	workroom_db = '.artists.db'
+	workroom_t = 'workrooms'
+	statistic_db = '.statistic.db'
+	statistic_t = 'statistic'
+	location_position_file = 'location_content_position.json'
+	user_registr_file_name = 'user_registr.json'
+	recycle_bin_name = '-Recycle_Bin-'
+	#-- shot_animation
+	meta_data_file = '.shot_meta_data.json'
+	
+	#Lists
+	priority = ['normal', 'high', 'top', 'ultra']
+	user_levels = ('user', 'extend_user', 'manager', 'root')
+	manager_levels = ('manager', 'root')
+	task_status = ('null','ready', 'ready_to_send', 'work', 'work_to_outsorce', 'pause', 'recast', 'checking', 'done', 'close')
+	working_statuses = ('ready', 'ready_to_send', 'work', 'work_to_outsorce', 'pause', 'recast')
+	end_statuses = ('done', 'close')
+	
+	#Types/Keys
+	task_types = [
+	# -- film
+	'animatic',
+	'film',
+	#
+	'sketch',
+	'textures',
+	# -- model
+	'sculpt',
+	'model',
+	# -- rig
+	'rig',
+	# -- location,
+	'specification',
+	'location',
+	#'location_full',
+	#'location_for_anim',
+	# -- animation
+	'animation_shot',
+	'tech_anim',
+	'simulation_din',
+	#'simulation_fluid',
+	'render',
+	'composition',
+	]
+	
+	service_tasks = [
+	'all',
+	'pre',
+	]
+	
+	asset_types = [
+	#'animatic',
+	'obj',
+	'char',
+	'location',
+	'shot_animation',
+	#'camera',
+	#'shot_render',
+	#'shot_composition',
+	#'light',
+	'film'
+	]
+	
+	asset_types_with_series = [
+	'animatic',
+	'shot_animation',
+	'camera',
+	'shot_render',
+	'shot_composition',
+	'film'
+	]
+	
+	asset_keys = [
+	('name', 'text'),
+	('group', 'text'),
+	('path', 'text'),
+	('type', 'text'),
+	('series', 'text'),
+	('priority', 'text'),
+	('comment', 'text'),
+	('content', 'text'),
+	('id', 'text'),
+	('status', 'text'),
+	('parent', 'text') # {'name':asset_name, 'id': asset_id}
+	]
+	
+	# constants (0 - 3 required parameters)
+	tasks_keys = [
+	('asset', 'text'),
+	('activity', 'text'),
+	('task_name', 'text'),
+	('task_type', 'text'),
+	('series', 'text'),
+	('input', 'text'),
+	('status', 'text'),
+	('outsource', 'text'),
+	('artist', 'text'),
+	('planned_time', 'text'),
+	('time', 'text'),
+	('start', 'timestamp'),
+	('end', 'timestamp'),
+	('supervisor', 'text'),
+	('approved_date', 'text'),
+	('price', 'real'),
+	('tz', 'text'),
+	('chat_local', 'text'),
+	('web_chat', 'text'),
+	('workroom', 'text'),
+	('readers', 'text'),
+	('output', 'text'),
+	('priority','text'),
+	('asset_id', 'text'),
+	('asset_type', 'text'),
+	('asset_path', 'text'),
+	('extension', 'text'),
+	]
+	
+	workroom_keys = [
+	('name', 'text'),
+	('id', 'text')
+	]
+	
+	# activity, task_name, action, date_time, comment, version, artist
+	
+	logs_keys = [
+	('version', 'text'),
+	('date_time', 'timestamp'),
+	('activity', 'text'),
+	('task_name', 'text'),
+	('action', 'text'),
+	('artist', 'text'),
+	('comment', 'text'),
+	]
+	
+	# user_name, task_name, data_start, data_end, long_time, cost
+	statistics_keys = [
+	('project_name', 'text'),
+	('task_name', 'text'),
+	('data_start', 'timestamp'),
+	('data_end', 'timestamp'),
+	('long_time', 'text'),
+	('cost', 'text'),
+	('status', 'text')
+	]
+	# artist_name, user_name, email, phone, specialty, outsource = '' or '0'/'1'
+	artists_keys = [
+	('nik_name', 'text'),
+	('user_name', 'text'),
+	('password', 'text'),
+	('date_time', 'timestamp'),
+	('email', 'text'),
+	('phone', 'text'),
+	('specialty', 'text'),
+	('outsource', 'text'),
+	('workroom', 'text'),
+	('level', 'text'),
+	('share_dir', 'text'),
+	('status', 'text')
+	]
+	chats_keys = [
+	('date_time', 'timestamp'),
+	('author', 'text'),
+	('topic', 'text'),
+	('color', 'text'),
+	('status', 'text'),
+	('reading_status', 'text')
+	]
+	
+	projects_keys = [
+	('name', 'text'),
+	('assets_path', 'text'),
+	('chat_img_path', 'text'),
+	('chat_path', 'text'),
+	('list_of_assets_path', 'text'),
+	('path', 'text'),
+	('preview_img_path', 'text'),
+	('status', 'text'),
+	('tasks_path', 'text'),
+	]
+	
+	# blender
+	blend_service_images = {
+		'preview_img_name' : 'Lineyka_Preview_Image',
+		'bg_image_name' : 'Lineyka_BG_Image',
+		}
+	
 	def __init__(self):
 		# 
-		self.farme_offset = 100
+		#self.farme_offset = 100
 		# studio
-		self.studio_folder = False
-		self.tmp_folder = False
-		self.convert_exe = False
-		self.init_path = False
-		self.set_path = False
-		self.share_dir = False
-		self.projects_path = False  # path to .projects.db
-		self.set_of_tasks_path = False  # path to .set_of_tasks.json
-		self.artists_path = False # path to .artists.db
-		self.workroom_path = False # path to .workroom_db
-		self.statistic_path = False # path to .statistic.db
-		self.list_projects = {} # a list of existing projects
-		self.list_active_projects = []
-		
+		#self.studio_folder = False
+		#self.tmp_folder = False
+		#self.convert_exe = False
+		#self.init_path = False
+		#self.set_path = False
+		#self.share_dir = False
+		#self.projects_path = False  # path to .projects.db
+		#self.set_of_tasks_path = False  # path to .set_of_tasks.json
+		#self.artists_path = False # path to .artists.db
+		#self.workroom_path = False # path to .workroom_db
+		#self.statistic_path = False # path to .statistic.db
+		#self.list_projects = {} # a list of existing projects
+		#self.list_active_projects = []
+		'''
 		self.extensions = ['.blend', '.ma', '.tiff', '.ntp']
 		self.setting_data = {
 		'extension': {
@@ -51,20 +343,19 @@ class studio:
 			'.ods':'libreoffice',
 			}
 		}
+		self.soft_data = None # setting_data['extension']
+		'''
+		#self.publish_folder_name = 'publish'
 		
-		self.publish_folder_name = 'publish'
+		#self.priority = ['normal', 'high', 'top', 'ultra']
 		
-		self.soft_data = None
-		
-		self.priority = ['normal', 'high', 'top', 'ultra']
-		
-		self.user_levels = ('user', 'extend_user', 'manager', 'root')
-		self.manager_levels = ('manager', 'root')
+		#self.user_levels = ('user', 'extend_user', 'manager', 'root')
+		#self.manager_levels = ('manager', 'root')
 
-		self.task_status = ('null','ready', 'ready_to_send', 'work', 'work_to_outsorce', 'pause', 'recast', 'checking', 'done', 'close')
-		self.working_statuses = ('ready', 'ready_to_send', 'work', 'work_to_outsorce', 'pause', 'recast')
-		self.end_statuses = ('done', 'close')
-		
+		#self.task_status = ('null','ready', 'ready_to_send', 'work', 'work_to_outsorce', 'pause', 'recast', 'checking', 'done', 'close')
+		#self.working_statuses = ('ready', 'ready_to_send', 'work', 'work_to_outsorce', 'pause', 'recast')
+		#self.end_statuses = ('done', 'close')
+		'''
 		self.color_status = {
 		'null':(0.451000005, 0.451000005, 0.451000005),
 		#'ready':(0.7627863884, 0, 1),
@@ -185,17 +476,17 @@ class studio:
 		]
 		
 		# activity, task_name, action, date_time, comment, version, artist
-		'''
+		
 		self.logs_keys = [
+		('version', 'text'),
+		('date_time', 'timestamp'),
 		('activity', 'text'),
 		('task_name', 'text'),
 		('action', 'text'),
-		('date_time', 'timestamp'),
+		('artist', 'text'),
 		('comment', 'text'),
-		('version', 'text'),
-		('artist', 'text')
 		]
-		'''
+		
 		# user_name, task_name, data_start, data_end, long_time, cost
 		self.statistics_keys = [
 		('project_name', 'text'),
@@ -241,43 +532,110 @@ class studio:
 		('status', 'text'),
 		('tasks_path', 'text'),
 		]
+		'''
 		
-		self.init_folder = '.lineyka'
-		self.init_file = 'lineyka_init.json'
-		self.set_file = 'user_setting.json'
-		self.set_of_tasks_file = '.set_of_tasks.json'
-		self.projects_file = '.projects.json'
-		self.projects_db = '.projects.db'
-		self.projects_t = 'projects'
-		self.artists_db = '.artists.db'
-		self.artists_t = 'artists'
-		self.workroom_db = '.artists.db'
-		self.workroom_t = 'workrooms'
-		self.statistic_db = '.statistic.db'
-		self.statistic_t = 'statistic'
-		self.location_position_file = 'location_content_position.json'
-		self.user_registr_file_name = 'user_registr.json'
-		self.recycle_bin_name = '-Recycle_Bin-'
+		#self.init_folder = '.lineyka'
+		#self.init_file = 'lineyka_init.json'
+		#self.set_file = 'user_setting.json'
+		#self.set_of_tasks_file = '.set_of_tasks.json'
+		#self.projects_file = '.projects.json'
+		#self.projects_db = '.projects.db'
+		#self.projects_t = 'projects'
+		#self.artists_db = '.artists.db'
+		#self.artists_t = 'artists'
+		#self.workroom_db = '.artists.db'
+		#self.workroom_t = 'workrooms'
+		#self.statistic_db = '.statistic.db'
+		#self.statistic_t = 'statistic'
+		#self.location_position_file = 'location_content_position.json'
+		#self.user_registr_file_name = 'user_registr.json'
+		#self.recycle_bin_name = '-Recycle_Bin-'
 		
 		# shot_animation
-		self.meta_data_file = '.shot_meta_data.json'
+		#self.meta_data_file = '.shot_meta_data.json'
 		
 		# 
-		self.make_init_file()
-		self.get_studio()
-		
+		#self.make_init_file()
+		#self.get_studio()
+		'''
 		# blender
 		self.blend_service_images = {
 			'preview_img_name' : 'Lineyka_Preview_Image',
 			'bg_image_name' : 'Lineyka_BG_Image',
 			}
+		'''
+		pass
+		
+	@staticmethod
+	def get_studio():
+		studio.__make_init_file()
+		
+		if not studio.init_path:
+			return(False, '****** in get_studio() -> init_path = False!')
+		
+		try:
+			with open(studio.init_path, 'r') as read:
+				data = json.load(read)
+				read.close()
+		except:
+			return(False, "****** init file  can not be read")
+		
+		studio.studio_folder = data.get('studio_folder')
+		studio.convert_exe = data.get('convert_exe')
+		studio.tmp_folder = data.get('tmp_folder')
+		#--tmp as sistem tmp 
+		if not studio.tmp_folder or not os.path.exists(studio.tmp_folder):
+			studio.tmp_folder = os.environ.get('tmp')
+		#--get paths
+		if studio.studio_folder:
+			if not studio.projects_path:
+				path = os.path.normpath(os.path.join(studio.studio_folder, studio.projects_db))
+				if os.path.exists(path):
+					studio.projects_path = path
+			
+			studio.get_set_of_tasks_path()
+			
+			if not studio.artists_path:
+				path = os.path.normpath(os.path.join(studio.studio_folder, studio.artists_db))
+				if os.path.exists(path):
+					studio.artists_path = path
+			if not studio.workroom_path:
+				path = os.path.normpath(os.path.join(studio.studio_folder, studio.artists_db))
+				if os.path.exists(path):
+					studio.workroom_path = path
+			if not studio.statistic_path:
+				path = os.path.normpath(os.path.join(studio.studio_folder, studio.statistic_db))
+				if os.path.exists(path):
+					studio.statistic_path = path
+					
+		#--get self.list_projects
+		if studio.projects_path:
+			studio.get_list_projects()
+		
+		#--fill self.extensions
+		try:
+			with open(studio.set_path, 'r') as read:
+				data = json.load(read)
+				extension_data = data.get('extension')
+				if extension_data:
+					studio.extensions = extension_data.keys()
+					studio.soft_data = extension_data
+				read.close()
+		except Exception as e:
+			return(False, e)
+			
+		#--get share dir
+		studio.get_share_dir()
+		
+		return(True, [studio.studio_folder, studio.tmp_folder, studio.projects_path, studio.artists_path, studio.statistic_path, studio.list_projects, studio.workroom_path])
 
-	def make_init_file(self):
+	@staticmethod
+	def __make_init_file():
 		home = os.path.expanduser('~')
 		
-		folder = os.path.normpath(os.path.join(home, self.init_folder))
-		init_path = os.path.normpath(os.path.join(home, self.init_folder, self.init_file))
-		set_path = os.path.normpath(os.path.join(folder, self.set_file))
+		folder = os.path.normpath(os.path.join(home, studio.init_folder))
+		init_path = os.path.normpath(os.path.join(home, studio.init_folder, studio.init_file))
+		set_path = os.path.normpath(os.path.join(folder, studio.set_file))
 		
 		# make folder
 		if not os.path.exists(folder):
@@ -296,22 +654,23 @@ class studio:
 		# make set_file
 		if not os.path.exists(set_path):
 			# make jason
-			d = self.setting_data
+			d = studio.setting_data
 			m_json = json.dumps(d, sort_keys=True, indent=4)
 			# save
 			data_fale = open(set_path, 'w')
 			data_fale.write(m_json)
 			data_fale.close()
 			
-		self.init_path = init_path
-		self.set_path = set_path
+		studio.init_path = init_path
+		studio.set_path = set_path
 		
-	def set_studio(self, path):
+	@staticmethod
+	def set_studio(path):
 		if not os.path.exists(path):
 			return(False, "****** to studio path not Found!")
 		
-		home = os.path.expanduser('~')	
-		init_path = os.path.join(home, self.init_folder, self.init_file).replace('\\','/')
+		home = os.path.expanduser('~')
+		init_path = os.path.normpath(os.path.join(home, studio.init_folder, studio.init_file))
 		if not os.path.exists(init_path):
 			return(False, "****** init_path not Found!")
 		
@@ -321,8 +680,8 @@ class studio:
 				data = json.load(read)
 				data['studio_folder'] = path
 				read.close()
-		except:
-			return(False, "****** in set_studio() -> init file  can not be read")
+		except Exception as e:
+			return(False, "****** in studio.set_studio() -> init file  can not be read", e)
 
 		try:
 			with open(init_path, 'w') as f:
@@ -330,30 +689,19 @@ class studio:
 				f.close()
 		except:
 			return(False, "****** in set_studio() ->  init file  can not be read")
-
-		self.studio_folder = path
+		studio.studio_folder = path
 		
 		# create projects_db
-		projects_path = os.path.normpath(os.path.join(path, self.projects_db))
+		projects_path = os.path.normpath(os.path.join(path, studio.projects_db))
 		if not os.path.exists(projects_path):
 			conn = sqlite3.connect(projects_path)
 			c = conn.cursor()
 			conn.commit()
 			conn.close()
-		'''
-		projects_path = os.path.join(path, self.projects_file)
-		if not os.path.exists(projects_path):
-			d = {}
-			m_json = json.dumps(d, sort_keys=True, indent=4)
-			# save
-			data_fale = open(projects_path, 'w')
-			data_fale.write(m_json)
-			data_fale.close()
-		'''
-		self.projects_path = projects_path
+		studio.projects_path = projects_path
 		
 		# create .set_of_tasks.json
-		set_of_tasks_path = os.path.join(path, self.set_of_tasks_file)
+		set_of_tasks_path = os.path.join(path, studio.set_of_tasks_file)
 		if not os.path.exists(set_of_tasks_path):
 			d = {}
 			m_json = json.dumps(d, sort_keys=True, indent=4)
@@ -361,77 +709,45 @@ class studio:
 			data_fale = open(set_of_tasks_path, 'w')
 			data_fale.write(m_json)
 			data_fale.close()
-		self.set_of_tasks_path = set_of_tasks_path
+		studio.set_of_tasks_path = set_of_tasks_path
 
 		# create  artists
-		artist_path = os.path.normpath(os.path.join(path, self.artists_db))
+		artist_path = os.path.normpath(os.path.join(path, studio.artists_db))
 		if not os.path.exists(artist_path):
 			conn = sqlite3.connect(artist_path)
 			c = conn.cursor()
-			'''
-			names = (self.artists_t, )
-			c.execute("CREATE TABLE ?(artist_name TEXT, user_name TEXT, email TEXT, phone TEXT, name TEXT, specialty TEXT)", names)
-			'''
-			'''
-			string2 = "CREATE TABLE " + self.artists_t + " ("
-			for i,key in enumerate(self.artists_keys):
-				if i == 0:
-					string2 = string2 + '\"' + key[0] + '\" ' + key[1]
-				else:
-					string2 = string2 + ', \"' + key[0] + '\" ' + key[1]
-			string2 = string2 + ')'
-			c.execute(string2)
-			'''
-			'''
-			string = "CREATE TABLE " + self.artists_t + "(artist_name TEXT, user_name TEXT, email TEXT, phone TEXT, name TEXT, specialty TEXT)"
-			c.execute(string)
-			'''
-			
 			conn.commit()
 			conn.close()
-		self.artists_path = artist_path
+		studio.artists_path = artist_path
 		
 		# create workroom
-		self.workroom_path = artist_path
+		studio.workroom_path = artist_path
 
 		# create  statistic
-		statistic_path = os.path.join(path, self.statistic_db)
+		statistic_path = os.path.join(path, studio.statistic_db)
 		if not os.path.exists(statistic_path):
 			conn = sqlite3.connect(statistic_path)
 			c = conn.cursor()
-			'''
-			names = (self.statistic_t, )
-			c.execute("CREATE TABLE ?(task TEXT, user_name TEXT, data_start TEXT, data_end TEXT, long_time REAL, price REAL)", names)
-			'''
-			'''
-			string = "CREATE TABLE " + self.statistic_t + "(task TEXT, user_name TEXT, data_start TEXT, data_end TEXT, long_time REAL, price REAL)"
-			c.execute(string)
-			'''
-			
 			conn.commit()
 			conn.close()
-		self.statistic_path = statistic_path
-		'''		
-		# fill self.extensions
-		try:
-			with open(self.set_path, 'r') as read:
-				data = json.load(read)
-				self.extensions = data['extension'].keys()
-				read.close()
-		except:
-			print('in set_studio -> not read user_setting.json!')
-			return(False, 'in set_studio -> not read user_setting.json!')
-		'''	
+		studio.statistic_path = statistic_path
+		
+		#get studio
+		studio.get_studio()
+		
 		return(True, 'Ok')
 		
-	def set_tmp_dir(self, path):
-		if not os.path.exists(path):
-			return "****** to studio path not Found!"
+	@staticmethod
+	def set_tmp_dir(path):
+		if not path or path.lower() == 'tmp':
+			path = ''
+		elif not os.path.exists(path):
+			return(False, "****** in studio/set_tmp_dir() to studio path not Found!")
 		
-		home = os.path.expanduser('~')	
-		init_path = os.path.join(home, self.init_folder, self.init_file).replace('\\','/')
+		home = os.path.expanduser('~')
+		init_path = os.path.normpath(os.path.join(home, studio.init_folder, studio.init_file))
 		if not os.path.exists(init_path):
-			return "****** init_path not Found!"
+			return(False, "****** in studio/set_tmp_dir() init_path not Found!")
 		
 		# write studio path
 		try:
@@ -440,27 +756,31 @@ class studio:
 				data['tmp_folder'] = path
 				read.close()
 		except:
-			return "****** init file  can not be read"
+			return(False, "****** in studio/set_tmp_dir() init file  can not be read")
 
 		try:
 			with open(init_path, 'w') as f:
 				jsn = json.dump(data, f, sort_keys=True, indent=4)
 				f.close()
 		except:
-			return "****** init file  can not be read"
+			return(False, "****** in studio/set_tmp_dir() init file  can not be read")
 
-		self.tmp_folder = path
+		if not path:
+			studio.tmp_folder = os.environ.get('tmp')
+		else:
+			studio.tmp_folder = path
 				
-		return(True, 'Ok')
-		
-	def set_convert_exe_path(self, path):
+		return(True, studio.tmp_folder)
+	
+	@staticmethod
+	def set_convert_exe_path(path):
 		if not os.path.exists(path):
-			return(False, "****** to convert.exe path not Found!")
+			return(False, "****** in studio.set_convert_exe_path() convert.exe path not Found!")
 		
 		home = os.path.expanduser('~')
-		init_path = os.path.join(home, self.init_folder, self.init_file).replace('\\','/')
+		init_path = os.path.join(home, studio.init_folder, studio.init_file).replace('\\','/')
 		if not os.path.exists(init_path):
-			return(False, "****** init_path not Found!")
+			return(False, "****** in studio.set_convert_exe_path()  init_path not Found!")
 		
 		# write studio path
 		try:
@@ -469,27 +789,28 @@ class studio:
 				data['convert_exe'] = os.path.normpath(path)
 				read.close()
 		except:
-			return(False, "****** init file  can not be read")
+			return(False, "****** in studio.set_convert_exe_path() init file  can not be read")
 
 		try:
 			with open(init_path, 'w') as f:
 				jsn = json.dump(data, f, sort_keys=True, indent=4)
 				f.close()
 		except:
-			return(False, "****** init file  can not be read")
+			return(False, "****** in studio.set_convert_exe_path() init file  can not be read")
 
-		self.convert_exe = path
+		studio.convert_exe = path
 				
-		return True, 'Ok'
-		
-	def set_share_dir(self, path):
+		return(True, studio.convert_exe)
+	
+	@staticmethod
+	def set_share_dir(path):
 		if not os.path.exists(path):
-			return "****** to studio path not Found!"
+			return(False, "****** in studio.set_share_dir() path not Found!")
 		
 		home = os.path.expanduser('~')	
-		init_path = os.path.join(home, self.init_folder, self.init_file).replace('\\','/')
+		init_path = os.path.join(home, studio.init_folder, studio.init_file).replace('\\','/')
 		if not os.path.exists(init_path):
-			return "****** init_path not Found!"
+			return(False, "****** in studio.set_share_dir() init_path not Found!")
 		
 		# write studio path
 		try:
@@ -498,147 +819,60 @@ class studio:
 				data['share_folder'] = path
 				read.close()
 		except:
-			return "****** init file  can not be read"
+			return(False, "****** in studio.set_share_dir() init file  can not be read")
 
 		try:
 			with open(init_path, 'w') as f:
 				jsn = json.dump(data, f, sort_keys=True, indent=4)
 				f.close()
 		except:
-			return "****** init file  can not be read"
+			return(False, "****** in studio.set_share_dir() init file  can not be read")
 
-		#self.out_source_share_folder = path
+		studio.share_dir = path
 				
-		return True, 'Ok'
-		
-	def get_share_dir(self):
+		return(True, path)
+	
+	@staticmethod
+	def get_share_dir():
 		# get lineyka_init.json
 		home = os.path.expanduser('~')	
-		init_path = os.path.join(home, self.init_folder, self.init_file).replace('\\','/')
+		init_path = os.path.join(home, studio.init_folder, studio.init_file).replace('\\','/')
 		if not os.path.exists(init_path):
-			return False, "****** init_path not Found!"
+			return(False, "****** in studio.get_share_dir - init_path not Found!")
 			
 		# write studio path
 		
 		try:
 			with open(init_path, 'r') as read:
 				data = json.load(read)
-				try:
-					path = data['share_folder']
-					self.share_dir = path
-					return True, path
-				except:
-					return False, 'Not key \"share_folder\"'
+				studio.share_dir = data.get('share_folder')
 				read.close()
-		except:
-			return False, '****** init file not Read!'
+		except Exception as e:
+			print(e)
+			return(False, '****** in studio.get_share_dir - init file not Read!')
+			
+		return(True, studio.share_dir)
 	
-	def get_studio(self):
-		if self.init_path == False:
-			return(False, '****** in get_studio() -> init_path = False!')
-		# write studio path
-		try:
-			with open(self.init_path, 'r') as read:
-				data = json.load(read)
-				#self.studio_folder = data['studio_folder']
-				#self.tmp_folder = data['tmp_folder']
-				read.close()
-		except:
-			return(False, "****** init file  can not be read")
-		try:
-			self.studio_folder = data['studio_folder']
-			#print('studio: ', self.studio_folder)
-		except:
-			pass
-		try:
-			self.convert_exe = data['convert_exe']
-		except:
-			pass
-		try:
-			self.tmp_folder = data['tmp_folder']	
-		except:
-			pass
-			
-		# artists_path = False   statistic_path = False
-		if self.studio_folder:
-			if self.projects_path == False:
-				path = os.path.normpath(os.path.join(self.studio_folder, self.projects_db))
-				if os.path.exists(path):
-					self.projects_path = path
-			
-			self.get_set_of_tasks_path()
-			'''
-			if not self.set_of_tasks_path:
-				path = os.path.normpath(os.path.join(self.studio_folder, self.set_of_tasks_file))
-				if os.path.exists(path):
-					self.set_of_tasks_path = path
-			'''
-			if not self.artists_path:
-				path = os.path.normpath(os.path.join(self.studio_folder, self.artists_db))
-				if os.path.exists(path):
-					self.artists_path = path
-			if self.workroom_path == False:
-				path = os.path.normpath(os.path.join(self.studio_folder, self.artists_db))
-				if os.path.exists(path):
-					self.workroom_path = path
-			if self.statistic_path == False:
-				path = os.path.normpath(os.path.join(self.studio_folder, self.statistic_db))
-				if os.path.exists(path):
-					self.statistic_path = path
-					
-		#print('artist path: ', self.artists_path)
-		
-		# get self.list_projects
-		if self.projects_path:
-			'''
-			try:
-				with open(self.projects_path, 'r') as read:
-					self.list_projects = json.load(read)
-					read.close()
-			except:
-				return False, "******studio.get_studio() -> .projects.json file  can not be read"
-			'''
-			self.get_list_projects()
-			
-		'''
-		# get list_active_projects
-		if self.list_projects:
-			self.list_active_projects = []
-			for key in self.list_projects:
-				if self.list_projects[key]['status'] == 'active':
-					self.list_active_projects.append(key)
-		'''
-				
-		# fill self.extensions
-		try:
-			with open(self.set_path, 'r') as read:
-				data = json.load(read)
-				self.extensions = data['extension'].keys()
-				self.soft_data = data['extension']
-				read.close()
-		except:
-			return(False, 'in get_studio -> not read user_setting.json!')
-		
-		return True, [self.studio_folder, self.tmp_folder, self.projects_path, self.artists_path, self.statistic_path, self.list_projects, self.workroom_path]
-		
-	def get_list_projects(self):
-		if not self.projects_path:
-			return
-		if not os.path.exists(self.projects_path):
+	@staticmethod
+	def get_list_projects():
+		if not studio.projects_path or not os.path.exists(studio.projects_path):
 			return
 			
 		# -- CONNECT  .db
-		conn = sqlite3.connect(self.projects_path, detect_types=sqlite3.PARSE_DECLTYPES|sqlite3.PARSE_COLNAMES)
-		conn.row_factory = sqlite3.Row
-		c = conn.cursor()
+		try:
+			conn = sqlite3.connect(studio.projects_path, detect_types=sqlite3.PARSE_DECLTYPES|sqlite3.PARSE_COLNAMES)
+			conn.row_factory = sqlite3.Row
+			c = conn.cursor()
+		except Exception as e:
+			return
 		
 		# -- EXISTS TABLE
-		table = self.projects_t
+		table = studio.projects_t
 		try:
 			string = 'select * from ' + table
 			c.execute(string)
-		except:
-			print('Not projects table!')
+		except Exception as e:
+			print(e, '-- in studio.get_list_projects()!')
 			pass
 		
 		else:
@@ -646,81 +880,89 @@ class studio:
 			for row in c.fetchall():
 				data = {}
 				for key in dict(row).keys():
-					print(key)
+					#print(key)
 					if key == 'name':
 						continue
 					data[key] = row[key]
 				list_projects[row['name']] = data
 			
-			self.list_projects = list_projects
+			studio.list_projects = list_projects
 		
 		conn.close()
 		
 		# get list_active_projects
-		if self.list_projects:
-			self.list_active_projects = []
-			for key in self.list_projects:
-				if self.list_projects[key]['status'] == 'active':
-					self.list_active_projects.append(key)
+		if studio.list_projects:
+			studio.list_active_projects = []
+			for key in studio.list_projects:
+				if studio.list_projects[key]['status'] == 'active':
+					studio.list_active_projects.append(key)
 	
-	def get_set_of_tasks_path(self):
-		if not self.set_of_tasks_path:
-			path = os.path.normpath(os.path.join(self.studio_folder, self.set_of_tasks_file))
+	@staticmethod
+	def get_set_of_tasks_path():
+		if not studio.set_of_tasks_path:
+			path = os.path.normpath(os.path.join(studio.studio_folder, studio.set_of_tasks_file))
 			if os.path.exists(path):
-				self.set_of_tasks_path = path
+				studio.set_of_tasks_path = path
 
 	# ****** SETTING ******
 	# ------- EXTENSION -------------
-	def get_extension_dict(self):
+	@staticmethod
+	def get_extension_dict():
 		extension_dict = {}
 		
 		home = os.path.expanduser('~')
-		folder = os.path.join(home, self.init_folder)
-		set_path = os.path.join(folder, self.set_file)
+		set_path = os.path.normpath(os.path.join(home, studio.init_folder, studio.set_file))
 		
 		if not os.path.exists(set_path):
-			return(False, ('Not Path ' + set_path))
+			return(False, ('****** in studio.get_extension_dict() - Not Path ' + set_path))
 		
 		with open(set_path, 'r') as read:
 			extension_dict = json.load(read)['extension']
 			
 		return(True, extension_dict)
-		
-	def edit_extension_dict(self, key, path):
+	
+	@staticmethod
+	def edit_extension_dict(extension, value):
 		extension_dict = {}
 		
 		home = os.path.expanduser('~')
-		folder = os.path.join(home, self.init_folder)
-		set_path = os.path.join(folder, self.set_file)
+		set_path = os.path.normpath(os.path.join(home, studio.init_folder, studio.set_file))
 		
 		if not os.path.exists(set_path):
-			return(False, ('Not Path ' + set_path))
+			return(False, ('****** in studio.get_extension_dict() - Not Path ' + set_path))
 		
 		with open(set_path, 'r') as read:
 			data = json.load(read)
+			
+		# preparation extension
+		if extension and extension[0] != '.':
+			extension = '.' + extension
 		
-		data['extension'][key] = path
+		if not extension in data['extension'].keys():
+			return(False, ('****** in studio.get_extension_dict() - Not \"%s\" in list extensions' % extension))
+		else:
+			data['extension'][extension] = value
 		
 		with open(set_path, 'w') as f:
 			jsn = json.dump(data, f, sort_keys=True, indent=4)
 			f.close()
 		
 		return(True, 'Ok')
-		
-	def edit_extension(self, extension, action, new_extension = False):
+	
+	@staticmethod
+	def edit_extension(extension, action, value = '', new_extension = False):
 		if not extension:
-			return(False, 'Not Extension!')
+			return(False, '****** in studio.edit_extension() - Not Extension!')
 			
-		if not action in ['ADD', 'REMOVE', 'EDIT']:
-			return(False, 'Incorrect Action!')
+		if not action in ['ADD', 'REMOVE', 'RENAME', 'EDIT']:
+			return(False, '****** in studio.edit_extension() - Incorrect Action!')
 			
 		# get file path
 		home = os.path.expanduser('~')
-		folder = os.path.join(home, self.init_folder)
-		set_path = os.path.join(folder, self.set_file)
+		set_path = os.path.normpath(os.path.join(home, studio.init_folder, studio.set_file))
 		
 		if not os.path.exists(set_path):
-			return(False, ('Not Path ' + set_path))
+			return(False, ('****** in studio.edit_extension() - Not Path %s' % set_path))
 		
 		# preparation extension
 		if extension[0] != '.':
@@ -732,28 +974,43 @@ class studio:
 			
 		if action == 'ADD':
 			if not extension in data['extension'].keys():
-				data['extension'][extension] = ''
+				data['extension'][extension] = value
 			else:
-				return(False, ('This Extension \"' + extension + '\" Already Exists!'))
+				return(False, ('****** in studio.edit_extension() - This Extension \"%s\" Already Exists!') % extension)
 		elif action == 'REMOVE':
 			if extension in data['extension'].keys():
 				del data['extension'][extension]
 			else:
-				return(False, ('This Extension \"' + extension + '\" Not Found!'))
-		elif action == 'EDIT':
-			if new_extension: 
-				if extension in data['extension'].keys():
-					value = data['extension'][extension]
-					del data['extension'][extension]
-					data['extension'][new_extension] = value
+				return(False, ('****** in studio.edit_extension() - This Extension \"%s\" Not Found!') % extension)
+		elif action == 'RENAME':
+			if new_extension:
+				if new_extension[0] != '.':
+					new_extension = '.' + new_extension
+				#--
+				if not extension in data['extension'].keys():
+					return(False, ('****** in studio.edit_extension() - This Extension \"%s\" Not Found!') % extension)
+				if new_extension in data['extension'].keys():
+					return(False, ('****** in studio.edit_extension() - This new Extension \"%s\" Already Exists!') % new_extension)
+				#--
+				value = data['extension'][extension]
+				del data['extension'][extension]
+				data['extension'][new_extension] = value
 			else:
-				return(False, 'Not New Extension!')
+				return(False, '****** in studio.edit_extension() - Not New Extension!')
+		elif action == 'EDIT':
+			if not extension in data['extension'].keys():
+				return(False, ('****** in studio.edit_extension() - This Extension \"%s\" Not Found!') % extension)
+			data['extension'][extension] = value
 			
 		with open(set_path, 'w') as f:
 			jsn = json.dump(data, f, sort_keys=True, indent=4)
 			f.close()
 		
 		return(True, 'Ok')
+	
+	
+class context:
+	pass
 	
 class project(studio):
 	'''
