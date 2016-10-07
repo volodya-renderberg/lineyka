@@ -1033,13 +1033,23 @@ class project():
 			if path = '' - project directory will be created in the studio directory
 			if name = '' - name of the project will be determined by the name of the directory
 		
-		make folders and files of project
-		fill context.project
-		run studio.get_studio()
+			make folders and files of project
+			fill context.project
+			run studio.get_studio()
+			
+			return(True/False, 'Ok'/comment)
 		
 	get_project(name)
 		description:
 			fill context.project
+			
+			return(True/False, 'Ok'/comment)
+			
+	rename_project(old_name, new_name)
+		description:
+			rename of project, fill context.project, fill studio.list_projects and studio.list_active_projects
+			
+			return(True/False, 'Ok'/comment)
 	'''
 	def __init__(self):
 		# constans
@@ -1255,7 +1265,7 @@ class project():
 			for key in studio.list_projects[name]:
 				context.project[key] = studio.list_projects[name][key]
 		self.get_list_of_assets()
-		return(True, context.project)
+		return(True, 'Ok!')
 		
 	def get_list_of_assets(self):
 		# self.assets_list - list of dictonary by self.asset_keys
@@ -1263,45 +1273,36 @@ class project():
 		return(True, 'Ok')
 	
 	def rename_project(self, old_name, new_name):
-		if not old_name in self.list_projects:
-			return(False, ('in rename_project -> No such project: \"' + old_name + '\"'))
+		if not old_name or not new_name:
+			return(False, ('*** in project.rename_project -> one or more names are not set!'))
+		elif not old_name in studio.list_projects:
+			return(False, ('*** in project.rename_project -> No such project: \"%s\"' % old_name))
+		elif new_name in studio.list_projects:
+			return(False, ('*** in project.rename_project -> This Project Name: \"%s\" already exists!' % new_name))
 			
-		result = self.get_project(old_name)
-		if not result[0]:
-			return(False, ('in rename_project -> ' + result[1]))
-		
-		'''
-		try:
-			with open(self.projects_path, 'r') as read:
-				data = json.load(read)
-				project_data = data[old_name]
-				del data[old_name]
-				data[new_name] = project_data
-				read.close()
-				
-		except:
-			return(False, 'Not Read \".projects.json\"!')
-			
-		try:
-			with open(self.projects_path, 'w') as f:
-				jsn = json.dump(data, f, sort_keys=True, indent=4)
-				f.close()
-		except:
-			return(False, 'Not Write \".projects.json\"!')
-		'''
+		res, comment = self.get_project(old_name)
+		if not res:
+			return(False, ('*** in project.rename_project -> ' + comment))
 		
 		# -- CONNECT  .db
-		conn = sqlite3.connect(self.projects_path, detect_types=sqlite3.PARSE_DECLTYPES|sqlite3.PARSE_COLNAMES)
-		conn.row_factory = sqlite3.Row
-		c = conn.cursor()
+		try:
+			conn = sqlite3.connect(studio.projects_path, detect_types=sqlite3.PARSE_DECLTYPES|sqlite3.PARSE_COLNAMES)
+			conn.row_factory = sqlite3.Row
+			c = conn.cursor()
+		except Exception as e:
+			print e
+			return(False, '*** in project.rename_project() a problem with connect by path: "%s"' % studio.projects_path)
 		
-		table = self.projects_t
-		string = 'UPDATE ' +  table + ' SET \"name\" = ? WHERE name = ?'
+		string = 'UPDATE ' +  studio.projects_t + ' SET \"name\" = ? WHERE name = ?'
 		data = (new_name, old_name)
 		
 		c.execute(string, data)
 		conn.commit()
 		conn.close()
+		
+		if context.project['name'] == old_name:
+			context.project['name'] = new_name
+		studio.get_list_projects()
 		
 		return(True, 'Ok')
 		
