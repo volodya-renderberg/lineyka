@@ -9,6 +9,7 @@ import datetime
 import getpass
 import random
 import shutil
+import tempfile
 
 try:
 	from .lineyka_publish import publish
@@ -585,7 +586,7 @@ class studio:
 		studio.tmp_folder = data.get('tmp_folder')
 		#--tmp as sistem tmp 
 		if not studio.tmp_folder or not os.path.exists(studio.tmp_folder):
-			studio.tmp_folder = os.environ.get('tmp')
+			studio.tmp_folder = tempfile.gettempdir()
 		#--get paths
 		if studio.studio_folder:
 			if not studio.projects_path:
@@ -766,7 +767,7 @@ class studio:
 			return(False, "****** in studio/set_tmp_dir() init file  can not be read")
 
 		if not path:
-			studio.tmp_folder = os.environ.get('tmp')
+			studio.tmp_folder = tempfile.gettempdir()
 		else:
 			studio.tmp_folder = path
 				
@@ -1010,30 +1011,36 @@ class studio:
 	
 	
 class context:
-	pass
+	project = {
+	'name': False,
+	'path': False,# project folder path
+	'status': False,# status of project
+	'assets_list': [],# a list of existing assets
+	'assets_path': False, # .assets.db file path
+	'tasks_path' : False, # .tasks.db  file path
+	'chat_path' : False, # .chats.db file path
+	'list_of_assets_path' : False, # path to .list_of_assets.json
+	'chat_img_path' : False, # img to chat, folder path
+	'preview_img_path' : False, # preview img, folder path
+	}
 	
-class project(studio):
+class project():
 	'''
-	self.add_project(project_name, project_path, keys) - 
-
-	self.get_project(project_name) - 
-	
+	add_project(name, path)
+		description:
+			make or applay new project,
+			if path = '' - project directory will be created in the studio directory
+			if name = '' - name of the project will be determined by the name of the directory
+		
+		make folders and files of project
+		fill context.project
+		run studio.get_studio()
+		
 	'''
 	def __init__(self):
-		self.path = False # project folder path
-		self.assets_path = False # .assets.db file path
-		self.tasks_path = False # .tasks.db  file path
-		self.chat_path = False # .chats.db file path
-		self.list_of_assets_path = False # path to .list_of_assets.json
-		self.chat_img_path = False # img to chat, folder path
-		self.preview_img_path = False # preview img, folder path
-		self.assets_list = False # # a list of existing assets
-		self.status = False # status 
-		
 		# constans
 		self.folders = {'assets':'assets', 'chat_img_folder':'.chat_images', 'preview_images': '.preview_images'}
 		self.tasks_name_db = '.tasks.db'
-		#self.assets_name = '.assets.json'
 		self.assets_name = '.assets.db'
 		self.chat_name_db = '.chats.db'
 		self.list_of_assets_name = '.list_of_assets.json'
@@ -1041,7 +1048,6 @@ class project(studio):
 		self.group_t = 'groups'
 		self.tasks_t = 'tasks'
 		self.logs_t = 'logs'
-		studio.__init__(self)
 
 	def add_project(self, project_name, project_path):
 		# project_name, get project_path
@@ -1049,20 +1055,22 @@ class project(studio):
 			return(False, 'No options!')
 			
 		elif project_path == '':
-			project_path = os.path.join(self.studio_folder, project_name)
+			project_path = os.path.join(studio.studio_folder, project_name)
 			try:
 				os.mkdir(project_path)
-			except:
-				return(False, ('Failed to create folder: ' + project_path))
+			except Exception as e:
+				print(e)
+				return(False, ('*** in project.add_project() - Failed to create folder: %s' % project_path))
 			
 		elif project_name == '':
 			if not os.path.exists(project_path):
-				return(False, ('Project Path: \'' + project_path + '\' Not Found!'))
+				return(False, ('Project Path: \"%s\" Not Found!' % project_path))
 			project_name = os.path.basename(project_path)
 			
 		# test by name 
-		if project_name in self.list_projects.keys():
-			return(False, "This project name already exists!")
+		if project_name in studio.list_projects.keys():
+			return(False, "This project name \"%s\" already exists!" %project_name)
+		context.project['name'] = project_name
 		
 		# path_encode
 		if platform.system() == 'Windows':
@@ -1070,135 +1078,114 @@ class project(studio):
 			project_path = str(project_path)
 			path = os.path.normpath(project_path.encode('string-escape'))
 		else:
-			# linux
+			# linux, osx
 			path = project_path
 			
 		if not os.path.exists(path):
-			text = '****** studio.project.add_project() -> ' +  path + ' not found'
-			return False, text
+			text = '****** project.add_project() -> %s not found' % path
+			return(False, text)
 		else:
-			self.path = path
+			context.project['path'] = path
 		
-		'''
-		# create assets json
-		assets_path = os.path.join(path, self.assets_name)
-		if not os.path.exists(assets_path):
-			d = {}
-			m_json = json.dumps(d, sort_keys=True, indent=4)
-			# save
-			data_fale = open(assets_path, 'w')
-			data_fale.write(m_json)
-			data_fale.close()
-		self.assets_path = assets_path
-		'''
 		# create .list_of_assets.json
-		self.list_of_assets_path = os.path.join(self.path, self.list_of_assets_name)
-		if not os.path.exists(self.list_of_assets_path):
+		list_of_assets_path = os.path.join(path, self.list_of_assets_name)
+		if not os.path.exists(list_of_assets_path):
 			d = {}
 			m_json = json.dumps(d, sort_keys=True, indent=4)
 			# save
-			data_fale = open(self.list_of_assets_path, 'w')
+			data_fale = open(list_of_assets_path, 'w')
 			data_fale.write(m_json)
 			data_fale.close()
-		
+		context.project['list_of_assets_path'] = list_of_assets_path
 		
 		# create assets db
-		self.assets_path = os.path.normpath(os.path.join(path, self.assets_name))
-		if not os.path.exists(self.assets_path):
-			conn = sqlite3.connect(self.assets_path, detect_types=sqlite3.PARSE_DECLTYPES|sqlite3.PARSE_COLNAMES)
+		assets_path = os.path.normpath(os.path.join(path, self.assets_name))
+		if not os.path.exists(assets_path):
+			conn = sqlite3.connect(assets_path, detect_types=sqlite3.PARSE_DECLTYPES|sqlite3.PARSE_COLNAMES)
 			c = conn.cursor()
-			'''			
-			# -- table groups
-			string = "CREATE TABLE " + self.group_t + "("
-			for i,key in enumerate(self.group_keys):
-				if i == 0:
-					string = string + '\"' + key[0] + '\"' + ' ' + key[1]
-				else:
-					string = string + ', ' + '\"' + key[0] + '\"' + ' ' + key[1]
-			string = string + ')'
-			#print(string)
-			c.execute(string)
-			'''
 			conn.commit()
 			conn.close()
-			
+		context.project['assets_path'] = assets_path
 		
 		# create tasks db
-		self.tasks_path = os.path.join(path, self.tasks_name_db)
-		if not os.path.exists(self.tasks_path):
-			conn = sqlite3.connect(self.tasks_path, detect_types=sqlite3.PARSE_DECLTYPES|sqlite3.PARSE_COLNAMES)
+		tasks_path = os.path.join(path, self.tasks_name_db)
+		if not os.path.exists(tasks_path):
+			conn = sqlite3.connect(tasks_path, detect_types=sqlite3.PARSE_DECLTYPES|sqlite3.PARSE_COLNAMES)
 			c = conn.cursor()
 			
 			# -- table tasks
-			#string = "CREATE TABLE " + self.tasks_t + "(Id INTEGER PRIMARY KEY AUTOINCREMENT UNIQUE NOT NULL, series text, task_name text, asset text, activity text, input text, status text, artist text, planned_time text, time text, start text, end text, supervisor text, approved_date text, price real, tz text, chat text)"
-			#string = "CREATE TABLE " + self.tasks_t + "(Id INTEGER PRIMARY KEY AUTOINCREMENT UNIQUE NOT NULL"
 			string = "CREATE TABLE " + self.tasks_t + "("
-			for i,key in enumerate(self.tasks_keys):
+			for i,key in enumerate(studio.tasks_keys):
 				if i == 0:
 					string = string + key[0] + ' ' + key[1]
 				else:
 					string = string + ', ' + key[0] + ' ' + key[1]
 			string = string + ')'
-			#print(string)
 			c.execute(string)
 			
-			# -- table logs
-			string = "CREATE TABLE " + self.logs_t + "(activity text, task_name text, action text, date_time text, comment text, version text, artist text)"
+			# -- table logs ???
+			string = "CREATE TABLE " + self.logs_t + "("
+			for i,key in enumerate(studio.logs_keys):
+				if i == 0:
+					string = string + key[0] + ' ' + key[1]
+				else:
+					string = string + ', ' + key[0] + ' ' + key[1]
+			string = string + ')'
 			c.execute(string)
 			
 			conn.commit()
 			conn.close()
+		context.project['tasks_path'] = tasks_path
 		
 		# create chat db
-		self.chat_path = os.path.join(path, self.chat_name_db)
-		if not os.path.exists(self.chat_path):
-			conn = sqlite3.connect(self.chat_path)
+		chat_path = os.path.join(path, self.chat_name_db)
+		if not os.path.exists(chat_path):
+			conn = sqlite3.connect(chat_path)
 			c = conn.cursor()
-			
 			conn.commit()
 			conn.close()
+		context.project['chat_path'] = chat_path
 			
 		# create folders
-		self.make_folders(self.path)
+		self.make_folders(path)
 		# -- get chat_img_folder
-		img_folder_path = os.path.join(self.path, self.folders['chat_img_folder'])
-		if os.path.exists(img_folder_path):
-			self.chat_img_path = img_folder_path
-		else:
-			self.chat_img_path = False
+		chat_img_path = os.path.join(path, self.folders['chat_img_folder'])
+		if not os.path.exists(chat_img_path):
+			chat_img_path = False
+		context.project['chat_img_path'] = chat_img_path
 		# -- get preview_images
-		preview_img_path = os.path.join(self.path, self.folders['preview_images'])	
-		if os.path.exists(preview_img_path):
-			self.preview_img_path = preview_img_path
-		else:
-			self.chat_img_path = False
+		preview_img_path = os.path.join(path, self.folders['preview_images'])
+		if not os.path.exists(preview_img_path):
+			preview_img_path = False
+		context.project['preview_img_path'] = preview_img_path
 		
-		self.status = 'active'
+		status = 'active'
+		context.project['status'] = status
 		
 		# create project
-		# -- CREATE .projects.db
-		projects_path = os.path.normpath(os.path.join(self.studio_folder, self.projects_db))
+		# -- CREATE .projects.db  ???
+		projects_path = os.path.normpath(os.path.join(studio.studio_folder, studio.projects_db))
 		if not os.path.exists(projects_path):
 			conn = sqlite3.connect(projects_path)
 			c = conn.cursor()
 			conn.commit()
 			conn.close()
-		self.projects_path = projects_path
+			studio.projects_path = projects_path # ???
 		
 		# -- CONNECT  .db
-		conn = sqlite3.connect(self.projects_path, detect_types=sqlite3.PARSE_DECLTYPES|sqlite3.PARSE_COLNAMES)
+		conn = sqlite3.connect(studio.projects_path, detect_types=sqlite3.PARSE_DECLTYPES|sqlite3.PARSE_COLNAMES)
 		conn.row_factory = sqlite3.Row
 		c = conn.cursor()
 		
 		# -- EXISTS TABLE
-		table = self.projects_t
+		table = studio.projects_t
 		try:
 			str_ = 'select * from ' + table
 			c.execute(str_)
-									
+		
 		except:
 			string2 = "CREATE TABLE " + table + " ("
-			for i,key in enumerate(self.projects_keys):
+			for i,key in enumerate(studio.projects_keys):
 				if i == 0:
 					string2 = string2 + '\"' + key[0] + '\" ' + key[1]
 				else:
@@ -1210,28 +1197,28 @@ class project(studio):
 		string = "insert into " + table + " values"
 		values = '('
 		data = []
-		for i, key in enumerate(self.projects_keys):
-			if i< (len(self.projects_keys) - 1):
+		for i, key in enumerate(studio.projects_keys):
+			if i< (len(studio.projects_keys) - 1):
 				values = values + '?, '
 			else:
 				values = values + '?'
 			
 			if key[0] == 'path':
-				data.append(self.path)
+				data.append(path)
 			elif key[0] == 'assets_path':
-				data.append(self.assets_path)
+				data.append(assets_path)
 			elif key[0] == 'tasks_path':
-				data.append(self.tasks_path)
+				data.append(tasks_path)
 			elif key[0] == 'chat_path':
-				data.append(self.chat_path)
+				data.append(chat_path)
 			elif key[0] == 'chat_img_path':
-				data.append(self.chat_img_path)
+				data.append(chat_img_path)
 			elif key[0] == 'preview_img_path':
-				data.append(self.preview_img_path)
+				data.append(preview_img_path)
 			elif key[0] == 'status':
-				data.append(self.status)
+				data.append(status)
 			elif key[0] == 'list_of_assets_path':
-				data.append(self.list_of_assets_path)
+				data.append(list_of_assets_path)
 			elif key[0] == 'name':
 				data.append(project_name)
 					
@@ -1240,48 +1227,20 @@ class project(studio):
 		string = string + values
 		
 		c.execute(string, data)
-		#print('*'*200)
-		#print(string)
-		#print('*'*200)
-		#print(data)
-		
 		conn.commit()
 		conn.close()
 		
-		'''
-		# write data
-		try:
-			with open(self.projects_path, 'r') as read:
-				data = json.load(read)
-				data[project_name] = {
-				'path' : self.path,
-				'assets_path' : self.assets_path,
-				'tasks_path' : self.tasks_path,
-				'chat_path' : self.chat_path,
-				'chat_img_path' : self.chat_img_path,
-				'preview_img_path' : self.preview_img_path,
-				'status' : self.status,
-				'list_of_assets_path' : self.list_of_assets_path
-				} 
-				read.close()
-								
-		except:
-			return False, "****** studio.add_project -> .projects.json  can not be read"
-
-		try:
-			with open(self.projects_path, 'w') as f:
-				jsn = json.dump(data, f, sort_keys=True, indent=4)
-				f.close()
-		except:
-			return False, "****** studio.add_project -> .projects.json  can not be write"
-		'''
-		
 		# create_recycle_bin
-		result = group().create_recycle_bin(project_name)
-		if not result[0]:
-			return(False, result[1])
+		try:
+			result = group().create_recycle_bin(project_name)
+			if not result[0]:
+				return(False, result[1])
+		except Exception as e:
+			print e
 		
-		return True, 'ok'
+		studio.get_studio()
+		
+		return(True, 'ok')
 		
 	def get_project(self, name):
 		self.get_list_projects()
