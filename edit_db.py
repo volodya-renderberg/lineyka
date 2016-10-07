@@ -1059,6 +1059,14 @@ class project():
 			fill studio.list_projects and studio.list_active_projects
 			
 			return(True/False, 'Ok'/comment)
+			
+	edit_status(name, status)
+		description:
+			change status of project, status - string in ['active', 'none']
+			if context.project['name'] == name : edit context.project['status']
+			fill studio.list_projects and studio.list_active_projects
+			
+			return(True/False, 'Ok'/comment)
 	'''
 	def __init__(self):
 		# constans
@@ -1170,7 +1178,7 @@ class project():
 		context.project['chat_path'] = chat_path
 			
 		# create folders
-		self.make_folders(path)
+		self.__make_folders(path)
 		# -- get chat_img_folder
 		chat_img_path = os.path.join(path, self.folders['chat_img_folder'])
 		if not os.path.exists(chat_img_path):
@@ -1376,14 +1384,14 @@ class project():
 		
 		return(True, 'Ok')
 		
-	def make_folders(self, root):
+	def __make_folders(self, root):
 		for f in self.folders:
 			path = os.path.join(root, self.folders[f])
 			if not os.path.exists(path):
 				os.mkdir(path)
 				#print '\n****** Created'
 			else:
-				return False, '\n****** studio.project.make_folders -> No Created'
+				return False, '\n****** studio.project.__make_folders -> No Created'
 	
 class asset(project):
 	'''
