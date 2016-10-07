@@ -609,11 +609,11 @@ class studio:
 				if os.path.exists(path):
 					studio.statistic_path = path
 					
-		#--get self.list_projects
+		#--get list_projects
 		if studio.projects_path:
 			studio.get_list_projects()
 		
-		#--fill self.extensions
+		#--fill extensions
 		try:
 			with open(studio.set_path, 'r') as read:
 				data = json.load(read)
@@ -883,7 +883,8 @@ class studio:
 				for key in dict(row).keys():
 					#print(key)
 					if key == 'name':
-						continue
+						#continue
+						pass
 					data[key] = row[key]
 				list_projects[row['name']] = data
 			
@@ -1036,6 +1037,9 @@ class project():
 		fill context.project
 		run studio.get_studio()
 		
+	get_project(name)
+		description:
+			fill context.project
 	'''
 	def __init__(self):
 		# constans
@@ -1243,26 +1247,19 @@ class project():
 		return(True, 'ok')
 		
 	def get_project(self, name):
-		self.get_list_projects()
+		studio.get_list_projects()
 		
-		if not name in self.list_projects.keys():
+		if not name in studio.list_projects.keys():
 			return(False, "This project Not Found!")
 		else:
-			self.path = self.list_projects[name]['path']
-			self.assets_path = self.list_projects[name]['assets_path']
-			self.list_of_assets_path = self.list_projects[name]['list_of_assets_path']
-			self.tasks_path = self.list_projects[name]['tasks_path']
-			self.chat_path = self.list_projects[name]['chat_path']
-			self.chat_img_path = self.list_projects[name]['chat_img_path']
-			self.preview_img_path = self.list_projects[name]['preview_img_path']
-			self.status = self.list_projects[name]['status']
-				
+			for key in studio.list_projects[name]:
+				context.project[key] = studio.list_projects[name][key]
 		self.get_list_of_assets()
-		return(True, (self.list_projects[name], self.assets_list))
+		return(True, context.project)
 		
 	def get_list_of_assets(self):
 		# self.assets_list - list of dictonary by self.asset_keys
-		self.assets_list = []
+		#self.assets_list = []
 		return(True, 'Ok')
 	
 	def rename_project(self, old_name, new_name):
