@@ -5393,7 +5393,7 @@ class log(task):
 	def camera_get_push_logs(self, project_name, task_data):
 		pass
 		
-class artist(studio):
+class artist():
 	'''
 	self.add_artist({key:data, ...}) - "nik_name", "user_name" - Required, add new artist in 'artists.db';; return - (True, 'ok') or (Fasle, comment) comments: 'overlap', 'not nik_name', 
 	
@@ -5412,30 +5412,66 @@ class artist(studio):
 	self.edit_stat(user_name, project_name, task_name, {key:data, ...}) - 
 	'''
 	def __init__(self):
-		studio.__init__(self)
+		pass
 		
 	def add_artist(self, keys):
 		# test nik_name
-		try:
-			nik_name = keys['nik_name']
-			if not nik_name:
-				return(False, 'not nik_name')
-		except:
-			return(False, 'not nik_name')
+		if not keys.get('nik_name'):
+			return(False, '*** in artist.add_artist() - not nik_name!')
 			
 		# test user_name
-		try:
-			user_name = keys['user_name']
-		except:
+		user_name = keys.get('user_name')
+		if not user_name:
 			return(False, 'not user_name')
+			
+		# test level
+		if not keys.get('level') in studio.user_levels:
+			keys['level'] = studio.user_levels[0]
 		
+		if not studio.artists_path:
+			studio.get_studio()
+		
+		# write task to db
+		try:
+			conn = sqlite3.connect(studio.artists_path, detect_types=sqlite3.PARSE_DECLTYPES|sqlite3.PARSE_COLNAMES)
+			conn.row_factory = sqlite3.Row
+			c = conn.cursor()
+		except Exception as e:
+			print e
+			return(False, '*** in artist.add_artist() - problem with connected file:"%s"' % studio.artists_path)
+		
+		# exists table
+		try:
+			str_ = 'select * from ' + studio.artists_t
+			c.execute(str_)
+			# unicum task_name test
+			r = c.fetchall()
+			for row in r:
+				if row['nik_name'] == keys['nik_name']:
+					conn.close()
+					return(False, 'overlap')
+				if row['user_name'] == keys['user_name']:
+					string3 = 'UPDATE ' +  studio.artists_t + ' SET user_name = ? WHERE nik_name = ?'
+					data = ('', row['nik_name'])
+					c.execute(string3, data)
+		except:
+			keys['level'] = studio.user_levels[len(studio.user_levels)]
+			string2 = "CREATE TABLE " + studio.artists_t + " ("
+			for i,key in enumerate(studio.artists_keys):
+				if i == 0:
+					string2 = string2 + key[0] + ' ' + key[1]
+				else:
+					string2 = string2 + ', ' + key[0] + ' ' + key[1]
+			string2 = string2 + ')'
+			c.execute(string2)
+		
+		# add artist
 		# create string
-		table = self.artists_t
-		string = "insert into " + table + " values"
+		string = "insert into " + studio.artists_t + " values"
 		values = '('
 		data = []
-		for i, key in enumerate(self.artists_keys):
-			if i< (len(self.artists_keys) - 1):
+		for i, key in enumerate(studio.artists_keys):
+			if i< (len(studio.artists_keys) - 1):
 				values = values + '?, '
 			else:
 				values = values + '?'
@@ -5452,46 +5488,7 @@ class artist(studio):
 		values = values + ')'
 		data = tuple(data)
 		string = string + values
-		
-		if not self.artists_path:
-			self.get_studio()
-		
-		# write task to db
-		conn = sqlite3.connect(self.artists_path, detect_types=sqlite3.PARSE_DECLTYPES|sqlite3.PARSE_COLNAMES)
-		conn.row_factory = sqlite3.Row
-		c = conn.cursor()
-		
-		# exists table
-		try:
-			str_ = 'select * from ' + table
-			c.execute(str_)
-			# unicum task_name test
-			r = c.fetchall()
-			for row in r:
-				if row['nik_name'] == keys['nik_name']:
-					conn.close()
-					return(False, 'overlap')
-				if row['user_name'] == keys['user_name']:
-					string3 = 'UPDATE ' +  table + ' SET user_name = \"\" WHERE nik_name = \"' + row['nik_name'] + '\"'
-					c.execute(string3)
-		except:
-			string2 = "CREATE TABLE " + table + " ("
-			for i,key in enumerate(self.artists_keys):
-				if i == 0:
-					string2 = string2 + key[0] + ' ' + key[1]
-				else:
-					string2 = string2 + ', ' + key[0] + ' ' + key[1]
-			string2 = string2 + ')'
-			'''
-			# -- 
-			print 'String 2: ', string2
-			conn.close()
-			return
-			# --
-			'''
-			c.execute(string2)
-		
-		# add task
+		# execute
 		c.execute(string, data)
 		conn.commit()
 		conn.close()
