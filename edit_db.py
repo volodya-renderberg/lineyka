@@ -1047,7 +1047,16 @@ class project():
 			
 	rename_project(old_name, new_name)
 		description:
-			rename of project, fill context.project, fill studio.list_projects and studio.list_active_projects
+			rename of project, fill context.project,
+			fill studio.list_projects and studio.list_active_projects
+			
+			return(True/False, 'Ok'/comment)
+			
+	remove_project(name)
+		description:
+			remove project from data of projects
+			if context.project['name'] == name : clean context.project
+			fill studio.list_projects and studio.list_active_projects
 			
 			return(True/False, 'Ok'/comment)
 	'''
@@ -1307,82 +1316,63 @@ class project():
 		return(True, 'Ok')
 		
 	def remove_project(self, name):
-		if not name in self.list_projects:
-			return(False, ('No such project: \"' + name + '\"'))
+		if not name in studio.list_projects:
+			return(False, ('No such project: \"%s\"' % name))
 			
-		result = self.get_project(name)
-		if not result[0]:
-			return(False, result[1])
-			
-		'''
-		try:
-			with open(self.projects_path, 'r') as read:
-				data = json.load(read)
-				del data[name]
-				read.close()
-		except:
-			return(False, 'Not Read \".projects.json\"!')
-			
-		try:
-			with open(self.projects_path, 'w') as f:
-				jsn = json.dump(data, f, sort_keys=True, indent=4)
-				f.close()
-		except:
-			return(False, 'Not Write \".projects.json\"!')
-		'''
-		
 		# -- CONNECT  .db
-		conn = sqlite3.connect(self.projects_path, detect_types=sqlite3.PARSE_DECLTYPES|sqlite3.PARSE_COLNAMES)
-		conn.row_factory = sqlite3.Row
-		c = conn.cursor()
+		try:
+			conn = sqlite3.connect(studio.projects_path, detect_types=sqlite3.PARSE_DECLTYPES|sqlite3.PARSE_COLNAMES)
+			conn.row_factory = sqlite3.Row
+			c = conn.cursor()
+		except Exception as e:
+			print e
+			return(False, '*** in project.remove_project() a problem with connect by path: "%s"' % studio.projects_path)
 		
-		table = self.projects_t
-		string = 'DELETE FROM ' +  table + ' WHERE name = ?'
+		string = 'DELETE FROM ' +  studio.projects_t + ' WHERE name = ?'
 		data = (name,)
 		
 		c.execute(string, data)
 		conn.commit()
 		conn.close()
-			
+		
+		if context.project['name'] == name:
+			for key in context.project:
+				context.project[key] = False
+		
+		studio.get_list_projects()
 		return(True, 'Ok')
 		
 	def edit_status(self, name, status):
-		if not name in self.list_projects:
-			return(False, ('in edit_status -> No such project: \"' + name + '\"'))
+		if not status in ['active', 'none']:
+			return(False, '*** in project.edit_status() - Incorrect Status %s' % status)
+			
+		if not name in studio.list_projects:
+			return(False, ('*** in project.edit_status() - No such project: \"' + name + '\"'))
 			
 		result = self.get_project(name)
 		if not result[0]:
 			return(False, ('in edit_status -> ' + result[1]))
 		
-		'''
-		try:
-			with open(self.projects_path, 'r') as read:
-				data = json.load(read)
-				data[name]['status'] = status
-				read.close()
-		except:
-			return(False, 'Not Read \".projects.json\"!')
-			
-		try:
-			with open(self.projects_path, 'w') as f:
-				jsn = json.dump(data, f, sort_keys=True, indent=4)
-				f.close()
-		except:
-			return(False, 'Not Write \".projects.json\"!')
-		'''
-		
 		# -- CONNECT  .db
-		conn = sqlite3.connect(self.projects_path, detect_types=sqlite3.PARSE_DECLTYPES|sqlite3.PARSE_COLNAMES)
-		conn.row_factory = sqlite3.Row
-		c = conn.cursor()
+		try:
+			conn = sqlite3.connect(studio.projects_path, detect_types=sqlite3.PARSE_DECLTYPES|sqlite3.PARSE_COLNAMES)
+			conn.row_factory = sqlite3.Row
+			c = conn.cursor()
+		except Exception as e:
+			print e
+			return(False, '*** in project.edit_status() a problem with connect by path: "%s"' % studio.projects_path)
 		
-		table = self.projects_t
-		string = 'UPDATE ' +  table + ' SET \"status\" = ? WHERE name = ?'
+		string = 'UPDATE ' +  studio.projects_t + ' SET \"status\" = ? WHERE name = ?'
 		data = (status, name)
 		
 		c.execute(string, data)
 		conn.commit()
 		conn.close()
+		
+		if context.project['name'] == name:
+			context.project['status'] = status
+				
+		studio.get_list_projects()
 		
 		return(True, 'Ok')
 		
