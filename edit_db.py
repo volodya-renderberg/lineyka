@@ -5795,21 +5795,15 @@ class artist():
 		
 	def add_stat(self, user_name, keys):
 		# test project_name
-		try:
-			project_name = keys['project_name']
-		except:
-			return False, 'not project_name'
+		if not keys.get('project_name')
+			return(False, 'not project_name!')
 		
 		# test task_name
-		try:
-			task_name = keys['task_name']
-		except:
-			return False, 'not task_name'
+		if not keys.get('task_name')
+			return(False, 'not task_name')
 		
 		# test data_start
-		try:
-			data_start = keys['data_start']
-		except:
+		if not keys.get('data_start')
 			return False, 'not data_start'
 		
 		# create string
