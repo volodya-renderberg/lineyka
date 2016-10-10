@@ -5407,9 +5407,15 @@ class artist():
 		
 	read_artist(keys)
 		description:
-		"keys" - dict by studio.artists_keys or string "all"
-		if "keys" == 'all' - return (True, data) data = [rows] all users
-		if "keys" == dict - return [rows] of users matching the specified "keys"
+			"keys" - dict by studio.artists_keys or string "all"
+			if "keys" == 'all' - return (True, data) data = [rows] all users
+			if "keys" == dict - return [rows] of users matching the specified "keys"
+	
+	read_artist_of_workroom(workroom_id)
+			description:
+				return the dictonary of user data by nik_name
+				"workroom_id" - string - "id" of workroom
+				return(True/False, dictonary/comment)
 	
 	self.login_user(nik_name, password) - 
 	
@@ -5560,27 +5566,28 @@ class artist():
 		
 	def read_artist_of_workroom(self, workroom_id):
 		# create string
-		table = self.artists_t
+		table = studio.artists_t
 		
-		if not self.artists_path or (not os.path.exists(self.artists_path)):
-			#print('artists_path:', self.artists_path)
-			return(False, 'Not Artist Path')
+		if not studio.artists_path or (not os.path.exists(studio.artists_path)):
+			return(False, '*** in artist.read_artist_of_workroom() - Not Artist Path')
 			
 		string = 'select * from ' + table
 		
 		try:
 			# connect .db
-			conn = sqlite3.connect(self.artists_path, detect_types=sqlite3.PARSE_DECLTYPES|sqlite3.PARSE_COLNAMES)
+			conn = sqlite3.connect(studio.artists_path, detect_types=sqlite3.PARSE_DECLTYPES|sqlite3.PARSE_COLNAMES)
 			conn.row_factory = sqlite3.Row
 			c = conn.cursor()
-		except:
-			return(False, 'in artist().read_artist_of_workroom Not Table Connect!')
+		except Exception as e:
+			print e
+			return(False, 'in artist.read_artist_of_workroom() - Not Table Connect! %s' % table)
 			
 		rows = c.execute(string)
 		
 		if not rows:
-			conn.close()
-			return(False, 'Not Artists!')
+			rows = []
+			#conn.close()
+			#return(False, 'Not Artists!')
 		
 		artists_dict = {}
 		for row in rows:
@@ -5590,10 +5597,8 @@ class artist():
 				continue
 			if workroom_id in workrooms:
 				artists_dict[row['nik_name']] = dict(row)
-			
-		#c.close()
-		conn.close()
 		
+		conn.close()
 		return(True, artists_dict)
 		
 		
@@ -5857,9 +5862,19 @@ class artist():
 		
 		return True, 'ok'
 		
-class workroom(artist):
+class workroom():
+	'''
+	get_list_workrooms(DICTONARY = False)
+		description:
+			return data of workrooms in various combinations:
+				if DICTONARY == False: returns list of "rows" (True, [rows])
+				if DICTONARY == 'by_name': returns dictonary by "name" of workrooms (True, {by_name})
+				if DICTONARY == 'by_id': returns dictonary by "id" of workrooms (True, {by_id})
+				if DICTONARY == 'by_id_by_name': returns both dictionaries (True, {by_id}, {by_name})
+	'''
+
 	def __init__(self):
-		artist.__init__(self)
+		pass
 	
 	def add(self, keys):
 		# test name
@@ -5935,20 +5950,21 @@ class workroom(artist):
 		return(True, 'ok')
 		
 	def get_list_workrooms(self, DICTONARY = False):
-		table = self.workroom_t
+		table = studio.workroom_t
 		
-		if not self.workroom_path or (not os.path.exists(self.workroom_path)):
+		if not studio.workroom_path or (not os.path.exists(studio.workroom_path)):
 			return(False, 'Not Found WorkRoom Data Base!')
 		
-		conn = sqlite3.connect(self.workroom_path, detect_types=sqlite3.PARSE_DECLTYPES|sqlite3.PARSE_COLNAMES)
+		conn = sqlite3.connect(studio.workroom_path, detect_types=sqlite3.PARSE_DECLTYPES|sqlite3.PARSE_COLNAMES)
 		conn.row_factory = sqlite3.Row
 		c = conn.cursor()
 		
 		str_ = 'select * from ' + table
 		try:
 			c.execute(str_)
-		except:
-			return(False, 'WorkRoom Table Not Found!')
+		except Exception as e:
+			print e
+			return(False, '*** in workroom.get_list_workrooms() - WorkRoom Table Not Found!')
 		# unicum workroom_name test
 		rows = c.fetchall()
 		return_data_0 = {}
@@ -5981,7 +5997,7 @@ class workroom(artist):
 		elif DICTONARY == 'by_id_by_name':
 			return(True, return_data_2, return_data_0)
 		else:
-			return(False, ('Incorrect DICTONARY: ' + DICTONARY))
+			return(False, ('*** in workroom.get_list_workrooms() - Incorrect DICTONARY: ' + DICTONARY))
 	
 	
 	def get_name_by_id(self, id_):
