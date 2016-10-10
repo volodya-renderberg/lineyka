@@ -5413,12 +5413,15 @@ class artist():
 			if "keys" == dict - return [rows] of users matching the specified "keys"
 	
 	read_artist_of_workroom(workroom_id)
-			description:
-				return the dictonary of user data by nik_name
-				"workroom_id" - string - "id" of workroom
-				return(True/False, dictonary/comment)
+		description:
+			return the dictonary of user data by nik_name
+			"workroom_id" - string - "id" of workroom
+			return(True/False, dictonary/comment)
 	
-	self.login_user(nik_name, password) - 
+	login_user(nik_name, password)
+		description:
+			assignment of current "user_name" on "nik_name", fill context.artist
+			return(True, (nik_name, user_name)) or (False, comment)
 	
 	self.edit_artist({key:data, ...}) - "nik_name", - Required, does not change the setting ;;
 	
@@ -5618,34 +5621,71 @@ class artist():
 		
 	def login_user(self, nik_name, password):
 		user_name = getpass.getuser()
-		table = self.artists_t
+		table = studio.artists_t
 		string = 'select * from ' + table + ' WHERE nik_name = \"' + nik_name + '\"'
 		
-		conn = sqlite3.connect(self.artists_path, detect_types=sqlite3.PARSE_DECLTYPES|sqlite3.PARSE_COLNAMES)
-		conn.row_factory = sqlite3.Row
-		c = conn.cursor()
+		try:
+			conn = sqlite3.connect(studio.artists_path, detect_types=sqlite3.PARSE_DECLTYPES|sqlite3.PARSE_COLNAMES)
+			conn.row_factory = sqlite3.Row
+			c = conn.cursor()
+		except Exception as e:
+			print e
+			try:
+				conn.close()
+			except:
+				pass
+			return(False, '*** in artist.login_user() - do not connected to .db %s' % studio.artists_path)
 		
-		c.execute(string)
-		rows = c.fetchall()
+		try:
+			c.execute(string)
+		except Exception as e:
+			print e
+			conn.close()
+			return(False, '***1 in artist.login_user() - do not exicution string: %s' % string)
 		
-		if len(rows)== 0:
+		c_rows = c.fetchall()
+		
+		if len(c_rows)== 0:
 			conn.close()
 			return(False, 'not user')
 			
 		else:
-			if password == rows[0]['password']:
+			if password == c_rows[0]['password']:
+				#get rows of all users with that user_name
 				string2 = 'select * from ' + table + ' WHERE user_name = \"' + user_name + '\"'
-				c.execute(string2)
+				try:
+					c.execute(string2)
+				except Exception as e:
+					print e
+					conn.close()
+					return(False, '***2 in artist.login_user() - do not exicution string: %s' % string2)
 				rows = c.fetchall()
+				#
 				for row in rows:
-					#print(row['nik_name'])
 					string3 = 'UPDATE ' +  table + ' SET user_name = \'\' WHERE nik_name = \"' + row['nik_name'] + '\"'
-					#print(string3)
-					c.execute(string3)
-					
+					try:
+						c.execute(string3)
+					except Exception as e:
+						print e
+						conn.close()
+						return(False, '***3 in artist.login_user() - do not exicution string: %s' % string3)
+				#
 				string4 = 'UPDATE ' +  table + ' SET user_name = \"' + user_name + '\" WHERE nik_name = \"' + nik_name + '\"'
-				c.execute(string4)
+				try:
+					c.execute(string4)
+				except Exception as e:
+					print e
+					conn.close()
+					return(False, '***4 in artist.login_user() - do not exicution string: %s' % string4)
+				
 				conn.commit()
+				#conn.close()
+				
+				#fill context.artist
+				context.artist = dict(c_rows[0])
+				context.artist['user_name'] = user_name
+				
+				#return
 				conn.close()
 				return(True, (nik_name, user_name))
 				
