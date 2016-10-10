@@ -1268,7 +1268,7 @@ class project():
 			if not result[0]:
 				return(False, result[1])
 		except Exception as e:
-			print e
+			print(e)
 		
 		studio.get_studio()
 		
@@ -1308,7 +1308,7 @@ class project():
 			conn.row_factory = sqlite3.Row
 			c = conn.cursor()
 		except Exception as e:
-			print e
+			print(e)
 			return(False, '*** in project.rename_project() a problem with connect by path: "%s"' % studio.projects_path)
 		
 		string = 'UPDATE ' +  studio.projects_t + ' SET \"name\" = ? WHERE name = ?'
@@ -1334,7 +1334,7 @@ class project():
 			conn.row_factory = sqlite3.Row
 			c = conn.cursor()
 		except Exception as e:
-			print e
+			print(e)
 			return(False, '*** in project.remove_project() a problem with connect by path: "%s"' % studio.projects_path)
 		
 		string = 'DELETE FROM ' +  studio.projects_t + ' WHERE name = ?'
@@ -1368,7 +1368,7 @@ class project():
 			conn.row_factory = sqlite3.Row
 			c = conn.cursor()
 		except Exception as e:
-			print e
+			print(e)
 			return(False, '*** in project.edit_status() a problem with connect by path: "%s"' % studio.projects_path)
 		
 		string = 'UPDATE ' +  studio.projects_t + ' SET \"status\" = ? WHERE name = ?'
@@ -5422,10 +5422,12 @@ class artist():
 		description:
 			assignment of current "user_name" on "nik_name", fill context.artist
 			return(True, (nik_name, user_name)) or (False, comment)
+			
+	get_user(outsource = False)
+		description:
+			return: (True, (nik_name, user_name, out_source, dict)) if not outsource: "out_source" = None, else: "out_source" = dict['out_source']
 	
 	self.edit_artist({key:data, ...}) - "nik_name", - Required, does not change the setting ;;
-	
-	self.get_user() - ;; return: (True, (nik_name, user_name)), (False, 'more than one user'), (False, 'not user') ;;
 	
 	self.add_stat(user_name, {key:data, ...}) - "project_name, task_name, data_start" - Required ;;
 	
@@ -5467,7 +5469,7 @@ class artist():
 			conn.row_factory = sqlite3.Row
 			c = conn.cursor()
 		except Exception as e:
-			print e
+			print(e)
 			return(False, '*** in artist.add_artist() - problem with connected file:"%s"' % studio.artists_path)
 		
 		# exists table
@@ -5525,7 +5527,7 @@ class artist():
 			conn.close()
 		except Exception as e:
 			conn.close()
-			print e
+			print(e)
 			return(False, '*** in artist.add_artist() - can not add artist!')
 			
 		#fill context.artist
@@ -5575,7 +5577,7 @@ class artist():
 			rows = c.fetchall()
 		except Exception as e:
 			conn.close()
-			print e
+			print(e)
 			return(False, '*** in artist.read_artist() - can_not_read_artists!')
 				
 		conn.close()
@@ -5596,7 +5598,7 @@ class artist():
 			conn.row_factory = sqlite3.Row
 			c = conn.cursor()
 		except Exception as e:
-			print e
+			print(e)
 			return(False, 'in artist.read_artist_of_workroom() - Not Table Connect! %s' % table)
 			
 		rows = c.execute(string)
@@ -5629,7 +5631,7 @@ class artist():
 			conn.row_factory = sqlite3.Row
 			c = conn.cursor()
 		except Exception as e:
-			print e
+			print(e)
 			try:
 				conn.close()
 			except:
@@ -5639,7 +5641,7 @@ class artist():
 		try:
 			c.execute(string)
 		except Exception as e:
-			print e
+			print(e)
 			conn.close()
 			return(False, '***1 in artist.login_user() - do not exicution string: %s' % string)
 		
@@ -5656,7 +5658,7 @@ class artist():
 				try:
 					c.execute(string2)
 				except Exception as e:
-					print e
+					print(e)
 					conn.close()
 					return(False, '***2 in artist.login_user() - do not exicution string: %s' % string2)
 				rows = c.fetchall()
@@ -5666,7 +5668,7 @@ class artist():
 					try:
 						c.execute(string3)
 					except Exception as e:
-						print e
+						print(e)
 						conn.close()
 						return(False, '***3 in artist.login_user() - do not exicution string: %s' % string3)
 				#
@@ -5674,7 +5676,7 @@ class artist():
 				try:
 					c.execute(string4)
 				except Exception as e:
-					print e
+					print(e)
 					conn.close()
 					return(False, '***4 in artist.login_user() - do not exicution string: %s' % string4)
 				
@@ -5695,37 +5697,33 @@ class artist():
 		
 	def get_user(self, outsource = False):
 		user_name = getpass.getuser()
-		table = self.artists_t
+		table = studio.artists_t
 		string = 'select * from ' + table + ' WHERE user_name = \"' + user_name + '\"'
 		
 		try:
-			conn = sqlite3.connect(self.artists_path, detect_types=sqlite3.PARSE_DECLTYPES|sqlite3.PARSE_COLNAMES)
+			conn = sqlite3.connect(studio.artists_path, detect_types=sqlite3.PARSE_DECLTYPES|sqlite3.PARSE_COLNAMES)
 			conn.row_factory = sqlite3.Row
 			c = conn.cursor()
-		except:
-			return(False, 'Not Artist Table!')
+		except Exception as e:
+			print(e)
+			return(False, '*** in artist.get_user() - do not connecteb to .db %s' % studio.artists_path)
 		
-		#return string
-		'''
-		c.execute(string)
-		rows = c.fetchall()
-		
-		'''
 		# read db
 		try:
 			c.execute(string)
 			rows = c.fetchall()
-		except:
+		except Exception as e:
+			print(e)
 			conn.close()
-			return False, 'can_not_read_artists'
+			return(False, '*** in artist.get_user() - do not execute string: %s' % string)
 				
 		conn.close()
 		
 		# conditions # return
 		if len(rows)>1:
-			return False, 'more than one user'
+			return False, 'more than one user!'
 		elif len(rows)== 0:
-			return False, 'not user'
+			return False, 'not user!'
 		else:
 			if not outsource:
 				return True, (rows[0]['nik_name'], rows[0]['user_name'], None, rows[0])
@@ -6017,7 +6015,7 @@ class workroom():
 		try:
 			c.execute(str_)
 		except Exception as e:
-			print e
+			print(e)
 			return(False, '*** in workroom.get_list_workrooms() - WorkRoom Table Not Found!')
 		# unicum workroom_name test
 		rows = c.fetchall()
