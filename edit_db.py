@@ -5423,10 +5423,15 @@ class artist():
 		user_name = keys.get('user_name')
 		if not user_name:
 			return(False, 'not user_name')
+		keys['user_name'] = user_name.replace(' ', '_')
 			
 		# test level
-		if not keys.get('level') in studio.user_levels:
+		if not keys.get('level') or not keys.get('level') in studio.user_levels:
 			keys['level'] = studio.user_levels[0]
+			
+		#test password
+		if not keys.get('password'):
+			keys['password'] = '1234'
 		
 		if not studio.artists_path:
 			studio.get_studio()
