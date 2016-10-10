@@ -1024,6 +1024,7 @@ class context:
 	'chat_img_path' : False, # img to chat, folder path
 	'preview_img_path' : False, # preview img, folder path
 	}
+	artist = {}
 	
 class project():
 	'''
@@ -5395,11 +5396,22 @@ class log(task):
 		
 class artist():
 	'''
-	self.add_artist({key:data, ...}) - "nik_name", "user_name" - Required, add new artist in 'artists.db';; return - (True, 'ok') or (Fasle, comment) comments: 'overlap', 'not nik_name', 
+	add_artist(keys)
+		description:
+			add new artist in 'artists.db';
+			"keys" - dict by studio.artists_keys ("nik_name", "user_name" - required keys),
+			the first artist gets "root" level
+			if no "level" is assigned to the lowest level ("user")
+			unless specified password, is assigned password - 1234
+			return - (True/Fasle, 'ok'/comment)
+		
+	read_artist(keys)
+		description:
+		"keys" - dict by studio.artists_keys or string "all"
+		if "keys" == 'all' - return (True, data) data = [rows] all users
+		if "keys" == dict - return [rows] of users matching the specified "keys"
 	
 	self.login_user(nik_name, password) - 
-	
-	self.read_artist({key:data, ...}) - "nik_name", - Required, returns full information, relevant over the keys ;; example: self.read_artist({'specialty':'rigger'});; return: (True, [{Data}, ...])  or (False, comment)
 	
 	self.edit_artist({key:data, ...}) - "nik_name", - Required, does not change the setting ;;
 	
@@ -5494,23 +5506,34 @@ class artist():
 		data = tuple(data)
 		string = string + values
 		# execute
-		c.execute(string, data)
-		conn.commit()
-		conn.close()
+		try:
+			c.execute(string, data)
+			conn.commit()
+			conn.close()
+		except Exception as e:
+			conn.close()
+			print e
+			return(False, '*** in artist.add_artist() - can not add artist!')
+		
 		return(True, 'ok')
 			
 	def read_artist(self, keys):
+		#test studio.artists_path
+		if not studio.artists_path or (not os.path.exists(studio.artists_path)):
+			return(False, '*** in artist.read_artist() - Not Artist Path!')
+		
 		# create string
-		table = self.artists_t
-		
-		if not self.artists_path or (not os.path.exists(self.artists_path)):
-			#print('artists_path:', self.artists_path)
-			return(False, 'Not Artist Path')
-		
-		if keys == 'all':
-			string = 'select * from ' + table		
+		if type(keys).__name__ == 'str':
+			if keys == 'all':
+				string = 'select * from ' + studio.artists_t
+			else:
+				return(False, '*** in artist.read_artist() - the allowable value of the "string" only - "all"!')
+		elif type(keys).__name__ != 'dict':
+			return(False, '*** in artist.read_artist() - incorrect data type!')
+		if not keys:
+			return(False, '*** in artist.read_artist() - null!')
 		else:
-			string = 'select * from ' + table + ' WHERE '
+			string = 'select * from ' + studio.artists_t + ' WHERE '
 			for i,key in enumerate(keys):
 				if i == 0:
 					string = string + ' ' + key + ' = ' + '\"' + keys[key] + '\"'
@@ -5520,25 +5543,19 @@ class artist():
 		#return string
 		
 		# read artists
-		conn = sqlite3.connect(self.artists_path, detect_types=sqlite3.PARSE_DECLTYPES|sqlite3.PARSE_COLNAMES)
+		conn = sqlite3.connect(studio.artists_path, detect_types=sqlite3.PARSE_DECLTYPES|sqlite3.PARSE_COLNAMES)
 		conn.row_factory = sqlite3.Row
 		c = conn.cursor()
-		'''
-		c.execute(string)
-		rows = c.fetchall()
-		'''
+		
 		try:
 			c.execute(string)
 			rows = c.fetchall()
-		except:
+		except Exception as e:
 			conn.close()
-			return(False, 'can_not_read_artists')
+			print e
+			return(False, '*** in artist.read_artist() - can_not_read_artists!')
 				
 		conn.close()
-		'''
-		if not rows:
-			return False, 'not_task_name'
-		'''
 		return(True, rows)
 		
 	def read_artist_of_workroom(self, workroom_id):
