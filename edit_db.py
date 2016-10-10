@@ -5396,10 +5396,11 @@ class log(task):
 		
 class artist():
 	'''
-	add_artist(keys)
+	add_artist(keys, registaration = False)
 		description:
 			add new artist in 'artists.db';
 			"keys" - dict by studio.artists_keys ("nik_name", "user_name" - required keys),
+			if registaration == True - the key "user_name" not required, and fill context.artist
 			the first artist gets "root" level
 			if no "level" is assigned to the lowest level ("user")
 			unless specified password, is assigned password - 1234
@@ -5432,16 +5433,19 @@ class artist():
 	def __init__(self):
 		pass
 		
-	def add_artist(self, keys):
+	def add_artist(self, keys, registaration = False):
 		# test nik_name
 		if not keys.get('nik_name'):
 			return(False, '*** in artist.add_artist() - not nik_name!')
+		keys['nik_name'] = keys['nik_name'].replace(' ', '_')
 			
 		# test user_name
 		user_name = keys.get('user_name')
-		if not user_name:
+		if not user_name and not registaration:
 			return(False, 'not user_name')
-		keys['user_name'] = user_name.replace(' ', '_')
+		elif registaration:
+			keys['user_name'] = getpass.getuser()
+			keys['status'] = 'active'
 			
 		# test level
 		if not keys.get('level') or not keys.get('level') in studio.user_levels:
@@ -5520,6 +5524,16 @@ class artist():
 			conn.close()
 			print e
 			return(False, '*** in artist.add_artist() - can not add artist!')
+			
+		#fill context.artist
+		if registaration:
+			for key in studio.artists_keys:
+				if key[0] in keys:
+					context.artist[key[0]] = keys[key[0]]
+				elif key[1] == 'timestamp':
+						context.artist[key[0]] = datetime.datetime.now()
+				else:
+					context.artist[key[0]] = ''
 		
 		return(True, 'ok')
 			
