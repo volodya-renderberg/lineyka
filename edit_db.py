@@ -5427,7 +5427,12 @@ class artist():
 		description:
 			return: (True, (nik_name, user_name, out_source, dict)) if not outsource: "out_source" = None, else: "out_source" = dict['out_source']
 	
-	self.edit_artist({key:data, ...}) - "nik_name", - Required, does not change the setting ;;
+	edit_artist({data})
+		description:
+			edit data of user,
+			"data" - dict by studio.artists_keys ("nik_name", - Required key and does not change the setting.)
+			if the change of the current user, you will be changed "context.artist" 
+			return (True, 'ok') or (False, comment)
 	
 	self.add_stat(user_name, {key:data, ...}) - "project_name, task_name, data_start" - Required ;;
 	
@@ -5736,21 +5741,27 @@ class artist():
 	
 	def edit_artist(self, key_data):
 		# test nik_name
-		try:
-			nik_name = (key_data['nik_name'],)
-		except:
-			return False, 'not nik_name'
+		if not key_data.get('nik_name'):
+			return False, '*** in artist.edit_artist(() - not nik_name!'
 			
 		# write task to db
-		conn = sqlite3.connect(self.artists_path, detect_types=sqlite3.PARSE_DECLTYPES|sqlite3.PARSE_COLNAMES)
-		c = conn.cursor()
+		try:
+			conn = sqlite3.connect(studio.artists_path, detect_types=sqlite3.PARSE_DECLTYPES|sqlite3.PARSE_COLNAMES)
+			c = conn.cursor()
+		except Exception as e:
+			print(e)
+			try:
+				conn.close()
+			except:
+				pass
+			return(False, '*** in artist.edit_artist() do not connected to .db: %s' %studio.artists_path)
 		
-		table = self.artists_t
+		table = studio.artists_t
 		# edit db
 		data = []
 		string = 'UPDATE ' +  table + ' SET '
 		for key in key_data:
-			if not key == 'nik_name':
+			if key != 'nik_name':
 				#print '*************', key, key_data[key], '\n'
 				#string = string + ' ' + key + ' = \"' + key_data[key] + '\",'
 				string = string + ' ' + key + ' = ? ,'
@@ -5764,11 +5775,23 @@ class artist():
 		#return(False, 'Be!')
 		
 		data = tuple(data)
-		c.execute(string, data)
+		try:
+			c.execute(string, data)
+		except Exception as e:
+			print(e)
+			conn.close()
+			return(False, '*** in artist.edit_artist() - do not execute string: %s, %s' % (string, data))
+			
 		conn.commit()
 		conn.close()
 		
-		return True, 'ok'
+		if context.artist and context.artist.get('nik_name') == key_data['nik_name']:
+			for key in key_data:
+				if key == 'nik_name':
+					continue
+				context.artist[key] = key_data[key]
+		
+		return(True, 'ok')
 		
 	def add_stat(self, user_name, keys):
 		# test project_name
@@ -5841,7 +5864,7 @@ class artist():
 		c.execute(string, data)
 		conn.commit()
 		conn.close()
-		return True, 'ok'
+		return(True, 'ok')
 	
 	def read_stat(self, nik_name, keys):
 		# create string
