@@ -103,6 +103,7 @@ class studio:
 	#Progects
 	list_projects = {} # a list of existing projects
 	list_active_projects = []
+	project_var = 'LnkProjectPath'
 	
 	#Constants
 	farme_offset = 100
@@ -1271,6 +1272,8 @@ class project():
 			print(e)
 		
 		studio.get_studio()
+		#add environ var
+		os.environ[studio.project_var] = context.project['path']
 		
 		return(True, 'ok')
 		
@@ -1283,6 +1286,10 @@ class project():
 			for key in studio.list_projects[name]:
 				context.project[key] = studio.list_projects[name][key]
 		self.get_list_of_assets()
+		
+		#add environ var
+		os.environ[studio.project_var] = context.project['path']
+		
 		return(True, 'Ok!')
 		
 	def get_list_of_assets(self):
