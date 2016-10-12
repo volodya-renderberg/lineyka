@@ -5970,7 +5970,7 @@ class workroom():
 		except:
 			return(False, 'not Name!')
 			
-		keys['id'] = str(random.randint(0, 1000000000))
+		keys['id'] = hex(random.randint(0, 1000000000)).replace('0x', '')
 		
 		# connect to db
 		if not studio.workroom_path:
@@ -5987,7 +5987,57 @@ class workroom():
 			except:
 				pass
 			return(False, "do not connect to .db: %s" % studio.workroom_path)
+			
+		#get tables list
+		tbl_name_list = []
+		try:
+			string = 'select * from sqlite_master'
+			c.execute(string)
+		except Exception as e:
+			print(e)
+			conn.close()
+			return(False, '*** in workroom.add() - do not execute %s' % string)
+		else:
+			l = c.fetchall()
+			for sql_type, sql_name, tbl_name, rootpage, sql in l:
+				if sql_type == 'table':
+					tbl_name_list.append(sql_name)
 		
+		table = studio.workroom_t
+		if not table in tbl_name_list:
+			#create table
+			string2 = "CREATE TABLE " + table + " ("
+			for i,key in enumerate(studio.workroom_keys):
+				if i == 0:
+					string2 = string2 + key[0] + ' ' + key[1]
+				else:
+					string2 = string2 + ', ' + key[0] + ' ' + key[1]
+			string2 = string2 + ")"
+			try:
+				c.execute(string2)
+			except Exception as e:
+				print(e)
+				conn.close()
+				return(False, '***2 in workroom.add() - do not execute %s' % string2)
+		else:
+			#exists table, name, id
+			str_ = 'select * from ' + table
+			try:
+				c.execute(str_)
+			except Exception as e:
+				print(e)
+				conn.close()
+				return(False, '***2 in workroom.add() - do not execute %s' % str_)
+			# unicum workroom_name test
+			r = c.fetchall()
+			for row in r:
+				if row['name'] == keys['name']:
+					conn.close()
+					return(False, 'overlap')
+				elif row['id'] == keys['id']:
+					keys['id'] = hex(random.randint(0, 1000000000)).replace('0x','')
+		
+		'''
 		# exists table, name, id
 		table = studio.workroom_t
 		try:
@@ -6011,6 +6061,7 @@ class workroom():
 					string2 = string2 + ', ' + key[0] + ' ' + key[1]
 			string2 = string2 + ")"
 			c.execute(string2)
+		'''
 		
 		# create string
 		string = "insert into " + table + " values"
@@ -6039,7 +6090,12 @@ class workroom():
 		return(False, 'Be!')
 		'''
 		# add workroom
-		c.execute(string, data)
+		try:
+			c.execute(string, data)
+		except Exception as e:
+			print(e)
+			conn.close()
+			return(False, '***3 in workroom.add() - do not execute %s' % string)
 		conn.commit()
 		conn.close()
 		return(True, 'ok')
@@ -6172,7 +6228,7 @@ class workroom():
 			return(False, '*** in workroom.get_id_by_name() - Not workroom Name')
 			
 	def name_list_to_id_list(self, name_list):
-		table = self.workroom_t
+		table = studio.workroom_t
 		
 		if not self.workroom_path or (not os.path.exists(self.workroom_path)):
 			return(False, 'Not Found WorkRoom Data Base!')
