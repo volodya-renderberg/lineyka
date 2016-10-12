@@ -6328,21 +6328,35 @@ class workroom():
 		wr_id = result[1]
 		
 		# connect to db
-		table = self.workroom_t
+		table = studio.workroom_t
 		
 		print(old_name, new_name, wr_id, table)
 		
-		if not self.workroom_path or (not os.path.exists(self.workroom_path)):
+		if not studio.workroom_path or (not os.path.exists(studio.workroom_path)):
 			return(False, 'Not Found WorkRoom Data Base!')
 		
-		conn = sqlite3.connect(self.workroom_path, detect_types=sqlite3.PARSE_DECLTYPES|sqlite3.PARSE_COLNAMES)
-		conn.row_factory = sqlite3.Row
-		c = conn.cursor()
+		try:
+			conn = sqlite3.connect(studio.workroom_path, detect_types=sqlite3.PARSE_DECLTYPES|sqlite3.PARSE_COLNAMES)
+			conn.row_factory = sqlite3.Row
+			c = conn.cursor()
+		except Exception as e:
+			print(e)
+			try:
+				conn.close()
+			except:
+				pass
+			return(False, "*** in workroom.rename_workroom() - do not connect to .db: %s" % studio.workroom_path)
 		
 		# write data
 		string = 'UPDATE ' + table + ' SET name = ? WHERE id = ?'
 		data = (new_name, wr_id)
-		c.execute(string, data)
+		
+		try:
+			c.execute(string, data)
+		except Exception as e:
+			print(e)
+			conn.close()
+			return(False, '*** in workroom.rename_workroom() - do not execute: %s' % string)
 		
 		conn.commit()
 		conn.close()
