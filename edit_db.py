@@ -5795,15 +5795,15 @@ class artist():
 		
 	def add_stat(self, user_name, keys):
 		# test project_name
-		if not keys.get('project_name')
+		if not keys.get('project_name'):
 			return(False, 'not project_name!')
 		
 		# test task_name
-		if not keys.get('task_name')
+		if not keys.get('task_name'):
 			return(False, 'not task_name')
 		
 		# test data_start
-		if not keys.get('data_start')
+		if not keys.get('data_start'):
 			return False, 'not data_start'
 		
 		# create string
@@ -5933,6 +5933,12 @@ class artist():
 		
 class workroom():
 	'''
+	add(data):
+		description:
+			It creates a new workroom in the dictionary ("data") options
+		data - dictonary by studio.workroom_keys
+		return (True, ok) or (False, comment)
+		
 	get_list_workrooms(DICTONARY = False)
 		description:
 			return data of workrooms in various combinations:
@@ -5940,6 +5946,18 @@ class workroom():
 				if DICTONARY == 'by_name': returns dictonary by "name" of workrooms (True, {by_name})
 				if DICTONARY == 'by_id': returns dictonary by "id" of workrooms (True, {by_id})
 				if DICTONARY == 'by_id_by_name': returns both dictionaries (True, {by_id}, {by_name})
+				
+	get_name_by_id(id)
+		description:
+			returns the name of the workroom by its id
+		id - string
+		return (True, name) or (False, comment)
+		
+	get_id_by_name(name)
+		description:
+			returns the name of the workroom by its id
+		name - string
+		return (True, id(string)) or (False, comment)
 	'''
 
 	def __init__(self):
@@ -5955,15 +5973,23 @@ class workroom():
 		keys['id'] = str(random.randint(0, 1000000000))
 		
 		# connect to db
-		if not self.workroom_path:
-			self.get_studio()
-			
-		conn = sqlite3.connect(self.workroom_path, detect_types=sqlite3.PARSE_DECLTYPES|sqlite3.PARSE_COLNAMES)
-		conn.row_factory = sqlite3.Row
-		c = conn.cursor()
+		if not studio.workroom_path:
+			studio.get_studio()
+		
+		try:
+			conn = sqlite3.connect(studio.workroom_path, detect_types=sqlite3.PARSE_DECLTYPES|sqlite3.PARSE_COLNAMES)
+			conn.row_factory = sqlite3.Row
+			c = conn.cursor()
+		except Exception as e:
+			print(e)
+			try:
+				conn.close()
+			except:
+				pass
+			return(False, "do not connect to .db: %s" % studio.workroom_path)
 		
 		# exists table, name, id
-		table = self.workroom_t
+		table = studio.workroom_t
 		try:
 			str_ = 'select * from ' + table
 			c.execute(str_)
@@ -5978,7 +6004,7 @@ class workroom():
 					
 		except:
 			string2 = "CREATE TABLE " + table + " ("
-			for i,key in enumerate(self.workroom_keys):
+			for i,key in enumerate(studio.workroom_keys):
 				if i == 0:
 					string2 = string2 + key[0] + ' ' + key[1]
 				else:
@@ -5990,8 +6016,8 @@ class workroom():
 		string = "insert into " + table + " values"
 		values = "("
 		data = []
-		for i, key in enumerate(self.workroom_keys):
-			if i< (len(self.workroom_keys) - 1) and (len(keys) > 1):
+		for i, key in enumerate(studio.workroom_keys):
+			if i< (len(studio.workroom_keys) - 1) and (len(keys) > 1):
 				values = values + '?, '
 			else:
 				values = values + '?'
@@ -6070,14 +6096,22 @@ class workroom():
 	
 	
 	def get_name_by_id(self, id_):
-		table = self.workroom_t
+		table = studio.workroom_t
 		
-		if not self.workroom_path or (not os.path.exists(self.workroom_path)):
-			return(False, 'Not Found WorkRoom Data Base!')
+		if not studio.workroom_path or (not os.path.exists(studio.workroom_path)):
+			return(False, '*** in workroom.get_name_by_id() - Not Found WorkRoom Data Base!')
 		
-		conn = sqlite3.connect(self.workroom_path, detect_types=sqlite3.PARSE_DECLTYPES|sqlite3.PARSE_COLNAMES)
-		conn.row_factory = sqlite3.Row
-		c = conn.cursor()
+		try:
+			conn = sqlite3.connect(studio.workroom_path, detect_types=sqlite3.PARSE_DECLTYPES|sqlite3.PARSE_COLNAMES)
+			conn.row_factory = sqlite3.Row
+			c = conn.cursor()
+		except Exception as e:
+			print(e)
+			try:
+				conn.close()
+			except:
+				pass
+			return(False, "*** in workroom.get_name_by_id() - do not connect to .db: %s" % studio.workroom_path)
 		
 		str_ = 'select * from ' + table
 		return_data = ''
@@ -6090,24 +6124,32 @@ class workroom():
 					break
 		except:
 			conn.close()
-			return(False, 'Table Not Found!')
+			return(False, '*** in workroom.get_name_by_id() - Table Not Found!')
 			
 		if return_data:
 			conn.close()
 			return(True, return_data)
 		else:
 			conn.close()
-			return(False, 'Not workroom Id')
+			return(False, '*** in workroom.get_name_by_id() - Not workroom Id')
 	
 	def get_id_by_name(self, name):
-		table = self.workroom_t
+		table = studio.workroom_t
 		
-		if not self.workroom_path or (not os.path.exists(self.workroom_path)):
-			return(False, 'Not Found WorkRoom Data Base!')
+		if not studio.workroom_path or (not os.path.exists(studio.workroom_path)):
+			return(False, '*** in workroom.get_id_by_name() - Not Found WorkRoom Data Base!')
 		
-		conn = sqlite3.connect(self.workroom_path, detect_types=sqlite3.PARSE_DECLTYPES|sqlite3.PARSE_COLNAMES)
-		conn.row_factory = sqlite3.Row
-		c = conn.cursor()
+		try:
+			conn = sqlite3.connect(studio.workroom_path, detect_types=sqlite3.PARSE_DECLTYPES|sqlite3.PARSE_COLNAMES)
+			conn.row_factory = sqlite3.Row
+			c = conn.cursor()
+		except Exception as e:
+			print(e)
+			try:
+				conn.close()
+			except:
+				pass
+			return(False, "*** in workroom.get_id_by_name() - do not connect to .db: %s" % studio.workroom_path)
 		
 		str_ = 'select * from ' + table
 		return_data = ''
@@ -6120,14 +6162,14 @@ class workroom():
 					break
 		except:
 			conn.close()
-			return(False, 'Table Not Found!')
+			return(False, '*** in workroom.get_id_by_name() - Table Not Found!')
 			
 		if return_data:
 			conn.close()
 			return(True, return_data)
 		else:
 			conn.close()
-			return(False, 'Not workroom Name')
+			return(False, '*** in workroom.get_id_by_name() - Not workroom Name')
 			
 	def name_list_to_id_list(self, name_list):
 		table = self.workroom_t
