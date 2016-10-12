@@ -6240,24 +6240,34 @@ class workroom():
 	def name_list_to_id_list(self, name_list):
 		table = studio.workroom_t
 		
-		if not self.workroom_path or (not os.path.exists(self.workroom_path)):
+		if not studio.workroom_path or (not os.path.exists(studio.workroom_path)):
 			return(False, 'Not Found WorkRoom Data Base!')
 		
-		conn = sqlite3.connect(self.workroom_path, detect_types=sqlite3.PARSE_DECLTYPES|sqlite3.PARSE_COLNAMES)
-		conn.row_factory = sqlite3.Row
-		c = conn.cursor()
+		try:
+			conn = sqlite3.connect(studio.workroom_path, detect_types=sqlite3.PARSE_DECLTYPES|sqlite3.PARSE_COLNAMES)
+			conn.row_factory = sqlite3.Row
+			c = conn.cursor()
+		except Exception as e:
+			print(e)
+			try:
+				conn.close()
+			except:
+				pass
+			return(False, "*** in workroom.name_list_to_id_list() - do not connect to .db: %s" % studio.workroom_path)
 		
 		str_ = 'select * from ' + table
 		return_data = []
 		try:
 			c.execute(str_)
+		except Exception as e:
+			print(e)
+			conn.close()
+			return(False, '*** in workroom.name_list_to_id_list() - do not execute: %s' % str_)
+		else:
 			rows = c.fetchall()
 			for row in rows:
 				if row['name'] in name_list:
 					return_data.append(row['id'])
-		except:
-			conn.close()
-			return(False, 'Table Not Found!')
 			
 		if return_data:
 			conn.close()
@@ -6267,26 +6277,36 @@ class workroom():
 			return(False, 'Not workroom Names')
 			
 	def id_list_to_name_list(self, id_list):
-		table = self.workroom_t
+		table = studio.workroom_t
 		
-		if not self.workroom_path or (not os.path.exists(self.workroom_path)):
+		if not studio.workroom_path or (not os.path.exists(studio.workroom_path)):
 			return(False, 'Not Found WorkRoom Data Base!')
 		
-		conn = sqlite3.connect(self.workroom_path, detect_types=sqlite3.PARSE_DECLTYPES|sqlite3.PARSE_COLNAMES)
-		conn.row_factory = sqlite3.Row
-		c = conn.cursor()
-		
+		try:
+			conn = sqlite3.connect(studio.workroom_path, detect_types=sqlite3.PARSE_DECLTYPES|sqlite3.PARSE_COLNAMES)
+			conn.row_factory = sqlite3.Row
+			c = conn.cursor()
+		except Exception as e:
+			print(e)
+			try:
+				conn.close()
+			except:
+				pass
+			return(False, "*** in workroom.id_list_to_name_list() - do not connect to .db: %s" % studio.workroom_path)
+			
 		str_ = 'select * from ' + table
 		return_data = []
 		try:
 			c.execute(str_)
+		except Exception as e:
+			print(e)
+			conn.close()
+			return(False, '*** in workroom.id_list_to_name_list() - do not execute: %s' % str_)
+		else:
 			rows = c.fetchall()
 			for row in rows:
 				if row['id'] in id_list:
 					return_data.append(row['name'])
-		except:
-			conn.close()
-			return(False, 'Table Not Found!')
 			
 		if return_data:
 			conn.close()
