@@ -6106,16 +6106,24 @@ class workroom():
 		if not studio.workroom_path or (not os.path.exists(studio.workroom_path)):
 			return(False, 'Not Found WorkRoom Data Base!')
 		
-		conn = sqlite3.connect(studio.workroom_path, detect_types=sqlite3.PARSE_DECLTYPES|sqlite3.PARSE_COLNAMES)
-		conn.row_factory = sqlite3.Row
-		c = conn.cursor()
+		try:
+			conn = sqlite3.connect(studio.workroom_path, detect_types=sqlite3.PARSE_DECLTYPES|sqlite3.PARSE_COLNAMES)
+			conn.row_factory = sqlite3.Row
+			c = conn.cursor()
+		except Exception as e:
+			print(e)
+			try:
+				conn.close()
+			except:
+				pass
+			return(False, "*** in workroom.get_list_workrooms() - do not connect to .db: %s" % studio.workroom_path)
 		
 		str_ = 'select * from ' + table
 		try:
 			c.execute(str_)
 		except Exception as e:
 			print(e)
-			return(False, '*** in workroom.get_list_workrooms() - WorkRoom Table Not Found!')
+			return(False, '*** in workroom.get_list_workrooms() - do not execute: %s' % str_)
 		# unicum workroom_name test
 		rows = c.fetchall()
 		return_data_0 = {}
