@@ -5958,6 +5958,25 @@ class workroom():
 			returns the name of the workroom by its id
 		name - string
 		return (True, id(string)) or (False, comment)
+		
+	name_list_to_id_list(name_list)
+		description:
+			returns a list of id on the list of names of workrooms
+		name_list - list of names of workrooms
+		return (True, (list of id of workrooms)) or (False, comment)
+		
+	id_list_to_name_list(id_list)
+		description:
+			returns a list of names on the list of id of workrooms
+		id_list - list of id of workrooms
+		return (True, (list of names of workrooms)) or (False, comment)
+		
+	rename_workroom(old_name, new_name)
+		description:
+			Renaming the department from the old to the new name
+		old_name - string
+		new_name - string
+		return (True, 'Ok!') or (False, comment)
 	'''
 
 	def __init__(self):
