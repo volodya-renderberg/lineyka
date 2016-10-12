@@ -5807,12 +5807,12 @@ class artist():
 			return False, 'not data_start'
 		
 		# create string
-		table = '\"' + user_name + ':' + self.statistic_t + '\"'
+		table = '\"' + user_name + ':' + studio.statistic_t + '\"'
 		string = "insert into " + table + " values"
 		values = '('
 		data = []
-		for i, key in enumerate(self.statistics_keys):
-			if i< (len(self.statistics_keys) - 1):
+		for i, key in enumerate(studio.statistics_keys):
+			if i< (len(studio.statistics_keys) - 1):
 				values = values + '?, '
 			else:
 				values = values + '?'
@@ -5829,7 +5829,7 @@ class artist():
 		string = string + values
 		
 		# write task to db
-		conn = sqlite3.connect(self.statistic_path, detect_types=sqlite3.PARSE_DECLTYPES|sqlite3.PARSE_COLNAMES)
+		conn = sqlite3.connect(studio.statistic_path, detect_types=sqlite3.PARSE_DECLTYPES|sqlite3.PARSE_COLNAMES)
 		conn.row_factory = sqlite3.Row
 		c = conn.cursor()
 		
@@ -5845,7 +5845,7 @@ class artist():
 					return False, 'overlap'
 		except:
 			string2 = "CREATE TABLE " + table + " ("
-			for i,key_ in enumerate(self.statistics_keys):
+			for i,key_ in enumerate(studio.statistics_keys):
 				if i == 0:
 					string2 = string2 + key_[0] + ' ' + key_[1]
 				else:
@@ -5862,7 +5862,7 @@ class artist():
 	
 	def read_stat(self, nik_name, keys):
 		# create string
-		table = '\"' + nik_name + ':' + self.statistic_t + '\"'
+		table = '\"' + nik_name + ':' + studio.statistic_t + '\"'
 		
 		if keys == 'all':
 			string = 'select * from ' + table
@@ -5878,7 +5878,7 @@ class artist():
 		#return string
 				
 		# read tasks
-		conn = sqlite3.connect(self.statistic_path, detect_types=sqlite3.PARSE_DECLTYPES|sqlite3.PARSE_COLNAMES)
+		conn = sqlite3.connect(studio.statistic_path, detect_types=sqlite3.PARSE_DECLTYPES|sqlite3.PARSE_COLNAMES)
 		conn.row_factory = sqlite3.Row
 		c = conn.cursor()
 		'''	
@@ -5902,7 +5902,7 @@ class artist():
 		
 	def edit_stat(self, user_name, project_name, task_name, keys):
 		# create string	
-		table = '\"' + user_name + ':' + self.statistic_t + '\"'
+		table = '\"' + user_name + ':' + studio.statistic_t + '\"'
 		# edit db
 		string = 'UPDATE ' +  table + ' SET '
 		for key in keys:
@@ -5915,7 +5915,7 @@ class artist():
 		#return string
 		
 		# write task to db
-		conn = sqlite3.connect(self.statistic_path, detect_types=sqlite3.PARSE_DECLTYPES|sqlite3.PARSE_COLNAMES)
+		conn = sqlite3.connect(studio.statistic_path, detect_types=sqlite3.PARSE_DECLTYPES|sqlite3.PARSE_COLNAMES)
 		c = conn.cursor()
 		'''
 		c.execute(string)
