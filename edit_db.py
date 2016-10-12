@@ -250,7 +250,8 @@ class studio:
 	
 	workroom_keys = [
 	('name', 'text'),
-	('id', 'text')
+	('id', 'text'),
+	('task_types', 'text')
 	]
 	
 	# activity, task_name, action, date_time, comment, version, artist
@@ -1401,10 +1402,8 @@ class project():
 			else:
 				return False, '\n****** studio.project.__make_folders -> No Created'
 	
-class asset(project):
+class asset():
 	'''
-	studio.project.asset()
-	
 	self.activity_folder  - {activity_name : activity_folder, ... }
 	
 	add_asset(project_name, asset_name) - create folder: assets/asset_name; create activity folders assets/asset_name/...folders; write {asset_name:folder_full_path} in .assets.json; 
@@ -6046,8 +6045,28 @@ class workroom():
 				conn.close()
 				return(False, '***2 in workroom.add() - do not execute %s' % string2)
 		else:
-			#exists table, name, id
 			str_ = 'select * from ' + table
+			
+			#fix - exists/add column 'task_types'
+			try:
+				c.execute(str_)
+			except Exception as e:
+				print(e)
+				conn.close()
+				return(False, '***4 in workroom.add() - do not execute %s' % str_)
+			
+			columns = [member[0] for member in c.description]
+			
+			#add column 'task_types'
+			if not 'task_types' in columns:
+				try:
+					c.execute("alter table %s add column %s text" % (table, 'task_types'))
+				except Exception as e:
+					print(e)
+					conn.close()
+					return(False, '***5 in workroom.add() - do not execute: "alter table %s add column %s text"' % (table, 'task_types'))
+			
+			#exists table, name, id
 			try:
 				c.execute(str_)
 			except Exception as e:
