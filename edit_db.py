@@ -6186,9 +6186,10 @@ class workroom():
 				if row['id'] == id_:
 					return_data = row['name']
 					break
-		except:
+		except Exception as e:
+			print(e)
 			conn.close()
-			return(False, '*** in workroom.get_name_by_id() - Table Not Found!')
+			return(False, '*** in workroom.get_name_by_id() - do not execute: %s' % str_)
 			
 		if return_data:
 			conn.close()
@@ -6224,9 +6225,10 @@ class workroom():
 				if row['name'] == name:
 					return_data = row['id']
 					break
-		except:
+		except Exception as e:
+			print(e)
 			conn.close()
-			return(False, '*** in workroom.get_id_by_name() - Table Not Found!')
+			return(False, '*** in workroom.get_id_by_name() - do not execute: %s' % str_)
 			
 		if return_data:
 			conn.close()
