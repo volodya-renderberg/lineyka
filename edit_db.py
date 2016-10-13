@@ -1038,6 +1038,7 @@ class context:
 	'preview_img_path' : False, # preview img, folder path
 	}
 	artist = {}
+	group = {}
 	
 class project():
 	'''
@@ -1095,6 +1096,7 @@ class project():
 		self.logs_t = 'logs'
 
 	def add_project(self, project_name, project_path):
+		pass
 		# project_name, get project_path
 		if project_path == '' and project_name == '':
 			return(False, 'No options!')
@@ -1218,9 +1220,17 @@ class project():
 			studio.projects_path = projects_path # ???
 		
 		# -- CONNECT  .db
-		conn = sqlite3.connect(studio.projects_path, detect_types=sqlite3.PARSE_DECLTYPES|sqlite3.PARSE_COLNAMES)
-		conn.row_factory = sqlite3.Row
-		c = conn.cursor()
+		try:
+			conn = sqlite3.connect(studio.projects_path, detect_types=sqlite3.PARSE_DECLTYPES|sqlite3.PARSE_COLNAMES)
+			conn.row_factory = sqlite3.Row
+			c = conn.cursor()
+		except Exception as e:
+			print(e)
+			try:
+				conn.close()
+			except:
+				pass
+			return(False, '*** in project.add_project() |\ndo not connect to: %s' % studio.projects_path)
 		
 		# -- EXISTS TABLE
 		table = studio.projects_t
@@ -7347,6 +7357,7 @@ class group():
 		return(True, 'ok')
 		
 	def create_recycle_bin(self, project_name):
+		pass
 		# get group list
 		result = self.get_list(project_name)
 		if not result[0]:
@@ -7617,17 +7628,31 @@ class group():
 			return(False, 'No Table of Groups!')
 		
 	
-	def get_by_name(self, project, name):
+	def get_by_name(self, project, name, to_context = False):
 		rows = self.get_by_keys(project, {'name': name})
 		if rows[0]:
-			return(True, rows[1][0])
+			if rows[1]:
+				#to context
+				if to_context:
+					for key in dict(rows[1][0]).keys():
+						context.group[key] = rows[1][0][key]
+				return(True, rows[1][0])
+			else:
+				return(True, rows[1])
 		else:
 			return(False, rows[1])
 	
-	def get_by_id(self, project, id_):
+	def get_by_id(self, project, id_, to_context = False):
 		rows = self.get_by_keys(project, {'id': id_})
 		if rows[0]:
-			return(True, rows[1][0])
+			if rows[1]:
+				#to context
+				if to_context:
+					for key in dict(rows[1][0]).keys():
+						context.group[key] = rows[1][0][key]
+				return(True, rows[1][0])
+			else:
+				return(True, rows[1])
 		else:
 			return(False, rows[1])
 	
@@ -7648,6 +7673,7 @@ class group():
 		return(True, data)
 		
 	def get_dict_by_all_types(self, project):
+		pass
 		# get all group data
 		result = self.get_list(project)
 		if not result[0]:
@@ -7742,21 +7768,51 @@ class group():
 		return(True, 'ok')
 		
 	def edit_comment_by_name(self, project, name, comment):
-		result = self.get_project(project)
-		if not result[0]:
-			return(False, result[1])
+		if not context.project['name'] or context.project['name'] != project:
+			result = self.project.get_project(project)
+			if not result[0]:
+				return(False, result[1])
 			
-		# write task to db
-		conn = sqlite3.connect(self.assets_path, detect_types=sqlite3.PARSE_DECLTYPES|sqlite3.PARSE_COLNAMES)
-		conn.row_factory = sqlite3.Row
-		c = conn.cursor()
-		
-		table = self.group_t
-		
-		# test old name exists
+		# connect to db
 		try:
+			conn = sqlite3.connect(context.project['assets_path'], detect_types=sqlite3.PARSE_DECLTYPES|sqlite3.PARSE_COLNAMES)
+			conn.row_factory = sqlite3.Row
+			c = conn.cursor()
+		except Exception as e:
+			print(e)
+			try:
+				conn.close()
+			except:
+				pass
+			return(False, '*** in group.edit_comment_by_name() | do not connect to .db: %s' %  context.project['assets_path'])
+		
+		#get tables list
+		tbl_name_list = []
+		string1 = 'select * from sqlite_master'
+		try:
+			c.execute(string1)
+		except Exception as e:
+			print(e)
+			conn.close()
+			return(False, '***1 in group.edit_comment_by_name() |\n do not execute %s' % string1)
+		else:
+			l = c.fetchall()
+			for sql_type, sql_name, tbl_name, rootpage, sql in l:
+				if sql_type == 'table':
+					tbl_name_list.append(sql_name)
+		
+		table = studio.group_t
+		# test old name exists
+		if table in tbl_name_list:
 			str_ = 'select * from ' + table
-			c.execute(str_)
+			
+			try:
+				c.execute(str_)
+			except Exception as e:
+				print(e)
+				conn.close()
+				return(False, '***2 in group.edit_comment_by_name() |\n do not execute %s' % str_)
+			
 			r = c.fetchall()
 			
 			names = []
@@ -7765,19 +7821,29 @@ class group():
 			
 			if not name in names:
 				conn.close()
-				return(False, 'Name Not Exists!')
+				return(False, '*** in group.edit_comment_by_name() |\nName Not Exists!')
 		
-		except:
+		else:
 			conn.close()
-			return(False, 'Not Table!')
+			return(False, '*** in group.edit_comment_by_name() |\nNot Table!')
 			
 		# edit db
 		string = 'UPDATE ' +  table + ' SET  \"comment\"  = ? WHERE \"name\" = \"' + name + '\"'
-				
 		data = (comment,)
-		c.execute(string, data)
+		
+		try:
+			c.execute(string, data)
+		except Exception as e:
+			print(e)
+			conn.close()
+			return(False, '***3 in group.edit_comment_by_name() |\n do not execute %s' % string)
+		
 		conn.commit()
 		conn.close()
+		
+		#edit context
+		if context.group and context.group['name'] == name:
+			context.group['comment'] = comment
 		
 		return(True, 'ok')
 		
