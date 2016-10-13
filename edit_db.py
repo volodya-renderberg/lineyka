@@ -7215,6 +7215,13 @@ class group():
 		return (True, data) or (False, comment)
 		data - dictonary {group_id : data dictonary of group (db row)}
 		
+	get_by_keys(project_name, keys)
+		description:
+			returns a list of dictionaries of data groups corresponding keys
+		project_name - string
+		keys - dictonary by studio.group_keys
+		return (True, data) or (False, comment)
+		data - list [data dictonary of group (db row), ...]
 	'''
 	def __init__(self):
 		self.project = project()
@@ -7546,21 +7553,45 @@ class group():
 		return(True, group_dict)
 	
 	def get_by_keys(self, project, keys):
-		result = self.get_project(project)
-		if not result[0]:
-			return(False, result[1])
+		if not context.project['name'] or context.project['name'] != project:
+			result = self.project.get_project(project)
+			if not result[0]:
+				return(False, '*** in group.get_by_keys() |\n%s' % result[1])
 		
-		if len(keys) == 0:
-			return(False, 'Not Keys!')
+		if not keys:
+			return(False, '*** in group.get_by_keys() |\nNot Keys!')
 		
-		# write series to db
-		conn = sqlite3.connect(self.assets_path, detect_types=sqlite3.PARSE_DECLTYPES|sqlite3.PARSE_COLNAMES)
-		conn.row_factory = sqlite3.Row
-		c = conn.cursor()
-		
+		# connect to db
 		try:
+			conn = sqlite3.connect(context.project['assets_path'], detect_types=sqlite3.PARSE_DECLTYPES|sqlite3.PARSE_COLNAMES)
+			conn.row_factory = sqlite3.Row
+			c = conn.cursor()
+		except Exception as e:
+			print(e)
+			try:
+				conn.close()
+			except:
+				pass
+			return(False, '*** in group.get_by_keys() | do not connect to .db: %s' %  context.project['assets_path'])
+		
+		#get tables list
+		tbl_name_list = []
+		string1 = 'select * from sqlite_master'
+		try:
+			c.execute(string1)
+		except Exception as e:
+			print(e)
+			conn.close()
+			return(False, '***1 in group.get_by_keys() | do not execute %s' % string1)
+		else:
+			l = c.fetchall()
+			for sql_type, sql_name, tbl_name, rootpage, sql in l:
+				if sql_type == 'table':
+					tbl_name_list.append(sql_name)
+		
+		table = studio.group_t
+		if table in tbl_name_list:
 			data = []
-			table = self.group_t
 			string = 'select * from ' + table + ' WHERE '
 			for i,key in enumerate(keys):
 				if i == 0:
@@ -7570,14 +7601,20 @@ class group():
 				data.append(keys[key])	
 			
 			data = tuple(data)
-			c.execute(string, data)
+			
+			try:
+				c.execute(string, data)
+			except Exception as e:
+				print(e)
+				conn.close()
+				return(False, '***2 in group.get_by_keys() | do not execute %s' % string)
+			
 			rows = c.fetchall()
 			conn.close()
 			return(True, rows)
-		
-		except:
+		else:
 			conn.close()
-			return(False, 'Not Table!')
+			return(False, 'No Table of Groups!')
 		
 	
 	def get_by_name(self, project, name):
