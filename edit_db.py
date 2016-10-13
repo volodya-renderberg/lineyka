@@ -7639,10 +7639,6 @@ class group():
 			return(False, rows[1])
 	
 	def get_by_type_list(self, project, type_list):
-		result = self.get_project(project)
-		if not result[0]:
-			return(False, result[1])
-		
 		data = []
 		for type_ in type_list:
 			rows = self.get_by_keys(project, {'type':type_})
