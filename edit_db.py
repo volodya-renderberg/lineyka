@@ -7179,6 +7179,21 @@ class series(project):
 		pass
 	
 class group():
+	'''
+	create(project_name, data)
+		description:
+			create new group
+		project_name - string
+		data - dictinary by studio.group_keys
+		return(True, 'Ok') or (False, comment)
+		
+	get_list(project_name, filter)
+		description:
+			returns a list of groups of data dictionaries, by filter
+		project_name - string
+		filter - list, list of types.
+		return(True, Data(list of rows)) or (False, comment)
+	'''
 	def __init__(self):
 		self.project = project()
 		pass
@@ -7239,7 +7254,7 @@ class group():
 		if not table in tbl_name_list:
 			#create table
 			string2 = "CREATE TABLE " + table + " ("
-			for i,key in enumerate(self.group_keys):
+			for i,key in enumerate(studio.group_keys):
 				if i == 0:
 					string2 = string2 + key[0] + ' ' + key[1]
 				else:
@@ -7268,31 +7283,6 @@ class group():
 					return(False, 'overlap')
 				elif row['id'] == keys['id']:
 					keys['id'] = hex(random.randint(0, 1000000000)).replace('0x','')
-		
-		'''
-		# exists table
-		try:
-			str_ = 'select * from ' + table
-			c.execute(str_)
-			# unicum task_name test
-			r = c.fetchall()
-			for row in r:
-				if row['name'] == keys['name']:
-					conn.close()
-					return(False, 'overlap')
-				elif row['id'] == keys['id']:
-					keys['id'] = str(random.randint(0, 1000000000))
-				
-		except:
-			string2 = "CREATE TABLE " + table + " ("
-			for i,key in enumerate(self.group_keys):
-				if i == 0:
-					string2 = string2 + key[0] + ' ' + key[1]
-				else:
-					string2 = string2 + ', ' + key[0] + ' ' + key[1]
-			string2 = string2 + ')'
-			c.execute(string2)
-		'''
 		
 		# create string
 		string = "insert into " + table + " values"
@@ -7444,23 +7434,51 @@ class group():
 			
 		
 	def get_list(self, project, f = False): # f = [...] - filter of types
-		result = self.get_project(project)
-		if not result[0]:
-			return(False, (result[1] + '***'))
+		if not context.project['name'] or context.project['name'] != project:
+			result = self.project.get_project(project)
+			if not result[0]:
+				return(False, '*** in group.get_list() | \n%s' % result[1])
 		
-		# write series to db
+		# connect to db
 		try:
-			conn = sqlite3.connect(self.assets_path, detect_types=sqlite3.PARSE_DECLTYPES|sqlite3.PARSE_COLNAMES)
+			conn = sqlite3.connect(context.project['assets_path'], detect_types=sqlite3.PARSE_DECLTYPES|sqlite3.PARSE_COLNAMES)
 			conn.row_factory = sqlite3.Row
 			c = conn.cursor()
-		except:
-			print(self.assets_path)
-			return(False, ('Not Open .db' + self.assets_path))
+		except Exception as e:
+			print(e)
+			try:
+				conn.close()
+			except:
+				pass
+			return(False, '*** in group.get_list() | do not connect to .db: %s' %  context.project['assets_path'])
 		
+		#get tables list
+		tbl_name_list = []
+		string1 = 'select * from sqlite_master'
 		try:
-			table = self.group_t
+			c.execute(string1)
+		except Exception as e:
+			print(e)
+			conn.close()
+			return(False, '***1 in group.create() | do not execute %s' % string1)
+		else:
+			l = c.fetchall()
+			for sql_type, sql_name, tbl_name, rootpage, sql in l:
+				if sql_type == 'table':
+					tbl_name_list.append(sql_name)
+		
+		# read db
+		table = studio.group_t
+		if table in tbl_name_list:
 			str_ = 'select * from ' + table
-			c.execute(str_)
+			
+			try:
+				c.execute(str_)
+			except Exception as e:
+				print(e)
+				conn.close()
+				return(False, '*** in group.get_list() - do not execute: %s' % str_)
+			
 			rows = c.fetchall()
 			conn.close()
 			if not f:
@@ -7471,33 +7489,10 @@ class group():
 					if row['type'] in f:
 						f_rows.append(row)
 				return(True, f_rows)
-		except:
-			string2 = "CREATE TABLE " + table + " ("
-			for i,key in enumerate(self.group_keys):
-				if i == 0:
-					string2 = string2 + key[0] + ' ' + key[1]
-				else:
-					string2 = string2 + ', ' + key[0] + ' ' + key[1]
-			string2 = string2 + ')'
-			# -- make table
-			try:
-				c.execute(string2)
-				conn.commit()
-				conn.close()
-				return(True, [])
-			except:
-				conn.close()
-				return(False, 'Not found or created!')
-							
-		'''
-		table = self.group_t
-		str_ = 'select * from ' + table
-		c.execute(str_)
-		rows = c.fetchall()
-		conn.close()
-		return(True, rows)
-		'''
-	
+		else:
+			return(True, [])
+			
+			
 	def get_groups_dict_by_id(self, project):
 		result = self.get_list(project)
 		if not result[0]:
