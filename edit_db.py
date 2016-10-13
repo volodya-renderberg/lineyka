@@ -7648,10 +7648,6 @@ class group():
 		return(True, data)
 		
 	def get_dict_by_all_types(self, project):
-		result = self.get_project(project)
-		if not result[0]:
-			return(False, result[1])
-		
 		# get all group data
 		result = self.get_list(project)
 		if not result[0]:
@@ -7779,11 +7775,6 @@ class group():
 		string = 'UPDATE ' +  table + ' SET  \"comment\"  = ? WHERE \"name\" = \"' + name + '\"'
 				
 		data = (comment,)
-		'''
-		print(string, data)
-		conn.close()
-		return(False, 'Be!')
-		'''
 		c.execute(string, data)
 		conn.commit()
 		conn.close()
