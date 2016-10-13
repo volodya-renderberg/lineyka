@@ -138,6 +138,7 @@ class studio:
 	location_position_file = 'location_content_position.json'
 	user_registr_file_name = 'user_registr.json'
 	recycle_bin_name = '-Recycle_Bin-'
+	group_t = 'groups'
 	#-- shot_animation
 	meta_data_file = '.shot_meta_data.json'
 	
@@ -252,6 +253,14 @@ class studio:
 	('name', 'text'),
 	('id', 'text'),
 	('task_types', 'text')
+	]
+	
+	group_keys = [
+	('name', 'text'),
+	('type', 'text'),
+	('series', 'text'),
+	('comment', 'text'),
+	('id', 'text'),
 	]
 	
 	# activity, task_name, action, date_time, comment, version, artist
@@ -7169,75 +7178,98 @@ class series(project):
 	def start(self, project, name):
 		pass
 	
-class group(project):
+class group():
 	def __init__(self):
-		self.group_keys = [
-		('name', 'text'),
-		('type', 'text'),
-		('series', 'text'),
-		('comment', 'text'),
-		('id', 'text'),
-		]
-		
-		self.group_t = 'groups'
-		
-		project.__init__(self)
+		self.project = project()
+		pass
 	
 	def create(self, project, keys):
-		result = self.get_project(project)
-		if not result[0]:
-			return(False, result[1])
+		if not context.project['name'] or context.project['name'] != project:
+			result = self.project.get_project(project)
+			if not result[0]:
+				return(False, result[1])
 			
 		# test name
-		if (not 'name' in keys) or (keys['name'] == ''):
-			return(False, 'Not Name!')
+		if not keys.get('name'):
+			return(False, '*** in group.create() | Not Name!')
 			
 		# test type
-		# test name
-		if (not 'type' in keys) or (keys['name'] == '') or (not keys['type'] in self.asset_types):
-			return(False, 'Not Type!')
+		if not keys.get('type') or (not keys['type'] in studio.asset_types):
+			return(False, '*** in group.create() | Not Type!')
 		
-		# get id				
-		keys['id'] = str(random.randint(0, 1000000000))
+		# get id
+		keys['id'] = hex(random.randint(0, 1000000000)).replace('0x','')
 		
 		# test series key
-		if keys['type'] in self.asset_types_with_series:
-			if 'series' in keys and keys['series'] == '':
-				return(False, 'For This Type Must Specify a Series!')
-			elif not 'series' in keys:
-				return(False, 'Required For This Type of Key Series!')
+		if keys['type'] in studio.asset_types_with_series:
+			if not keys.get('series'):
+				return(False, '*** in group.create() | For This Type Must Specify a Series!')
 		else:
 			keys['series'] = ''
 		
-		# create string
-		table = self.group_t
-		string = "insert into " + table + " values"
-		values = '('
-		data = []
-		for i, key in enumerate(self.group_keys):
-			if i< (len(self.group_keys) - 1):
-				values = values + '?, '
-			else:
-				values = values + '?'
-			if key[0] in keys:
-				data.append(keys[key[0]])
-			else:
-				if key[1] == 'real':
-					data.append(0.0)
-				elif key[1] == 'timestamp':
-					data.append(datetime.datetime.now())
-				else:
-					data.append('')
+		# connect to db
+		try:
+			conn = sqlite3.connect(context.project['assets_path'], detect_types=sqlite3.PARSE_DECLTYPES|sqlite3.PARSE_COLNAMES)
+			conn.row_factory = sqlite3.Row
+			c = conn.cursor()
+		except Exception as e:
+			print(e)
+			try:
+				conn.close()
+			except:
+				pass
+			return(False, '*** in group.create() | do not connect to .db: %s' %  context.project['assets_path'])
+		
+		#get tables list
+		tbl_name_list = []
+		string1 = 'select * from sqlite_master'
+		try:
+			c.execute(string1)
+		except Exception as e:
+			print(e)
+			conn.close()
+			return(False, '***1 in group.create() | do not execute %s' % string1)
+		else:
+			l = c.fetchall()
+			for sql_type, sql_name, tbl_name, rootpage, sql in l:
+				if sql_type == 'table':
+					tbl_name_list.append(sql_name)
 					
-		values = values + ')'
-		data = tuple(data)
-		string = string + values
+		table = studio.group_t
+		if not table in tbl_name_list:
+			#create table
+			string2 = "CREATE TABLE " + table + " ("
+			for i,key in enumerate(self.group_keys):
+				if i == 0:
+					string2 = string2 + key[0] + ' ' + key[1]
+				else:
+					string2 = string2 + ', ' + key[0] + ' ' + key[1]
+			string2 = string2 + ')'
+			try:
+				c.execute(string2)
+			except Exception as e:
+				print(e)
+				conn.close()
+				return(False, '***2 in group.create() | do not execute %s' % string2)
+		else:
+			#test unicum
+			str_ = 'select * from ' + table
+			try:
+				c.execute(str_)
+			except Exception as e:
+				print(e)
+				conn.close()
+				return(False, '***3 in group.create() | do not execute %s' % str_)
+			# unicum group_name test
+			r = c.fetchall()
+			for row in r:
+				if row['name'] == keys['name']:
+					conn.close()
+					return(False, 'overlap')
+				elif row['id'] == keys['id']:
+					keys['id'] = hex(random.randint(0, 1000000000)).replace('0x','')
 		
-		# write group to db
-		conn = sqlite3.connect(self.assets_path, detect_types=sqlite3.PARSE_DECLTYPES|sqlite3.PARSE_COLNAMES)
-		conn.row_factory = sqlite3.Row
-		c = conn.cursor()
-		
+		'''
 		# exists table
 		try:
 			str_ = 'select * from ' + table
@@ -7259,18 +7291,38 @@ class group(project):
 				else:
 					string2 = string2 + ', ' + key[0] + ' ' + key[1]
 			string2 = string2 + ')'
-			'''
-			# -- 
-			print 'String 2: ', string2
-			conn.close()
-			return
-			# --
-			'''
 			c.execute(string2)
+		'''
 		
-		# add series
-		#print(string, data)
-		c.execute(string, data)
+		# create string
+		string = "insert into " + table + " values"
+		values = '('
+		data = []
+		for i, key in enumerate(studio.group_keys):
+			if i< (len(studio.group_keys) - 1):
+				values = values + '?, '
+			else:
+				values = values + '?'
+			if key[0] in keys:
+				data.append(keys[key[0]])
+			else:
+				if key[1] == 'real':
+					data.append(0.0)
+				elif key[1] == 'timestamp':
+					data.append(datetime.datetime.now())
+				else:
+					data.append('')
+					
+		values = values + ')'
+		data = tuple(data)
+		string = string + values
+		
+		try:
+			c.execute(string, data)
+		except Exception as e:
+			print(e)
+			conn.close()
+			return(False, '***3 in group.create() | do not execute %s' % string)
 		conn.commit()
 		conn.close()
 		return(True, 'ok')
