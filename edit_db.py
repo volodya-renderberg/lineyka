@@ -909,6 +909,8 @@ class studio:
 			for key in studio.list_projects:
 				if studio.list_projects[key]['status'] == 'active':
 					studio.list_active_projects.append(key)
+		else:
+			studio.list_active_projects = []
 	
 	@staticmethod
 	def get_set_of_tasks_path():
@@ -7187,6 +7189,12 @@ class group():
 		data - dictinary by studio.group_keys
 		return(True, 'Ok') or (False, comment)
 		
+	create_recycle_bin(project_name)
+		description:
+			It creates a group for removed assets list
+		project_name - string
+		return(True, 'Ok') or (False, comment)
+		
 	get_list(project_name, filter)
 		description:
 			returns a list of groups of data dictionaries, by filter
@@ -7199,6 +7207,14 @@ class group():
 			rename of group
 		project_name, old_name, new_name - string
 		return(True, 'Ok') or (False, comment)
+		
+	get_groups_dict_by_id(project_name)
+		description:
+			a dictionary of rows in their id
+		project_name - string
+		return (True, data) or (False, comment)
+		data - dictonary {group_id : data dictonary of group (db row)}
+		
 	'''
 	def __init__(self):
 		self.project = project()
@@ -7327,7 +7343,7 @@ class group():
 		# get group list
 		result = self.get_list(project_name)
 		if not result[0]:
-			return(False, (result[1] + ' in get group list'))
+			return(False, (result[1] + '\nin create_recycle_bin() in get group list'))
 		groups = result[1]
 		
 		all_group = False
@@ -7349,18 +7365,18 @@ class group():
 			if recycle_bin:
 				#print('Exist RB name')
 				# -- new name
-				new_name = self.recycle_bin_name + hex(random.randint(0, 1000000000)).replace('0x','')
+				new_name = studio.recycle_bin_name + hex(random.randint(0, 1000000000)).replace('0x','')
 				while new_name in names:
-					new_name = self.recycle_bin_name + hex(random.randint(0, 1000000000)).replace('0x','')
+					new_name = studio.recycle_bin_name + hex(random.randint(0, 1000000000)).replace('0x','')
 				# -- rename
-				result = self.rename(project_name, self.recycle_bin_name, new_name)
+				result = self.rename(project_name, studio.recycle_bin_name, new_name)
 				if not result[0]:
 					return(False, result[1])
 				
 			# create group
 			# -- keys
 			keys = {
-			'name':self.recycle_bin_name,
+			'name':studio.recycle_bin_name,
 			'type': 'all',
 			'comment':'removed assets'
 			}
@@ -7368,15 +7384,59 @@ class group():
 			keys['id'] = hex(random.randint(0, 1000000000)).replace('0x','')
 			while keys['id'] in id_s:
 				keys['id'] = hex(random.randint(0, 1000000000)).replace('0x','')
-			#print(keys)
+			
+			# CONNECT to db
+			try:
+				conn = sqlite3.connect(context.project['assets_path'], detect_types=sqlite3.PARSE_DECLTYPES|sqlite3.PARSE_COLNAMES)
+				conn.row_factory = sqlite3.Row
+				c = conn.cursor()
+			except Exception as e:
+				print(e)
+				try:
+					conn.close()
+				except:
+					pass
+				return(False, '*** in group.create_recycle_bin() |\ndo not connect to .db: %s' %  context.project['assets_path'])
+			
+			#get tables list
+			tbl_name_list = []
+			string1 = 'select * from sqlite_master'
+			try:
+				c.execute(string1)
+			except Exception as e:
+				print(e)
+				conn.close()
+				return(False, '***1 in group.create_recycle_bin() |\ndo not execute %s' % string1)
+			else:
+				l = c.fetchall()
+				for sql_type, sql_name, tbl_name, rootpage, sql in l:
+					if sql_type == 'table':
+						tbl_name_list.append(sql_name)
+			
+			# exists table
+			table = studio.group_t
+			if not table in tbl_name_list:
+				string2 = "CREATE TABLE " + table + " ("
+				for i,key in enumerate(studio.group_keys):
+					if i == 0:
+						string2 = string2 + key[0] + ' ' + key[1]
+					else:
+						string2 = string2 + ', ' + key[0] + ' ' + key[1]
+				string2 = string2 + ')'
+				# -- make table
+				try:
+					c.execute(string2)
+				except Exception as e:
+					print(e)
+					conn.close()
+					return(False, '***2 in group.create_recycle_bin() |\ndo not execute %s' % string2)
 			
 			# -- create string
-			table = self.group_t
 			string = "insert into " + table + " values"
 			values = '('
 			data = []
-			for i, key in enumerate(self.group_keys):
-				if i< (len(self.group_keys) - 1):
+			for i, key in enumerate(studio.group_keys):
+				if i< (len(studio.group_keys) - 1):
 					values = values + '?, '
 				else:
 					values = values + '?'
@@ -7389,43 +7449,27 @@ class group():
 						data.append(datetime.datetime.now())
 					else:
 						data.append('')
-						
+			
 			values = values + ')'
 			data = tuple(data)
 			string = string + values
-				
-			# CONNECT to db
-			conn = sqlite3.connect(self.assets_path, detect_types=sqlite3.PARSE_DECLTYPES|sqlite3.PARSE_COLNAMES)
-			conn.row_factory = sqlite3.Row
-			c = conn.cursor()
 			
-			# exists table
-			try:
-				str_ = 'select * from ' + table
-				c.execute(str_)
-			except:
-				string2 = "CREATE TABLE " + table + " ("
-				for i,key in enumerate(self.group_keys):
-					if i == 0:
-						string2 = string2 + key[0] + ' ' + key[1]
-					else:
-						string2 = string2 + ', ' + key[0] + ' ' + key[1]
-				string2 = string2 + ')'
-				# -- make table
-				c.execute(string2)
-							
 			# -- create group
-			c.execute(string, data)
+			try:
+				c.execute(string, data)
+			except Exception as e:
+				print(e)
+				conn.close()
+				return(False, '***3 in group.create_recycle_bin() |\ndo not execute %s' % string)
 			conn.commit()
 			conn.close()
 			
 		else:
-			#print('Exist RB!')
 			if not recycle_bin:
 				# -- rename
-				result = self.rename(project_name, all_group['name'], self.recycle_bin_name)
+				result = self.rename(project_name, all_group['name'], studio.recycle_bin_name)
 				if not result[0]:
-					return(False, (result[1] + 'in rename rcycle bin'))
+					return(False, (result[1] + '\n*** in group.create_recycle_bin() \nin rename rcycle bin'))
 			
 		return(True, 'ok')
 			
