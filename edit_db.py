@@ -7193,6 +7193,12 @@ class group():
 		project_name - string
 		filter - list, list of types.
 		return(True, Data(list of rows)) or (False, comment)
+		
+	rename(project_name, old_name, new_name)
+		description:
+			rename of group
+		project_name, old_name, new_name - string
+		return(True, 'Ok') or (False, comment)
 	'''
 	def __init__(self):
 		self.project = project()
@@ -7318,15 +7324,6 @@ class group():
 		return(True, 'ok')
 		
 	def create_recycle_bin(self, project_name):
-		'''
-		result = self.get_studio()
-		if not result[0]:
-			return(False, (result[1] + ' in get studio'))
-		
-		result = self.get_project(project_name)
-		if not result[0]:
-			return(False, (result[1] + ' in get project'))
-		'''
 		# get group list
 		result = self.get_list(project_name)
 		if not result[0]:
@@ -7341,7 +7338,7 @@ class group():
 			for group in groups:
 				names.append(group['name'])
 				id_s.append(group['id'])
-				if group['name'] == self.recycle_bin_name:
+				if group['name'] == studio.recycle_bin_name:
 					recycle_bin = group
 				if group['type'] == 'all':
 					all_group = group
@@ -7460,7 +7457,7 @@ class group():
 		except Exception as e:
 			print(e)
 			conn.close()
-			return(False, '***1 in group.create() | do not execute %s' % string1)
+			return(False, '***1 in group.get_list() | do not execute %s' % string1)
 		else:
 			l = c.fetchall()
 			for sql_type, sql_name, tbl_name, rootpage, sql in l:
@@ -7595,47 +7592,77 @@ class group():
 			
 		return(True, data)
 	
-	def rename(self, project, name, new_name):
-		result = self.get_project(project)
-		if not result[0]:
-			return(False, (result[1] + ' <in rename>'))
+	def rename(self, project, old_name, new_name):
+		if not context.project['name'] or context.project['name'] != project:
+			result = self.project.get_project(project)
+			if not result[0]:
+				return(False, result[1])
 			
-		# write task to db
-		conn = sqlite3.connect(self.assets_path, detect_types=sqlite3.PARSE_DECLTYPES|sqlite3.PARSE_COLNAMES)
-		conn.row_factory = sqlite3.Row
-		c = conn.cursor()
+		# connect to db
+		try:
+			conn = sqlite3.connect(context.project['assets_path'], detect_types=sqlite3.PARSE_DECLTYPES|sqlite3.PARSE_COLNAMES)
+			conn.row_factory = sqlite3.Row
+			c = conn.cursor()
+		except Exception as e:
+			print(e)
+			try:
+				conn.close()
+			except:
+				pass
+			return(False, '*** in group.rename() | do not connect to .db: %s' %  context.project['assets_path'])
 		
-		table = self.group_t
+		table = studio.group_t
+		
+		#get tables list
+		tbl_name_list = []
+		string1 = 'select * from sqlite_master'
+		try:
+			c.execute(string1)
+		except Exception as e:
+			print(e)
+			conn.close()
+			return(False, '***1 in group.rename() | do not execute %s' % string1)
+		else:
+			l = c.fetchall()
+			for sql_type, sql_name, tbl_name, rootpage, sql in l:
+				if sql_type == 'table':
+					tbl_name_list.append(sql_name)
 		
 		# test old name exists
-		try:
-			str_ = 'select * from ' + table
-			c.execute(str_)
+		if table in tbl_name_list:
+			str_ = 'select * from %s' % table
+			try:
+				c.execute(str_)
+			except Exception as e:
+				print(e)
+				conn.close()
+				return(False, '***2 in group.rename() | \n do not execute %s' % str_)
+			
 			r = c.fetchall()
 			
 			names = []
 			for row in r:
 				names.append(row['name'])
 			
-			if not name in names:
+			if not old_name in names:
 				conn.close()
-				return(False, 'Old Name Not Exists!')
+				return(False, '***3 in group.rename() | \n Old Name Not Exists!')
 		
-		except:
+		else:
 			conn.close()
 			return(False, 'Not Table!')
 		
 						
 		# edit db
-		string = 'UPDATE ' +  table + ' SET  \"name\"  = ? WHERE \"name\" = \"' + name + '\"'
+		string = 'UPDATE ' +  table + ' SET  \"name\"  = ? WHERE \"name\" = \"' + old_name + '\"'
 				
 		data = (new_name,)
-		'''
-		print(string, data)
-		conn.close()
-		return(False, 'Be!')
-		'''
-		c.execute(string, data)
+		try:
+			c.execute(string, data)
+		except Exception as e:
+				print(e)
+				conn.close()
+				return(False, '***4 in group.rename() | \n do not execute %s' % string)
 		conn.commit()
 		conn.close()
 		
