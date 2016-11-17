@@ -4744,7 +4744,7 @@ class task(asset):
 						
 					for td in rows:
 						if td['activity'] == activity:
-							if td_dict[td['input']]['activity'] != activity:
+							if not dict(td).get('input') or td_dict[td['input']]['activity'] != activity:
 								final_tasks_list.append(td)
 			
 			else:
