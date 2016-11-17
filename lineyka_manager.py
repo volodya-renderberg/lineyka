@@ -6624,17 +6624,28 @@ class MainWindow(QtGui.QMainWindow):
 	
 	def tm_paste_image_from_clipboard(self, img_label):
 		rand  = hex(random.randint(0, 1000000000)).replace('0x', '')
-		img_path = os.path.join(self.db_chat.tmp_folder, ('tmp_image_' + rand + '.png')).replace('\\','/')
+		img_path = os.path.normpath(os.path.join(self.db_chat.tmp_folder, ('tmp_image_' + rand + '.png')))
 		
 		clipboard = QtGui.QApplication.clipboard()
 		img = clipboard.image()
 		if img:
 			img.save(img_path)
-			cmd = '\"' + self.db_chat.convert_exe + '\" \"' + img_path + '\" -resize 300 \"' + img_path + '\"'
+			cmd = '%s %s -resize 300 %s' % (os.path.normpath(self.db_chat.convert_exe), img_path, img_path)
+			cmd2 = '%s %s -resize 300x300 %s' % (os.path.normpath(self.db_chat.convert_exe), img_path, img_path)
+			cmd3 = '\"%s\" \"%s\" -resize 300 \"%s\"' % (os.path.normpath(self.db_chat.convert_exe), img_path, img_path)
+			print(cmd)
+			print(cmd2)
+			print(cmd3)
 			try:
 				os.system(cmd)
 			except:
-				return(False, 'in tm_paste_image_from_clipboard - problems with conversion resize.png')
+				try:
+					os.system(cmd2)
+				except:
+					try:
+						os.system(cmd3)
+					except:	
+						return(False, 'in tm_paste_image_from_clipboard - problems with conversion resize.png')
 		else:
 			self.message('Cannot Image!', 2)
 			return(False, 'Cannot Image!')
@@ -6660,15 +6671,23 @@ class MainWindow(QtGui.QMainWindow):
 		shutil.copyfile(window.img_path, save_path)
 		
 		# -- resize
-		#cmd = '\"' + self.db_chat.convert_exe + '\" \"' + save_path + '\" -resize 100 \"' + icon_path + '\"'
-		cmd = '\"' + self.db_chat.convert_exe + '\" \"' + window.img_path + '\" -resize 100 \"' + tmp_icon_path + '\"'
+		cmd = '%s %s -resize 100 %s' % (os.path.normpath(self.db_chat.convert_exe), window.img_path, tmp_icon_path)
+		cmd2 = '%s %s -resize 100x100 %s' % (os.path.normpath(self.db_chat.convert_exe), window.img_path, tmp_icon_path)
+		cmd3 = '\"%s\" \"%s\" -resize 100 \"%s\"' % (os.path.normpath(self.db_chat.convert_exe), window.img_path, tmp_icon_path)
 		try:
 			os.system(cmd)
-			shutil.copyfile(tmp_icon_path, icon_path)
 		except:
-			self.message('problems with conversion _icon.png', 2)
-			return(False, 'in tm_save_preview_image_action - problems with conversion resize.png')
-			
+			try:
+				os.system(cmd2)
+			except:
+				try:
+					os.system(cmd3)
+				except:
+					self.message('problems with conversion _icon.png', 2)
+					return(False, 'in tm_save_preview_image_action - problems with conversion resize.png')
+				
+		shutil.copyfile(tmp_icon_path, icon_path)
+		
 		# load to preview  image_label
 		image = QtGui.QImage(save_path)
 		self.myWidget.image_label.setPixmap(QtGui.QPixmap.fromImage(image))
