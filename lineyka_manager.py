@@ -4480,11 +4480,13 @@ class MainWindow(QtGui.QMainWindow):
 			
 		# get list removed tasks
 		list_removed_tasks = []
+		task_names = []
 		select_items = table2.selectedItems()
 		for item in select_items:
-			if item.task:
+			if item.task and not item.task['task_name'] in task_names:
 				list_removed_tasks.append(item.task)
-		
+				task_names.append(item.task['task_name'])
+
 		if len(list_removed_tasks) > 1:
 			self.message('Selected more than one task!', 2)
 			return
