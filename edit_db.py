@@ -4412,6 +4412,12 @@ class task(asset):
 		if not result[0]:
 			return(False, result[1])
 			
+		# -- publish
+		#result = lineyka_publish.publish().publish(project_name, task_data)
+		result = self.publish.publish(project_name, task_data)
+		if not result[0]:
+			return(False, result[1])
+			
 		# -- Connect to db
 		conn = sqlite3.connect(self.tasks_path, detect_types=sqlite3.PARSE_DECLTYPES|sqlite3.PARSE_COLNAMES)
 		conn.row_factory = sqlite3.Row
@@ -4433,12 +4439,6 @@ class task(asset):
 			conn.close()
 			return(False, 'in accept_task - Not Edit Table!')
 		'''	
-		# -- publish
-		#result = lineyka_publish.publish().publish(project_name, task_data)
-		result = self.publish.publish(project_name, task_data)
-		if not result[0]:
-			return(False, result[1])
-		
 		# -- change output statuses
 		result = self.this_change_to_end(project_name, task_data)
 		if not result[0]:
@@ -4448,6 +4448,12 @@ class task(asset):
 			
 	def readers_accept_task(self, project_name, task_data, nik_name):
 		result = self.get_project(project_name)
+		if not result[0]:
+			return(False, result[1])
+			
+		# -- publish
+		#result = lineyka_publish.publish().publish(project_name, task_data)
+		result = self.publish.publish(project_name, task_data)
 		if not result[0]:
 			return(False, result[1])
 			
@@ -4498,12 +4504,6 @@ class task(asset):
 			result = self.this_change_to_end(project_name, task_data)
 			if not result[0]:
 				return(False, result[1])
-		
-		# -- publish
-		#result = lineyka_publish.publish().publish(project_name, task_data)
-		result = self.publish.publish(project_name, task_data)
-		if not result[0]:
-			return(False, result[1])
 		
 		return(True, 'Ok')
 	
