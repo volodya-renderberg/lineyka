@@ -6050,7 +6050,7 @@ class MainWindow(QtGui.QMainWindow):
 		item = self.myWidget.task_manager_table.currentItem()
 		
 		# change task
-		ask = self.message(('Do you want to accept the task: ' + item.task['task_name'] + ' ?'), 0)
+		ask = self.message(('Do you want to accept the task: %s ?') % item.task['task_name'], 0)
 		if not ask:
 			return
 		
@@ -6070,7 +6070,7 @@ class MainWindow(QtGui.QMainWindow):
 		
 		if not result[0]:
 			self.message(result[1], 2)
-			return
+			#return #to reload the page in the accident with the publish!
 			
 		# reload table
 		self.tm_reload_task_list()
