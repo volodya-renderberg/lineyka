@@ -39,7 +39,7 @@ class G(object):
 	]
 	
 	not_used_extensions = [
-	'.blend','.tiff', '.ods', '.xcf'
+	'.blend','.tiff', '.ods', '.xcf', '.svg'
 	]
 
 class MainWindow(QtGui.QMainWindow):
