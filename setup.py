@@ -43,7 +43,7 @@ def linux_setup():
 	manager_exec = os.path.join(path_dir, 'lineyka_manager.py')
 	manager_icon = os.path.join(path_dir, 'manager_icon.png')
 	
-	cmd = 'chmod +x %s' % manager_exec
+	cmd = 'sudo chmod +x %s' % manager_exec
 	os.system(cmd)
 	
 	with open(save_path, 'w') as f:
@@ -55,7 +55,7 @@ def linux_setup():
 	user_exec = os.path.join(path_dir, 'lineyka_user.py')
 	user_icon = os.path.join(path_dir, 'user_icon.png')
 	
-	cmd = 'chmod +x %s' % user_exec
+	cmd = 'sudo chmod +x %s' % user_exec
 	os.system(cmd)
 	
 	with open(save_path, 'w') as f:

@@ -71,7 +71,8 @@ class lineyka_chat:
 		topics = None
 		result = G.MW.db_chat.read_the_chat(project_name, task_data['task_name'])
 		if not result[0]:
-			G.MW.message(result[1], 2)
+			#G.MW.message(result[1], 2)
+			pass
 		else:
 			topics = result[1]
 		

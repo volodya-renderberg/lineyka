@@ -6039,10 +6039,13 @@ class MainWindow(QtGui.QMainWindow):
 				
 		# open file
 		soft = self.db_studio.soft_data[task_data['extension']]
-		cmd = "\"" + soft + "\"  \"" + tmp_file_path + "\""
-		subprocess.Popen(cmd, shell = True)
-		
+		cmd = '\"%s\" \"%s\"' % (soft, tmp_file_path)
 		print(cmd)
+		print('$PATH:', os.environ['PATH'])
+		
+		subprocess.Popen(cmd, shell = True)
+		#os.system(cmd)
+
 		
 	# ---- accept task --------------
 	def tm_accept_task_action(self):
