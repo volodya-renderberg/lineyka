@@ -5373,7 +5373,7 @@ class MainWindow(QtGui.QMainWindow):
 		self.searchDialog.setLayout(v_layout)
 		
 		
-		headers = ['name', 'group', 'type']
+		headers = ['icon', 'name', 'group', 'type']
 		num_column = len(headers)
 		num_row = len(asset_list)
 		
@@ -5393,15 +5393,39 @@ class MainWindow(QtGui.QMainWindow):
 				if header == 'group':
 					newItem.setText(group_dict[row[header]]['name'])
 				else:
-					newItem.setText(row[header])
+					if header != 'icon':
+						newItem.setText(row[header])
 				
 				if header == 'name':
 					color = QtGui.QColor(self.asset_color)
 					brush = QtGui.QBrush(color)
 					newItem.setBackground(brush)
+					
+				elif header == 'icon':
+					# get img path
+					icon_path = os.path.join(self.db_asset.preview_img_path, (row['name'] + '_icon.png'))
+					# label
+					label = QtGui.QLabel()
+					
+					if os.path.exists(icon_path):
+						# img
+						image = QtGui.QImage(icon_path)
+						pix = QtGui.QPixmap(image)
+						label.setPixmap(pix)
+						label.show()
+					else:
+						label.setText('no image')
+					
+					table.setCellWidget(i, j, label)
 				
-				table.setItem(i, j, newItem)
+				if header != 'icon':
+					table.setItem(i, j, newItem)
+				
+				#table.setItem(i, j, newItem)
 				#print(i,j)
+				
+		table.resizeRowsToContents()
+		table.resizeColumnsToContents()
 		
 		self.searchDialog.show()
 		
