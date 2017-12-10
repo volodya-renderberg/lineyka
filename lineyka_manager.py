@@ -19,6 +19,9 @@ import edit_db as db
 
 # sudo chmod +x "/home/vofka/Yandex.Disk/Lineyka/lineyka_manager.py"
 
+class G(object):
+	pass
+
 class MainWindow(QtGui.QMainWindow):
 	def __init__(self, parent = None):
 		# get Path
@@ -5244,9 +5247,13 @@ class MainWindow(QtGui.QMainWindow):
 			
 			# fill group list
 			group_list = []
+			group_id_list = []
 			for row in result[1]:
 				group_list.append(row['name'])
+				group_id_list.append(row['id'])
 			items = ['-- select group --'] + group_list
+			G.id_group_items = [''] + group_id_list
+			
 			self.myWidget.task_manager_comboBox_3.setVisible(True)
 			self.myWidget.task_manager_comboBox_3.clear()
 			self.myWidget.task_manager_comboBox_3.addItems(items)
@@ -5254,7 +5261,8 @@ class MainWindow(QtGui.QMainWindow):
 				self.myWidget.task_manager_comboBox_3.activated[str].disconnect()
 			except:
 				pass
-			self.myWidget.task_manager_comboBox_3.activated[str].connect(self.tm_load_tasks_list)
+			#self.myWidget.task_manager_comboBox_3.activated[str].connect(self.tm_load_tasks_list)
+			self.myWidget.task_manager_comboBox_3.activated[int].connect(self.tm_load_tasks_list)
 			# unhide asset types box
 			self.myWidget.task_manager_comboBox_5.setVisible(True)
 			
@@ -5294,11 +5302,15 @@ class MainWindow(QtGui.QMainWindow):
 		# fill combobox
 		if result[0]:
 			group_list = []
+			group_id_list = []
 			for row in result[1]:
 				if row['series'] == series_id or series == '-- all series --':
 					group_list.append(row['name'])
+					group_id_list.append(row['id'])
 									
 			items = ['-- select group --'] + group_list
+			G.id_group_items = [''] + group_id_list
+			
 			self.myWidget.task_manager_comboBox_3.setVisible(True)
 			self.myWidget.task_manager_comboBox_3.clear()
 			self.myWidget.task_manager_comboBox_3.addItems(items)
@@ -5307,14 +5319,17 @@ class MainWindow(QtGui.QMainWindow):
 	def tm_reload_task_list(self):
 		# get current group
 		group_name = self.myWidget.task_manager_comboBox_3.currentText()
-		self.tm_load_tasks_list(group_name)
+		index = self.myWidget.task_manager_comboBox_3.currentIndex()
+		
+		self.tm_load_tasks_list(index)
 		
 	def tm_reload_task_list_by_search(self, *args):
 		# get current group
 		group_name = self.myWidget.task_manager_comboBox_3.currentText()
+		index = self.myWidget.task_manager_comboBox_3.currentIndex()
 		search = self.myWidget.local_search_qline.text()
 		#self.message(('Reload Task list: ' + group_name + ' ' + search), 0)
-		self.tm_load_tasks_list(group_name, search = search)
+		self.tm_load_tasks_list(index, search = search)
 		
 	def tm_reload_task_list_by_global_search_ui(self):
 		# Get Data
@@ -5408,11 +5423,14 @@ class MainWindow(QtGui.QMainWindow):
 		
 		self.close_window(window)
 			
-	def tm_load_tasks_list(self, group_name, search = False):
+	def tm_load_tasks_list(self, index, search = False):
 		search = self.myWidget.local_search_qline.text()
 		self.myWidget.button_area.setVisible(False)
+		
+		group_id = G.id_group_items[index]
 				
-		if group_name == '-- select group --':
+		#if group_name == '-- select group --':
+		if not group_id:
 			self.myWidget.button_area.setVisible(False)
 			self.clear_table(table = self.myWidget.task_manager_table)
 			return
@@ -5421,7 +5439,7 @@ class MainWindow(QtGui.QMainWindow):
 			
 		# get self.current_group 
 		#copy = db.group()
-		result = self.db_group.get_by_name(self.current_project, group_name)
+		result = self.db_group.get_by_id(self.current_project, group_id)
 		if not result[0]:
 			self.message(result[1], 3)
 			return
