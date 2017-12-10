@@ -44,7 +44,11 @@ def linux_setup():
 	manager_icon = os.path.join(path_dir, 'manager_icon.png')
 	
 	cmd = 'sudo chmod +x %s' % manager_exec
-	os.system(cmd)
+	alternative_cmd = 'chmod +x %s' % manager_exec
+	try:
+        os.system(cmd)
+    except:
+        os.system(alternative_cmd)
 	
 	with open(save_path, 'w') as f:
 		f.write(linux_manager_file_data % (manager_exec, manager_icon, path_dir))
@@ -56,7 +60,11 @@ def linux_setup():
 	user_icon = os.path.join(path_dir, 'user_icon.png')
 	
 	cmd = 'sudo chmod +x %s' % user_exec
-	os.system(cmd)
+	alternative_cmd = 'chmod +x %s' % user_exec
+	try:
+        os.system(cmd)
+    except:
+        os.system(alternative_cmd)
 	
 	with open(save_path, 'w') as f:
 		f.write(linux_artist_file_data % (user_exec, user_icon, path_dir))
