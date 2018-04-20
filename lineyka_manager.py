@@ -5447,8 +5447,9 @@ class MainWindow(QtGui.QMainWindow):
 		
 		self.close_window(window)
 			
-	def tm_load_tasks_list(self, index, search = False):
-		search = self.myWidget.local_search_qline.text()
+	def tm_load_tasks_list(self, index, search = False): #? может index тут определять?
+		if search:
+			search = self.myWidget.local_search_qline.text().lower().replace(' ', '_')
 		self.myWidget.button_area.setVisible(False)
 		
 		group_id = G.id_group_items[index]
@@ -5505,11 +5506,11 @@ class MainWindow(QtGui.QMainWindow):
 		result = self.db_chat.get_list_by_group(self.current_project, self.current_group['id'])
 		asset_list = []
 		if result[0]:
-			if not search:
+			if not search or search in self.db_chat.task_status: # пустая строка поиска либо в строке поиска статус задачи
 				asset_list = result[1]
 			else:
 				for row in result[1]:
-					if search.lower() in row['name'].lower():
+					if search in row['name'].lower():
 						asset_list.append(row)
 		else:
 			self.message(result[1], 2)
@@ -5528,24 +5529,33 @@ class MainWindow(QtGui.QMainWindow):
 		# create tasks rows
 		num_column = []
 		self.tasks_rows = {}
+		fin_asset_list = []
 		for asset_ in asset_list:
-			self.tasks_rows[asset_['name']] = []
+			#self.tasks_rows[asset_['name']] = []
 			# -- get task list
 			task_list = []
-			result = self.db_chat.get_list(self.current_project, asset_['id'])
+			if search and search in self.db_chat.task_status:
+				result = self.db_chat.get_list(self.current_project, asset_['id'], search)
+				print(result[1])
+			else:
+				result = self.db_chat.get_list(self.current_project, asset_['id'])
 			if result[0]:
-				task_list = result[1]
+				if not result[1]: # в смысле вернулся пустой список
+					continue
+				else:
+					task_list = result[1]
+					fin_asset_list.append(asset_)
 			else:
 				#print(result[1])
 				continue
-			
+			self.tasks_rows[asset_['name']] = []
 			# -- -- tasks labels
 			len_ = len(task_list)
 			for task_ in task_list:
 				if task_['task_type'] == 'service':
 					len_ = len_ - 1
 					continue
-					self.tasks_rows[asset_['name']].append(task_)
+					#self.tasks_rows[asset_['name']].append(task_)
 				elif not task_['workroom'] in current_wr_id:
 					len_ = len_ - 1
 					continue
@@ -5557,7 +5567,8 @@ class MainWindow(QtGui.QMainWindow):
 		else:
 			num_column = 0
 		
-		num_row = len(asset_list)
+		#num_row = len(asset_list)
+		num_row = len(fin_asset_list)
 		
 		print(num_column, num_row)
 		

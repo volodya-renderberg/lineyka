@@ -3598,7 +3598,7 @@ class task(asset):
 				
 		return(True, 'Ok')
 		
-	def get_list(self, project_name, asset_id):
+	def get_list(self, project_name, asset_id, task_status = False):
 		task_list = []
 		
 		# Other errors test
@@ -3614,12 +3614,16 @@ class task(asset):
 		# Exists table
 		table = '\"' + asset_id + ':' + self.tasks_t + '\"'
 		try:
-			str_ = 'select * from ' + table
+			if not task_status:
+				str_ = 'select * from ' + table
+			else:
+				str_ = 'select * from  %s where status=\"%s\"' % (table, task_status.lower())
 			c.execute(str_)
 			task_list = c.fetchall()
-		except:
+		except Exception as e:
 			conn.close()
-			return(False, 'Not Table!')
+			#return(False, 'Not Table!')
+			return(False, e)
 		
 		conn.close()
 		return(True, task_list)
