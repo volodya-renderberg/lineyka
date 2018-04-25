@@ -5118,6 +5118,7 @@ class MainWindow(QtGui.QMainWindow):
 		self.myWidget.to_rework_button.clicked.connect(self.tm_rework_action)
 		self.myWidget.return_a_job_button.clicked.connect(self.tm_return_a_job_action)
 		self.myWidget.look_file_button.clicked.connect(self.tm_look_file_action)
+		self.myWidget.look_version_file_button.clicked.connect(self.tm_look_version_file_ui)
 		self.myWidget.add_task_button.clicked.connect(self.tm_add_task_ui)
 		self.myWidget.add_task_button.setText('Add Single Task')
 		self.myWidget.edit_readers_button.clicked.connect(self.tm_edit_readers_ui)
@@ -6098,6 +6099,110 @@ class MainWindow(QtGui.QMainWindow):
 		
 		subprocess.Popen(cmd, shell = True)
 		#os.system(cmd)
+		
+		
+	def tm_look_version_file_ui(self):
+		item = self.myWidget.task_manager_table.currentItem()
+		self.current_task = item.task
+		
+		#get versions_list
+		result = self.db_log.get_push_logs(self.current_project, self.current_task)
+		if not result[0]:
+			G.versions_list = []
+			self.message('Not Versions of Activity!', 2)
+			return
+		else:
+			G.versions_list = result[1]
+			
+		print(len(G.versions_list))
+		
+		# make widjet
+		ui_path = self.select_from_list_dialog_path
+		# widget
+		loader = QtUiTools.QUiLoader()
+		file = QtCore.QFile(ui_path)
+		#file.open(QtCore.QFile.ReadOnly)
+		window = self.lookVersionDialog = loader.load(file, self)
+		file.close()
+		
+		# set modal window
+		window.setWindowModality(QtCore.Qt.WindowModal)
+		window.setAttribute(QtCore.Qt.WA_DeleteOnClose, True)
+		
+		# edit Widget
+		window.select_from_list_cansel_button.clicked.connect(partial(self.close_window, window))
+		window.setWindowTitle('Look Version')
+		window.select_from_list_apply_button.clicked.connect(partial(self.tm_look_version_file_action, window))
+				
+		# make table
+		headers = []
+		for key in self.db_log.logs_keys:
+			headers.append(key[0])
+		
+		window.select_from_list_data_list_table.setColumnCount(len(headers))
+		window.select_from_list_data_list_table.setRowCount(len(G.versions_list))
+		window.select_from_list_data_list_table.setHorizontalHeaderLabels(headers)
+		
+		# selection mode   
+		window.select_from_list_data_list_table.setSortingEnabled(True)
+		window.select_from_list_data_list_table.setSelectionBehavior(QtGui.QAbstractItemView.SelectRows)
+		window.select_from_list_data_list_table.setSelectionMode(QtGui.QAbstractItemView.SingleSelection)
+		
+		# make tabel
+		for i,log in enumerate(G.versions_list):
+			#print(log)
+			for j,key in enumerate(headers):
+				newItem = QtGui.QTableWidgetItem()
+				newItem.setText(log[key])
+				newItem.log = False
+								
+				if key == 'version':
+					newItem.log = log
+					
+				window.select_from_list_data_list_table.setItem(i, j, newItem)
+				
+		window.show()
+		
+		
+	def tm_look_version_file_action(self, window):
+		list_items = []
+		select_items = window.select_from_list_data_list_table.selectedItems()
+		for item in select_items:
+			if item.log:
+				list_items.append(item.log)
+				
+		if not list_items:
+			self.message('Not Selected Versions!', 2)
+			return
+			
+		version = list_items[0]['version']
+		
+		# get file_path
+		result = self.db_chat.get_version_file_path(self.current_project, self.current_task, version)
+		if not result[0]:
+			print("*"*50, result[1])
+			self.message('No read file path of this version! Look console', 2)
+			return(False, result[1])
+			
+		open_path = result[1]
+		
+		if not open_path:
+			return(False, 'Not Saved Version!')
+			
+		# get tmp_file_path
+		task_data = self.current_task
+		tmp_path = self.db_chat.tmp_folder
+		tmp_file_name = task_data['task_name'].replace(':','_', 2) + '_' + hex(random.randint(0, 1000000000)).replace('0x', '') + task_data['extension']
+		tmp_file_path = os.path.join(tmp_path, tmp_file_name)
+		
+		# copy to tmp
+		shutil.copyfile(open_path, tmp_file_path)
+				
+		# open file
+		soft = self.db_studio.soft_data[task_data['extension']]
+		#cmd = soft + " \"" + tmp_file_path + "\""
+		cmd = "\"" + soft + "\"  \"" + tmp_file_path + "\""
+		subprocess.Popen(cmd, shell = True)
 
 		
 	# ---- accept task --------------
