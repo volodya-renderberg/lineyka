@@ -5447,9 +5447,9 @@ class MainWindow(QtGui.QMainWindow):
 		
 		self.close_window(window)
 			
-	def tm_load_tasks_list(self, index, search = False): #? может index тут определять?
-		if search:
-			search = self.myWidget.local_search_qline.text().lower().replace(' ', '_')
+	def tm_load_tasks_list(self, index, search = False): #? может index тут определять? параметр search - возможно тоже лишний
+		#if search:
+		search = self.myWidget.local_search_qline.text().lower().replace(' ', '_')
 		self.myWidget.button_area.setVisible(False)
 		
 		group_id = G.id_group_items[index]
