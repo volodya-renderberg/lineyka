@@ -3420,7 +3420,7 @@ class MainWindow(QtGui.QMainWindow):
 			for i in range(0, self.myWidget.task_manager_comboBox_1.model().rowCount()):
 				if self.myWidget.task_manager_comboBox_1.itemText(i) == self.current_project:
 					self.myWidget.task_manager_comboBox_1.setCurrentIndex(i)
-					#self.tm_reload_task_list_by_search()
+					#self.tm_reload_task_list()
 					break
 			
 			#self.myWidget.global_search_qline.setText(asset_data['name'])
@@ -3463,7 +3463,7 @@ class MainWindow(QtGui.QMainWindow):
 				for i in range(0, self.myWidget.task_manager_comboBox_1.model().rowCount()):
 					if self.myWidget.task_manager_comboBox_1.itemText(i) == self.current_project:
 						self.myWidget.task_manager_comboBox_1.setCurrentIndex(i)
-						#self.tm_reload_task_list_by_search()
+						#self.tm_reload_task_list()
 						break
 					
 				self.tm_reload_task_list_by_global_search_action(None, group_dict, item)
@@ -3501,7 +3501,7 @@ class MainWindow(QtGui.QMainWindow):
 				for i in range(0, self.myWidget.task_manager_comboBox_1.model().rowCount()):
 					if self.myWidget.task_manager_comboBox_1.itemText(i) == self.current_project:
 						self.myWidget.task_manager_comboBox_1.setCurrentIndex(i)
-						#self.tm_reload_task_list_by_search()
+						#self.tm_reload_task_list()
 						break
 					
 				self.tm_reload_task_list_by_global_search_action(None, group_dict, item)
@@ -3906,7 +3906,7 @@ class MainWindow(QtGui.QMainWindow):
 		for i in range(0, self.myWidget.set_comboBox_01.model().rowCount()):
 			if self.myWidget.set_comboBox_01.itemText(i) == new_group_name:
 				self.myWidget.set_comboBox_01.setCurrentIndex(i)
-				#self.tm_reload_task_list_by_search()
+				#self.tm_reload_task_list()
 				break
 		
 		self.fill_group_content_list(self.myWidget, self.myWidget.studio_editor_table, new_group_name)
@@ -5026,13 +5026,20 @@ class MainWindow(QtGui.QMainWindow):
 		self.myWidget.task_manager_comboBox_5.addItems((['-all types-'] + self.db_studio.asset_types))
 		self.myWidget.task_manager_comboBox_5.activated[str].connect(self.tm_reload_group_list_by_type)
 		self.myWidget.local_search_qline.setVisible(False)
-		self.myWidget.local_search_qline.returnPressed.connect(self.tm_reload_task_list_by_search)
+		self.myWidget.local_search_qline.returnPressed.connect(self.tm_reload_task_list)
 		self.myWidget.global_search_qline.setVisible(False)
 		self.myWidget.global_search_qline.returnPressed.connect(self.tm_reload_task_list_by_global_search_ui)
 		
 		self.myWidget.button_area.setVisible(False)
 		
 		# ----------- POPUP MENU --------------------------
+		# LOCAL SEARCH
+		self.myWidget.local_search_qline.setContextMenuPolicy( QtCore.Qt.ActionsContextMenu )
+		for status in self.db_chat.task_status:
+			addgrup_action = QtGui.QAction( status, self.myWidget)
+			addgrup_action.triggered.connect(partial(self.tm_reload_task_list_by_status, status))
+			self.myWidget.local_search_qline.addAction( addgrup_action )
+		
 		# ACTIVITY
 		self.myWidget.tm_data_label_2.setContextMenuPolicy( QtCore.Qt.ActionsContextMenu )
 		addgrup_action = QtGui.QAction( 'change Activity', self.myWidget)
@@ -5243,8 +5250,8 @@ class MainWindow(QtGui.QMainWindow):
 				self.myWidget.task_manager_comboBox_3.activated[str].disconnect()
 			except:
 				pass
-			#self.myWidget.task_manager_comboBox_3.activated[str].connect(self.tm_load_tasks_list)
-			self.myWidget.task_manager_comboBox_3.activated[int].connect(self.tm_load_tasks_list)
+			#self.myWidget.task_manager_comboBox_3.activated[str].connect(self.tm_reload_task_list)
+			self.myWidget.task_manager_comboBox_3.activated[int].connect(self.tm_reload_task_list)
 			# unhide asset types box
 			self.myWidget.task_manager_comboBox_5.setVisible(True)
 			
@@ -5298,21 +5305,7 @@ class MainWindow(QtGui.QMainWindow):
 			self.myWidget.task_manager_comboBox_3.addItems(items)
 	
 	# ---------- RELOAD TASK_ LIST ----------------------------------------------
-	def tm_reload_task_list(self):
-		# get current group
-		group_name = self.myWidget.task_manager_comboBox_3.currentText()
-		index = self.myWidget.task_manager_comboBox_3.currentIndex()
-		
-		self.tm_load_tasks_list(index)
-		
-	def tm_reload_task_list_by_search(self, *args):
-		# get current group
-		group_name = self.myWidget.task_manager_comboBox_3.currentText()
-		index = self.myWidget.task_manager_comboBox_3.currentIndex()
-		search = self.myWidget.local_search_qline.text()
-		#self.message(('Reload Task list: ' + group_name + ' ' + search), 0)
-		self.tm_load_tasks_list(index, search = search)
-		
+	
 	def tm_reload_task_list_by_global_search_ui(self):
 		# Get Data
 		# -- get search
@@ -5424,15 +5417,23 @@ class MainWindow(QtGui.QMainWindow):
 		for i in range(0, self.myWidget.task_manager_comboBox_3.model().rowCount()):
 			if self.myWidget.task_manager_comboBox_3.itemText(i) == group_dict[asset_data['group']]['name']:
 				self.myWidget.task_manager_comboBox_3.setCurrentIndex(i)
-				self.tm_reload_task_list_by_search()
+				self.tm_reload_task_list()
 				break
 		
 		self.close_window(window)
-			
-	def tm_load_tasks_list(self, index, search = False): #? может index тут определять? параметр search - возможно тоже лишний
+		
+	def tm_reload_task_list_by_status(self, status):
+		self.myWidget.local_search_qline.setText(status)
+		self.tm_reload_task_list()
+		
+	def tm_reload_task_list(self, *args):
 		#if search:
+		group_name = self.myWidget.task_manager_comboBox_3.currentText()
+		index = self.myWidget.task_manager_comboBox_3.currentIndex()
 		search = self.myWidget.local_search_qline.text().lower().replace(' ', '_')
 		self.myWidget.button_area.setVisible(False)
+		
+		SEARCH_IDENTIFIERS = ('#','@')
 		
 		group_id = G.id_group_items[index]
 				
