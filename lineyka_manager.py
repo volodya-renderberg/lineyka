@@ -2890,7 +2890,7 @@ class MainWindow(QtGui.QMainWindow):
 		self.clear_table()
 		project = self.myWidget.set_comboBox_01.currentText()
 		self.fill_group_table(table, project)
-		print('reload group list')
+		#print('reload group list')
 		
 	def new_group_ui(self):
 		# get project
@@ -3012,29 +3012,9 @@ class MainWindow(QtGui.QMainWindow):
 		if project == '-- select project --':
 			self.message('Not Project!', 3)
 			return
-			
-		# get old series
-		column = table.columnCount()
-		name_column = None
-		for i in range(0, column):
-			head_item = table.horizontalHeaderItem(i)
-			if head_item.text() == 'name':
-				name_column = i
-				break
 		
-		# -- get selected rows
-		selected = table.selectedItems()
-		lists = []
-		for item in selected:
-			if item.column() == name_column:
-				lists.append(item.text())
-				
-		if lists == []:
-			self.message('Not Selected Series', 2)
-			return
-		
-		# -- get name
-		name = lists[0]
+		name = table.selectedItems()[0].group['name']
+		group_id = table.selectedItems()[0].group['id']
 		
 		# widget
 		loader = QtUiTools.QUiLoader()
@@ -3048,7 +3028,7 @@ class MainWindow(QtGui.QMainWindow):
 		window.new_dialog_label.setText('New Name of Group:')
 		window.new_dialog_name.setText(name)
 		window.new_dialog_cancel.clicked.connect(partial(self.close_window, window))
-		window.new_dialog_ok.clicked.connect(partial(self.rename_group_action, window, name, project))
+		window.new_dialog_ok.clicked.connect(partial(self.rename_group_action, window, group_id, project))
 				
 		# set modal window
 		window.setWindowModality(QtCore.Qt.WindowModal)
@@ -3058,7 +3038,7 @@ class MainWindow(QtGui.QMainWindow):
 		
 		print('rename group ui')
 		
-	def rename_group_action(self, window, old_name, project):
+	def rename_group_action(self, window, group_id, project):
 		# get name
 		new_name = window.new_dialog_name.text()
 				
@@ -3066,11 +3046,10 @@ class MainWindow(QtGui.QMainWindow):
 			self.message('Not Name!', 3)
 			return
 			
-		#copy = db.group()
-		#result = copy.rename(project, old_name, new_name)
-		result = self.db_group.rename(project, old_name, new_name)
+		result = self.db_group.rename(project, group_id, new_name)
 		if not result[0]:
-			self.message(result[1], 2)
+			self.message('Could not rename the group, see details in the console', 2)
+			print('*'*25, result[1])
 			return
 		
 		self.close_window(window)
@@ -3156,7 +3135,7 @@ class MainWindow(QtGui.QMainWindow):
 		
 	def edit_ui_to_group_content_editor(self, table):
 		#self.current_group = None
-		
+		'''
 		# get group
 		# -- get num 'name' column
 		column = table.columnCount()
@@ -3177,9 +3156,10 @@ class MainWindow(QtGui.QMainWindow):
 		if lists == []:
 			self.message('Not Selected Group', 2)
 			return
-		
+		'''
 		# -- get group
-		group = lists[0]
+		#group = lists[0]
+		group = self.current_group['name']
 				
 		window = self.myWidget
 		table = window.studio_editor_table
@@ -3200,7 +3180,8 @@ class MainWindow(QtGui.QMainWindow):
 		button10 = window.studio_butt_10
 		
 		# edit label
-		window.studio_editor_label.setText(('\"' + self.current_project + '\" / \"' + group + '\" / Assets'))
+		label_trext = '\"%s\" / \"%s\" / Assets' % (self.current_project, self.current_group['name'])
+		window.studio_editor_label.setText(label_trext)
 				
 		# edit button
 		button01.setVisible(True)

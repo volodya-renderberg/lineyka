@@ -7049,7 +7049,7 @@ class group(project):
 			
 		return(True, data)
 	
-	def rename(self, project, name, new_name):
+	def rename(self, project, group_id, new_name):
 		result = self.get_project(project)
 		if not result[0]:
 			return(False, (result[1] + ' <in rename>'))
@@ -7061,38 +7061,17 @@ class group(project):
 		
 		table = self.group_t
 		
-		# test old name exists
-		try:
-			str_ = 'select * from ' + table
-			c.execute(str_)
-			r = c.fetchall()
-			
-			names = []
-			for row in r:
-				names.append(row['name'])
-			
-			if not name in names:
-				conn.close()
-				return(False, 'Old Name Not Exists!')
-		
-		except:
-			conn.close()
-			return(False, 'Not Table!')
-		
-						
 		# edit db
-		string = 'UPDATE ' +  table + ' SET  \"name\"  = ? WHERE \"name\" = \"' + name + '\"'
-				
-		data = (new_name,)
-		'''
-		print(string, data)
-		conn.close()
-		return(False, 'Be!')
-		'''
-		c.execute(string, data)
-		conn.commit()
-		conn.close()
-		
+		string = 'UPDATE ' +  table + ' SET  \"name\"  = ? WHERE \"id\" = ?'
+		data = (new_name, group_id)
+		try:
+			c.execute(string, data)
+		except Exception as e:
+			conn.close()
+			return(False, e)
+		else:
+			conn.commit()
+			conn.close()
 		return(True, 'ok')
 		
 	def edit_comment_by_name(self, project, name, comment):
