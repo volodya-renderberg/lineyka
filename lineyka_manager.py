@@ -2747,7 +2747,7 @@ class MainWindow(QtGui.QMainWindow):
 			button05.clicked.disconnect()
 		except:
 			pass
-		button05.clicked.connect(partial(self.pre_edit_ui_to_group_content_editor, table))
+		button05.clicked.connect(partial(self.edit_ui_to_group_content_editor))
 		button06.setVisible(False)
 		button07.setVisible(False)
 		button08.setVisible(False)
@@ -2878,6 +2878,15 @@ class MainWindow(QtGui.QMainWindow):
 				newItem.group = data
 				table.setItem(i, j, newItem)
 				
+		# disconnect table
+		try:
+			self.myWidget.studio_editor_table.itemDoubleClicked.disconnect()
+		except:
+			pass
+		# connect table
+		#self.myWidget.studio_editor_table.itemClicked.connect(self.set_context_group)
+		self.myWidget.studio_editor_table.itemDoubleClicked.connect(self.edit_ui_to_group_content_editor)
+				
 		#  edit label
 		self.myWidget.studio_editor_label.setText(('Group Editor / \"' + project + '\"'))
 		
@@ -2885,6 +2894,9 @@ class MainWindow(QtGui.QMainWindow):
 		table.resizeColumnsToContents()
 		
 		print('fill group table')
+		
+	def set_context_group(self, item):
+		self.current_group = item.group
 		
 	def reload_group_list(self, table):
 		self.clear_table()
@@ -3127,40 +3139,11 @@ class MainWindow(QtGui.QMainWindow):
 		self.fill_group_table(self.myWidget.studio_editor_table, project)
 		print('edit comment group action')
 		
-	# ******************* ASSET EDITOR 
+	# ******************* ASSET EDITOR
 		
-	def pre_edit_ui_to_group_content_editor(self, table):
-		self.current_group = table.currentItem().group
-		self.edit_ui_to_group_content_editor(table)
+	def edit_ui_to_group_content_editor(self, *args):
+		self.current_group = args[0].group
 		
-	def edit_ui_to_group_content_editor(self, table):
-		#self.current_group = None
-		'''
-		# get group
-		# -- get num 'name' column
-		column = table.columnCount()
-		name_column = None
-		for i in range(0, column):
-			head_item = table.horizontalHeaderItem(i)
-			if head_item.text() == 'name':
-				name_column = i
-				break
-		
-		# -- get selected rows
-		selected = table.selectedItems()
-		lists = []
-		for item in selected:
-			if item.column() == name_column:
-				lists.append(item.text())
-				
-		if lists == []:
-			self.message('Not Selected Group', 2)
-			return
-		'''
-		# -- get group
-		#group = lists[0]
-		group = self.current_group['name']
-				
 		window = self.myWidget
 		table = window.studio_editor_table
 		
@@ -3255,9 +3238,7 @@ class MainWindow(QtGui.QMainWindow):
 		button10.setVisible(False)
 		
 		# -- get group list
-		#copy = db.group()
 		groups = []
-		#rows = copy.get_list(self.current_project)
 		rows = self.db_group.get_list(self.current_project)
 		if rows[0]:
 			for row in rows[1]:
@@ -3267,7 +3248,7 @@ class MainWindow(QtGui.QMainWindow):
 		
 		# edit combobox
 		#groups = ['-- select group --'] + groups
-		index = groups.index(group)
+		index = groups.index(self.current_group['name'])
 		print('index: ', index)
 		window.set_comboBox_01.setVisible(True)
 		window.set_comboBox_01.clear()
@@ -3292,7 +3273,7 @@ class MainWindow(QtGui.QMainWindow):
 		table.setSelectionMode(QtGui.QAbstractItemView.SingleSelection)
 		
 		self.clear_table()
-		self.fill_group_content_list(window, table, group)
+		self.fill_group_content_list(window, table, self.current_group['name'])
 		
 		print('edit ui to group content editor')
 		
