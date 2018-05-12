@@ -2747,7 +2747,7 @@ class MainWindow(QtGui.QMainWindow):
 			button05.clicked.disconnect()
 		except:
 			pass
-		button05.clicked.connect(partial(self.edit_ui_to_group_content_editor))
+		button05.clicked.connect(partial(self.pre_edit_ui_to_group_content_editor))
 		button06.setVisible(False)
 		button07.setVisible(False)
 		button08.setVisible(False)
@@ -3140,6 +3140,10 @@ class MainWindow(QtGui.QMainWindow):
 		print('edit comment group action')
 		
 	# ******************* ASSET EDITOR
+	
+	def pre_edit_ui_to_group_content_editor(self, *args):
+		item = self.myWidget.studio_editor_table.currentItem()
+		self.edit_ui_to_group_content_editor(item)
 		
 	def edit_ui_to_group_content_editor(self, *args):
 		self.current_group = args[0].group
