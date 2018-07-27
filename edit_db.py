@@ -17,261 +17,259 @@ except:
 
 class studio:
 	'''
-	self.set_studio(path) - 
-	
-	self.set_tmp_dir(path) - 
-	
-	self.get_studio() - 	
+	@classmethod get_studio()
+	@classmethod make_init_file()
+	@classmethod get_list_projects()
 	'''
-	def __init__(self):
-		# 
-		self.farme_offset = 100
-		# studio
-		self.studio_folder = False
-		self.tmp_folder = False
-		self.convert_exe = False
-		self.init_path = False
-		self.set_path = False
-		self.share_dir = False
-		self.projects_path = False  # path to .projects.db
-		self.set_of_tasks_path = False  # path to .set_of_tasks.json
-		self.artists_path = False # path to .artists.db
-		self.workroom_path = False # path to .workroom_db
-		self.statistic_path = False # path to .statistic.db
-		self.list_projects = {} # a list of existing projects
-		self.list_active_projects = []
-		
-		self.extensions = ['.blend', '.ma', '.tiff', '.ntp']
-		self.setting_data = {
-		'extension': {
-			'.tiff':'krita',
-			'.blend': 'blender',
-			'.ntp': 'natron',
-			'.ma': 'maya',
-			'.ods':'libreoffice',
-			}
+	# 
+	farme_offset = 100
+	# studio
+	studio_folder = False
+	tmp_folder = False
+	convert_exe = False
+	init_path = False
+	set_path = False
+	share_dir = False
+	projects_path = False  # path to .projects.db
+	set_of_tasks_path = False  # path to .set_of_tasks.json
+	artists_path = False # path to .artists.db
+	workroom_path = False # path to .workroom_db
+	statistic_path = False # path to .statistic.db
+	list_projects = {} # a list of existing projects
+	list_active_projects = []
+	
+	extensions = ['.blend', '.ma', '.tiff', '.ntp']
+	setting_data = {
+	'extension': {
+		'.tiff':'krita',
+		'.blend': 'blender',
+		'.ntp': 'natron',
+		'.ma': 'maya',
+		'.ods':'libreoffice',
 		}
-		
-		self.publish_folder_name = 'publish'
-		
-		self.soft_data = None
-		
-		self.priority = ['normal', 'high', 'top', 'ultra']
-		
-		self.user_levels = ('user', 'extend_user', 'manager', 'root')
-		self.manager_levels = ('manager', 'root')
+	}
+	
+	publish_folder_name = 'publish'
+	
+	soft_data = None
+	
+	priority = ['normal', 'high', 'top', 'ultra']
+	
+	user_levels = ('user', 'extend_user', 'manager', 'root')
+	manager_levels = ('manager', 'root')
 
-		self.task_status = ('null','ready', 'ready_to_send', 'work', 'work_to_outsorce', 'pause', 'recast', 'checking', 'done', 'close')
-		self.working_statuses = ('ready', 'ready_to_send', 'work', 'work_to_outsorce', 'pause', 'recast')
-		self.end_statuses = ('done', 'close')
-		
-		self.color_status = {
-		'null':(0.451000005, 0.451000005, 0.451000005),
-		#'ready':(0.7627863884, 0, 1),
-		'ready':(0.826, 0.249, 1),
-		'ready_to_send':(0.9367088675, 0.2608556151, 0.4905878305),
-		'work':(0.520749867, 0.7143493295, 0.8227847815),
-		'work_to_outsorce':(0.2161512673, 0.5213058591, 0.8987341523),
-		#'pause':(0.3417721391, 0.2282493114, 0.1557442695),
-		'pause':(0.670, 0.539, 0.827),
-		'recast':(0.8481012583, 0.1967110634, 0.1502964497),
-		'checking':(1, 0.5872552395, 0.2531645298),
-		'done':(0.175, 0.752, 0.113),
-		#'close':(0.1645569652, 0.08450711519, 0.02499599569)
-		'close':(0.613, 0.373, 0.195)
+	task_status = ('null','ready', 'ready_to_send', 'work', 'work_to_outsorce', 'pause', 'recast', 'checking', 'done', 'close')
+	working_statuses = ('ready', 'ready_to_send', 'work', 'work_to_outsorce', 'pause', 'recast')
+	end_statuses = ('done', 'close')
+	
+	color_status = {
+	'null':(0.451000005, 0.451000005, 0.451000005),
+	#'ready':(0.7627863884, 0, 1),
+	'ready':(0.826, 0.249, 1),
+	'ready_to_send':(0.9367088675, 0.2608556151, 0.4905878305),
+	'work':(0.520749867, 0.7143493295, 0.8227847815),
+	'work_to_outsorce':(0.2161512673, 0.5213058591, 0.8987341523),
+	#'pause':(0.3417721391, 0.2282493114, 0.1557442695),
+	'pause':(0.670, 0.539, 0.827),
+	'recast':(0.8481012583, 0.1967110634, 0.1502964497),
+	'checking':(1, 0.5872552395, 0.2531645298),
+	'done':(0.175, 0.752, 0.113),
+	#'close':(0.1645569652, 0.08450711519, 0.02499599569)
+	'close':(0.613, 0.373, 0.195)
+	}
+	
+	task_types = [
+	# -- film
+	'animatic',
+	'film',
+	#
+	'sketch',
+	'textures',
+	# -- model
+	'sculpt',
+	'model',
+	# -- rig
+	'rig',
+	# -- location,
+	'specification',
+	'location',
+	#'location_full',
+	#'location_for_anim',
+	# -- animation
+	'animation_shot',
+	'tech_anim',
+	'simulation_din',
+	#'simulation_fluid',
+	'render',
+	'composition',
+	]
+	
+	service_tasks = [
+	'all',
+	'pre',
+	]
+	
+	asset_types = [
+	#'animatic',
+	'obj',
+	'char',
+	'location',
+	'shot_animation',
+	#'camera',
+	#'shot_render',
+	#'shot_composition',
+	#'light',
+	'film'
+	]
+	
+	asset_types_with_series = [
+	'animatic',
+	'shot_animation',
+	'camera',
+	'shot_render',
+	'shot_composition',
+	'film'
+	]
+	
+	asset_keys = [
+	('name', 'text'),
+	('group', 'text'),
+	('path', 'text'),
+	('type', 'text'),
+	('series', 'text'),
+	('priority', 'text'),
+	('comment', 'text'),
+	('content', 'text'),
+	('id', 'text'),
+	('status', 'text'),
+	('parent', 'text') # {'name':asset_name, 'id': asset_id}
+	]
+	
+	# constants (0 - 3 required parameters)
+	tasks_keys = [
+	('asset', 'text'),
+	('activity', 'text'),
+	('task_name', 'text'),
+	('task_type', 'text'),
+	('series', 'text'),
+	('input', 'text'),
+	('status', 'text'),
+	('outsource', 'text'),
+	('artist', 'text'),
+	('planned_time', 'text'),
+	('time', 'text'),
+	('start', 'timestamp'),
+	('end', 'timestamp'),
+	('supervisor', 'text'),
+	('approved_date', 'text'),
+	('price', 'real'),
+	('tz', 'text'),
+	('chat_local', 'text'),
+	('web_chat', 'text'),
+	('workroom', 'text'),
+	('readers', 'text'),
+	('output', 'text'),
+	('priority','text'),
+	('asset_id', 'text'),
+	('asset_type', 'text'),
+	('asset_path', 'text'),
+	('extension', 'text'),
+	]
+	
+	workroom_keys = [
+	('name', 'text'),
+	('id', 'text')
+	]
+	
+	# activity, task_name, action, date_time, comment, version, artist
+	'''
+	logs_keys = [
+	('activity', 'text'),
+	('task_name', 'text'),
+	('action', 'text'),
+	('date_time', 'timestamp'),
+	('comment', 'text'),
+	('version', 'text'),
+	('artist', 'text')
+	]
+	'''
+	# user_name, task_name, data_start, data_end, long_time, cost
+	statistics_keys = [
+	('project_name', 'text'),
+	('task_name', 'text'),
+	('data_start', 'timestamp'),
+	('data_end', 'timestamp'),
+	('long_time', 'text'),
+	('cost', 'text'),
+	('status', 'text')
+	]
+	# artist_name, user_name, email, phone, specialty, outsource = '' or '0'/'1'
+	artists_keys = [
+	('nik_name', 'text'),
+	('user_name', 'text'),
+	('password', 'text'),
+	('date_time', 'timestamp'),
+	('email', 'text'),
+	('phone', 'text'),
+	('specialty', 'text'),
+	('outsource', 'text'),
+	('workroom', 'text'),
+	('level', 'text'),
+	('share_dir', 'text'),
+	('status', 'text')
+	]
+	chats_keys = [
+	('date_time', 'timestamp'),
+	('author', 'text'),
+	('topic', 'text'),
+	('color', 'text'),
+	('status', 'text'),
+	('reading_status', 'text')
+	]
+	
+	projects_keys = [
+	('name', 'text'),
+	('assets_path', 'text'),
+	('chat_img_path', 'text'),
+	('chat_path', 'text'),
+	('list_of_assets_path', 'text'),
+	('path', 'text'),
+	('preview_img_path', 'text'),
+	('status', 'text'),
+	('tasks_path', 'text'),
+	]
+	
+	init_folder = '.lineyka'
+	init_file = 'lineyka_init.json'
+	set_file = 'user_setting.json'
+	set_of_tasks_file = '.set_of_tasks.json'
+	projects_file = '.projects.json'
+	projects_db = '.projects.db'
+	projects_t = 'projects'
+	artists_db = '.artists.db'
+	artists_t = 'artists'
+	workroom_db = '.artists.db'
+	workroom_t = 'workrooms'
+	statistic_db = '.statistic.db'
+	statistic_t = 'statistic'
+	location_position_file = 'location_content_position.json'
+	user_registr_file_name = 'user_registr.json'
+	recycle_bin_name = '-Recycle_Bin-'
+	
+	# shot_animation
+	meta_data_file = '.shot_meta_data.json'
+	
+	# blender
+	blend_service_images = {
+		'preview_img_name' : 'Lineyka_Preview_Image',
+		'bg_image_name' : 'Lineyka_BG_Image',
 		}
 		
-		self.task_types = [
-		# -- film
-		'animatic',
-		'film',
-		#
-		'sketch',
-		'textures',
-		# -- model
-		'sculpt',
-		'model',
-		# -- rig
-		'rig',
-		# -- location,
-		'specification',
-		'location',
-		#'location_full',
-		#'location_for_anim',
-		# -- animation
-		'animation_shot',
-		'tech_anim',
-		'simulation_din',
-		#'simulation_fluid',
-		'render',
-		'composition',
-		]
-		
-		self.service_tasks = [
-		'all',
-		'pre',
-		]
-		
-		self.asset_types = [
-		#'animatic',
-		'obj',
-		'char',
-		'location',
-		'shot_animation',
-		#'camera',
-		#'shot_render',
-		#'shot_composition',
-		#'light',
-		'film'
-		]
-		
-		self.asset_types_with_series = [
-		'animatic',
-		'shot_animation',
-		'camera',
-		'shot_render',
-		'shot_composition',
-		'film'
-		]
-		
-		self.asset_keys = [
-		('name', 'text'),
-		('group', 'text'),
-		('path', 'text'),
-		('type', 'text'),
-		('series', 'text'),
-		('priority', 'text'),
-		('comment', 'text'),
-		('content', 'text'),
-		('id', 'text'),
-		('status', 'text'),
-		('parent', 'text') # {'name':asset_name, 'id': asset_id}
-		]
-		
-		# constants (0 - 3 required parameters)
-		self.tasks_keys = [
-		('asset', 'text'),
-		('activity', 'text'),
-		('task_name', 'text'),
-		('task_type', 'text'),
-		('series', 'text'),
-		('input', 'text'),
-		('status', 'text'),
-		('outsource', 'text'),
-		('artist', 'text'),
-		('planned_time', 'text'),
-		('time', 'text'),
-		('start', 'timestamp'),
-		('end', 'timestamp'),
-		('supervisor', 'text'),
-		('approved_date', 'text'),
-		('price', 'real'),
-		('tz', 'text'),
-		('chat_local', 'text'),
-		('web_chat', 'text'),
-		('workroom', 'text'),
-		('readers', 'text'),
-		('output', 'text'),
-		('priority','text'),
-		('asset_id', 'text'),
-		('asset_type', 'text'),
-		('asset_path', 'text'),
-		('extension', 'text'),
-		]
-		
-		self.workroom_keys = [
-		('name', 'text'),
-		('id', 'text')
-		]
-		
-		# activity, task_name, action, date_time, comment, version, artist
-		'''
-		self.logs_keys = [
-		('activity', 'text'),
-		('task_name', 'text'),
-		('action', 'text'),
-		('date_time', 'timestamp'),
-		('comment', 'text'),
-		('version', 'text'),
-		('artist', 'text')
-		]
-		'''
-		# user_name, task_name, data_start, data_end, long_time, cost
-		self.statistics_keys = [
-		('project_name', 'text'),
-		('task_name', 'text'),
-		('data_start', 'timestamp'),
-		('data_end', 'timestamp'),
-		('long_time', 'text'),
-		('cost', 'text'),
-		('status', 'text')
-		]
-		# artist_name, user_name, email, phone, specialty, outsource = '' or '0'/'1'
-		self.artists_keys = [
-		('nik_name', 'text'),
-		('user_name', 'text'),
-		('password', 'text'),
-		('date_time', 'timestamp'),
-		('email', 'text'),
-		('phone', 'text'),
-		('specialty', 'text'),
-		('outsource', 'text'),
-		('workroom', 'text'),
-		('level', 'text'),
-		('share_dir', 'text'),
-		('status', 'text')
-		]
-		self.chats_keys = [
-		('date_time', 'timestamp'),
-		('author', 'text'),
-		('topic', 'text'),
-		('color', 'text'),
-		('status', 'text'),
-		('reading_status', 'text')
-		]
-		
-		self.projects_keys = [
-		('name', 'text'),
-		('assets_path', 'text'),
-		('chat_img_path', 'text'),
-		('chat_path', 'text'),
-		('list_of_assets_path', 'text'),
-		('path', 'text'),
-		('preview_img_path', 'text'),
-		('status', 'text'),
-		('tasks_path', 'text'),
-		]
-		
-		self.init_folder = '.lineyka'
-		self.init_file = 'lineyka_init.json'
-		self.set_file = 'user_setting.json'
-		self.set_of_tasks_file = '.set_of_tasks.json'
-		self.projects_file = '.projects.json'
-		self.projects_db = '.projects.db'
-		self.projects_t = 'projects'
-		self.artists_db = '.artists.db'
-		self.artists_t = 'artists'
-		self.workroom_db = '.artists.db'
-		self.workroom_t = 'workrooms'
-		self.statistic_db = '.statistic.db'
-		self.statistic_t = 'statistic'
-		self.location_position_file = 'location_content_position.json'
-		self.user_registr_file_name = 'user_registr.json'
-		self.recycle_bin_name = '-Recycle_Bin-'
-		
-		# shot_animation
-		self.meta_data_file = '.shot_meta_data.json'
-		
-		# 
+	def __init__(self):
 		self.make_init_file()
 		self.get_studio()
-		
-		# blender
-		self.blend_service_images = {
-			'preview_img_name' : 'Lineyka_Preview_Image',
-			'bg_image_name' : 'Lineyka_BG_Image',
-			}
 
+	@classmethod
 	def make_init_file(self):
 		home = os.path.expanduser('~')
 		
@@ -533,6 +531,7 @@ class studio:
 		except:
 			return False, '****** init file not Read!'
 	
+	@classmethod
 	def get_studio(self):
 		if self.init_path == False:
 			return(False, '****** in get_studio() -> init_path = False!')
@@ -566,13 +565,12 @@ class studio:
 				if os.path.exists(path):
 					self.projects_path = path
 			
-			self.get_set_of_tasks_path()
-			'''
+			#self.get_set_of_tasks_path()
 			if not self.set_of_tasks_path:
 				path = os.path.normpath(os.path.join(self.studio_folder, self.set_of_tasks_file))
 				if os.path.exists(path):
 					self.set_of_tasks_path = path
-			'''
+			
 			if not self.artists_path:
 				path = os.path.normpath(os.path.join(self.studio_folder, self.artists_db))
 				if os.path.exists(path):
@@ -599,6 +597,7 @@ class studio:
 				return False, "******studio.get_studio() -> .projects.json file  can not be read"
 			'''
 			self.get_list_projects()
+			pass
 			
 		'''
 		# get list_active_projects
@@ -619,8 +618,10 @@ class studio:
 		except:
 			return(False, 'in get_studio -> not read user_setting.json!')
 		
+		print('studio.get_studio')
 		return True, [self.studio_folder, self.tmp_folder, self.projects_path, self.artists_path, self.statistic_path, self.list_projects, self.workroom_path]
 		
+	@classmethod
 	def get_list_projects(self):
 		if not self.projects_path:
 			return
@@ -646,7 +647,7 @@ class studio:
 			for row in c.fetchall():
 				data = {}
 				for key in dict(row).keys():
-					print(key)
+					#print(key)
 					if key == 'name':
 						continue
 					data[key] = row[key]
@@ -784,7 +785,7 @@ class project(studio):
 		self.group_t = 'groups'
 		self.tasks_t = 'tasks'
 		self.logs_t = 'logs'
-		studio.__init__(self)
+		#studio.__init__(self)
 
 	def add_project(self, project_name, project_path):
 		# project_name, get project_path
@@ -5204,7 +5205,8 @@ class artist(studio):
 	self.edit_stat(user_name, project_name, task_name, {key:data, ...}) - 
 	'''
 	def __init__(self):
-		studio.__init__(self)
+		#studio.__init__(self)
+		pass
 		
 	def add_artist(self, keys):
 		# test nik_name
@@ -6119,7 +6121,7 @@ class set_of_tasks(studio):
 		'extension',
 		]
 		
-		studio.__init__(self)
+		#studio.__init__(self)
 	
 	def create(self, name, asset_type):
 		# test data
