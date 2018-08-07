@@ -5504,7 +5504,7 @@ class MainWindow(QtGui.QMainWindow):
 			task_list = []
 			if search and search in self.db_chat.task_status:
 				result = self.db_chat.get_list(self.current_project, asset_['id'], search)
-				print(result[1])
+			
 			else:
 				result = self.db_chat.get_list(self.current_project, asset_['id'])
 			if result[0]:
@@ -5514,7 +5514,6 @@ class MainWindow(QtGui.QMainWindow):
 					task_list = result[1]
 					fin_asset_list.append(asset_)
 			else:
-				#print(result[1])
 				continue
 			self.tasks_rows[asset_['name']] = []
 			# -- -- tasks labels
@@ -5524,9 +5523,11 @@ class MainWindow(QtGui.QMainWindow):
 					len_ = len_ - 1
 					continue
 					#self.tasks_rows[asset_['name']].append(task_)
-				elif not task_['workroom'] in current_wr_id:
-					len_ = len_ - 1
-					continue
+				#!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+				elif wr_name != 'all workrooms':
+					if not task_['workroom'] in current_wr_id:
+						len_ = len_ - 1
+						continue
 				else:
 					self.tasks_rows[asset_['name']].append(task_)
 			num_column.append(len_)
@@ -5600,7 +5601,7 @@ class MainWindow(QtGui.QMainWindow):
 				self.myWidget.task_manager_table.setItem(i, j, newItem)
 			# add empty item	
 			if not self.tasks_rows[asset]:
-				print(asset)
+				#print(asset)
 				for jj in range(0, num_column):
 					newItem = QtGui.QTableWidgetItem()
 					newItem.task = None
