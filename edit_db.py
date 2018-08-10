@@ -14,7 +14,7 @@ try:
 	from .lineyka_publish import publish
 except:
 	from lineyka_publish import publish
-
+	
 class studio:
 	'''
 	@classmethod get_studio()
@@ -27,6 +27,7 @@ class studio:
 	studio_folder = False
 	tmp_folder = False
 	convert_exe = False
+	use_database = False
 	init_path = False
 	set_path = False
 	share_dir = False
@@ -274,36 +275,38 @@ class studio:
 		home = os.path.expanduser('~')
 		
 		folder = os.path.normpath(os.path.join(home, self.init_folder))
-		init_path = os.path.normpath(os.path.join(home, self.init_folder, self.init_file))
-		set_path = os.path.normpath(os.path.join(folder, self.set_file))
+		self.init_path = os.path.normpath(os.path.join(home, self.init_folder, self.init_file))
+		self.set_path = os.path.normpath(os.path.join(folder, self.set_file))
 		
 		# make folder
 		if not os.path.exists(folder):
 			os.mkdir(folder)
 		
 		# make init_file
-		if not os.path.exists(init_path):
+		if not os.path.exists(self.init_path):
 			# make jason
-			d = {'studio_folder': None, 'convert_exe': None}
+			d = {
+				'studio_folder': None,
+				'convert_exe': None,
+				'use_database': ['sqlite3', False],
+				}
 			m_json = json.dumps(d, sort_keys=True, indent=4)
 			# save
-			data_fale = open(init_path, 'w')
+			data_fale = open(self.init_path, 'w')
 			data_fale.write(m_json)
 			data_fale.close()
 			
 		# make set_file
-		if not os.path.exists(set_path):
+		if not os.path.exists(self.set_path):
 			# make jason
 			d = self.setting_data
 			m_json = json.dumps(d, sort_keys=True, indent=4)
 			# save
-			data_fale = open(set_path, 'w')
+			data_fale = open(self.set_path, 'w')
 			data_fale.write(m_json)
 			data_fale.close()
-			
-		self.init_path = init_path
-		self.set_path = set_path
-		
+	
+	@classmethod
 	def set_studio(self, path):
 		if not os.path.exists(path):
 			return(False, "****** to studio path not Found!")
@@ -421,7 +424,8 @@ class studio:
 			return(False, 'in set_studio -> not read user_setting.json!')
 		'''	
 		return(True, 'Ok')
-		
+	
+	@classmethod
 	def set_tmp_dir(self, path):
 		if not os.path.exists(path):
 			return "****** to studio path not Found!"
@@ -450,7 +454,8 @@ class studio:
 		self.tmp_folder = path
 				
 		return(True, 'Ok')
-		
+	
+	@classmethod
 	def set_convert_exe_path(self, path):
 		if not os.path.exists(path):
 			return(False, "****** to convert.exe path not Found!")
@@ -546,17 +551,11 @@ class studio:
 			return(False, "****** init file  can not be read")
 		try:
 			self.studio_folder = data['studio_folder']
-			#print('studio: ', self.studio_folder)
-		except:
-			pass
-		try:
 			self.convert_exe = data['convert_exe']
-		except:
-			pass
-		try:
-			self.tmp_folder = data['tmp_folder']	
-		except:
-			pass
+			self.tmp_folder = data['tmp_folder']
+			self.use_database = data['use_database']
+		except Exception as e:
+			print(e)
 			
 		# artists_path = False   statistic_path = False
 		if self.studio_folder:
@@ -755,6 +754,9 @@ class studio:
 			f.close()
 		
 		return(True, 'Ok')
+	
+class database(studio):
+	pass
 	
 class project(studio):
 	'''
