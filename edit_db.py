@@ -27,7 +27,7 @@ class studio:
 	studio_folder = False
 	tmp_folder = False
 	convert_exe = False
-	use_database = False
+	studio_database = ['sqlite3', False]
 	init_path = False
 	set_path = False
 	share_dir = False
@@ -245,17 +245,41 @@ class studio:
 	set_file = 'user_setting.json'
 	set_of_tasks_file = '.set_of_tasks.json'
 	projects_file = '.projects.json'
-	projects_db = '.projects.db'
-	projects_t = 'projects'
-	artists_db = '.artists.db'
-	artists_t = 'artists'
-	workroom_db = '.artists.db'
-	workroom_t = 'workrooms'
-	statistic_db = '.statistic.db'
-	statistic_t = 'statistic'
 	location_position_file = 'location_content_position.json'
 	user_registr_file_name = 'user_registr.json'
 	recycle_bin_name = '-Recycle_Bin-'
+	list_of_assets_name = '.list_of_assets.json' # to delete
+	
+	#database files
+	# --- projects
+	projects_db = '.projects.db'
+	projects_t = 'projects'
+	# --- assets
+	assets_db = '.assets.db'
+	#assets_t = '' # имя таблицы - тип ассета
+	# --- artists
+	artists_db = '.artists.db'
+	artists_t = 'artists'
+	# --- workroom
+	workroom_db = artists_db
+	workroom_t = 'workrooms'
+	# --- statistic
+	statistic_db = '.statistic.db'
+	statistic_t = 'statistic'
+	# --- series
+	series_db = assets_db
+	series_t = 'series'
+	# --- group
+	group_db = assets_db
+	group_t = 'groups'
+	# --- tasks
+	tasks_db = '.tasks.db'
+	tasks_t = 'tasks'
+	# --- logs
+	logs_db = tasks_db
+	logs_t = 'logs'
+	# --- chat
+	chat_db = '.chats.db'
 	
 	# shot_animation
 	meta_data_file = '.shot_meta_data.json'
@@ -587,14 +611,6 @@ class studio:
 		
 		# get self.list_projects
 		if self.projects_path:
-			'''
-			try:
-				with open(self.projects_path, 'r') as read:
-					self.list_projects = json.load(read)
-					read.close()
-			except:
-				return False, "******studio.get_studio() -> .projects.json file  can not be read"
-			'''
 			self.get_list_projects()
 			pass
 			
@@ -626,42 +642,35 @@ class studio:
 			return
 		if not os.path.exists(self.projects_path):
 			return
-			
-		# -- CONNECT  .db
-		conn = sqlite3.connect(self.projects_path, detect_types=sqlite3.PARSE_DECLTYPES|sqlite3.PARSE_COLNAMES)
-		conn.row_factory = sqlite3.Row
-		c = conn.cursor()
 		
-		# -- EXISTS TABLE
-		table = self.projects_t
-		try:
-			string = 'select * from ' + table
-			c.execute(string)
-		except:
-			print('Not projects table!')
-			pass
+		# get list_projects
+		com = 'SELECT * FROM %s' % self.projects_t
+		bool_, return_data = database().get('studio', self, self.projects_t, com)
 		
-		else:
-			list_projects = {}
-			for row in c.fetchall():
-				data = {}
-				for key in dict(row).keys():
-					#print(key)
-					if key == 'name':
-						continue
-					data[key] = row[key]
-				list_projects[row['name']] = data
-			
-			self.list_projects = list_projects
+		if not bool_:
+			print('#'*10, return_data)
+			return(False, return_data)
 		
-		conn.close()
+		list_projects = {}
+		for row in return_data:
+			data = {}
+			for key in row.keys():
+				#print(key)
+				if key == 'name':
+					continue
+				data[key] = row[key]
+			list_projects[row['name']] = data
 		
+		self.list_projects = list_projects
+
 		# get list_active_projects
 		if self.list_projects:
 			self.list_active_projects = []
 			for key in self.list_projects:
 				if self.list_projects[key]['status'] == 'active':
 					self.list_active_projects.append(key)
+		
+		print('get_list_projects')
 	
 	def get_set_of_tasks_path(self):
 		if not self.set_of_tasks_path:
@@ -755,8 +764,64 @@ class studio:
 		
 		return(True, 'Ok')
 	
-class database(studio):
-	pass
+class database():
+	def __init__(self):
+		pass
+	
+	# level - studio or project; or: studio, project, series, group, asset, task, chat, log, statistic ...
+	# read_ob - object of studio or project;
+	# table_type - assets, chats - те случаи когда имя таблицы не соответствует имени таблицы.
+	def get(self, level, read_ob, table_name, com, table_type=False):
+		use_db_attr = {
+			'studio': 'studio_database',
+			'project': 'project_database',
+			}
+		
+		# get use_db
+		attr = use_db_attr.get(level)
+		if not attr:
+			raise Exception('database.get()', 'Unknown Level : %s' % level)
+		
+		db_name, db_data = eval('read_ob.%s' % attr)
+		#return(db_name, db_data)
+		
+		if db_name == 'sqlite3':
+			return_data = self.get_sqlite3(level, read_ob, table_name, com, table_type)
+			return(return_data)
+			
+	def get_sqlite3(self, level, read_ob, table_name, com, table_type):
+		db_folder_attr = {
+			'studio': 'studio_folder',
+			'project': 'path',
+			}
+		
+		attr = db_folder_attr.get(level)
+		db_folder = eval('read_ob.%s' % attr)
+		db_path = os.path.join(db_folder, '.%s.db' % table_name)
+		
+		#print('get_sqlite3()', db_path, os.path.exists(db_path))
+		
+		try:
+			# -- CONNECT  .db
+			conn = sqlite3.connect(db_path, detect_types=sqlite3.PARSE_DECLTYPES|sqlite3.PARSE_COLNAMES)
+			conn.row_factory = sqlite3.Row
+			c = conn.cursor()
+			c.execute(com)
+			data = []
+			for row in c.fetchall():
+				data.append(dict(row))
+			#print('*'*10, data)
+		except Exception as e:
+			try:
+				conn.close()
+			except:
+				pass
+			print('get_sqlite3()', e)
+			return(False, e)
+		
+		conn.close()
+		return(True, data)
+		
 	
 class project(studio):
 	'''
@@ -774,19 +839,12 @@ class project(studio):
 		self.chat_img_path = False # img to chat, folder path
 		self.preview_img_path = False # preview img, folder path
 		self.assets_list = False # # a list of existing assets
-		self.status = False # status 
+		self.status = False # status
+		self.project_database = False # the type of database
 		
 		# constans
 		self.folders = {'assets':'assets', 'chat_img_folder':'.chat_images', 'preview_images': '.preview_images'}
-		self.tasks_name_db = '.tasks.db'
-		#self.assets_name = '.assets.json'
-		self.assets_name = '.assets.db'
-		self.chat_name_db = '.chats.db'
-		self.list_of_assets_name = '.list_of_assets.json'
 		#self.asset_t = 'assets'
-		self.group_t = 'groups'
-		self.tasks_t = 'tasks'
-		self.logs_t = 'logs'
 		#studio.__init__(self)
 
 	def add_project(self, project_name, project_path):
@@ -849,7 +907,7 @@ class project(studio):
 		
 		
 		# create assets db
-		self.assets_path = os.path.normpath(os.path.join(path, self.assets_name))
+		self.assets_path = os.path.normpath(os.path.join(path, self.assets_db))
 		if not os.path.exists(self.assets_path):
 			conn = sqlite3.connect(self.assets_path, detect_types=sqlite3.PARSE_DECLTYPES|sqlite3.PARSE_COLNAMES)
 			c = conn.cursor()
@@ -870,7 +928,7 @@ class project(studio):
 			
 		
 		# create tasks db
-		self.tasks_path = os.path.join(path, self.tasks_name_db)
+		self.tasks_path = os.path.join(path, self.tasks_db)
 		if not os.path.exists(self.tasks_path):
 			conn = sqlite3.connect(self.tasks_path, detect_types=sqlite3.PARSE_DECLTYPES|sqlite3.PARSE_COLNAMES)
 			c = conn.cursor()
@@ -896,7 +954,7 @@ class project(studio):
 			conn.close()
 		
 		# create chat db
-		self.chat_path = os.path.join(path, self.chat_name_db)
+		self.chat_path = os.path.join(path, self.chat_db)
 		if not os.path.exists(self.chat_path):
 			conn = sqlite3.connect(self.chat_path)
 			c = conn.cursor()
@@ -1030,7 +1088,7 @@ class project(studio):
 		return True, 'ok'
 		
 	def get_project(self, name):
-		self.get_list_projects()
+		#self.get_list_projects()
 		
 		if not name in self.list_projects.keys():
 			return(False, "This project Not Found!")
@@ -1043,6 +1101,8 @@ class project(studio):
 			self.chat_img_path = self.list_projects[name]['chat_img_path']
 			self.preview_img_path = self.list_projects[name]['preview_img_path']
 			self.status = self.list_projects[name]['status']
+			# database
+			self.project_database = ['sqlite3', False]
 				
 		self.get_list_of_assets()
 		return(True, (self.list_projects[name], self.assets_list))
@@ -6469,7 +6529,7 @@ class series(project):
 		('id', 'text'),
 		]
 		
-		self.series_t = 'series'
+		#self.series_t = 'series'
 		
 		project.__init__(self)
 		
@@ -6684,7 +6744,7 @@ class group(project):
 		('id', 'text'),
 		]
 		
-		self.group_t = 'groups'
+		#self.group_t = 'groups'
 		
 		project.__init__(self)
 	
