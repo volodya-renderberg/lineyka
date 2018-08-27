@@ -788,6 +788,24 @@ class database():
 		if db_name == 'sqlite3':
 			return_data = self.get_sqlite3(level, read_ob, table_name, com, table_type)
 			return(return_data)
+		
+	def set_db(self, level, read_ob, table_name, com, data_com=False, table_type=False):
+		use_db_attr = {
+			'studio': 'studio_database',
+			'project': 'project_database',
+			}
+		
+		# get use_db
+		attr = use_db_attr.get(level)
+		if not attr:
+			raise Exception('database.set_db()', 'Unknown Level : %s' % level)
+		
+		db_name, db_data = eval('read_ob.%s' % attr)
+		#return(db_name, db_data)
+		
+		if db_name == 'sqlite3':
+			return_data = self.set_sqlite3(level, read_ob, table_name, com, data_com, table_type)
+			return(return_data)
 			
 	def get_sqlite3(self, level, read_ob, table_name, com, table_type):
 		db_folder_attr = {
@@ -821,8 +839,40 @@ class database():
 		
 		conn.close()
 		return(True, data)
-		
 	
+	def set_sqlite3(self, level, read_ob, table_name, com, data_com, table_type):
+		db_folder_attr = {
+			'studio': 'studio_folder',
+			'project': 'path',
+			}
+		
+		attr = db_folder_attr.get(level)
+		db_folder = eval('read_ob.%s' % attr)
+		db_path = os.path.join(db_folder, '.%s.db' % table_name)
+		
+		#print('get_sqlite3()', db_path, os.path.exists(db_path))
+		
+		try:
+			# -- CONNECT  .db
+			conn = sqlite3.connect(db_path, detect_types=sqlite3.PARSE_DECLTYPES|sqlite3.PARSE_COLNAMES)
+			conn.row_factory = sqlite3.Row
+			c = conn.cursor()
+			if data_com:
+				c.execute(com, data_com)
+			else:
+				c.execute(com)
+		except Exception as e:
+			try:
+				conn.close()
+			except:
+				pass
+			print('#'*3, 'Exception in set_sqlite3()', e)
+			return(False, 'Exception in set_sqlite3(), please read the terminal!')
+		
+		conn.commit()
+		conn.close()
+		return(True, 'Ok!')
+
 class project(studio):
 	'''
 	self.add_project(project_name, project_path, keys) - 
@@ -1120,40 +1170,11 @@ class project(studio):
 		if not result[0]:
 			return(False, ('in rename_project -> ' + result[1]))
 		
-		'''
-		try:
-			with open(self.projects_path, 'r') as read:
-				data = json.load(read)
-				project_data = data[old_name]
-				del data[old_name]
-				data[new_name] = project_data
-				read.close()
-				
-		except:
-			return(False, 'Not Read \".projects.json\"!')
-			
-		try:
-			with open(self.projects_path, 'w') as f:
-				jsn = json.dump(data, f, sort_keys=True, indent=4)
-				f.close()
-		except:
-			return(False, 'Not Write \".projects.json\"!')
-		'''
-		
-		# -- CONNECT  .db
-		conn = sqlite3.connect(self.projects_path, detect_types=sqlite3.PARSE_DECLTYPES|sqlite3.PARSE_COLNAMES)
-		conn.row_factory = sqlite3.Row
-		c = conn.cursor()
-		
-		table = self.projects_t
-		string = 'UPDATE ' +  table + ' SET \"name\" = ? WHERE name = ?'
-		data = (new_name, old_name)
-		
-		c.execute(string, data)
-		conn.commit()
-		conn.close()
-		
-		return(True, 'Ok')
+		# rename
+		com = 'UPDATE %s SET \"name\" = ? WHERE name = ?' % self.projects_t
+		data_com = (new_name, old_name)
+		bool_, return_data = database().set_db('studio', self, self.projects_t, com, data_com=data_com)
+		return(bool_, return_data)
 		
 	def remove_project(self, name):
 		if not name in self.list_projects:
