@@ -238,6 +238,17 @@ class studio:
 	('preview_img_path', 'text'),
 	('status', 'text'),
 	('tasks_path', 'text'),
+	('project_database', 'text')
+	]
+	
+	logs_keys = [
+	('version', 'text'),
+	('date_time', 'timestamp'),
+	('activity', 'text'),
+	('task_name', 'text'),
+	('action', 'text'),
+	('artist', 'text'),
+	('comment', 'text'),
 	]
 	
 	init_folder = '.lineyka'
@@ -766,19 +777,22 @@ class studio:
 	
 class database():
 	def __init__(self):
-		pass
-	
-	# level - studio or project; or: studio, project, series, group, asset, task, chat, log, statistic ...
-	# read_ob - object of studio or project;
-	# table_type - assets, chats - те случаи когда имя таблицы не соответствует имени таблицы.
-	def get(self, level, read_ob, table_name, com, table_type=False):
-		use_db_attr = {
+		self.sqlite3_db_folder_attr = {
+			'studio': 'studio_folder',
+			'project': 'path',
+			}
+		
+		self.use_db_attr = {
 			'studio': 'studio_database',
 			'project': 'project_database',
 			}
-		
+	
+	# level - studio or project; or: studio, project, series, group, asset, task, chat, log, statistic ...
+	# read_ob - object of studio or project;
+	# table_root - assets, chats - те случаи когда имя файла ДБ не соответствует имени таблицы, если есть table_root - имя файла ДБ будет определяться по нему.
+	def get(self, level, read_ob, table_name, com, table_root=False):
 		# get use_db
-		attr = use_db_attr.get(level)
+		attr = self.use_db_attr.get(level)
 		if not attr:
 			raise Exception('database.get()', 'Unknown Level : %s' % level)
 		
@@ -786,17 +800,12 @@ class database():
 		#return(db_name, db_data)
 		
 		if db_name == 'sqlite3':
-			return_data = self.get_sqlite3(level, read_ob, table_name, com, table_type)
+			return_data = self.sqlite3_get(level, read_ob, table_name, com, table_root)
 			return(return_data)
 		
-	def set_db(self, level, read_ob, table_name, com, data_com=False, table_type=False):
-		use_db_attr = {
-			'studio': 'studio_database',
-			'project': 'project_database',
-			}
-		
+	def set_db(self, level, read_ob, table_name, com, data_com=False, table_root=False):
 		# get use_db
-		attr = use_db_attr.get(level)
+		attr = self.use_db_attr.get(level)
 		if not attr:
 			raise Exception('database.set_db()', 'Unknown Level : %s' % level)
 		
@@ -804,20 +813,59 @@ class database():
 		#return(db_name, db_data)
 		
 		if db_name == 'sqlite3':
-			return_data = self.set_sqlite3(level, read_ob, table_name, com, data_com, table_type)
+			return_data = self.sqlite3_set(level, read_ob, table_name, com, data_com, table_root)
 			return(return_data)
+	
+	# write_data - словарь с ключами из keys
+	# keys - это: tasks_keys, projects_keys итд.
+	def write(self, level, read_ob, table_name, keys, write_data, table_root=False):
+		attr = self.use_db_attr.get(level)
+		if not attr:
+			raise Exception('database.write()', 'Unknown Level : %s' % level)
+		
+		db_name, db_data = eval('read_ob.%s' % attr)
+		#return(db_name, db_data)
+		
+		if db_name == 'sqlite3':
+			return_data = self.write_sqlite3(level, read_ob, table_name, keys, write_data, table_root)
+			return(return_data)
+	
+	def create_table(self, level, read_ob, table_name, keys, table_root = False):
+		attr = self.use_db_attr.get(level)
+		if not attr:
+			raise Exception('database.write()', 'Unknown Level : %s' % level)
+		
+		db_name, db_data = eval('read_ob.%s' % attr)
+		#return(db_name, db_data)
+		
+		if db_name == 'sqlite3':
+			return_data = self.sqlite3_create_table(level, read_ob, table_name, keys, table_root)
+			return(return_data)
+		
+	def sqlite3_create_table(self, level, read_ob, table_name, keys, table_root):
+		com = ''
+		for i, data in enumerate(keys):
+			if i==0:
+				com = com + '%s %s' % (data[0], data[1])
+			else:
+				com = com + ', %s %s' % (data[0], data[1])
+		com = 'CREATE TABLE IF NOT EXISTS %s (%s)' % (table_name, com)
+		#print(com)
+		return_data = sqlite3_set(level, read_ob, table_name, com, False, table_root)
+		return(return_data)
+		
+	def sqlite3_write(self, level, read_ob, table_name, keys, write_data, table_root):
+		pass
 			
-	def get_sqlite3(self, level, read_ob, table_name, com, table_type):
-		db_folder_attr = {
-			'studio': 'studio_folder',
-			'project': 'path',
-			}
-		
-		attr = db_folder_attr.get(level)
+	def sqlite3_get(self, level, read_ob, table_name, com, table_root):
+		attr = self.sqlite3_db_folder_attr.get(level)
 		db_folder = eval('read_ob.%s' % attr)
-		db_path = os.path.join(db_folder, '.%s.db' % table_name)
+		if table_root:
+			db_path = os.path.join(db_folder, '.%s.db' % table_root)
+		else:
+			db_path = os.path.join(db_folder, '.%s.db' % table_name)
 		
-		#print('get_sqlite3()', db_path, os.path.exists(db_path))
+		#print('sqlite3_get()', db_path, os.path.exists(db_path))
 		
 		try:
 			# -- CONNECT  .db
@@ -834,23 +882,22 @@ class database():
 				conn.close()
 			except:
 				pass
-			print('get_sqlite3()', e)
+			print('sqlite3_get()', e)
 			return(False, e)
 		
 		conn.close()
 		return(True, data)
 	
-	def set_sqlite3(self, level, read_ob, table_name, com, data_com, table_type):
-		db_folder_attr = {
-			'studio': 'studio_folder',
-			'project': 'path',
-			}
-		
-		attr = db_folder_attr.get(level)
+	# if com = False - создаётся пустая таблица ,при отсутствии
+	def sqlite3_set(self, level, read_ob, table_name, com, data_com, table_root):
+		attr = self.sqlite3_db_folder_attr.get(level)
 		db_folder = eval('read_ob.%s' % attr)
-		db_path = os.path.join(db_folder, '.%s.db' % table_name)
+		if table_root:
+			db_path = os.path.join(db_folder, '.%s.db' % table_root)
+		else:
+			db_path = os.path.join(db_folder, '.%s.db' % table_name)
 		
-		#print('get_sqlite3()', db_path, os.path.exists(db_path))
+		#print('sqlite3_get()', db_path, os.path.exists(db_path))
 		
 		try:
 			# -- CONNECT  .db
@@ -859,15 +906,19 @@ class database():
 			c = conn.cursor()
 			if data_com:
 				c.execute(com, data_com)
-			else:
+			elif com:
 				c.execute(com)
+			else:
+				pass
 		except Exception as e:
 			try:
 				conn.close()
 			except:
 				pass
-			print('#'*3, 'Exception in set_sqlite3()', e)
-			return(False, 'Exception in set_sqlite3(), please read the terminal!')
+			print('#'*3, 'Exception in sqlite3_set()', e)
+			print('#'*3, 'com:', com)
+			print('#'*3, 'data_com:', data_com)
+			return(False, 'Exception in sqlite3_set(), please read the terminal!')
 		
 		conn.commit()
 		conn.close()
@@ -881,6 +932,7 @@ class project(studio):
 	
 	'''
 	def __init__(self):
+		self.name = False
 		self.path = False # project folder path
 		self.assets_path = False # .assets.db file path
 		self.tasks_path = False # .tasks.db  file path
@@ -911,12 +963,13 @@ class project(studio):
 			
 		elif project_name == '':
 			if not os.path.exists(project_path):
-				return(False, ('Project Path: \'' + project_path + '\' Not Found!'))
+				return(False, ('Project Path: \"%s\" Not Found!' % project_path))
 			project_name = os.path.basename(project_path)
 			
 		# test by name 
 		if project_name in self.list_projects.keys():
 			return(False, "This project name already exists!")
+		self.name = project_name
 		
 		# path_encode
 		if platform.system() == 'Windows':
@@ -928,90 +981,49 @@ class project(studio):
 			path = project_path
 			
 		if not os.path.exists(path):
-			text = '****** studio.project.add_project() -> ' +  path + ' not found'
+			text = '****** studio.project.add_project() -> %s not found' % path
 			return False, text
 		else:
 			self.path = path
 		
-		'''
-		# create assets json
-		assets_path = os.path.join(path, self.assets_name)
-		if not os.path.exists(assets_path):
-			d = {}
-			m_json = json.dumps(d, sort_keys=True, indent=4)
-			# save
-			data_fale = open(assets_path, 'w')
-			data_fale.write(m_json)
-			data_fale.close()
-		self.assets_path = assets_path
-		'''
-		# create .list_of_assets.json
-		self.list_of_assets_path = os.path.join(self.path, self.list_of_assets_name)
-		if not os.path.exists(self.list_of_assets_path):
-			d = {}
-			m_json = json.dumps(d, sort_keys=True, indent=4)
-			# save
-			data_fale = open(self.list_of_assets_path, 'w')
-			data_fale.write(m_json)
-			data_fale.close()
-		
+		self.project_database = ['sqlite3', False] # новый проект в начале всегда sqlite3, чтобы сработало всё в database
 		
 		# create assets db
-		self.assets_path = os.path.normpath(os.path.join(path, self.assets_db))
-		if not os.path.exists(self.assets_path):
-			conn = sqlite3.connect(self.assets_path, detect_types=sqlite3.PARSE_DECLTYPES|sqlite3.PARSE_COLNAMES)
-			c = conn.cursor()
-			'''			
-			# -- table groups
-			string = "CREATE TABLE " + self.group_t + "("
-			for i,key in enumerate(self.group_keys):
-				if i == 0:
-					string = string + '\"' + key[0] + '\"' + ' ' + key[1]
-				else:
-					string = string + ', ' + '\"' + key[0] + '\"' + ' ' + key[1]
-			string = string + ')'
-			#print(string)
-			c.execute(string)
-			'''
-			conn.commit()
-			conn.close()
-			
+		# database
+		com = False # означает создание пустого файла sqlite3 - будет игнорироваться в других базах данных
+		bool_, return_data = database().set_db('project', self, 'assets', com)
+
+		# create chats db
+		# database
+		com = False # означает создание пустого файла sqlite3 - будет игнорироваться в других базах данных
+		bool_, return_data = database().set_db('project', self, 'chats', com)
 		
 		# create tasks db
-		self.tasks_path = os.path.join(path, self.tasks_db)
-		if not os.path.exists(self.tasks_path):
-			conn = sqlite3.connect(self.tasks_path, detect_types=sqlite3.PARSE_DECLTYPES|sqlite3.PARSE_COLNAMES)
-			c = conn.cursor()
-			
-			# -- table tasks
-			#string = "CREATE TABLE " + self.tasks_t + "(Id INTEGER PRIMARY KEY AUTOINCREMENT UNIQUE NOT NULL, series text, task_name text, asset text, activity text, input text, status text, artist text, planned_time text, time text, start text, end text, supervisor text, approved_date text, price real, tz text, chat text)"
-			#string = "CREATE TABLE " + self.tasks_t + "(Id INTEGER PRIMARY KEY AUTOINCREMENT UNIQUE NOT NULL"
-			string = "CREATE TABLE " + self.tasks_t + "("
-			for i,key in enumerate(self.tasks_keys):
-				if i == 0:
-					string = string + key[0] + ' ' + key[1]
-				else:
-					string = string + ', ' + key[0] + ' ' + key[1]
-			string = string + ')'
-			#print(string)
-			c.execute(string)
-			
-			# -- table logs
-			string = "CREATE TABLE " + self.logs_t + "(activity text, task_name text, action text, date_time text, comment text, version text, artist text)"
-			c.execute(string)
-			
-			conn.commit()
-			conn.close()
+		# database
+		com = False # означает создание пустого файла sqlite3 - будет игнорироваться в других базах данных
+		'''
+		for i, data in enumerate(self.tasks_keys):
+			if i==0:
+				com = com + '%s %s' % (data[0], data[1])
+			else:
+				com = com + ', %s %s' % (data[0], data[1])
+		com = 'CREATE TABLE IF NOT EXISTS %s (%s);' % (self.tasks_t, com)
+		'''
+		bool_, return_data = database().set_db('project', self, self.tasks_t, com)
 		
-		# create chat db
-		self.chat_path = os.path.join(path, self.chat_db)
-		if not os.path.exists(self.chat_path):
-			conn = sqlite3.connect(self.chat_path)
-			c = conn.cursor()
-			
-			conn.commit()
-			conn.close()
-			
+		# create logs db
+		# database
+		com = False # означает создание пустого файла sqlite3 - будет игнорироваться в других базах данных
+		'''
+		for i, data in enumerate(self.logs_keys):
+			if i==0:
+				com = com + '%s %s' % (data[0], data[1])
+			else:
+				com = com + ', %s %s' % (data[0], data[1])
+		com = 'CREATE TABLE IF NOT EXISTS %s (%s);' % (self.logs_t, com)
+		'''
+		bool_, return_data = database().set_db('project', self, self.logs_t, com, table_root = self.tasks_t)
+
 		# create folders
 		self.make_folders(self.path)
 		# -- get chat_img_folder
@@ -1027,9 +1039,36 @@ class project(studio):
 		else:
 			self.chat_img_path = False
 		
+		# status
 		self.status = 'active'
 		
 		# create project
+		# -- create table
+		com = False
+		for i, data in enumerate(self.projects_keys):
+			print(data[0], data[1])
+			continue
+			if i==0:
+				com = com + '%s %s' % (data[0], data[1])
+			else:
+				com = com + ', %s %s' % (data[0], data[1])
+		com = 'CREATE TABLE IF NOT EXISTS %s (%s);' % (self.logs_t, com)
+		bool_, return_data = database().set_db('studio', self, self.projects_t, com)
+		
+		# -- write data
+		com = 'INSERT INTO %s VALUES' % self.projects_t
+		com_data = []
+		for i, data in enumerate(self.projects_keys):
+			if i==0:
+				com = com + ' ?'
+			else:
+				com = com + ', ?'
+			eval('com_data.append(self.%s)' % data[0])
+		
+		print(com, com_data)
+		return
+		
+		'''
 		# -- CREATE .projects.db
 		projects_path = os.path.normpath(os.path.join(self.studio_folder, self.projects_db))
 		if not os.path.exists(projects_path):
@@ -1101,36 +1140,10 @@ class project(studio):
 		
 		conn.commit()
 		conn.close()
-		
-		'''
-		# write data
-		try:
-			with open(self.projects_path, 'r') as read:
-				data = json.load(read)
-				data[project_name] = {
-				'path' : self.path,
-				'assets_path' : self.assets_path,
-				'tasks_path' : self.tasks_path,
-				'chat_path' : self.chat_path,
-				'chat_img_path' : self.chat_img_path,
-				'preview_img_path' : self.preview_img_path,
-				'status' : self.status,
-				'list_of_assets_path' : self.list_of_assets_path
-				} 
-				read.close()
-								
-		except:
-			return False, "****** studio.add_project -> .projects.json  can not be read"
-
-		try:
-			with open(self.projects_path, 'w') as f:
-				jsn = json.dump(data, f, sort_keys=True, indent=4)
-				f.close()
-		except:
-			return False, "****** studio.add_project -> .projects.json  can not be write"
 		'''
 		
 		# create_recycle_bin
+		self.get_list_projects()
 		result = group().create_recycle_bin(project_name)
 		if not result[0]:
 			return(False, result[1])
@@ -1143,13 +1156,36 @@ class project(studio):
 		if not name in self.list_projects.keys():
 			return(False, "This project Not Found!")
 		else:
+			#self.assets_path = self.list_projects[name]['assets_path']
+			#self.tasks_path = self.list_projects[name]['tasks_path']
+			#self.chat_path = self.list_projects[name]['chat_path']
+			#self.chat_img_path = self.list_projects[name]['chat_img_path']
+			#self.preview_img_path = self.list_projects[name]['preview_img_path']
+			#
 			self.path = self.list_projects[name]['path']
-			self.assets_path = self.list_projects[name]['assets_path']
-			self.list_of_assets_path = self.list_projects[name]['list_of_assets_path']
-			self.tasks_path = self.list_projects[name]['tasks_path']
-			self.chat_path = self.list_projects[name]['chat_path']
-			self.chat_img_path = self.list_projects[name]['chat_img_path']
-			self.preview_img_path = self.list_projects[name]['preview_img_path']
+			#
+			assets_path = os.path.normpath(os.path.join(self.path, self.assets_db))
+			if os.path.exists(assets_path):
+				self.assets_path = assets_path
+			#
+			tasks_path = os.path.normpath(os.path.join(self.path, self.tasks_db))
+			if os.path.exists(tasks_path):
+				self.tasks_path = tasks_path
+			#
+			self.list_of_assets_path = os.path.normpath(self.list_projects[name]['list_of_assets_path'])
+			#
+			chat_path = os.path.normpath(os.path.join(self.path, self.chat_db))
+			if os.path.exists(chat_path):
+				self.chat_path = chat_path
+			#
+			chat_img_path = os.path.normpath(os.path.join(self.path, self.folders['chat_img_folder']))
+			if os.path.exists(chat_img_path):
+				self.chat_img_path = chat_img_path
+			#
+			preview_img_path = os.path.normpath(os.path.join(self.path, self.folders['preview_images']))
+			if os.path.exists(preview_img_path):
+				self.preview_img_path = preview_img_path
+			#
 			self.status = self.list_projects[name]['status']
 			# database
 			self.project_database = ['sqlite3', False]
@@ -1170,7 +1206,7 @@ class project(studio):
 		if not result[0]:
 			return(False, ('in rename_project -> ' + result[1]))
 		
-		# rename
+		# database
 		com = 'UPDATE %s SET \"name\" = ? WHERE name = ?' % self.projects_t
 		data_com = (new_name, old_name)
 		bool_, return_data = database().set_db('studio', self, self.projects_t, com, data_com=data_com)
@@ -1183,38 +1219,12 @@ class project(studio):
 		result = self.get_project(name)
 		if not result[0]:
 			return(False, result[1])
-			
-		'''
-		try:
-			with open(self.projects_path, 'r') as read:
-				data = json.load(read)
-				del data[name]
-				read.close()
-		except:
-			return(False, 'Not Read \".projects.json\"!')
-			
-		try:
-			with open(self.projects_path, 'w') as f:
-				jsn = json.dump(data, f, sort_keys=True, indent=4)
-				f.close()
-		except:
-			return(False, 'Not Write \".projects.json\"!')
-		'''
 		
-		# -- CONNECT  .db
-		conn = sqlite3.connect(self.projects_path, detect_types=sqlite3.PARSE_DECLTYPES|sqlite3.PARSE_COLNAMES)
-		conn.row_factory = sqlite3.Row
-		c = conn.cursor()
-		
-		table = self.projects_t
-		string = 'DELETE FROM ' +  table + ' WHERE name = ?'
-		data = (name,)
-		
-		c.execute(string, data)
-		conn.commit()
-		conn.close()
-			
-		return(True, 'Ok')
+		# database
+		com = 'DELETE FROM %s WHERE name = ?' % self.projects_t
+		data_com = (name,)
+		bool_, return_data = database().set_db('studio', self, self.projects_t, com, data_com=data_com)
+		return(bool_, return_data)
 		
 	def edit_status(self, name, status):
 		if not name in self.list_projects:
@@ -5008,16 +5018,6 @@ class log(task):
 	'''
 	
 	def __init__(self):
-		self.logs_keys = [
-		('version', 'text'),
-		('date_time', 'timestamp'),
-		('activity', 'text'),
-		('task_name', 'text'),
-		('action', 'text'),
-		('artist', 'text'),
-		('comment', 'text'),
-		]
-		
 		self.camera_log_file_name = 'camera_logs.json'
 		self.playblast_log_file_name = 'playblast_logs.json'
 		
