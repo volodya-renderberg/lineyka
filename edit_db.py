@@ -1029,30 +1029,10 @@ class project(studio):
 			self.path = path
 		
 		self.project_database = ['sqlite3', False] # новый проект в начале всегда sqlite3, чтобы сработало всё в database
-		
-		# create assets db
-		# database
-		com = False # означает создание пустого файла sqlite3 - будет игнорироваться в других базах данных
-		bool_, return_data = database().set_db('project', self, 'assets', com)
 		self.assets_path = os.path.normpath(os.path.join(self.path, self.assets_db))
-
-		# create chats db
-		# database
-		com = False # означает создание пустого файла sqlite3 - будет игнорироваться в других базах данных
-		bool_, return_data = database().set_db('project', self, 'chats', com)
 		self.chat_path = os.path.normpath(os.path.join(self.path, self.chats_db))
-		
-		# create tasks db
-		# database
-		com = False # означает создание пустого файла sqlite3 - будет игнорироваться в других базах данных
-		bool_, return_data = database().set_db('project', self, self.tasks_t, com)
 		self.tasks_path = os.path.normpath(os.path.join(self.path, self.tasks_db))
 		
-		# create logs db
-		# database
-		com = False # означает создание пустого файла sqlite3 - будет игнорироваться в других базах данных
-		bool_, return_data = database().set_db('project', self, self.logs_t, com, table_root = self.tasks_t)
-
 		# create folders
 		self.make_folders(self.path)
 		# -- get chat_img_folder
