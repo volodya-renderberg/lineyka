@@ -238,7 +238,7 @@ class studio:
 	('preview_img_path', 'text'),
 	('status', 'text'),
 	('tasks_path', 'text'),
-	('project_database', 'text')
+	('project_database', 'json') # формат который конвертируется через json и записывается строкой.
 	]
 	
 	logs_keys = [
@@ -831,10 +831,14 @@ class database():
 	def sqlite3_create_table(self, level, read_ob, table_name, keys, table_root):
 		com = ''
 		for i, data in enumerate(keys):
-			if i==0:
-				com = com + '%s %s' % (data[0], data[1])
+			if data[1] == 'json':
+				type_data = 'text'
 			else:
-				com = com + ', %s %s' % (data[0], data[1])
+				type_data = data[1]
+			if i==0:
+				com = com + '%s %s' % (data[0], type_data)
+			else:
+				com = com + ', %s %s' % (data[0], type_data)
 		com = 'CREATE TABLE IF NOT EXISTS %s (%s)' % (table_name, com)
 		#print(com)
 		return_data = self.sqlite3_set(level, read_ob, table_name, com, False, table_root)
@@ -883,7 +887,10 @@ class database():
 					com_ = com_ + ' ?'
 				else:
 					com_ = com_ + ', ?'
-				data_ = item.get(data[0])
+				if data[1] == 'json':
+					data_ = json.dumps(item.get(data[0]))
+				else:
+					data_ = item.get(data[0])
 				data_com.append(data_)
 			com = '%s (%s)' % (com, com_)
 			try:
@@ -974,22 +981,14 @@ class project(studio):
 	
 	'''
 	def __init__(self):
-		self.name = False
-		self.path = False # project folder path
-		self.assets_path = False # .assets.db file path
-		self.tasks_path = False # .tasks.db  file path
-		self.chat_path = False # .chats.db file path
-		self.list_of_assets_path = False # path to .list_of_assets.json
-		self.chat_img_path = False # img to chat, folder path
-		self.preview_img_path = False # preview img, folder path
-		self.assets_list = False # # a list of existing assets
-		self.status = False # status
-		self.project_database = False # the type of database
+		#base fields
+		for item in self.projects_keys:
+			exec('self.%s = False' % item[0])
 		
+		# added fields
+		self.assets_list = False # # a list of existing assets
 		# constans
 		self.folders = {'assets':'assets', 'chat_img_folder':'.chat_images', 'preview_images': '.preview_images'}
-		#self.asset_t = 'assets'
-		#studio.__init__(self)
 
 	def add_project(self, project_name, project_path):
 		# project_name, get project_path
@@ -1060,10 +1059,7 @@ class project(studio):
 		# -- write data
 		write_data = {}
 		for item in self.projects_keys:
-			if item[0] == 'project_database':
-				write_data[item[0]] = json.dumps(eval('self.%s' % item[0]))
-			else:
-				write_data[item[0]] = eval('self.%s' % item[0])
+			write_data[item[0]] = eval('self.%s' % item[0])
 		#print('#'*3, write_data)
 		bool_, return_data = database().write('studio', self, self.projects_t, self.projects_keys, write_data)
 		if not bool_:
