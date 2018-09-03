@@ -655,8 +655,7 @@ class studio:
 			return
 		
 		# get list_projects
-		com = 'SELECT * FROM %s' % self.projects_t
-		bool_, return_data = database().get('studio', self, self.projects_t, com)
+		bool_, return_data = database().read('studio', self, self.projects_t)
 		
 		if not bool_:
 			print('#'*10, return_data)
@@ -828,6 +827,84 @@ class database():
 			return_data = self.sqlite3_create_table(level, read_ob, table_name, keys, table_root)
 			return(return_data)
 		
+	# write_data - словарь по ключам keys, также может быть списком словарей, для записи нескольких строк.
+	# keys - это: tasks_keys, projects_keys итд.
+	def write(self, level, read_ob, table_name, keys, write_data, table_root=False):
+		attr = self.use_db_attr.get(level)
+		if not attr:
+			raise Exception('database.write()', 'Unknown Level : %s' % level)
+		
+		db_name, db_data = eval('read_ob.%s' % attr)
+		#return(db_name, db_data)
+		
+		if db_name == 'sqlite3':
+			return_data = self.sqlite3_write(level, read_ob, table_name, keys, write_data, table_root)
+			return(return_data)
+		
+	def read(self, level, read_ob, table_name, columns = False, where=False, table_root=False):
+		attr = self.use_db_attr.get(level)
+		if not attr:
+			raise Exception('database.write()', 'Unknown Level : %s' % level)
+		
+		db_name, db_data = eval('read_ob.%s' % attr)
+		#return(db_name, db_data)
+		
+		if db_name == 'sqlite3':
+			return_data = self.sqlite3_read(level, read_ob, table_name, columns, where, table_root)
+			return(return_data)
+	
+	### SQLITE3
+	def get_db_path(self, level, read_ob, table_name, table_root):
+		attr = self.sqlite3_db_folder_attr.get(level)
+		db_folder = eval('read_ob.%s' % attr)
+		if table_root:
+			db_path = os.path.join(db_folder, '.%s.db' % table_root)
+		else:
+			db_path = os.path.join(db_folder, '.%s.db' % table_name)
+		return(db_path)
+	
+	# where - строка условия. если where = False - значит выделяется всё.
+	# columns - False - означает все столбцы если не False - то список столбцов.
+	def sqlite3_read(self, level, read_ob, table_name, columns, where, table_root):
+		# db_path
+		db_path = self.get_db_path(level, read_ob, table_name, table_root)
+		# columns
+		col = ''
+		if not columns:
+			col = '*'
+		elif columns.__class__.__name__ == 'list':
+			for i, item in enumerate(columns):
+				if i == 0:
+					col = col + item
+				else:
+					col = col + ', %s' % item
+		# com
+		com = 'SELECT %s FROM %s ' % (col, table_name)
+		if where:
+			com = '%s WHERE %s' % (com, where)
+			
+		# connect
+		# -- db_path
+		db_path = self.get_db_path(level, read_ob, table_name, table_root)
+		# -- connect
+		conn = sqlite3.connect(db_path, detect_types=sqlite3.PARSE_DECLTYPES|sqlite3.PARSE_COLNAMES)
+		conn.row_factory = sqlite3.Row
+		c = conn.cursor()
+		try:
+			c.execute(com)
+		except Ecxeption as e:
+			conn.close()
+			print('#'*3, 'Exception in database.sqlite3_read:')
+			print('#'*3, 'com:', com)
+			print('#'*3, e)
+			return(False, 'Exception in database.sqlite3_read, please look the terminal!')
+		
+		data = []
+		for row in c.fetchall():
+			data.append(dict(row))
+		conn.close()
+		return(True, data)
+	
 	def sqlite3_create_table(self, level, read_ob, table_name, keys, table_root):
 		com = ''
 		for i, data in enumerate(keys):
@@ -846,20 +923,6 @@ class database():
 	
 	# write_data - словарь по ключам keys, также может быть списком словарей, для записи нескольких строк.
 	# keys - это: tasks_keys, projects_keys итд.
-	def write(self, level, read_ob, table_name, keys, write_data, table_root=False):
-		attr = self.use_db_attr.get(level)
-		if not attr:
-			raise Exception('database.write()', 'Unknown Level : %s' % level)
-		
-		db_name, db_data = eval('read_ob.%s' % attr)
-		#return(db_name, db_data)
-		
-		if db_name == 'sqlite3':
-			return_data = self.sqlite3_write(level, read_ob, table_name, keys, write_data, table_root)
-			return(return_data)
-	
-	# write_data - словарь по ключам keys, также может быть списком словарей, для записи нескольких строк.
-	# keys - это: tasks_keys, projects_keys итд.
 	def sqlite3_write(self, level, read_ob, table_name, keys, write_data, table_root):
 		if write_data.__class__.__name__ == 'dict':
 			iterator = [write_data]
@@ -867,12 +930,7 @@ class database():
 			iterator = write_data
 		# connect
 		# -- db_path
-		attr = self.sqlite3_db_folder_attr.get(level)
-		db_folder = eval('read_ob.%s' % attr)
-		if table_root:
-			db_path = os.path.join(db_folder, '.%s.db' % table_root)
-		else:
-			db_path = os.path.join(db_folder, '.%s.db' % table_name)
+		db_path = self.get_db_path(level, read_ob, table_name, table_root)
 		# -- connect
 		conn = sqlite3.connect(db_path, detect_types=sqlite3.PARSE_DECLTYPES|sqlite3.PARSE_COLNAMES)
 		conn.row_factory = sqlite3.Row
@@ -907,13 +965,8 @@ class database():
 		return(True, 'Ok!')
 			
 	def sqlite3_get(self, level, read_ob, table_name, com, table_root):
-		attr = self.sqlite3_db_folder_attr.get(level)
-		db_folder = eval('read_ob.%s' % attr)
-		if table_root:
-			db_path = os.path.join(db_folder, '.%s.db' % table_root)
-		else:
-			db_path = os.path.join(db_folder, '.%s.db' % table_name)
-		
+		#db_path
+		db_path = self.get_db_path(level, read_ob, table_name, table_root)
 		#print('sqlite3_get()', db_path, os.path.exists(db_path))
 		
 		try:
@@ -939,13 +992,8 @@ class database():
 	
 	# if com = False - создаётся пустая таблица ,при отсутствии
 	def sqlite3_set(self, level, read_ob, table_name, com, data_com, table_root):
-		attr = self.sqlite3_db_folder_attr.get(level)
-		db_folder = eval('read_ob.%s' % attr)
-		if table_root:
-			db_path = os.path.join(db_folder, '.%s.db' % table_root)
-		else:
-			db_path = os.path.join(db_folder, '.%s.db' % table_name)
-		
+		#db_path
+		db_path = self.get_db_path(level, read_ob, table_name, table_root)
 		#print('sqlite3_get()', db_path, os.path.exists(db_path))
 		
 		try:
@@ -1088,26 +1136,26 @@ class project(studio):
 			self.path = self.list_projects[name]['path']
 			#
 			assets_path = os.path.normpath(os.path.join(self.path, self.assets_db))
-			if os.path.exists(assets_path):
-				self.assets_path = assets_path
+			#if os.path.exists(assets_path):
+			self.assets_path = assets_path
 			#
 			tasks_path = os.path.normpath(os.path.join(self.path, self.tasks_db))
-			if os.path.exists(tasks_path):
-				self.tasks_path = tasks_path
+			#if os.path.exists(tasks_path):
+			self.tasks_path = tasks_path
 			#
 			self.list_of_assets_path = os.path.normpath(self.list_projects[name]['list_of_assets_path'])
 			#
 			chat_path = os.path.normpath(os.path.join(self.path, self.chats_db))
-			if os.path.exists(chat_path):
-				self.chat_path = chat_path
+			#if os.path.exists(chat_path):
+			self.chat_path = chat_path
 			#
 			chat_img_path = os.path.normpath(os.path.join(self.path, self.folders['chat_img_folder']))
-			if os.path.exists(chat_img_path):
-				self.chat_img_path = chat_img_path
+			#if os.path.exists(chat_img_path):
+			self.chat_img_path = chat_img_path
 			#
 			preview_img_path = os.path.normpath(os.path.join(self.path, self.folders['preview_images']))
-			if os.path.exists(preview_img_path):
-				self.preview_img_path = preview_img_path
+			#if os.path.exists(preview_img_path):
+			self.preview_img_path = preview_img_path
 			#
 			self.status = self.list_projects[name]['status']
 			# database
@@ -6910,9 +6958,12 @@ class group(project):
 			conn = sqlite3.connect(self.assets_path, detect_types=sqlite3.PARSE_DECLTYPES|sqlite3.PARSE_COLNAMES)
 			conn.row_factory = sqlite3.Row
 			c = conn.cursor()
-		except:
-			print(self.assets_path)
-			return(False, ('Not Open .db' + self.assets_path))
+		except Exception as e:
+			print('#'*3, 'Exception in group.get_list:')
+			print('#'*3, 'assets_path:', self.assets_path)
+			print('#'*3, e)
+			#conn.close()
+			return(False, ('Exception in group.get_list: please look the terminal'))
 		
 		try:
 			table = self.group_t
