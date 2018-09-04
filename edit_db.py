@@ -853,6 +853,20 @@ class database():
 			return_data = self.sqlite3_read(level, read_ob, table_name, columns, where, table_root)
 			return(return_data)
 	
+	# update_data - словарь по ключам из keys
+	# where - словарь по ключам, так как значения маскируются под "?" не может быть None или False
+	def update(self, level, read_ob, table_name, keys, update_data, where, table_root=False):
+		attr = self.use_db_attr.get(level)
+		if not attr:
+			raise Exception('database.write()', 'Unknown Level : %s' % level)
+		
+		db_name, db_data = eval('read_ob.%s' % attr)
+		#return(db_name, db_data)
+		
+		if db_name == 'sqlite3':
+			return_data = self.sqlite3_update(level, read_ob, table_name, keys, update_data, where, table_root)
+			return(return_data)
+	
 	### SQLITE3
 	def get_db_path(self, level, read_ob, table_name, table_root):
 		attr = self.sqlite3_db_folder_attr.get(level)
@@ -863,11 +877,59 @@ class database():
 			db_path = os.path.join(db_folder, '.%s.db' % table_name)
 		return(db_path)
 	
+	# update_data - словарь по ключам из keys
+	# where - словарь по ключам, так как значения маскируются под "?" не может быть None или False
+	def sqlite3_update(self, level, read_ob, table_name, keys, update_data, where, table_root):
+		data_com = []
+		# set_data
+		set_data = ''
+		if update_data.__class__.__name__ != 'dict':
+			return(False, 'update_data not dict!')
+		else:
+			for i, key in enumerate(update_data):
+				if i==0:
+					set_data = '%s = ?' % key
+				else:
+					set_data = set_data + ', %s = ?' % key
+				data_com.append(update_data[key])
+		# where
+		where_data = ''
+		if where.__class__.__name__ != 'dict':
+			return(False, 'where not dict!')
+		else:
+			for i, key in enumerate(where):
+				if i==0:
+					where_data = '%s = ?' % key
+				else:
+					where_data = where_data + ', %s = ?' % key
+				data_com.append(where[key])
+		# com
+		com = 'UPDATE %s SET %s WHERE %s' % (table_name, set_data, where_data)
+		
+		# connect
+		# -- db_path
+		db_path = self.get_db_path(level, read_ob, table_name, table_root)
+		# -- connect
+		conn = sqlite3.connect(db_path, detect_types=sqlite3.PARSE_DECLTYPES|sqlite3.PARSE_COLNAMES)
+		conn.row_factory = sqlite3.Row
+		c = conn.cursor()
+		# -- com
+		try:
+			c.execute(com, data_com)
+		except Exception as e:
+			print('#'*3, 'Exception in database.sqlite3_update:')
+			print('#'*3, 'com:', com)
+			print('#'*3, 'data_com:', data_com)
+			print('#'*3, e)
+			conn.close()
+			return(False, 'Exception in database.sqlite3_update, please look the terminal!')
+		conn.commit()
+		conn.close()
+		return(True, 'Ok!')
+	
 	# where - строка условия. если where = False - значит выделяется всё.
 	# columns - False - означает все столбцы если не False - то список столбцов.
 	def sqlite3_read(self, level, read_ob, table_name, columns, where, table_root):
-		# db_path
-		db_path = self.get_db_path(level, read_ob, table_name, table_root)
 		# columns
 		col = ''
 		if not columns:
@@ -1171,7 +1233,7 @@ class project(studio):
 	
 	def rename_project(self, old_name, new_name):
 		if not old_name in self.list_projects:
-			return(False, ('in rename_project -> No such project: \"' + old_name + '\"'))
+			return(False, ('in rename_project -> No such project: \"%s\"' % old_name))
 			
 		result = self.get_project(old_name)
 		if not result[0]:
@@ -1203,39 +1265,13 @@ class project(studio):
 			
 		result = self.get_project(name)
 		if not result[0]:
-			return(False, ('in edit_status -> ' + result[1]))
+			return(False, ('in project.edit_status -> ' + result[1]))
 		
-		'''
-		try:
-			with open(self.projects_path, 'r') as read:
-				data = json.load(read)
-				data[name]['status'] = status
-				read.close()
-		except:
-			return(False, 'Not Read \".projects.json\"!')
-			
-		try:
-			with open(self.projects_path, 'w') as f:
-				jsn = json.dump(data, f, sort_keys=True, indent=4)
-				f.close()
-		except:
-			return(False, 'Not Write \".projects.json\"!')
-		'''
-		
-		# -- CONNECT  .db
-		conn = sqlite3.connect(self.projects_path, detect_types=sqlite3.PARSE_DECLTYPES|sqlite3.PARSE_COLNAMES)
-		conn.row_factory = sqlite3.Row
-		c = conn.cursor()
-		
-		table = self.projects_t
-		string = 'UPDATE ' +  table + ' SET \"status\" = ? WHERE name = ?'
-		data = (status, name)
-		
-		c.execute(string, data)
-		conn.commit()
-		conn.close()
-		
-		return(True, 'Ok')
+		# database
+		update_data = {'status': status}
+		where = {'name': name}
+		bool_, return_data = database().update('studio', self, self.projects_t, self.projects_keys, update_data, where)
+		return(bool_, return_data)
 		
 	def make_folders(self, root):
 		for f in self.folders:
