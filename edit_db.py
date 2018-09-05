@@ -789,6 +789,7 @@ class database():
 	# level - studio or project; or: studio, project, series, group, asset, task, chat, log, statistic ...
 	# read_ob - object of studio or project;
 	# table_root - assets, chats - те случаи когда имя файла ДБ не соответствует имени таблицы, если есть table_root - имя файла ДБ будет определяться по нему.
+	# table_root - может быть как именем таблицы - например: assets, так и именем файла - .assets.db
 	def get(self, level, read_ob, table_name, com, table_root=False):
 		# get use_db
 		attr = self.use_db_attr.get(level)
@@ -801,7 +802,8 @@ class database():
 		if db_name == 'sqlite3':
 			return_data = self.sqlite3_get(level, read_ob, table_name, com, table_root)
 			return(return_data)
-		
+	
+	# table_root - может быть как именем таблицы - например: assets, так и именем файла - .assets.db
 	def set_db(self, level, read_ob, table_name, com, data_com=False, table_root=False):
 		# get use_db
 		attr = self.use_db_attr.get(level)
@@ -815,6 +817,7 @@ class database():
 			return_data = self.sqlite3_set(level, read_ob, table_name, com, data_com, table_root)
 			return(return_data)
 	
+	# table_root - может быть как именем таблицы - например: assets, так и именем файла - .assets.db
 	def create_table(self, level, read_ob, table_name, keys, table_root = False):
 		attr = self.use_db_attr.get(level)
 		if not attr:
@@ -829,22 +832,23 @@ class database():
 		
 	# write_data - словарь по ключам keys, также может быть списком словарей, для записи нескольких строк.
 	# keys - это: tasks_keys, projects_keys итд.
-	def write(self, level, read_ob, table_name, keys, write_data, table_root=False):
+	# table_root - может быть как именем таблицы - например: assets, так и именем файла - .assets.db
+	def insert(self, level, read_ob, table_name, keys, write_data, table_root=False):
 		attr = self.use_db_attr.get(level)
 		if not attr:
-			raise Exception('database.write()', 'Unknown Level : %s' % level)
+			raise Exception('database.insert()', 'Unknown Level : %s' % level)
 		
 		db_name, db_data = eval('read_ob.%s' % attr)
 		#return(db_name, db_data)
 		
 		if db_name == 'sqlite3':
-			return_data = self.sqlite3_write(level, read_ob, table_name, keys, write_data, table_root)
+			return_data = self.sqlite3_insert(level, read_ob, table_name, keys, write_data, table_root)
 			return(return_data)
 		
 	def read(self, level, read_ob, table_name, columns = False, where=False, table_root=False):
 		attr = self.use_db_attr.get(level)
 		if not attr:
-			raise Exception('database.write()', 'Unknown Level : %s' % level)
+			raise Exception('database.read()', 'Unknown Level : %s' % level)
 		
 		db_name, db_data = eval('read_ob.%s' % attr)
 		#return(db_name, db_data)
@@ -855,10 +859,11 @@ class database():
 	
 	# update_data - словарь по ключам из keys
 	# where - словарь по ключам, так как значения маскируются под "?" не может быть None или False
+	# table_root - может быть как именем таблицы - например: assets, так и именем файла - .assets.db
 	def update(self, level, read_ob, table_name, keys, update_data, where, table_root=False):
 		attr = self.use_db_attr.get(level)
 		if not attr:
-			raise Exception('database.write()', 'Unknown Level : %s' % level)
+			raise Exception('database.update()', 'Unknown Level : %s' % level)
 		
 		db_name, db_data = eval('read_ob.%s' % attr)
 		#return(db_name, db_data)
@@ -868,11 +873,15 @@ class database():
 			return(return_data)
 	
 	### SQLITE3
+	# table_root - может быть как именем таблицы - например: assets, так и именем файла - .assets.db
 	def get_db_path(self, level, read_ob, table_name, table_root):
 		attr = self.sqlite3_db_folder_attr.get(level)
 		db_folder = eval('read_ob.%s' % attr)
 		if table_root:
-			db_path = os.path.join(db_folder, '.%s.db' % table_root)
+			if table_root.endswith('.db'):
+				db_path = os.path.join(db_folder, table_root)
+			else:
+				db_path = os.path.join(db_folder, '.%s.db' % table_root)
 		else:
 			db_path = os.path.join(db_folder, '.%s.db' % table_name)
 		return(db_path)
@@ -954,7 +963,7 @@ class database():
 		c = conn.cursor()
 		try:
 			c.execute(com)
-		except Ecxeption as e:
+		except Exception as e:
 			conn.close()
 			print('#'*3, 'Exception in database.sqlite3_read:')
 			print('#'*3, 'com:', com)
@@ -985,7 +994,7 @@ class database():
 	
 	# write_data - словарь по ключам keys, также может быть списком словарей, для записи нескольких строк.
 	# keys - это: tasks_keys, projects_keys итд.
-	def sqlite3_write(self, level, read_ob, table_name, keys, write_data, table_root):
+	def sqlite3_insert(self, level, read_ob, table_name, keys, write_data, table_root):
 		if write_data.__class__.__name__ == 'dict':
 			iterator = [write_data]
 		elif write_data.__class__.__name__ == 'list':
@@ -1016,12 +1025,12 @@ class database():
 			try:
 				c.execute(com, data_com)
 			except Exception as e:
-				print('#'*3, 'Exception in database.sqlite3_write:')
+				print('#'*3, 'Exception in database.sqlite3_insert:')
 				print('#'*3, 'com:', com)
 				print('#'*3, 'data_com:', data_com)
 				print('#'*3, e)
 				conn.close()
-				return(False, 'Exception in database.sqlite3_write, please look the terminal!')
+				return(False, 'Exception in database.sqlite3_insert, please look the terminal!')
 		conn.commit()
 		conn.close()
 		return(True, 'Ok!')
@@ -1171,7 +1180,7 @@ class project(studio):
 		for item in self.projects_keys:
 			write_data[item[0]] = eval('self.%s' % item[0])
 		#print('#'*3, write_data)
-		bool_, return_data = database().write('studio', self, self.projects_t, self.projects_keys, write_data)
+		bool_, return_data = database().insert('studio', self, self.projects_t, self.projects_keys, write_data)
 		if not bool_:
 			return(bool_, return_data)
 		
