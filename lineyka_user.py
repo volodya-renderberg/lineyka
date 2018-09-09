@@ -1341,37 +1341,14 @@ class MainWindow(QtGui.QMainWindow):
 		'status' : 'active'
 		}
     
-		# exists Nik - Password
-		if data['nik_name'] == '':
-			self.message('\"Nik Name\" not specified!', 3)
-			return
-		if data['password'] == '':
-			self.message('\"Password\" not specified!', 3)
-			return
-    
-		# get User_Name
-		user_name = getpass.getuser()
-		data['user_name'] = user_name
-
-		# get user_level
-		artists = copy.read_artist('all')
-		if not artists[0]:
-			data['level'] = 'root'
-		else:
-			data['level'] = 'user'
-      
 		# add artist
 		result = copy.add_artist(data)
 		if result[0]:
 			self.myWidget.registrWindow.close()
 		else:
-			if result[1] == 'overlap':
-				self.message('User With That Username Already Exists!', 2)
-				return
-			else:
-				self.message(result[1], 2)
-				return
-	
+			self.message(result[1], 2)
+			return
+				
 		# finish
 		self.load_nik_name()
 		self.clear_table()

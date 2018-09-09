@@ -844,7 +844,9 @@ class database():
 		if db_name == 'sqlite3':
 			return_data = self.sqlite3_insert(level, read_ob, table_name, keys, write_data, table_root)
 			return(return_data)
-		
+	
+	# where - строка условия. если where = False - значит выделяется всё.
+	# columns - False - означает все столбцы если не False - то список столбцов.
 	def read(self, level, read_ob, table_name, columns = False, where=False, table_root=False):
 		attr = self.use_db_attr.get(level)
 		if not attr:
@@ -5309,87 +5311,48 @@ class artist(studio):
 		
 	def add_artist(self, keys):
 		# test nik_name
-		try:
-			nik_name = keys['nik_name']
-			if not nik_name:
-				return(False, 'not nik_name')
-		except:
-			return(False, 'not nik_name')
-			
-		# test user_name
-		try:
-			user_name = keys['user_name']
-		except:
-			return(False, 'not user_name')
+		if not keys.get('nik_name'):
+			return(False, '\"Nik Name\" not specified!')
+		if not keys.get('password'):
+			return(False, '\"Password\" not specified!')
+
+		# создание таблицы, если отсутствует.
+		# определение level - если первый юзер то рут.
+		# проверка на совпадение имени.
+		# проверка на совпадение user_name и перезапись существующих в пустую строку.
+		# запиь нового юзера
 		
-		# create string
-		table = self.artists_t
-		string = "insert into " + table + " values"
-		values = '('
-		data = []
-		for i, key in enumerate(self.artists_keys):
-			if i< (len(self.artists_keys) - 1):
-				values = values + '?, '
-			else:
-				values = values + '?'
-			if key[0] in keys:
-				data.append(keys[key[0]])
-			else:
-				if key[1] == 'real':
-					data.append(0.0)
-				elif key[1] == 'timestamp':
-					data.append(datetime.datetime.now())
-				else:
-					data.append('')
-					
-		values = values + ')'
-		data = tuple(data)
-		string = string + values
+		# create table
+		bool_, return_data = database().create_table('studio', self, self.artists_t, self.artists_keys)
+		if not bool_:
+			return(bool_, return_data)
 		
-		if not self.artists_path:
-			self.get_studio()
+		# read table
+		bool_, return_data = database().read('studio', self, self.artists_t)
+		if not bool_:
+			return(bool_, return_data)
+		# -- set level
+		if not return_data:
+			keys['level'] = 'root'
+		else:
+			keys['level'] = 'user'
+		# -- test exist name, user_name
+		keys['user_name'] = getpass.getuser()
+		for item in return_data:
+			if item.get('nik_name') == keys['nik_name']:
+				return(False, 'User "%s" Already Exists!' % keys['nik_name'])
+			if item.get('user_name') == keys['user_name']:
+				bool_, return_data = database().update('studio', self, self.artists_t, self.artists_keys, {'user_name': ''}, {'user_name': keys['user_name']})
+				if not bool_:
+					return(bool_, return_data)
+				
+		# create user
+		bool_, return_data = database().insert('studio', self, self.artists_t, self.artists_keys, keys)
+		if not bool_:
+			return(bool_, return_data)
+		else:
+			return(True, 'ok')
 		
-		# write task to db
-		conn = sqlite3.connect(self.artists_path, detect_types=sqlite3.PARSE_DECLTYPES|sqlite3.PARSE_COLNAMES)
-		conn.row_factory = sqlite3.Row
-		c = conn.cursor()
-		
-		# exists table
-		try:
-			str_ = 'select * from ' + table
-			c.execute(str_)
-			# unicum task_name test
-			r = c.fetchall()
-			for row in r:
-				if row['nik_name'] == keys['nik_name']:
-					conn.close()
-					return(False, 'overlap')
-				if row['user_name'] == keys['user_name']:
-					string3 = 'UPDATE ' +  table + ' SET user_name = \"\" WHERE nik_name = \"' + row['nik_name'] + '\"'
-					c.execute(string3)
-		except:
-			string2 = "CREATE TABLE " + table + " ("
-			for i,key in enumerate(self.artists_keys):
-				if i == 0:
-					string2 = string2 + key[0] + ' ' + key[1]
-				else:
-					string2 = string2 + ', ' + key[0] + ' ' + key[1]
-			string2 = string2 + ')'
-			'''
-			# -- 
-			print 'String 2: ', string2
-			conn.close()
-			return
-			# --
-			'''
-			c.execute(string2)
-		
-		# add task
-		c.execute(string, data)
-		conn.commit()
-		conn.close()
-		return(True, 'ok')
-			
 	def read_artist(self, keys):
 		# create string
 		table = self.artists_t
