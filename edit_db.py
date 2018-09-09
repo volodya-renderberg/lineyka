@@ -845,7 +845,7 @@ class database():
 			return_data = self.sqlite3_insert(level, read_ob, table_name, keys, write_data, table_root)
 			return(return_data)
 	
-	# where - строка условия. если where = False - значит выделяется всё.
+	# where - 1) строка условия, 2) словарь по keys, 3) False - значит выделяется всё.
 	# columns - False - означает все столбцы если не False - то список столбцов.
 	def read(self, level, read_ob, table_name, columns = False, where=False, table_root=False):
 		attr = self.use_db_attr.get(level)
@@ -938,7 +938,7 @@ class database():
 		conn.close()
 		return(True, 'Ok!')
 	
-	# where - строка условия. если where = False - значит выделяется всё.
+	# where - 1) строка условия, 2) словарь по keys, 3) False - значит выделяется всё.
 	# columns - False - означает все столбцы если не False - то список столбцов.
 	def sqlite3_read(self, level, read_ob, table_name, columns, where, table_root):
 		# columns
@@ -954,8 +954,16 @@ class database():
 		# com
 		com = 'SELECT %s FROM %s ' % (col, table_name)
 		if where:
-			com = '%s WHERE %s' % (com, where)
-			
+			if where.__class__.__name__ == 'string':
+				com = '%s WHERE %s' % (com, where)
+			elif where.__class__.__name__ == 'dict':
+				were_string = ''
+				for i, key in enumerate(where):
+					if i == 0:
+						were_string = were_string + '"%s" = "%s"' % (key, where.get(key))
+					else:
+						were_string = were_string + ', "%s" = "%s"' % (key, where.get(key))
+				com = '%s WHERE %s' % (com, were_string)
 		# connect
 		# -- db_path
 		db_path = self.get_db_path(level, read_ob, table_name, table_root)
@@ -5354,85 +5362,25 @@ class artist(studio):
 			return(True, 'ok')
 		
 	def read_artist(self, keys):
-		# create string
-		table = self.artists_t
-		
-		if not self.artists_path or (not os.path.exists(self.artists_path)):
-			#print('artists_path:', self.artists_path)
-			return(False, 'Not Artist Path')
-		
 		if keys == 'all':
-			string = 'select * from ' + table		
-		else:
-			string = 'select * from ' + table + ' WHERE '
-			for i,key in enumerate(keys):
-				if i == 0:
-					string = string + ' ' + key + ' = ' + '\"' + keys[key] + '\"'
-				else:
-					string = string + 'and ' + key + ' = ' + '\"' + keys[key] + '\"'
-				
-		#return string
-		
-		# read artists
-		conn = sqlite3.connect(self.artists_path, detect_types=sqlite3.PARSE_DECLTYPES|sqlite3.PARSE_COLNAMES)
-		conn.row_factory = sqlite3.Row
-		c = conn.cursor()
-		'''
-		c.execute(string)
-		rows = c.fetchall()
-		'''
-		try:
-			c.execute(string)
-			rows = c.fetchall()
-		except:
-			conn.close()
-			return(False, 'can_not_read_artists')
-				
-		conn.close()
-		'''
-		if not rows:
-			return False, 'not_task_name'
-		'''
-		return(True, rows)
+			keys = False
+		bool_, return_data = database().read('studio', self, self.artists_t, where=keys)
+		return(bool_, return_data)
 		
 	def read_artist_of_workroom(self, workroom_id):
-		# create string
-		table = self.artists_t
-		
-		if not self.artists_path or (not os.path.exists(self.artists_path)):
-			#print('artists_path:', self.artists_path)
-			return(False, 'Not Artist Path')
-			
-		string = 'select * from ' + table
-		
-		try:
-			# connect .db
-			conn = sqlite3.connect(self.artists_path, detect_types=sqlite3.PARSE_DECLTYPES|sqlite3.PARSE_COLNAMES)
-			conn.row_factory = sqlite3.Row
-			c = conn.cursor()
-		except:
-			return(False, 'in artist().read_artist_of_workroom Not Table Connect!')
-			
-		rows = c.execute(string)
-		
-		if not rows:
-			conn.close()
-			return(False, 'Not Artists!')
-		
+		bool_, return_data = database().read('studio', self, self.artists_t)
+		if not bool_:
+			return(bool_, return_data)
+		#
 		artists_dict = {}
-		for row in rows:
+		for row in return_data:
 			try:
 				workrooms = json.loads(row['workroom'])
 			except:
 				continue
 			if workroom_id in workrooms:
-				artists_dict[row['nik_name']] = dict(row)
-			
-		#c.close()
-		conn.close()
-		
+				artists_dict[row['nik_name']] = row
 		return(True, artists_dict)
-		
 		
 	def login_user(self, nik_name, password):
 		user_name = getpass.getuser()

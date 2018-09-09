@@ -6352,7 +6352,7 @@ class MainWindow(QtGui.QMainWindow):
 				
 		# change workroom
 		task_data = dict(item_.task)
-		copy = db_task
+		copy = self.db_chat # db_task
 		result = copy.change_workroom(self.current_project, task_data, new_workroom)
 		if not result[0]:
 			self.message(result[1], 2)
@@ -6399,7 +6399,7 @@ class MainWindow(QtGui.QMainWindow):
 				
 		# change workroom
 		task_data = dict(item_.task)
-		copy = db_task
+		copy = self.db_chat # db_task
 		result = copy.change_price(self.current_project, task_data, new_price)
 		if not result[0]:
 			self.message(result[1], 2)
