@@ -7189,11 +7189,8 @@ class MainWindow(QtGui.QMainWindow):
     
 		if login[0]:
 			self.loginWindow.close()
-		elif login[1] == 'not user':
-			self.message('user name is not correct!', 2)
-			return
-		elif login[1] == 'not password':
-			self.message('password is not correct!!', 2)
+		else:
+			self.message(login[1], 2)
 			return
 			
 		# ---- get artist data

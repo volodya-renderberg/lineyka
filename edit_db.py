@@ -5383,42 +5383,31 @@ class artist(studio):
 		return(True, artists_dict)
 		
 	def login_user(self, nik_name, password):
+		# проверка наличия юзера
+		# проверка пароля
+		# очистка данного юзернейма
+		# присвоение данного юзернейма пользователю
 		user_name = getpass.getuser()
-		table = self.artists_t
-		string = 'select * from ' + table + ' WHERE nik_name = \"' + nik_name + '\"'
-		
-		conn = sqlite3.connect(self.artists_path, detect_types=sqlite3.PARSE_DECLTYPES|sqlite3.PARSE_COLNAMES)
-		conn.row_factory = sqlite3.Row
-		c = conn.cursor()
-		
-		c.execute(string)
-		rows = c.fetchall()
-		
-		if len(rows)== 0:
-			conn.close()
-			return(False, 'not user')
-			
+		bool_, return_data = database().read('studio', self, self.artists_t, where = {'nik_name': nik_name})
+		if not bool_:
+			return(bool_, return_data)
+		# test exists user
+		if not return_data:
+			return(False, 'User is not found!')
+		# test password
 		else:
-			if password == rows[0]['password']:
-				string2 = 'select * from ' + table + ' WHERE user_name = \"' + user_name + '\"'
-				c.execute(string2)
-				rows = c.fetchall()
-				for row in rows:
-					#print(row['nik_name'])
-					string3 = 'UPDATE ' +  table + ' SET user_name = \'\' WHERE nik_name = \"' + row['nik_name'] + '\"'
-					#print(string3)
-					c.execute(string3)
-					
-				string4 = 'UPDATE ' +  table + ' SET user_name = \"' + user_name + '\" WHERE nik_name = \"' + nik_name + '\"'
-				c.execute(string4)
-				conn.commit()
-				conn.close()
-				return(True, (nik_name, user_name))
-				
-			else:
-				conn.close()
-				return(False, 'not password')
-		
+			if return_data[0].get('password') != password:
+				return(False, 'Incorrect password!')
+		# clean
+		bool_, return_data = database().update('studio', self, self.artists_t, self.artists_keys, {'user_name': ''}, {'user_name': user_name})
+		if not bool_:
+			return(bool_, return_data)
+		# set user_name
+		bool_, return_data = database().update('studio', self, self.artists_t, self.artists_keys, {'user_name': user_name}, {'nik_name': nik_name})
+		if not bool_:
+			return(bool_, return_data)
+		return(True, (nik_name, user_name))
+
 	def get_user(self, outsource = False):
 		user_name = getpass.getuser()
 		table = self.artists_t
