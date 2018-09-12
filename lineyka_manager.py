@@ -390,7 +390,7 @@ class MainWindow(QtGui.QMainWindow):
 		# add artist
 		#copy = db.artist()
 		copy = self.db_workroom
-		result = copy.add_artist(data)
+		result = copy.add_artist(data, registration = False)
 		
 		if not result[0]:
 			if result[1] == 'overlap':
@@ -563,8 +563,9 @@ class MainWindow(QtGui.QMainWindow):
 				wr_id_list = result[1]
 		'''
 		# -- fill table
+		nik_name = window.nik_name_field.text()
 		data = {
-		'nik_name' : window.nik_name_field.text(),
+		'nik_name' : nik_name,
 		'password' : window.password_field.text(),
 		'email' : window.email_field.text(),
 		'phone' : window.phone_field.text(),
@@ -590,8 +591,8 @@ class MainWindow(QtGui.QMainWindow):
 			return
 		
 		# get artist data
-		print('*'*5, self.current_user, data['nik_name'])
-		if self.current_user == data['nik_name']:
+		#print('*'*5, self.current_user, nik_name)
+		if self.current_user == nik_name:
 			self.get_artist_data()
 			
 		# finish

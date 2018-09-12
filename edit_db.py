@@ -5314,10 +5314,15 @@ class artist(studio):
 	self.edit_stat(user_name, project_name, task_name, {key:data, ...}) - 
 	'''
 	def __init__(self):
+		#base fields
+		for item in self.artists_keys:
+			exec('self.%s = False' % item[0])
 		#studio.__init__(self)
 		pass
-		
-	def add_artist(self, keys):
+	
+	# если registration=True - произойдёт заполнение полей artists_keys, поле user_name будет заполнено.
+	# если registration=False - поля artists_keys заполняться не будут, поле user_name - останется пустым.
+	def add_artist(self, keys, registration = True):
 		# test nik_name
 		if not keys.get('nik_name'):
 			return(False, '\"Nik Name\" not specified!')
@@ -5344,21 +5349,34 @@ class artist(studio):
 			keys['level'] = 'root'
 		else:
 			keys['level'] = 'user'
+		# -- date_time
+		keys['date_time'] = datetime.datetime.now()
 		# -- test exist name, user_name
-		keys['user_name'] = getpass.getuser()
+		if registration:
+			keys['user_name'] = getpass.getuser()
+		else:
+			keys['user_name'] = ''
 		for item in return_data:
+			# test nik_name
 			if item.get('nik_name') == keys['nik_name']:
 				return(False, 'User "%s" Already Exists!' % keys['nik_name'])
-			if item.get('user_name') == keys['user_name']:
-				bool_, return_data = database().update('studio', self, self.artists_t, self.artists_keys, {'user_name': ''}, {'user_name': keys['user_name']})
-				if not bool_:
-					return(bool_, return_data)
+			# test user_name
+			if registration:
+				if item.get('user_name') == keys['user_name']:
+					bool_, return_data = database().update('studio', self, self.artists_t, self.artists_keys, {'user_name': ''}, {'user_name': keys['user_name']})
+					if not bool_:
+						return(bool_, return_data)
 				
 		# create user
 		bool_, return_data = database().insert('studio', self, self.artists_t, self.artists_keys, keys)
 		if not bool_:
 			return(bool_, return_data)
 		else:
+			# fill fields
+			if registration:
+				for item in self.artists_keys:
+					com = 'self.%s = keys.get("%s")' % (item[0], item[0])
+					exec(com)
 			return(True, 'ok')
 		
 	def read_artist(self, keys):
@@ -5388,15 +5406,15 @@ class artist(studio):
 		# очистка данного юзернейма
 		# присвоение данного юзернейма пользователю
 		user_name = getpass.getuser()
-		bool_, return_data = database().read('studio', self, self.artists_t, where = {'nik_name': nik_name})
+		bool_, user_data = database().read('studio', self, self.artists_t, where = {'nik_name': nik_name})
 		if not bool_:
-			return(bool_, return_data)
+			return(bool_, user_data)
 		# test exists user
-		if not return_data:
+		if not user_data:
 			return(False, 'User is not found!')
 		# test password
 		else:
-			if return_data[0].get('password') != password:
+			if user_data[0].get('password') != password:
 				return(False, 'Incorrect password!')
 		# clean
 		bool_, return_data = database().update('studio', self, self.artists_t, self.artists_keys, {'user_name': ''}, {'user_name': user_name})
@@ -5406,42 +5424,30 @@ class artist(studio):
 		bool_, return_data = database().update('studio', self, self.artists_t, self.artists_keys, {'user_name': user_name}, {'nik_name': nik_name})
 		if not bool_:
 			return(bool_, return_data)
+		
+		# fill fields
+		for item in self.artists_keys:
+			com = 'self.%s = user_data[0].get("%s")' % (item[0], item[0])
+			#print('#'*3, item[0], com)
+			exec(com)
 		return(True, (nik_name, user_name))
 
 	def get_user(self, outsource = False):
 		user_name = getpass.getuser()
-		table = self.artists_t
-		string = 'select * from ' + table + ' WHERE user_name = \"' + user_name + '\"'
-		
-		try:
-			conn = sqlite3.connect(self.artists_path, detect_types=sqlite3.PARSE_DECLTYPES|sqlite3.PARSE_COLNAMES)
-			conn.row_factory = sqlite3.Row
-			c = conn.cursor()
-		except:
-			return(False, 'Not Artist Table!')
-		
-		#return string
-		'''
-		c.execute(string)
-		rows = c.fetchall()
-		
-		'''
-		# read db
-		try:
-			c.execute(string)
-			rows = c.fetchall()
-		except:
-			conn.close()
-			return False, 'can_not_read_artists'
-				
-		conn.close()
-		
+		bool_, return_data = database().read('studio', self, self.artists_t, where = {'user_name': user_name})
+		if not bool_:
+			return(bool_, return_data)
+		rows = return_data
 		# conditions # return
-		if len(rows)>1:
-			return False, 'more than one user'
-		elif len(rows)== 0:
+		if not rows:
 			return False, 'not user'
+		elif len(rows)>1:
+			return False, 'more than one user'
 		else:
+			# fill fields
+			for item in self.artists_keys:
+				com = 'self.%s = rows[0].get("%s")' % (item[0], item[0])
+				exec(com)
 			if not outsource:
 				return True, (rows[0]['nik_name'], rows[0]['user_name'], None, rows[0])
 			else:
@@ -5451,40 +5457,39 @@ class artist(studio):
 					out_source = False
 				return True, (rows[0]['nik_name'], rows[0]['user_name'], out_source, rows[0])
 	
-	def edit_artist(self, key_data):
+	# key_data = обязательное поле nik_name
+	# artist_current_data - текущие данные пользователя на момент редактирования.
+	def edit_artist(self, key_data, artist_current_data = False):
 		# test nik_name
-		try:
-			nik_name = (key_data['nik_name'],)
-		except:
-			return False, 'not nik_name'
-			
-		# write task to db
-		conn = sqlite3.connect(self.artists_path, detect_types=sqlite3.PARSE_DECLTYPES|sqlite3.PARSE_COLNAMES)
-		c = conn.cursor()
-		
-		table = self.artists_t
-		# edit db
-		data = []
-		string = 'UPDATE ' +  table + ' SET '
-		for key in key_data:
-			if not key == 'nik_name':
-				#print '*************', key, key_data[key], '\n'
-				#string = string + ' ' + key + ' = \"' + key_data[key] + '\",'
-				string = string + ' ' + key + ' = ? ,'
-				data.append(key_data[key])
-			
-		# -- >>
-		string = string + ' WHERE nik_name = \"' + key_data['nik_name'] + '\"'
-		string = string.replace(', WHERE', ' WHERE')
-		
-		#print(string)
-		#return(False, 'Be!')
-		
-		data = tuple(data)
-		c.execute(string, data)
-		conn.commit()
-		conn.close()
-		
+		nik_name = key_data.get('nik_name')
+		if not nik_name:
+			return False, 'not nik_name!'
+		# test level
+		level = key_data.get('level')
+		if level and not level in self.user_levels:
+			return False, 'wrong level: "%s"!' % level
+		# get artist_current_data
+		if not artist_current_data:
+			bool_, return_data = database().read('studio', self, self.artists_t, where = {'nik_name': nik_name})
+			if not bool_:
+				return(bool_, return_data)
+			else:
+				artist_current_data = return_data[0]
+		# test Access Rights
+		# -- user не менеджер
+		if not self.level in self.manager_levels:
+			return(False, 'Not Access! (your level does not allow you to make similar changes)')
+		# -- попытка возвести в ранг выше себя
+		elif key_data.get("level") and self.user_levels.index(self.level) < self.user_levels.index(key_data.get("level")):
+			return(False, 'Not Access! (attempt to assign a level higher than yourself)')
+		# -- попытка сделать изменения пользователя с более высоким уровнем.
+		elif artist_current_data.get("level") and self.user_levels.index(self.level) < self.user_levels.index(artist_current_data.get("level")):
+			return(False, 'Not Access! (attempt to change a user with a higher level)')
+		# update
+		del key_data['nik_name']
+		bool_, return_data = database().update('studio', self, self.artists_t, self.artists_keys, key_data, {'nik_name': nik_name})
+		if not bool_:
+			return(bool_, return_data)
 		return True, 'ok'
 		
 	def add_stat(self, user_name, keys):
