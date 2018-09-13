@@ -64,14 +64,14 @@ class MainWindow(QtGui.QMainWindow):
 		
 		# load db.
 		self.db_studio = db.studio()
-		#self.artist = db.artist()
+		self.artist = db.artist()
+		self.db_workroom = db.workroom()
 		self.db_series = db.series()
 		self.db_group = db.group()
 		self.db_list_of_assets = db.list_of_assets()
 		self.db_asset = db.asset()
 		#self.db_task = db.task()
 		self.db_set_of_tasks = db.set_of_tasks()
-		self.db_workroom = db.workroom()
 		self.db_chat = db.chat()
 		self.db_log = db.log()
 		
@@ -82,7 +82,6 @@ class MainWindow(QtGui.QMainWindow):
 		self.look_keys = ['nik_name','specialty','outsource','level']
 		self.current_project = False
 		self.current_group = False
-		self.current_user_data = False
 		self.type_editor = False
 		
 		QtGui.QMainWindow.__init__(self, parent)
@@ -416,69 +415,15 @@ class MainWindow(QtGui.QMainWindow):
 		selected_data = current_item.artist
 		level = selected_data['level']
 		
-		'''
-		# get selected artist
-		row = self.myWidget.studio_editor_table.currentRow()
-		if row<0:
-			self.message('Not Selected Artists!', 2)
+		if self.artist.level not in self.artist.manager_levels:
+			self.message('No Access! your level: "%s"' % self.artist.level, 3)
 			return
-    
-		# get selectet artist data
-		num_column = self.myWidget.studio_editor_table.columnCount()
-		nik_name = None
-		level = None
-    
-		for i in range(0, num_column):
-			head = self.myWidget.studio_editor_table.horizontalHeaderItem(i)
-			if head.text() == 'nik_name':
-				item = self.myWidget.studio_editor_table.item(row, i)
-				nik_name = item.text()
-			elif head.text() == 'level':
-				item = self.myWidget.studio_editor_table.item(row, i)
-				level = item.text()
-				
-		# get selected data
-		selected_data = {}
-		for i in range(0, num_column):
-			head = self.myWidget.studio_editor_table.horizontalHeaderItem(i)
-			if head.text() == 'date_time':
-				continue
-			item = self.myWidget.studio_editor_table.item(row, i)
-			selected_data[head.text()] = item.text()
-		'''
-			
-		# get current level
-		copy = self.db_workroom
-		current_artist = copy.get_user()
-		if not current_artist[0]:
-			self.message(current_artist[1], 2)
-			return
-		current_nik_name = current_artist[1][0]
-		ask = copy.read_artist({'nik_name': current_nik_name})
-		current_level = ask[1][0]['level']
 		
-		# get index levels
-		current_index = 0
-		index = 0
-		for i,level_ in enumerate(copy.user_levels):
-			if level_ == current_level:
-				current_index = i
-			elif level_ == level:
-				index = i
-    
-		if current_level not in copy.manager_levels:
-			self.message('No Access! 1', 3)
-			return
-	
-		elif current_index < index:
-			self.message('No Access! 2', 3)
-			return
-			
 		# get levels
 		levels = []
-		for level in copy.user_levels:
+		for level in self.artist.user_levels:
 			levels.append(level)
-			if level == current_level:
+			if level == self.artist.level:
 				break
 			
 		# widget
@@ -497,16 +442,6 @@ class MainWindow(QtGui.QMainWindow):
 		wr_name_list = []
 		for wr_id in wr_id_list:
 			wr_name_list.append(self.myWidget.studio_editor_table.wr_id_dict[wr_id]['name'])
-		
-		'''
-		result = copy.id_list_to_name_list(wr_id_list)
-		if not result[0]:
-			self.message(result[1], 2)
-			wr_name_list = []
-			#return
-		else:
-			wr_name_list = result[1]
-		'''
 		
 		# edit widget
 		window.setWindowTitle('Edit Artist Data')
@@ -530,7 +465,7 @@ class MainWindow(QtGui.QMainWindow):
 		# button connect
 		window.get_share_dir_button.clicked.connect(partial(self.get_share_dir, window.share_dir_field))
 		window.artist_edit_workroom_button.clicked.connect(partial(self.artist_edit_workroom2_ui, window))
-		window.artist_dialog_ok.clicked.connect(self.edit_artist_action)
+		window.artist_dialog_ok.clicked.connect(partial(self.edit_artist_action, selected_data))
 		window.artist_dialog_cancel.clicked.connect(partial(self.close_window, window))
 		
 		# set modal window
@@ -543,25 +478,16 @@ class MainWindow(QtGui.QMainWindow):
 		print('edit artist ui')
 		
 	
-	def edit_artist_action(self):
+	def edit_artist_action(self, selected_data):
 		window = self.editArtistDialog
 		# get data
 		# -- get workroom id list
-		copy = self.db_workroom
 		wr_name_list = json.loads(window.workroom_field.text())
 		wr_id_list = []
 		
 		for name in wr_name_list:
 			wr_id_list.append(self.myWidget.studio_editor_table.wr_name_dict[name]['id'])
-		'''
-		if wr_name_list:
-			result = copy.name_list_to_id_list(wr_name_list)
-			if not result[0]:
-				self.message(result[1], 2)
-				return
-			else:
-				wr_id_list = result[1]
-		'''
+		
 		# -- fill table
 		nik_name = window.nik_name_field.text()
 		data = {
@@ -583,8 +509,7 @@ class MainWindow(QtGui.QMainWindow):
 			data['outsource'] = False
 		
 		# save artist data
-		#copy = db.artist()
-		result = copy.edit_artist(data)
+		result = self.artist.edit_artist(data, artist_current_data = selected_data)
 		
 		if not result[0]:
 			self.message(result[1], 2)
@@ -592,7 +517,7 @@ class MainWindow(QtGui.QMainWindow):
 		
 		# get artist data
 		#print('*'*5, self.current_user, nik_name)
-		if self.current_user == nik_name:
+		if self.artist.nik_name == nik_name:
 			self.get_artist_data()
 			
 		# finish
@@ -5135,13 +5060,13 @@ class MainWindow(QtGui.QMainWindow):
 		self.db_asset.get_list_projects()
 		self.db_log.get_list_projects()
 		
-		if not self.current_user_data:
+		if not self.artist.nik_name:
 			self.message('Not User!', 2)
 			self.boxes_default_state()
 			self.myWidget.task_manager_comboBox_1.clear()
 			self.myWidget.task_manager_comboBox_4.clear()
 			return
-		elif copy.user_levels.index(self.current_user_data['level']) < copy.user_levels.index('manager'):
+		elif copy.user_levels.index(self.artist.level) < copy.user_levels.index('manager'):
 			self.message('No Access!', 2)
 			self.boxes_default_state()
 			self.myWidget.task_manager_comboBox_1.clear()
@@ -5160,7 +5085,7 @@ class MainWindow(QtGui.QMainWindow):
 	def tm_fill_workroom_list(self):
 		copy = self.db_workroom
 		result = copy.get_list_workrooms()
-		if copy.user_levels.index(self.current_user_data['level']) >= copy.user_levels.index('root'):
+		if copy.user_levels.index(self.artist.level) >= copy.user_levels.index('root'):
 			#result = copy.get_list_workrooms()
 			if result[0]:
 				wr_list = []
@@ -5172,7 +5097,7 @@ class MainWindow(QtGui.QMainWindow):
 				self.myWidget.task_manager_comboBox_4.addItems(items)
 				self.myWidget.task_manager_comboBox_4.wr_list = wr_list
 		else:
-			user_wr_list = json.loads(self.current_user_data['workroom'])
+			user_wr_list = json.loads(self.artist.workroom)
 			if result[0]:
 				wr_list = []
 				for wr in result[1]:
@@ -6193,8 +6118,8 @@ class MainWindow(QtGui.QMainWindow):
 		
 		# accept task
 		result = None
-		if self.current_user in readers:
-			result = self.db_chat.readers_accept_task(self.current_project, item.task, self.current_user)
+		if self.artist.nik_name in readers:
+			result = self.db_chat.readers_accept_task(self.current_project, item.task, self.artist.nik_name)
 		else:
 			result = self.db_chat.accept_task(self.current_project, item.task)
 		
@@ -6236,7 +6161,7 @@ class MainWindow(QtGui.QMainWindow):
 		# change task
 		ask = self.message(('Do you want to Rework the task: ' + item.task['task_name'] + ' ?'), 0)
 		if ask:
-			result = self.db_chat.rework_task(self.current_project, item.task, current_user = self.current_user)
+			result = self.db_chat.rework_task(self.current_project, item.task, current_user = self.artist.nik_name)
 			if not result[0]:
 				if result[1] == 'not chat!':
 					self.message('no posts in the chat!', 2)
@@ -7186,7 +7111,7 @@ class MainWindow(QtGui.QMainWindow):
 		nik_name = self.loginWindow.login_nik_name_field.text()
 		password = self.loginWindow.login_password_field.text()
 
-		login = self.db_workroom.login_user(nik_name, password)
+		login = self.artist.login_user(nik_name, password)
     
 		if login[0]:
 			self.loginWindow.close()
@@ -7195,7 +7120,7 @@ class MainWindow(QtGui.QMainWindow):
 			return
 			
 		# ---- get artist data
-		self.get_artist_data()
+		self.get_artist_data(read=False)
 		    
 		# finish
 		self.tm_fill_project_list()
@@ -7233,14 +7158,14 @@ class MainWindow(QtGui.QMainWindow):
 		}
     
 		# add artist
-		result = self.db_workroom.add_artist(data)
+		result = self.artist.add_artist(data)
 		if result[0]:
 			self.myWidget.registrWindow.close()
 		else:
 			self.message(result[1], 2)
 			return
 		
-		self.get_artist_data()
+		self.get_artist_data(read = False)
 		
 		# finish
 		self.reload_artist_list()
@@ -7265,32 +7190,24 @@ class MainWindow(QtGui.QMainWindow):
 			self.workrooms.append(row['name'])
 			
 	
-	def get_artist_data(self):
+	def get_artist_data(self, read = True):
 		# ---- get artist data
-		artist_row = None
-		result = self.db_workroom.get_user()
-		if result[0]:
-			artist_row = result[1][3]
-			self.current_user = artist_row['nik_name']
-			'''
-			artist_data = self.db_workroom.read_artist({'nik_name': result[1][0]})
-			if artist_data[0]:
-				artist_row = artist_data[1][0]
-				# -- fill artist field
-				self.current_user = artist_row['nik_name']
-				#self.current_user_data = artist_row
-				print('***** current user', artist_row, result[1][3])
+		#artist_row = None
+		if read:
+			result = self.artist.get_user()
+			if result[0]:
+				#artist_row = result[1][3]
+				#self.current_user = artist_row['nik_name']
+				self.current_user = self.artist.nik_name
 			else:
-				self.message(artist_data[1], 2)
-			'''
+				self.message(result[1], 2)
+			try:
+				self.setWindowTitle(('Lineyka  ' + self.artist.nik_name))
+			except:
+				self.setWindowTitle('Lineyka  Not User!')
 		else:
-			self.message(result[1], 2)
-		try:
-			self.setWindowTitle(('Lineyka  ' + self.current_user))
-		except:
-			self.setWindowTitle('Lineyka  Not User!')
-		
-		self.current_user_data = artist_row
+			self.current_user = self.artist.nik_name
+			self.setWindowTitle(('Lineyka  ' + self.artist.nik_name))
 	
 	def close_window(self, window):
 		if window:

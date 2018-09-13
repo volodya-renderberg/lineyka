@@ -968,9 +968,15 @@ class database():
 		# -- db_path
 		db_path = self.get_db_path(level, read_ob, table_name, table_root)
 		# -- connect
-		conn = sqlite3.connect(db_path, detect_types=sqlite3.PARSE_DECLTYPES|sqlite3.PARSE_COLNAMES)
-		conn.row_factory = sqlite3.Row
-		c = conn.cursor()
+		try:
+			conn = sqlite3.connect(db_path, detect_types=sqlite3.PARSE_DECLTYPES|sqlite3.PARSE_COLNAMES)
+			conn.row_factory = sqlite3.Row
+			c = conn.cursor()
+		except Exception as e:
+			print('#'*3, 'Exception in database.sqlite3_read:')
+			print('#'*3, 'db_path:', db_path)
+			print('#'*3, e)
+			return(False, 'Exception in database.sqlite3_read, please look the terminal!')
 		try:
 			c.execute(com)
 		except Exception as e:
@@ -5348,7 +5354,8 @@ class artist(studio):
 		if not return_data:
 			keys['level'] = 'root'
 		else:
-			keys['level'] = 'user'
+			if not keys.get('level'):
+				keys['level'] = 'user'
 		# -- date_time
 		keys['date_time'] = datetime.datetime.now()
 		# -- test exist name, user_name
