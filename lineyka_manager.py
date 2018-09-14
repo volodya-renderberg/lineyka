@@ -296,25 +296,18 @@ class MainWindow(QtGui.QMainWindow):
 	
 	# ------------------- Add Artist ---------------------------------------------------------
 	def add_artist_ui(self):
-		# get current level
-		#copy = db.artist()
-		current_artist = self.db_workroom.get_user()
-		if not current_artist[0]:
-			self.message(current_artist[1], 2)
+		if not self.artist.level:
+			self.message('No Access! (you must register or login)', 3)
 			return
-		current_nik_name = current_artist[1][0]
-		ask = self.db_workroom.read_artist({'nik_name': current_nik_name})
-		current_level = ask[1][0]['level']
-    
-		if current_level not in self.db_workroom.manager_levels:
-			self.message('No Access!', 3)
+		elif self.artist.level not in self.artist.manager_levels:
+			self.message('No Access! (level "%s" is not enough to perform this operation)' % self.artist.level, 3)
 			return
 			
 		# get levels
 		levels = []
-		for level in self.db_workroom.user_levels:
+		for level in self.artist.user_levels:
 			levels.append(level)
-			if level == current_level:
+			if level == self.artist.level:
 				break
 		# widget
 		loader = QtUiTools.QUiLoader()
@@ -387,17 +380,11 @@ class MainWindow(QtGui.QMainWindow):
 		'''
 		
 		# add artist
-		#copy = db.artist()
-		copy = self.db_workroom
-		result = copy.add_artist(data, registration = False)
+		result = self.artist.add_artist(data, registration = False)
 		
 		if not result[0]:
-			if result[1] == 'overlap':
-				self.message('User With That Username Already Exists!', 2)
-				return
-			else:
-				self.message(result[1], 2)
-				return
+			self.message(result[1], 2)
+			return
 	
 		# finish
 		self.reload_artist_list()
