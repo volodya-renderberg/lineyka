@@ -216,7 +216,7 @@ class MainWindow(QtGui.QMainWindow):
 				
 	def fill_artist_table(self):
 		#copy = self.db_artist
-		artists = self.db_workroom.read_artist('all')
+		artists = self.artist.read_artist('all')
 		
 		if not artists[0]:
 			return
@@ -235,10 +235,10 @@ class MainWindow(QtGui.QMainWindow):
 		   
 		# get table data
 		num_row = len(artists[1])
-		num_column = len(self.db_workroom.artists_keys)
+		num_column = len(self.artist.artists_keys)
 		headers = []
 		
-		for item in self.db_workroom.artists_keys:
+		for item in self.artist.artists_keys:
 			headers.append(item[0])
     
 		# make table
