@@ -16,6 +16,8 @@ except:
 	from lineyka_publish import publish
 	
 def NormPath(input_path):
+	if not input_path:
+		return(input_path)
 	if platform.system() == 'Windows':
 			# windows
 			path = str(input_path)
@@ -1138,10 +1140,10 @@ class project(studio):
 	def add_project(self, project_name, project_path):
 		project_path = NormPath(project_path)
 		# project_name, get project_path
-		if project_path == '' and project_name == '':
+		if not project_path and project_name == '':
 			return(False, 'No options!')
 			
-		elif project_path == '':
+		elif not project_path:
 			project_path = os.path.join(self.studio_folder, project_name)
 			try:
 				os.mkdir(project_path)
