@@ -15,6 +15,16 @@ try:
 except:
 	from lineyka_publish import publish
 	
+def NormPath(input_path):
+	if platform.system() == 'Windows':
+			# windows
+			path = str(input_path)
+			path = os.path.normpath(path.encode('string-escape'))
+	else:
+		# linux etc...
+		path = os.path.normpath(input_path)
+	return(path)
+	
 class studio:
 	'''
 	@classmethod get_studio()
@@ -309,9 +319,9 @@ class studio:
 	def make_init_file(self):
 		home = os.path.expanduser('~')
 		
-		folder = os.path.normpath(os.path.join(home, self.init_folder))
-		self.init_path = os.path.normpath(os.path.join(home, self.init_folder, self.init_file))
-		self.set_path = os.path.normpath(os.path.join(folder, self.set_file))
+		folder = NormPath(os.path.join(home, self.init_folder))
+		self.init_path = NormPath(os.path.join(home, self.init_folder, self.init_file))
+		self.set_path = NormPath(os.path.join(folder, self.set_file))
 		
 		# make folder
 		if not os.path.exists(folder):
@@ -370,7 +380,7 @@ class studio:
 		self.studio_folder = path
 		
 		# create projects_db
-		projects_path = os.path.normpath(os.path.join(path, self.projects_db))
+		projects_path = NormPath(os.path.join(path, self.projects_db))
 		if not os.path.exists(projects_path):
 			conn = sqlite3.connect(projects_path)
 			c = conn.cursor()
@@ -400,7 +410,7 @@ class studio:
 		self.set_of_tasks_path = set_of_tasks_path
 
 		# create  artists
-		artist_path = os.path.normpath(os.path.join(path, self.artists_db))
+		artist_path = NormPath(os.path.join(path, self.artists_db))
 		if not os.path.exists(artist_path):
 			conn = sqlite3.connect(artist_path)
 			c = conn.cursor()
@@ -504,7 +514,7 @@ class studio:
 		try:
 			with open(init_path, 'r') as read:
 				data = json.load(read)
-				data['convert_exe'] = os.path.normpath(path)
+				data['convert_exe'] = NormPath(path)
 				read.close()
 		except:
 			return(False, "****** init file  can not be read")
@@ -595,26 +605,26 @@ class studio:
 		# artists_path = False   statistic_path = False
 		if self.studio_folder:
 			if self.projects_path == False:
-				path = os.path.normpath(os.path.join(self.studio_folder, self.projects_db))
+				path = NormPath(os.path.join(self.studio_folder, self.projects_db))
 				if os.path.exists(path):
 					self.projects_path = path
 			
 			#self.get_set_of_tasks_path()
 			if not self.set_of_tasks_path:
-				path = os.path.normpath(os.path.join(self.studio_folder, self.set_of_tasks_file))
+				path = NormPath(os.path.join(self.studio_folder, self.set_of_tasks_file))
 				if os.path.exists(path):
 					self.set_of_tasks_path = path
 			
 			if not self.artists_path:
-				path = os.path.normpath(os.path.join(self.studio_folder, self.artists_db))
+				path = NormPath(os.path.join(self.studio_folder, self.artists_db))
 				if os.path.exists(path):
 					self.artists_path = path
 			if self.workroom_path == False:
-				path = os.path.normpath(os.path.join(self.studio_folder, self.artists_db))
+				path = NormPath(os.path.join(self.studio_folder, self.artists_db))
 				if os.path.exists(path):
 					self.workroom_path = path
 			if self.statistic_path == False:
-				path = os.path.normpath(os.path.join(self.studio_folder, self.statistic_db))
+				path = NormPath(os.path.join(self.studio_folder, self.statistic_db))
 				if os.path.exists(path):
 					self.statistic_path = path
 					
@@ -684,7 +694,7 @@ class studio:
 	
 	def get_set_of_tasks_path(self):
 		if not self.set_of_tasks_path:
-			path = os.path.normpath(os.path.join(self.studio_folder, self.set_of_tasks_file))
+			path = NormPath(os.path.join(self.studio_folder, self.set_of_tasks_file))
 			if os.path.exists(path):
 				self.set_of_tasks_path = path
 
@@ -1126,6 +1136,7 @@ class project(studio):
 		self.folders = {'assets':'assets', 'chat_img_folder':'.chat_images', 'preview_images': '.preview_images'}
 
 	def add_project(self, project_name, project_path):
+		project_path = NormPath(project_path)
 		# project_name, get project_path
 		if project_path == '' and project_name == '':
 			return(False, 'No options!')
@@ -1147,14 +1158,7 @@ class project(studio):
 			return(False, "This project name already exists!")
 		self.name = project_name
 		
-		# path_encode
-		if platform.system() == 'Windows':
-			# windows
-			project_path = str(project_path)
-			path = os.path.normpath(project_path.encode('string-escape'))
-		else:
-			# linux
-			path = project_path
+		path = project_path
 			
 		if not os.path.exists(path):
 			text = '****** studio.project.add_project() -> %s not found' % path
@@ -1163,9 +1167,9 @@ class project(studio):
 			self.path = path
 		
 		self.project_database = ['sqlite3', False] # новый проект в начале всегда sqlite3, чтобы сработало всё в database
-		self.assets_path = os.path.normpath(os.path.join(self.path, self.assets_db))
-		self.chat_path = os.path.normpath(os.path.join(self.path, self.chats_db))
-		self.tasks_path = os.path.normpath(os.path.join(self.path, self.tasks_db))
+		self.assets_path = NormPath(os.path.join(self.path, self.assets_db))
+		self.chat_path = NormPath(os.path.join(self.path, self.chats_db))
+		self.tasks_path = NormPath(os.path.join(self.path, self.tasks_db))
 		
 		# create folders
 		self.make_folders(self.path)
@@ -1222,25 +1226,25 @@ class project(studio):
 			#
 			self.path = self.list_projects[name]['path']
 			#
-			assets_path = os.path.normpath(os.path.join(self.path, self.assets_db))
+			assets_path = NormPath(os.path.join(self.path, self.assets_db))
 			#if os.path.exists(assets_path):
 			self.assets_path = assets_path
 			#
-			tasks_path = os.path.normpath(os.path.join(self.path, self.tasks_db))
+			tasks_path = NormPath(os.path.join(self.path, self.tasks_db))
 			#if os.path.exists(tasks_path):
 			self.tasks_path = tasks_path
 			#
-			self.list_of_assets_path = os.path.normpath(self.list_projects[name]['list_of_assets_path'])
+			self.list_of_assets_path = NormPath(self.list_projects[name]['list_of_assets_path'])
 			#
-			chat_path = os.path.normpath(os.path.join(self.path, self.chats_db))
+			chat_path = NormPath(os.path.join(self.path, self.chats_db))
 			#if os.path.exists(chat_path):
 			self.chat_path = chat_path
 			#
-			chat_img_path = os.path.normpath(os.path.join(self.path, self.folders['chat_img_folder']))
+			chat_img_path = NormPath(os.path.join(self.path, self.folders['chat_img_folder']))
 			#if os.path.exists(chat_img_path):
 			self.chat_img_path = chat_img_path
 			#
-			preview_img_path = os.path.normpath(os.path.join(self.path, self.folders['preview_images']))
+			preview_img_path = NormPath(os.path.join(self.path, self.folders['preview_images']))
 			#if os.path.exists(preview_img_path):
 			self.preview_img_path = preview_img_path
 			#
@@ -2032,7 +2036,7 @@ class asset(project):
 			# -- get activity dir
 			if not key in old_activites:
 				continue
-			src_activity_dir = os.path.normpath(os.path.join(old_path, old_activites[key]))
+			src_activity_dir = NormPath(os.path.join(old_path, old_activites[key]))
 			
 			if not os.path.exists(src_activity_dir):
 				continue
@@ -2047,7 +2051,7 @@ class asset(project):
 			
 			if key == 'textures' or (key == 'cache' and new_asset_type == 'char'):
 				src_activity_path = src_activity_dir
-				dst_activity_path = os.path.normpath(os.path.join(new_asset_data['path'], activites[key]))
+				dst_activity_path = NormPath(os.path.join(new_asset_data['path'], activites[key]))
 				if not os.path.exists(dst_activity_path):
 					os.mkdir(dst_activity_path)
 				
@@ -2063,19 +2067,19 @@ class asset(project):
 				while not os.listdir(os.path.join(src_activity_dir, int_hex[str(max(numbers))])):
 					numbers.remove(max(numbers))
 				
-				src_activity_path = os.path.normpath(os.path.join(old_path, old_activites[key], int_hex[str(max(numbers))]))
-				dst_activity_path = os.path.normpath(os.path.join(new_asset_data['path'], activites[key], '0000'))
+				src_activity_path = NormPath(os.path.join(old_path, old_activites[key], int_hex[str(max(numbers))]))
+				dst_activity_path = NormPath(os.path.join(new_asset_data['path'], activites[key], '0000'))
 				
 				# -- -- make new dirs
-				if not os.path.exists(os.path.normpath(os.path.join(new_asset_data['path'], activites[key]))):
-					os.mkdir(os.path.normpath(os.path.join(new_asset_data['path'], activites[key])))
+				if not os.path.exists(NormPath(os.path.join(new_asset_data['path'], activites[key]))):
+					os.mkdir(NormPath(os.path.join(new_asset_data['path'], activites[key])))
 				if not os.path.exists(dst_activity_path):
 					os.mkdir(dst_activity_path)
 			
 			# -- -- copy content
 			for obj in os.listdir(src_activity_path):
-				src = os.path.normpath(os.path.join(src_activity_path, obj))
-				dst = os.path.normpath(os.path.join(dst_activity_path, obj.replace(old_name, new_asset_name)))
+				src = NormPath(os.path.join(src_activity_path, obj))
+				dst = NormPath(os.path.join(dst_activity_path, obj.replace(old_name, new_asset_name)))
 				if os.path.isfile(src):
 					shutil.copyfile(src, dst)
 					#print(int_hex[str(max(numbers))], obj)
@@ -2084,11 +2088,11 @@ class asset(project):
 					#print(int_hex[str(max(numbers))], obj)
 		
 		# copy preview image
-		img_folder_path = os.path.normpath(os.path.join(self.path, self.folders['preview_images']))
-		old_img_path = os.path.normpath(os.path.join(img_folder_path, (old_name + '.png')))
-		old_img_icon_path = os.path.normpath(os.path.join(img_folder_path, (old_name + '_icon.png')))
-		new_img_path = os.path.normpath(os.path.join(img_folder_path, (new_asset_name + '.png')))
-		new_img_icon_path = os.path.normpath(os.path.join(img_folder_path, (new_asset_name + '_icon.png')))
+		img_folder_path = NormPath(os.path.join(self.path, self.folders['preview_images']))
+		old_img_path = NormPath(os.path.join(img_folder_path, (old_name + '.png')))
+		old_img_icon_path = NormPath(os.path.join(img_folder_path, (old_name + '_icon.png')))
+		new_img_path = NormPath(os.path.join(img_folder_path, (new_asset_name + '.png')))
+		new_img_icon_path = NormPath(os.path.join(img_folder_path, (new_asset_name + '_icon.png')))
 		
 		if os.path.exists(old_img_path):
 			shutil.copyfile(old_img_path, new_img_path)
@@ -2805,7 +2809,7 @@ class task(asset):
 		'''
 		
 		folder_name = self.activity_folder[task_data['asset_type']][task_data['activity']]
-		activity_path = os.path.normpath(os.path.join(asset_path, folder_name))
+		activity_path = NormPath(os.path.join(asset_path, folder_name))
 		
 		if not os.path.exists(activity_path):
 			try:
@@ -2881,7 +2885,7 @@ class task(asset):
 		'''
 		
 		folder_name = self.activity_folder[task_data['asset_type']][task_data['activity']]
-		activity_path = os.path.normpath(os.path.join(asset_path, folder_name))
+		activity_path = NormPath(os.path.join(asset_path, folder_name))
 		
 		version_file = os.path.join(activity_path, version, (task_data['asset'] + task_data['extension']))
 		
@@ -2902,7 +2906,7 @@ class task(asset):
 		
 		# get activity path
 		folder_name = self.activity_folder[task_data['asset_type']][task_data['activity']]
-		activity_path = os.path.normpath(os.path.join(asset_path, folder_name))
+		activity_path = NormPath(os.path.join(asset_path, folder_name))
 		# make activity folder
 		if not os.path.exists(activity_path):
 			os.mkdir(activity_path)
@@ -2967,9 +2971,9 @@ class task(asset):
 		asset_path = task_data['asset_path']
 		
 		folder_name = self.activity_folder[task_data['asset_type']][activity]
-		activity_path = os.path.normpath(os.path.join(asset_path, folder_name))
-		activity_path = os.path.normpath(activity_path)
-		cache_dir_path = os.path.normpath(os.path.join(asset_path, folder_name, ob_name))
+		activity_path = NormPath(os.path.join(asset_path, folder_name))
+		activity_path = NormPath(activity_path)
+		cache_dir_path = NormPath(os.path.join(asset_path, folder_name, ob_name))
 		
 		if not os.path.exists(cache_dir_path):
 			return(False, 'No Found Cache Directory!')
@@ -2994,7 +2998,7 @@ class task(asset):
 					number = num
 					break
 			path = os.path.join(cache_dir_path, number, (ob_name + extension))
-			path = os.path.normpath(path)
+			path = NormPath(path)
 			if number:
 				if os.path.exists(path):
 					tech_anim_cache_versions_list.append((str(i), ob_name, path))
@@ -3011,10 +3015,10 @@ class task(asset):
 		asset_path = task_data['asset_path']
 		
 		folder_name = self.activity_folder[task_data['asset_type']][activity]
-		activity_path = os.path.normpath(os.path.join(asset_path, folder_name))
-		activity_path = os.path.normpath(activity_path)
-		cache_dir_path = os.path.normpath(os.path.join(asset_path, folder_name, cache_dir_name))
-		cache_dir_path = os.path.normpath(cache_dir_path)
+		activity_path = NormPath(os.path.join(asset_path, folder_name))
+		activity_path = NormPath(activity_path)
+		cache_dir_path = NormPath(os.path.join(asset_path, folder_name, cache_dir_name))
+		cache_dir_path = NormPath(cache_dir_path)
 		
 		#print(cache_dir_path)
 		
@@ -3062,7 +3066,7 @@ class task(asset):
 		
 		# get activity path
 		folder_name = self.activity_folder[task_data['asset_type']][activity]
-		activity_path = os.path.normpath(os.path.join(asset_path, folder_name, cache_dir_name))
+		activity_path = NormPath(os.path.join(asset_path, folder_name, cache_dir_name))
 		
 		# make activity folder
 		if not os.path.exists(activity_path):
@@ -3099,7 +3103,7 @@ class task(asset):
 		asset_path = task_data['asset_path']
 		
 		folder_name = self.activity_folder[task_data['asset_type']][activity]
-		activity_path = os.path.normpath(os.path.join(asset_path, folder_name, cache_dir_name))
+		activity_path = NormPath(os.path.join(asset_path, folder_name, cache_dir_name))
 		
 		version_file = os.path.join(activity_path, version, (cache_dir_name + extension))
 		
@@ -5194,7 +5198,7 @@ class log(task):
 		logs_keys['version'] = version
 		
 		path = os.path.join(task_data['asset_path'], self.additional_folders['meta_data'], self.camera_log_file_name)
-		path = os.path.normpath(path)
+		path = NormPath(path)
 		
 		data = {}
 		
@@ -5255,7 +5259,7 @@ class log(task):
 		logs_keys['version'] = version
 		
 		path = os.path.join(task_data['asset_path'], self.additional_folders['meta_data'], self.playblast_log_file_name)
-		path = os.path.normpath(path)
+		path = NormPath(path)
 		
 		data = {}
 		
