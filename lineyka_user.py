@@ -169,9 +169,9 @@ class MainWindow(QtGui.QMainWindow):
 		G.working_task_list = []
 		result = (False, 'fack!')
 		if action == 'work_list':
-			result = self.db_task.get_task_list_of_artist(G.current_project, G.current_user)
+			result = self.db_task.get_task_list_of_artist(G.current_project, self.db_artist.nik_name)
 		elif action == 'check_list':
-			result = self.db_task.get_chek_list_of_artist(G.current_project, G.current_user)
+			result = self.db_task.get_chek_list_of_artist(G.current_project, self.db_artist.nik_name)
 		if not result[0]:
 			G.task_list = []
 			self.message(result[1], 2)
@@ -652,7 +652,7 @@ class MainWindow(QtGui.QMainWindow):
 			return
 		
 		# accept in .db
-		result = self.db_chat.rework_task(G.current_project, G.current_task, current_user = G.current_user)
+		result = self.db_chat.rework_task(G.current_project, G.current_task, current_user = self.db_artist.nik_name)
 		if not result[0]:
 			if result[1] == 'not chat!':
 				self.message('no posts in the chat!', 2)
@@ -670,7 +670,7 @@ class MainWindow(QtGui.QMainWindow):
 			return
 		
 		# accept in .db
-		result = self.db_chat.readers_accept_task(G.current_project, G.current_task, G.current_user)
+		result = self.db_chat.readers_accept_task(G.current_project, G.current_task, self.db_artist.nik_name)
 		if not result[0]:
 			self.message(result[1], 2)
 			return
@@ -780,7 +780,7 @@ class MainWindow(QtGui.QMainWindow):
 	def chat_ui(self, chat_status = 'user'):
 		self.chat_status = chat_status
 		self.current_task = G.current_task
-		self.current_user = G.current_user
+		self.current_user = self.db_artist.nik_name
 		self.current_project = G.current_project
 		
 		import lineyka_chat
@@ -790,7 +790,7 @@ class MainWindow(QtGui.QMainWindow):
 	'''
 	def chat_main_ui_(self):
 		task_data = G.current_task
-		nik_name = G.current_user
+		nik_name = self.db_artist.nik_name
 		project = G.current_project
 		
 		# status
@@ -1018,7 +1018,7 @@ class MainWindow(QtGui.QMainWindow):
 		
 	def chat_new_topic_action(self, add_window, status):
 		task_data = G.current_task
-		nik_name = G.current_user
+		nik_name = self.db_artist.nik_name
 		project = G.current_project
 		
 		# get project
@@ -1210,8 +1210,7 @@ class MainWindow(QtGui.QMainWindow):
 			self.setWindow.set_tmp_field.setText(str(folder))
 
 			# set studio path
-			copy = self.db_studio
-			result = copy.set_tmp_dir(folder)
+			result = self.db_studio.set_tmp_dir(folder)
 			if not result[0]:
 				self.message(result[1], 2)
       
@@ -1227,8 +1226,7 @@ class MainWindow(QtGui.QMainWindow):
 			self.setWindow.set_convert_exe_field.setText(str(file_))
 			
 			# set studio path
-			copy = self.db_studio
-			result = copy.set_convert_exe_path(file_)
+			result = self.db_studio.set_convert_exe_path(file_)
 			if not result[0]:
 				self.message(result[1], 2)
       
@@ -1287,12 +1285,10 @@ class MainWindow(QtGui.QMainWindow):
 		print('login ui')
     
 	def user_login_action(self):
-		copy = self.db_artist
-
 		nik_name = self.loginWindow.login_nik_name_field.text()
 		password = self.loginWindow.login_password_field.text()
 
-		login = copy.login_user(nik_name, password)
+		login = self.db_artist.login_user(nik_name, password)
     
 		if login[0]:
 			self.loginWindow.close()
@@ -1301,6 +1297,9 @@ class MainWindow(QtGui.QMainWindow):
 			return
 		elif login[1] == 'not password':
 			self.message('password is not correct!!', 2)
+			return
+		else:
+			self.message(login[1], 2)
 			return
     
 		# finish
@@ -1328,8 +1327,6 @@ class MainWindow(QtGui.QMainWindow):
 		print('registration ui')
     
 	def user_registration_action(self):
-		copy = self.db_artist
-
 		# get Data
 		data = {
 		'nik_name' : self.myWidget.registrWindow.nik_name_field.text(),
@@ -1342,7 +1339,7 @@ class MainWindow(QtGui.QMainWindow):
 		}
     
 		# add artist
-		result = copy.add_artist(data)
+		result = self.db_artist.add_artist(data)
 		if result[0]:
 			self.myWidget.registrWindow.close()
 		else:
@@ -1377,13 +1374,15 @@ class MainWindow(QtGui.QMainWindow):
 		self.myWidget.project_box.addItems(enum_list)
 	
 	def load_nik_name(self):
-		nik_name = 'Not User'
-		result = self.db_artist.get_user()
-		if result[0]:
-			nik_name = result[1][0]
-		
-		self.myWidget.nik_name.setText(nik_name)
-		G.current_user = nik_name
+		if not self.db_artist.nik_name:
+			result = self.db_artist.get_user()
+			if not result[0]:
+				self.message(result[1], 2)
+
+		if not self.db_artist.nik_name:
+			self.myWidget.nik_name.setText('Not User')
+		else:
+			self.myWidget.nik_name.setText(self.db_artist.nik_name)
 	
 	def close_window(self, window):
 		window.close()
