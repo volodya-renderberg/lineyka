@@ -191,7 +191,8 @@ class studio:
 	
 	workroom_keys = [
 	('name', 'text'),
-	('id', 'text')
+	('id', 'text'),
+	('type', 'json')
 	]
 	
 	# activity, task_name, action, date_time, comment, version, artist
@@ -5653,6 +5654,7 @@ class workroom(artist):
 	def __init__(self):
 		artist.__init__(self)
 	
+	# keys['type'] - must be a list, False or None
 	def add(self, keys):
 		# test name
 		try:
@@ -5662,68 +5664,38 @@ class workroom(artist):
 			
 		keys['id'] = str(random.randint(0, 1000000000))
 		
-		# connect to db
-		if not self.workroom_path:
-			self.get_studio()
+		# создание таблицы, если отсутствует.
+		# проверка на совпадение имени
+		# проверка чтобы типы задач были из task_types
+		# запись строки в таблицу
+		
+		# create table
+		bool_, return_data = database().create_table('studio', self, self.workroom_t, self.workroom_keys, table_root = self.artists_db)
+		if not bool_:
+			return(bool_, return_data)
+		
+		# test exists name
+		bool_, return_data = database().read('studio', self, self.workroom_t, where={'name': name}, table_root=self.artists_db)
+		if not bool_:
+			return(bool_, return_data)
+		elif return_data:
+			return(False, 'This workroom name: "%s" already exists!' % name)
+		
+		# test type
+		type_ = keys.get('type')
+		if type_:
+			if type_.__class__.__name__ == 'list':
+				for item in type_:
+					if not item in self.task_types:
+						return(False, 'This type of task: "%s" is not correct!' % item)
+			else:
+				return(False, 'This type of keys[type]: "%s" is not correct (must be a list, False or None)' % str(type_))
 			
-		conn = sqlite3.connect(self.workroom_path, detect_types=sqlite3.PARSE_DECLTYPES|sqlite3.PARSE_COLNAMES)
-		conn.row_factory = sqlite3.Row
-		c = conn.cursor()
+		# insert string
+		bool_, return_data = database().insert('studio', self, self.workroom_t, self.workroom_keys, keys, table_root=self.artists_db)
+		if not bool_:
+			return(bool_, return_data)
 		
-		# exists table, name, id
-		table = self.workroom_t
-		try:
-			str_ = 'select * from ' + table
-			c.execute(str_)
-			# unicum workroom_name test
-			r = c.fetchall()
-			for row in r:
-				if row['name'] == keys['name']:
-					conn.close()
-					return(False, 'overlap')
-				elif row['id'] == keys['id']:
-					keys['id'] = str(random.randint(0, 1000000000))
-					
-		except:
-			string2 = "CREATE TABLE " + table + " ("
-			for i,key in enumerate(self.workroom_keys):
-				if i == 0:
-					string2 = string2 + key[0] + ' ' + key[1]
-				else:
-					string2 = string2 + ', ' + key[0] + ' ' + key[1]
-			string2 = string2 + ")"
-			c.execute(string2)
-		
-		# create string
-		string = "insert into " + table + " values"
-		values = "("
-		data = []
-		for i, key in enumerate(self.workroom_keys):
-			if i< (len(self.workroom_keys) - 1) and (len(keys) > 1):
-				values = values + '?, '
-			else:
-				values = values + '?'
-			if key[0] in keys:
-				data.append(keys[key[0]])
-			else:
-				if key[1] == 'real':
-					data.append(0.0)
-				elif key[1] == 'timestamp':
-					data.append(datetime.datetime.now())
-				else:
-					data.append("")
-					
-		values = values + ")"
-		data = tuple(data)
-		string = string + values
-		'''
-		print(string, data)
-		return(False, 'Be!')
-		'''
-		# add workroom
-		c.execute(string, data)
-		conn.commit()
-		conn.close()
 		return(True, 'ok')
 		
 	def get_list_workrooms(self, DICTONARY = False):
