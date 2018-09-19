@@ -5797,122 +5797,62 @@ class workroom(studio):
 	
 	
 	def get_name_by_id(self, id_):
-		table = self.workroom_t
-		
-		if not self.workroom_path or (not os.path.exists(self.workroom_path)):
-			return(False, 'Not Found WorkRoom Data Base!')
-		
-		conn = sqlite3.connect(self.workroom_path, detect_types=sqlite3.PARSE_DECLTYPES|sqlite3.PARSE_COLNAMES)
-		conn.row_factory = sqlite3.Row
-		c = conn.cursor()
-		
-		str_ = 'select * from ' + table
-		return_data = ''
-		try:
-			c.execute(str_)
-			rows = c.fetchall()
-			for row in rows:
-				if row['id'] == id_:
-					return_data = row['name']
-					break
-		except:
-			conn.close()
-			return(False, 'Table Not Found!')
-			
-		if return_data:
-			conn.close()
-			return(True, return_data)
+		where = {'id': id_}
+		bool_, return_data = database().read('studio', self, self.workroom_t, self.workroom_keys, columns = ['name'], where = where, table_root=self.artists_db)
+		if not bool_:
+			return(bool_, return_data)
 		else:
-			conn.close()
-			return(False, 'Not workroom Id')
+			if return_data:
+				return(True, return_data[0]['name'])
+			else:
+				print('#'*3, 'workroom.get_name_by_id() - id is incorrect!')
+				print('#'*3, 'id:', id_)
+				return(False, 'Look the terminal!')
 	
 	def get_id_by_name(self, name):
-		table = self.workroom_t
-		
-		if not self.workroom_path or (not os.path.exists(self.workroom_path)):
-			return(False, 'Not Found WorkRoom Data Base!')
-		
-		conn = sqlite3.connect(self.workroom_path, detect_types=sqlite3.PARSE_DECLTYPES|sqlite3.PARSE_COLNAMES)
-		conn.row_factory = sqlite3.Row
-		c = conn.cursor()
-		
-		str_ = 'select * from ' + table
-		return_data = ''
-		try:
-			c.execute(str_)
-			rows = c.fetchall()
-			for row in rows:
-				if row['name'] == name:
-					return_data = row['id']
-					break
-		except:
-			conn.close()
-			return(False, 'Table Not Found!')
-			
-		if return_data:
-			conn.close()
-			return(True, return_data)
+		where = {'name': name}
+		bool_, return_data = database().read('studio', self, self.workroom_t, self.workroom_keys, columns = ['id'], where = where, table_root=self.artists_db)
+		if not bool_:
+			return(bool_, return_data)
 		else:
-			conn.close()
-			return(False, 'Not workroom Name')
-			
+			if return_data:
+				return(True, return_data[0]['id'])
+			else:
+				print('#'*3, 'workroom.get_id_by_name() - name is incorrect!')
+				print('#'*3, 'name:', name)
+				return(False, 'Look the terminal!')
+	
+	# возможно лучше не использовать
 	def name_list_to_id_list(self, name_list):
-		table = self.workroom_t
-		
-		if not self.workroom_path or (not os.path.exists(self.workroom_path)):
-			return(False, 'Not Found WorkRoom Data Base!')
-		
-		conn = sqlite3.connect(self.workroom_path, detect_types=sqlite3.PARSE_DECLTYPES|sqlite3.PARSE_COLNAMES)
-		conn.row_factory = sqlite3.Row
-		c = conn.cursor()
-		
-		str_ = 'select * from ' + table
-		return_data = []
-		try:
-			c.execute(str_)
-			rows = c.fetchall()
-			for row in rows:
-				if row['name'] in name_list:
-					return_data.append(row['id'])
-		except:
-			conn.close()
-			return(False, 'Table Not Found!')
-			
-		if return_data:
-			conn.close()
+		bool_, data = self.get_list_workrooms('by_name')
+		if not bool_:
+			return(bool_, data)
+		if data:
+			return_data = []
+			for key in data:
+				if key in name_list:
+					return_data.append(data[key]['id'])
 			return(True, return_data)
 		else:
-			conn.close()
-			return(False, 'Not workroom Names')
-			
+			print('#'*3, 'workroom.name_list_to_id_list() - list of names is incorrect!')
+			print('#'*3, 'name list:', name_list)
+			return(False, 'Look the terminal!')
+	
+	# возможно лучше не использовать
 	def id_list_to_name_list(self, id_list):
-		table = self.workroom_t
-		
-		if not self.workroom_path or (not os.path.exists(self.workroom_path)):
-			return(False, 'Not Found WorkRoom Data Base!')
-		
-		conn = sqlite3.connect(self.workroom_path, detect_types=sqlite3.PARSE_DECLTYPES|sqlite3.PARSE_COLNAMES)
-		conn.row_factory = sqlite3.Row
-		c = conn.cursor()
-		
-		str_ = 'select * from ' + table
-		return_data = []
-		try:
-			c.execute(str_)
-			rows = c.fetchall()
-			for row in rows:
-				if row['id'] in id_list:
-					return_data.append(row['name'])
-		except:
-			conn.close()
-			return(False, 'Table Not Found!')
-			
-		if return_data:
-			conn.close()
+		bool_, data = self.get_list_workrooms('by_id')
+		if not bool_:
+			return(bool_, data)
+		if data:
+			return_data = []
+			for key in data:
+				if key in id_list:
+					return_data.append(data[key]['name'])
 			return(True, return_data)
 		else:
-			conn.close()
-			return(False, 'Not workrooms by list id')
+			print('#'*3, 'workroom.id_list_to_name_list() - list of id is incorrect!')
+			print('#'*3, 'id list:', id_list)
+			return(False, 'Look the terminal!')
 			
 	def rename_workroom(self, old_name, new_name):
 		new_name = new_name.replace(' ', '_')
