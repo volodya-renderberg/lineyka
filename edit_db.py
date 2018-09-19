@@ -5710,9 +5710,10 @@ class artist(studio):
 		
 		return True, 'ok'
 		
-class workroom(artist):
+class workroom(studio):
 	def __init__(self):
-		artist.__init__(self)
+		pass
+		#artist.__init__(self)
 	
 	# keys['type'] - must be a list, False or None
 	def add(self, keys):
