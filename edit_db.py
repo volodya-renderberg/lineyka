@@ -188,12 +188,18 @@ class studio:
 	('asset_path', 'text'),
 	('extension', 'text'),
 	]
-	
+	'''
 	workroom_keys = [
 	('name', 'text'),
 	('id', 'text'),
 	('type', 'json')
 	]
+	'''
+	workroom_keys = {
+	'name': 'text',
+	'id': 'text',
+	'type': 'json'
+	}
 	
 	# activity, task_name, action, date_time, comment, version, artist
 	'''
@@ -218,6 +224,7 @@ class studio:
 	('status', 'text')
 	]
 	# artist_name, user_name, email, phone, specialty, outsource = '' or '0'/'1'
+	'''
 	artists_keys = [
 	('nik_name', 'text'),
 	('user_name', 'text'),
@@ -232,6 +239,21 @@ class studio:
 	('share_dir', 'text'),
 	('status', 'text')
 	]
+	'''
+	artists_keys = {
+	'nik_name': 'text',
+	'user_name': 'text',
+	'password': 'text',
+	'date_time': 'timestamp',
+	'email': 'text',
+	'phone': 'text',
+	'specialty': 'text',
+	'outsource': 'text',
+	'workroom': 'json',
+	'level': 'text',
+	'share_dir': 'text',
+	'status': 'text'
+	}
 	chats_keys = [
 	('date_time', 'timestamp'),
 	('author', 'text'),
@@ -240,7 +262,7 @@ class studio:
 	('status', 'text'),
 	('reading_status', 'text')
 	]
-	
+	'''
 	projects_keys = [
 	('name', 'text'),
 	('assets_path', 'text'),
@@ -253,6 +275,19 @@ class studio:
 	('tasks_path', 'text'),
 	('project_database', 'json') # формат который конвертируется через json и записывается строкой.
 	]
+	'''
+	projects_keys = {
+	'name': 'text',
+	'assets_path': 'text',
+	'chat_img_path': 'text',
+	'chat_path': 'text',
+	'list_of_assets_path': 'text',
+	'path': 'text',
+	'preview_img_path': 'text',
+	'status': 'text',
+	'tasks_path': 'text',
+	'project_database': 'json' # формат который конвертируется через json и записывается строкой.
+	}
 	
 	logs_keys = [
 	('version', 'text'),
@@ -668,7 +703,7 @@ class studio:
 			return
 		
 		# get list_projects
-		bool_, return_data = database().read('studio', self, self.projects_t)
+		bool_, return_data = database().read('studio', self, self.projects_t, self.projects_keys)
 		
 		if not bool_:
 			print('#'*10, return_data)
@@ -860,7 +895,7 @@ class database():
 	
 	# where - 1) строка условия, 2) словарь по keys, 3) False - значит выделяется всё.
 	# columns - False - означает все столбцы если не False - то список столбцов.
-	def read(self, level, read_ob, table_name, columns = False, where=False, table_root=False):
+	def read(self, level, read_ob, table_name, keys, columns = False, where=False, table_root=False):
 		attr = self.use_db_attr.get(level)
 		if not attr:
 			raise Exception('database.read()', 'Unknown Level : %s' % level)
@@ -869,7 +904,7 @@ class database():
 		#return(db_name, db_data)
 		
 		if db_name == 'sqlite3':
-			return_data = self.sqlite3_read(level, read_ob, table_name, columns, where, table_root)
+			return_data = self.sqlite3_read(level, read_ob, table_name, keys, columns, where, table_root)
 			return(return_data)
 	
 	# update_data - словарь по ключам из keys
@@ -915,7 +950,10 @@ class database():
 					set_data = '%s = ?' % key
 				else:
 					set_data = set_data + ', %s = ?' % key
-				data_com.append(update_data[key])
+				if keys[key]=='json':
+					data_com.append(json.dumps(update_data[key]))
+				else:
+					data_com.append(update_data[key])
 		# where
 		where_data = ''
 		if where.__class__.__name__ != 'dict':
@@ -953,7 +991,7 @@ class database():
 	
 	# where - 1) строка условия, 2) словарь по keys, 3) False - значит выделяется всё.
 	# columns - False - означает все столбцы если не False - то список столбцов.
-	def sqlite3_read(self, level, read_ob, table_name, columns, where, table_root):
+	def sqlite3_read(self, level, read_ob, table_name, keys, columns, where, table_root):
 		# columns
 		col = ''
 		if not columns:
@@ -1001,21 +1039,39 @@ class database():
 		
 		data = []
 		for row in c.fetchall():
-			data.append(dict(row))
+			'''
+			dict_row = dict(row)
+			'''
+			dict_row = {}
+			for key in row.keys():
+				if keys[key]=='json':
+					#print('#'*10, key)
+					#print('*'*10, row[key])
+					try:
+						dict_row[key] = json.loads(row[key])
+					except Exception as e:
+						print('%s Exception in database.sqlite3_read:' % '#'*10)
+						print('%s table = %s, key = %s, row[key] = %s' % ('#'*10, table_name, key, row[key]))
+						print('#'*10, e)
+						dict_row[key] = None
+				else:
+					dict_row[key] = row[key]
+			
+			data.append(dict_row)
 		conn.close()
 		return(True, data)
 	
 	def sqlite3_create_table(self, level, read_ob, table_name, keys, table_root):
 		com = ''
-		for i, data in enumerate(keys):
-			if data[1] == 'json':
+		for i, key in enumerate(keys):
+			if keys[key] == 'json':
 				type_data = 'text'
 			else:
-				type_data = data[1]
+				type_data = keys[key]
 			if i==0:
-				com = com + '%s %s' % (data[0], type_data)
+				com = com + '%s %s' % (key, type_data)
 			else:
-				com = com + ', %s %s' % (data[0], type_data)
+				com = com + ', %s %s' % (key, type_data)
 		com = 'CREATE TABLE IF NOT EXISTS %s (%s)' % (table_name, com)
 		#print(com)
 		return_data = self.sqlite3_set(level, read_ob, table_name, com, False, table_root)
@@ -1040,15 +1096,15 @@ class database():
 			com = 'INSERT INTO %s VALUES' % table_name
 			com_=''
 			data_com = []
-			for i, data in enumerate(keys):
+			for i, key in enumerate(keys):
 				if i==0:
 					com_ = com_ + ' ?'
 				else:
 					com_ = com_ + ', ?'
-				if data[1] == 'json':
-					data_ = json.dumps(item.get(data[0]))
+				if keys[key] == 'json':
+					data_ = json.dumps(item.get(key))
 				else:
-					data_ = item.get(data[0])
+					data_ = item.get(key)
 				data_com.append(data_)
 			com = '%s (%s)' % (com, com_)
 			try:
@@ -1130,8 +1186,8 @@ class project(studio):
 	'''
 	def __init__(self):
 		#base fields
-		for item in self.projects_keys:
-			exec('self.%s = False' % item[0])
+		for key in self.projects_keys:
+			exec('self.%s = False' % key)
 		
 		# added fields
 		self.assets_list = False # # a list of existing assets
@@ -1200,8 +1256,8 @@ class project(studio):
 		
 		# -- write data
 		write_data = {}
-		for item in self.projects_keys:
-			write_data[item[0]] = eval('self.%s' % item[0])
+		for key in self.projects_keys:
+			write_data[key] = eval('self.%s' % key)
 		#print('#'*3, write_data)
 		bool_, return_data = database().insert('studio', self, self.projects_t, self.projects_keys, write_data)
 		if not bool_:
@@ -1253,7 +1309,8 @@ class project(studio):
 			#
 			self.status = self.list_projects[name]['status']
 			# database
-			self.project_database = json.loads(self.list_projects[name]['project_database'])
+			#self.project_database = json.loads(self.list_projects[name]['project_database'])
+			self.project_database = self.list_projects[name]['project_database']
 				
 		self.get_list_of_assets()
 		return(True, (self.list_projects[name], self.assets_list))
@@ -5328,8 +5385,8 @@ class artist(studio):
 	'''
 	def __init__(self):
 		#base fields
-		for item in self.artists_keys:
-			exec('self.%s = False' % item[0])
+		for key in self.artists_keys:
+			exec('self.%s = False' % key)
 		#studio.__init__(self)
 		pass
 	
@@ -5354,7 +5411,7 @@ class artist(studio):
 			return(bool_, return_data)
 		
 		# read table
-		bool_, return_data = database().read('studio', self, self.artists_t)
+		bool_, return_data = database().read('studio', self, self.artists_t, self.artists_keys)
 		if not bool_:
 			return(bool_, return_data)
 		# -- set level
@@ -5388,19 +5445,19 @@ class artist(studio):
 		else:
 			# fill fields
 			if registration:
-				for item in self.artists_keys:
-					com = 'self.%s = keys.get("%s")' % (item[0], item[0])
+				for key in self.artists_keys:
+					com = 'self.%s = keys.get("%s")' % (key, key)
 					exec(com)
 			return(True, 'ok')
 		
 	def read_artist(self, keys):
 		if keys == 'all':
 			keys = False
-		bool_, return_data = database().read('studio', self, self.artists_t, where=keys)
+		bool_, return_data = database().read('studio', self, self.artists_t, self.artists_keys, where=keys)
 		return(bool_, return_data)
 		
 	def read_artist_of_workroom(self, workroom_id):
-		bool_, return_data = database().read('studio', self, self.artists_t)
+		bool_, return_data = database().read('studio', self, self.artists_t, self.artists_keys)
 		if not bool_:
 			return(bool_, return_data)
 		#
@@ -5420,7 +5477,7 @@ class artist(studio):
 		# очистка данного юзернейма
 		# присвоение данного юзернейма пользователю
 		user_name = getpass.getuser()
-		bool_, user_data = database().read('studio', self, self.artists_t, where = {'nik_name': nik_name})
+		bool_, user_data = database().read('studio', self, self.artists_t, self.artists_keys, where = {'nik_name': nik_name})
 		if not bool_:
 			return(bool_, user_data)
 		# test exists user
@@ -5440,15 +5497,15 @@ class artist(studio):
 			return(bool_, return_data)
 		
 		# fill fields
-		for item in self.artists_keys:
-			com = 'self.%s = user_data[0].get("%s")' % (item[0], item[0])
+		for key in self.artists_keys:
+			com = 'self.%s = user_data[0].get("%s")' % (key, key)
 			#print('#'*3, item[0], com)
 			exec(com)
 		return(True, (nik_name, user_name))
 
 	def get_user(self, outsource = False):
 		user_name = getpass.getuser()
-		bool_, return_data = database().read('studio', self, self.artists_t, where = {'user_name': user_name})
+		bool_, return_data = database().read('studio', self, self.artists_t, self.artists_keys, where = {'user_name': user_name})
 		if not bool_:
 			return(bool_, return_data)
 		rows = return_data
@@ -5459,8 +5516,8 @@ class artist(studio):
 			return False, 'more than one user'
 		else:
 			# fill fields
-			for item in self.artists_keys:
-				com = 'self.%s = rows[0].get("%s")' % (item[0], item[0])
+			for key in self.artists_keys:
+				com = 'self.%s = rows[0].get("%s")' % (key, key)
 				exec(com)
 			if not outsource:
 				return True, (rows[0]['nik_name'], rows[0]['user_name'], None, rows[0])
@@ -5484,11 +5541,14 @@ class artist(studio):
 			return False, 'wrong level: "%s"!' % level
 		# get artist_current_data
 		if not artist_current_data:
-			bool_, return_data = database().read('studio', self, self.artists_t, where = {'nik_name': nik_name})
+			bool_, return_data = database().read('studio', self, self.artists_t, self.artists_keys, where = {'nik_name': nik_name})
 			if not bool_:
 				return(bool_, return_data)
 			else:
-				artist_current_data = return_data[0]
+				if return_data:
+					artist_current_data = return_data[0]
+				else:
+					return(False, return_data)
 		# test Access Rights
 		# -- user не менеджер
 		if not self.level in self.manager_levels:
@@ -5675,7 +5735,7 @@ class workroom(artist):
 			return(bool_, return_data)
 		
 		# test exists name
-		bool_, return_data = database().read('studio', self, self.workroom_t, where={'name': name}, table_root=self.artists_db)
+		bool_, return_data = database().read('studio', self, self.workroom_t, self.workroom_keys, where={'name': name}, table_root=self.artists_db)
 		if not bool_:
 			return(bool_, return_data)
 		elif return_data:
@@ -5699,26 +5759,14 @@ class workroom(artist):
 		return(True, 'ok')
 		
 	def get_list_workrooms(self, DICTONARY = False):
-		table = self.workroom_t
-		
-		if not self.workroom_path or (not os.path.exists(self.workroom_path)):
-			return(False, 'Not Found WorkRoom Data Base!')
-		
-		conn = sqlite3.connect(self.workroom_path, detect_types=sqlite3.PARSE_DECLTYPES|sqlite3.PARSE_COLNAMES)
-		conn.row_factory = sqlite3.Row
-		c = conn.cursor()
-		
-		str_ = 'select * from ' + table
-		try:
-			c.execute(str_)
-		except:
-			return(False, 'WorkRoom Table Not Found!')
-		# unicum workroom_name test
-		rows = c.fetchall()
+		bool_, return_data = database().read('studio', self, self.workroom_t, self.workroom_keys, table_root=self.artists_db)
+		if not bool_:
+			return(bool_, return_data)
+
 		return_data_0 = {}
 		return_data_1 = []
 		return_data_2 = {}
-		for row in rows:
+		for row in return_data:
 			#return_data['name'] = row['name']
 			work_room_data = {}
 			work_room_data_1 = {}
@@ -5735,7 +5783,6 @@ class workroom(artist):
 			return_data_1.append(work_room_data_1)
 			return_data_2[row['id']] = work_room_data_2
 		
-		conn.close()
 		if not DICTONARY:
 			return(True, return_data_1)
 		elif DICTONARY == 'by_name':
