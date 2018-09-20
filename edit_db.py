@@ -848,7 +848,7 @@ class database():
 		#return(db_name, db_data)
 		
 		if db_name == 'sqlite3':
-			return_data = self.sqlite3_get(level, read_ob, table_name, com, table_root)
+			return_data = self.__sqlite3_get(level, read_ob, table_name, com, table_root)
 			return(return_data)
 	
 	# table_root - может быть как именем таблицы - например: assets, так и именем файла - .assets.db
@@ -862,7 +862,7 @@ class database():
 		#return(db_name, db_data)
 		
 		if db_name == 'sqlite3':
-			return_data = self.sqlite3_set(level, read_ob, table_name, com, data_com, table_root)
+			return_data = self.__sqlite3_set(level, read_ob, table_name, com, data_com, table_root)
 			return(return_data)
 	
 	# table_root - может быть как именем таблицы - например: assets, так и именем файла - .assets.db
@@ -875,7 +875,7 @@ class database():
 		#return(db_name, db_data)
 		
 		if db_name == 'sqlite3':
-			return_data = self.sqlite3_create_table(level, read_ob, table_name, keys, table_root)
+			return_data = self.__sqlite3_create_table(level, read_ob, table_name, keys, table_root)
 			return(return_data)
 		
 	# write_data - словарь по ключам keys, также может быть списком словарей, для записи нескольких строк.
@@ -890,7 +890,7 @@ class database():
 		#return(db_name, db_data)
 		
 		if db_name == 'sqlite3':
-			return_data = self.sqlite3_insert(level, read_ob, table_name, keys, write_data, table_root)
+			return_data = self.__sqlite3_insert(level, read_ob, table_name, keys, write_data, table_root)
 			return(return_data)
 	
 	# where - 1) строка условия, 2) словарь по keys, 3) False - значит выделяется всё.
@@ -904,7 +904,7 @@ class database():
 		#return(db_name, db_data)
 		
 		if db_name == 'sqlite3':
-			return_data = self.sqlite3_read(level, read_ob, table_name, keys, columns, where, table_root)
+			return_data = self.__sqlite3_read(level, read_ob, table_name, keys, columns, where, table_root)
 			return(return_data)
 	
 	# update_data - словарь по ключам из keys
@@ -919,12 +919,12 @@ class database():
 		#return(db_name, db_data)
 		
 		if db_name == 'sqlite3':
-			return_data = self.sqlite3_update(level, read_ob, table_name, keys, update_data, where, table_root)
+			return_data = self.__sqlite3_update(level, read_ob, table_name, keys, update_data, where, table_root)
 			return(return_data)
 	
 	### SQLITE3
 	# table_root - может быть как именем таблицы - например: assets, так и именем файла - .assets.db
-	def get_db_path(self, level, read_ob, table_name, table_root):
+	def __get_db_path(self, level, read_ob, table_name, table_root):
 		attr = self.sqlite3_db_folder_attr.get(level)
 		db_folder = eval('read_ob.%s' % attr)
 		if table_root:
@@ -938,7 +938,7 @@ class database():
 	
 	# update_data - словарь по ключам из keys
 	# where - словарь по ключам, так как значения маскируются под "?" не может быть None или False
-	def sqlite3_update(self, level, read_ob, table_name, keys, update_data, where, table_root):
+	def __sqlite3_update(self, level, read_ob, table_name, keys, update_data, where, table_root):
 		data_com = []
 		# set_data
 		set_data = ''
@@ -970,7 +970,7 @@ class database():
 		
 		# connect
 		# -- db_path
-		db_path = self.get_db_path(level, read_ob, table_name, table_root)
+		db_path = self.__get_db_path(level, read_ob, table_name, table_root)
 		# -- connect
 		conn = sqlite3.connect(db_path, detect_types=sqlite3.PARSE_DECLTYPES|sqlite3.PARSE_COLNAMES)
 		conn.row_factory = sqlite3.Row
@@ -979,19 +979,19 @@ class database():
 		try:
 			c.execute(com, data_com)
 		except Exception as e:
-			print('#'*3, 'Exception in database.sqlite3_update:')
+			print('#'*3, 'Exception in database.__sqlite3_update:')
 			print('#'*3, 'com:', com)
 			print('#'*3, 'data_com:', data_com)
 			print('#'*3, e)
 			conn.close()
-			return(False, 'Exception in database.sqlite3_update, please look the terminal!')
+			return(False, 'Exception in database.__sqlite3_update, please look the terminal!')
 		conn.commit()
 		conn.close()
 		return(True, 'Ok!')
 	
 	# where - 1) строка условия, 2) словарь по keys, 3) False - значит выделяется всё.
 	# columns - False - означает все столбцы если не False - то список столбцов.
-	def sqlite3_read(self, level, read_ob, table_name, keys, columns, where, table_root):
+	def __sqlite3_read(self, level, read_ob, table_name, keys, columns, where, table_root):
 		# columns
 		col = ''
 		if not columns:
@@ -1017,25 +1017,25 @@ class database():
 				com = '%s WHERE %s' % (com, were_string)
 		# connect
 		# -- db_path
-		db_path = self.get_db_path(level, read_ob, table_name, table_root)
+		db_path = self.__get_db_path(level, read_ob, table_name, table_root)
 		# -- connect
 		try:
 			conn = sqlite3.connect(db_path, detect_types=sqlite3.PARSE_DECLTYPES|sqlite3.PARSE_COLNAMES)
 			conn.row_factory = sqlite3.Row
 			c = conn.cursor()
 		except Exception as e:
-			print('#'*3, 'Exception in database.sqlite3_read:')
+			print('#'*3, 'Exception in database.__sqlite3_read:')
 			print('#'*3, 'db_path:', db_path)
 			print('#'*3, e)
-			return(False, 'Exception in database.sqlite3_read, please look the terminal!')
+			return(False, 'Exception in database.__sqlite3_read, please look the terminal!')
 		try:
 			c.execute(com)
 		except Exception as e:
 			conn.close()
-			print('#'*3, 'Exception in database.sqlite3_read:')
+			print('#'*3, 'Exception in database.__sqlite3_read:')
 			print('#'*3, 'com:', com)
 			print('#'*3, e)
-			return(False, 'Exception in database.sqlite3_read, please look the terminal!')
+			return(False, 'Exception in database.__sqlite3_read, please look the terminal!')
 		
 		data = []
 		for row in c.fetchall():
@@ -1050,7 +1050,7 @@ class database():
 					try:
 						dict_row[key] = json.loads(row[key])
 					except Exception as e:
-						print('%s Exception in database.sqlite3_read:' % '#'*10)
+						print('%s Exception in database.__sqlite3_read:' % '#'*10)
 						print('%s table = %s, key = %s, row[key] = %s' % ('#'*10, table_name, key, row[key]))
 						print('#'*10, e)
 						dict_row[key] = None
@@ -1061,7 +1061,7 @@ class database():
 		conn.close()
 		return(True, data)
 	
-	def sqlite3_create_table(self, level, read_ob, table_name, keys, table_root):
+	def __sqlite3_create_table(self, level, read_ob, table_name, keys, table_root):
 		com = ''
 		for i, key in enumerate(keys):
 			if keys[key] == 'json':
@@ -1074,19 +1074,19 @@ class database():
 				com = com + ', %s %s' % (key, type_data)
 		com = 'CREATE TABLE IF NOT EXISTS %s (%s)' % (table_name, com)
 		#print(com)
-		return_data = self.sqlite3_set(level, read_ob, table_name, com, False, table_root)
+		return_data = self.__sqlite3_set(level, read_ob, table_name, com, False, table_root)
 		return(return_data)
 	
 	# write_data - словарь по ключам keys, также может быть списком словарей, для записи нескольких строк.
 	# keys - это: tasks_keys, projects_keys итд.
-	def sqlite3_insert(self, level, read_ob, table_name, keys, write_data, table_root):
+	def __sqlite3_insert(self, level, read_ob, table_name, keys, write_data, table_root):
 		if write_data.__class__.__name__ == 'dict':
 			iterator = [write_data]
 		elif write_data.__class__.__name__ == 'list':
 			iterator = write_data
 		# connect
 		# -- db_path
-		db_path = self.get_db_path(level, read_ob, table_name, table_root)
+		db_path = self.__get_db_path(level, read_ob, table_name, table_root)
 		# -- connect
 		conn = sqlite3.connect(db_path, detect_types=sqlite3.PARSE_DECLTYPES|sqlite3.PARSE_COLNAMES)
 		conn.row_factory = sqlite3.Row
@@ -1110,20 +1110,20 @@ class database():
 			try:
 				c.execute(com, data_com)
 			except Exception as e:
-				print('#'*3, 'Exception in database.sqlite3_insert:')
+				print('#'*3, 'Exception in database.__sqlite3_insert:')
 				print('#'*3, 'com:', com)
 				print('#'*3, 'data_com:', data_com)
 				print('#'*3, e)
 				conn.close()
-				return(False, 'Exception in database.sqlite3_insert, please look the terminal!')
+				return(False, 'Exception in database.__sqlite3_insert, please look the terminal!')
 		conn.commit()
 		conn.close()
 		return(True, 'Ok!')
 			
-	def sqlite3_get(self, level, read_ob, table_name, com, table_root):
+	def __sqlite3_get(self, level, read_ob, table_name, com, table_root):
 		#db_path
-		db_path = self.get_db_path(level, read_ob, table_name, table_root)
-		#print('sqlite3_get()', db_path, os.path.exists(db_path))
+		db_path = self.__get_db_path(level, read_ob, table_name, table_root)
+		#print('__sqlite3_get()', db_path, os.path.exists(db_path))
 		
 		try:
 			# -- CONNECT  .db
@@ -1140,17 +1140,17 @@ class database():
 				conn.close()
 			except:
 				pass
-			print('sqlite3_get()', e)
+			print('__sqlite3_get()', e)
 			return(False, e)
 		
 		conn.close()
 		return(True, data)
 	
 	# if com = False - создаётся пустая таблица ,при отсутствии
-	def sqlite3_set(self, level, read_ob, table_name, com, data_com, table_root):
+	def __sqlite3_set(self, level, read_ob, table_name, com, data_com, table_root):
 		#db_path
-		db_path = self.get_db_path(level, read_ob, table_name, table_root)
-		#print('sqlite3_get()', db_path, os.path.exists(db_path))
+		db_path = self.__get_db_path(level, read_ob, table_name, table_root)
+		#print('__sqlite3_get()', db_path, os.path.exists(db_path))
 		
 		try:
 			# -- CONNECT  .db
@@ -1168,10 +1168,10 @@ class database():
 				conn.close()
 			except:
 				pass
-			print('#'*3, 'Exception in sqlite3_set()', e)
+			print('#'*3, 'Exception in __sqlite3_set()', e)
 			print('#'*3, 'com:', com)
 			print('#'*3, 'data_com:', data_com)
-			return(False, 'Exception in sqlite3_set(), please read the terminal!')
+			return(False, 'Exception in __sqlite3_set(), please read the terminal!')
 		
 		conn.commit()
 		conn.close()
@@ -5857,35 +5857,30 @@ class workroom(studio):
 	def rename_workroom(self, old_name, new_name):
 		new_name = new_name.replace(' ', '_')
 		
+		# проверка имени на совпадение, со старым и с имеющимися
+		# получить id
+		# экшен
+		
+		# test name
 		if old_name == new_name:
 			return(False, 'Match names!')
+		bool_, return_data = self.get_list_workrooms('by_name')
+		if not bool_:
+			return(bool_, return_data)
+		if new_name in return_data:
+			return(False, 'This name of workroom already exists! "%s"' % new_name)
 		
+		# get id
 		result = self.get_id_by_name(old_name)
 		if not result[0]:
 			return(False, result[1])
-			
 		wr_id = result[1]
-		
-		# connect to db
-		table = self.workroom_t
-		
-		print(old_name, new_name, wr_id, table)
-		
-		if not self.workroom_path or (not os.path.exists(self.workroom_path)):
-			return(False, 'Not Found WorkRoom Data Base!')
-		
-		conn = sqlite3.connect(self.workroom_path, detect_types=sqlite3.PARSE_DECLTYPES|sqlite3.PARSE_COLNAMES)
-		conn.row_factory = sqlite3.Row
-		c = conn.cursor()
-		
-		# write data
-		string = 'UPDATE ' + table + ' SET name = ? WHERE id = ?'
-		data = (new_name, wr_id)
-		c.execute(string, data)
-		
-		conn.commit()
-		conn.close()
-		
+		# action
+		update_data = {'name':new_name}
+		where = {'id': wr_id}
+		bool_, return_data = database().update('studio', self, self.workroom_t, self.workroom_keys, update_data, where, table_root=self.artists_db)
+		if not bool_:
+			return(bool_, return_data)
 		return(True, 'Ok!')
 		
 	
