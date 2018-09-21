@@ -664,7 +664,13 @@ class MainWindow(QtGui.QMainWindow):
 		except:
 			pass
 		self.myWidget.studio_butt_2.clicked.connect(self.new_workroom_ui)
-		self.myWidget.studio_butt_3.setVisible(False)
+		self.myWidget.studio_butt_3.setVisible(True)
+		self.myWidget.studio_butt_3.setText('Edit Type')
+		try:
+			self.myWidget.studio_butt_3.clicked.disconnect()
+		except:
+			pass
+		self.myWidget.studio_butt_3.clicked.connect(self.edit_type_workroom_ui)
 		self.myWidget.studio_butt_4.setVisible(False)
 		self.myWidget.studio_butt_5.setVisible(True)
 		self.myWidget.studio_butt_5.setText('Rename')
@@ -735,12 +741,18 @@ class MainWindow(QtGui.QMainWindow):
 				if key == 'date_time':
 					continue
 				newItem = QtGui.QTableWidgetItem()
-				if workroom[key] and key == 'type':
-					type_string = ','.join(workroom[key])
-					newItem.setText(type_string)
+				#
+				if key == 'type':
+					if workroom[key]:
+						type_string = ','.join(workroom[key]).replace(',', ', ')
+						newItem.setText(type_string)
+					else:
+						newItem.setText('')
 				else:
 					newItem.setText(workroom[key])
+				#
 				newItem.workroom = workroom
+				#
 				if key == 'name':
 					color = self.workroom_color
 					brush = QtGui.QBrush(color)
@@ -762,19 +774,26 @@ class MainWindow(QtGui.QMainWindow):
 		
 	def new_workroom_ui(self):
 		loader = QtUiTools.QUiLoader()
-		file = QtCore.QFile(self.new_dialog_path)
+		#file = QtCore.QFile(self.new_dialog_path)
+		file = QtCore.QFile(self.qt_set_project_path)
 		#file.open(QtCore.QFile.ReadOnly)
 		self.newWorkroomDialog = loader.load(file, self)
 		file.close()
 		
 		# edit widget
 		self.newWorkroomDialog.setWindowTitle('add New WorkRoom')
-		self.newWorkroomDialog.new_dialog_label.setText('Name:')
+		#self.newWorkroomDialog.new_dialog_label.setText('Name:')
+		self.newWorkroomDialog.label_2.setText('* Name:')
+		self.newWorkroomDialog.label.setText('Type:')
+		self.newWorkroomDialog.set_project_path_button.setText('Set the Type')
 		
 		# edit button
-		self.newWorkroomDialog.new_dialog_cancel.clicked.connect(partial(self.new_workroom_action, False))
-		self.newWorkroomDialog.new_dialog_ok.clicked.connect(partial(self.new_workroom_action, True))
-		
+		#self.newWorkroomDialog.new_dialog_cancel.clicked.connect(partial(self.new_workroom_action, False))
+		#self.newWorkroomDialog.new_dialog_ok.clicked.connect(partial(self.new_workroom_action, True))
+		self.newWorkroomDialog.set_project_path_button.clicked.connect(partial(self.new_workroom_set_type_ui, self.newWorkroomDialog.set_project_folder))
+		self.newWorkroomDialog.set_project_cansel_button.clicked.connect(partial(self.new_workroom_action, False)) #set_project_cansel_button
+		self.newWorkroomDialog.set_project_ok_button.clicked.connect(partial(self.new_workroom_action, True)) # set_project_ok_button
+				
 		# set modal window
 		self.newWorkroomDialog.setWindowModality(QtCore.Qt.WindowModal)
 		self.newWorkroomDialog.setAttribute(QtCore.Qt.WA_DeleteOnClose, True)
@@ -782,22 +801,130 @@ class MainWindow(QtGui.QMainWindow):
 		self.newWorkroomDialog.show()
 		print('new workroom ui')
 		
+	def new_workroom_set_type_ui(self, field):
+		# widget
+		loader = QtUiTools.QUiLoader()
+		file = QtCore.QFile(self.select_from_check_button_dialog_path)
+		#file.open(QtCore.QFile.ReadOnly)
+		window = self.setWorkroomTypeDialog = loader.load(file, self)
+		file.close()
+		
+		# -- add checkbox
+		checkbox_list = []
+		layout = QtGui.QVBoxLayout()
+		for task_type in self.db_workroom.task_types:
+			box = QtGui.QCheckBox(task_type, window.check_buttons_frame)
+			checkbox_list.append(box)
+			if field.text():
+				if task_type in json.loads(field.text()):
+					box.setCheckState(QtCore.Qt.CheckState.Checked)
+			
+			layout.addWidget(box)
+		window.check_buttons_frame.setLayout(layout)
+		
+		# -- edit button
+		window.select_from_chbut_cansel_button.clicked.connect(partial(self.close_window, window))
+		window.select_from_chbut_apply_button.clicked.connect(partial(self.new_workroom_set_type_action, field, window, checkbox_list))
+		
+		# set modal window
+		window.setWindowModality(QtCore.Qt.WindowModal)
+		window.setAttribute(QtCore.Qt.WA_DeleteOnClose, True)
+		
+		#field.setText('type')
+		window.show()
+		
+	def new_workroom_set_type_action(self, field, window, checkbox_list):
+		# get data
+		data = []
+		for obj in checkbox_list:
+			if obj.checkState() == QtCore.Qt.CheckState.Checked:
+				data.append(obj.text())
+		# set data
+		field.setText(json.dumps(data))
+		self.close_window(window)
+		
 	def new_workroom_action(self, action):
 		if not action:
 			self.newWorkroomDialog.close()
 			return
+		
+		#name = self.newWorkroomDialog.new_dialog_name.text().replace(' ','_')
+		name = self.newWorkroomDialog.priject_name_field.text().replace(' ','_')
+		if name == '':
+			self.message('Not Name!', 2)
+			return
+		# get types
+		list_of_types = self.newWorkroomDialog.set_project_folder.text()
+		if list_of_types :
+			list_of_types = json.loads(list_of_types)
+			if list_of_types.__class__.__name__== 'list':
+				keys = {
+					'name': name,
+					'type': list_of_types,
+					}
+			else:
+				keys = {'name': name}
+		# create
+		result = self.db_workroom.add(keys)
+		if not result[0]:
+			self.message(result[1], 3)
+		self.newWorkroomDialog.close()
+		self.fill_workroom_table(self.myWidget.studio_editor_table)
+		
+	# -------------------- Edit Type Workroom ---------------------------------------
+	
+	def edit_type_workroom_ui(self):
+		table = self.myWidget.studio_editor_table
+		current_item = table.currentItem()
+		if not current_item:
+			self.message('Not Selected Workroom!', 2)
+			return
 		else:
-			name = self.newWorkroomDialog.new_dialog_name.text().replace(' ','_')
-			if name == '':
-				self.message('Not Name!', 2)
-				return
-			copy = self.db_workroom
-			result = copy.add({'name': name})
-			if not result[0]:
-				self.message(result[1], 3)
-			self.newWorkroomDialog.close()
-			self.fill_workroom_table(self.myWidget.studio_editor_table)
+			wr_data = current_item.workroom
+		
+		# widget
+		loader = QtUiTools.QUiLoader()
+		file = QtCore.QFile(self.select_from_check_button_dialog_path)
+		#file.open(QtCore.QFile.ReadOnly)
+		window = self.editWorkroomTypeDialog = loader.load(file, self)
+		file.close()
+		
+		# -- add checkbox
+		checkbox_list = []
+		layout = QtGui.QVBoxLayout()
+		for task_type in self.db_workroom.task_types:
+			box = QtGui.QCheckBox(task_type, window.check_buttons_frame)
+			checkbox_list.append(box)
+			if wr_data['type'] and task_type in wr_data['type']:
+				box.setCheckState(QtCore.Qt.CheckState.Checked)
 			
+			layout.addWidget(box)
+		window.check_buttons_frame.setLayout(layout)
+		
+		# -- edit button
+		window.select_from_chbut_cansel_button.clicked.connect(partial(self.close_window, window))
+		window.select_from_chbut_apply_button.clicked.connect(partial(self.edit_type_workroom_action, window, checkbox_list, wr_data['id']))
+		
+		# set modal window
+		window.setWindowModality(QtCore.Qt.WindowModal)
+		window.setAttribute(QtCore.Qt.WA_DeleteOnClose, True)
+		
+		#field.setText('type')
+		window.show()
+		
+	def edit_type_workroom_action(self, window, checkbox_list, wr_id):
+		data = []
+		for obj in checkbox_list:
+			if obj.checkState() == QtCore.Qt.CheckState.Checked:
+				data.append(obj.text())
+		# set data
+		bool_, return_data = self.db_workroom.edit_type(wr_id, data)
+		if not bool_:
+			return(False, return_data)
+		
+		self.close_window(window)
+		self.fill_workroom_table(self.myWidget.studio_editor_table)
+	
 	# -------------------- Rename Workroom ---------------------------------------
 	
 	def rename_workroom_ui(self):

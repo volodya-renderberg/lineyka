@@ -5882,6 +5882,15 @@ class workroom(studio):
 		if not bool_:
 			return(bool_, return_data)
 		return(True, 'Ok!')
+	
+	# new_type_list - список типов
+	def edit_type(self, wr_id, new_type_list):
+		update_data = {'type': new_type_list}
+		where = {'id': wr_id}
+		bool_, return_data = database().update('studio', self, self.workroom_t, self.workroom_keys, update_data, where, table_root=self.artists_db)
+		if not bool_:
+			return(bool_, return_data)
+		return(True, 'Ok!')
 		
 	
 class chat(task):
