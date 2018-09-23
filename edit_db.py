@@ -144,19 +144,19 @@ class studio:
 	'film'
 	]
 	
-	asset_keys = [
-	('name', 'text'),
-	('group', 'text'),
-	('path', 'text'),
-	('type', 'text'),
-	('series', 'text'),
-	('priority', 'text'),
-	('comment', 'text'),
-	('content', 'text'),
-	('id', 'text'),
-	('status', 'text'),
-	('parent', 'text') # {'name':asset_name, 'id': asset_id}
-	]
+	asset_keys = {
+	'name': 'text',
+	'group': 'text',
+	'path': 'text',
+	'type': 'text',
+	'series': 'text',
+	'priority': 'text',
+	'comment': 'text',
+	'content': 'text',
+	'id': 'text',
+	'status': 'text',
+	'parent': 'json' # {'name':asset_name, 'id': asset_id}
+	}
 	
 	# constants (0 - 3 required parameters)
 	tasks_keys = [
@@ -287,6 +287,14 @@ class studio:
 	'status': 'text',
 	'tasks_path': 'text',
 	'project_database': 'json' # формат который конвертируется через json и записывается строкой.
+	}
+	
+	group_keys = {
+	'name': 'text',
+	'type': 'text',
+	'series': 'text',
+	'comment': 'text',
+	'id': 'text',
 	}
 	
 	logs_keys = [
@@ -1265,7 +1273,8 @@ class project(studio):
 		
 		# create_recycle_bin
 		self.get_list_projects()
-		result = group().create_recycle_bin(project_name)
+		#result = group().create_recycle_bin(project_name)
+		result = group(self).create_recycle_bin()
 		if not result[0]:
 			return(False, result[1])
 		
@@ -1282,6 +1291,7 @@ class project(studio):
 			#self.chat_path = self.list_projects[name]['chat_path']
 			#self.chat_img_path = self.list_projects[name]['chat_img_path']
 			#self.preview_img_path = self.list_projects[name]['preview_img_path']
+			self.name = name
 			#
 			self.path = self.list_projects[name]['path']
 			#
@@ -1321,18 +1331,22 @@ class project(studio):
 		return(True, 'Ok')
 	
 	def rename_project(self, old_name, new_name):
-		if not old_name in self.list_projects:
+		# test old name
+		if not old_name in self.list_projects.keys():
 			return(False, ('in rename_project -> No such project: \"%s\"' % old_name))
-			
-		result = self.get_project(old_name)
-		if not result[0]:
-			return(False, ('in rename_project -> ' + result[1]))
-		
 		# database
 		com = 'UPDATE %s SET \"name\" = ? WHERE name = ?' % self.projects_t
 		data_com = (new_name, old_name)
 		bool_, return_data = database().set_db('studio', self, self.projects_t, com, data_com=data_com)
-		return(bool_, return_data)
+		if not bool_:
+			return(False, return_data)
+		# перезапись списка проэктов
+		self.get_list_projects()
+		# переименованный проект - стал текущим
+		result = self.get_project(new_name)
+		if not result[0]:
+			return(False, ('in rename_project -> ' + result[1]))
+		return(True, 'Ok!')
 		
 	def remove_project(self, name):
 		if not name in self.list_projects:
@@ -1371,11 +1385,11 @@ class project(studio):
 			else:
 				return False, '\n****** studio.project.make_folders -> No Created'
 	
-class asset(project):
+class asset(studio):
 	'''
 	studio.project.asset()
 	
-	self.activity_folder  - {activity_name : activity_folder, ... }
+	self.ACTIVITY_FOLDER  - {activity_name : ACTIVITY_FOLDER, ... }
 	
 	add_asset(project_name, asset_name) - create folder: assets/asset_name; create activity folders assets/asset_name/...folders; write {asset_name:folder_full_path} in .assets.json; 
 	
@@ -1389,17 +1403,41 @@ class asset(project):
 	
 	'''
 	
-	def __init__(self):
+	def __init__(self, project):
+		# objects
+		self.db_group = group() # под сильным вопросом ?????
+		self.project = project
+		
+		# asset keys
+		'''
+		asset_keys = {
+			'name': 'text',
+			'group': 'text',
+			'path': 'text',
+			'type': 'text',
+			'series': 'text',
+			'priority': 'text',
+			'comment': 'text',
+			'content': 'text',
+			'id': 'text',
+			'status': 'text',
+			'parent': 'text' # {'name':asset_name, 'id': asset_id}
+			}
 		self.asset_path = False # full path to asset folder
 		self.asset_name = False
-		self.activity_path = False
-		self.task_list = False # task lists from this asset
 		self.asset_group = False # the group of asset
 		self.asset_type = False
+		'''
+		self.task_list = False # task lists from this asset
+		self.activity_path = False # директория какого либо активити по запросу, заполняется в get_activity_path()
+		
+		#base fields
+		for key in self.asset_keys:
+			exec('self.%s = False' % key)
 		
 		# constants
 		#self.extension = '.ma'
-		self.activity_folder = {
+		self.ACTIVITY_FOLDER = {
 		#'animatic' : {
 		'film':{
 		'storyboard':'storyboard',
@@ -1456,64 +1494,57 @@ class asset(project):
 		#'film' : {'film':'film'},
 		}
 		
-		self.additional_folders = {
+		self.ADDITIONAL_FOLDERS = {
 		'meta_data':'00_common',
 		}
 		
-		self.unchangeable_keys = ['id', 'type', 'path']
-		#self.copied_asset = ['obj', 'char']
-		self.copied_asset = {
+		self.UNCHANGEABLE_KEYS = ['id', 'type', 'path']
+		#self.COPIED_ASSET = ['obj', 'char']
+		self.COPIED_ASSET = {
 			'obj':['obj', 'char'],
 			'char':['char', 'obj']
 			}
-		self.copied_with_task = ['obj', 'char']
+		self.COPIED_WITH_TASK = ['obj', 'char']
 		
-		# objects
-		self.db_group = group()
+		#project.__init__(self)
 		
-		project.__init__(self)
-		
-	def add_asset(self, project_name, type_, group, asset_name, asset_path = ''):
+	def add_asset(self, type_, group, asset_name, asset_path = ''):
 		# group - clear name
-		#
-		result = self.get_project(project_name)
-		if not result[0]:
-			return(False, result[1])
-		self.asset_name = asset_name.replace(' ', '_')
-		self.asset_type = type_
-		self.asset_group = group
+		self.name = asset_name.replace(' ', '_')
+		self.type = type_
+		self.group = group
 		
 		# create asset folder
 		if asset_path == '':
-			self.asset_path = os.path.join(self.path, self.folders['assets'],self.asset_group, self.asset_name)
+			self.path = os.path.join(self.path, self.folders['assets'],self.group, self.name)
 			# create group folder
-			group_dir = os.path.join(self.path, self.folders['assets'],self.asset_group)
+			group_dir = os.path.join(self.path, self.folders['assets'],self.group)
 			if not os.path.exists(group_dir):
 				try:
 					os.mkdir(group_dir)
 				except:
 					return False, '**** studio/project/asset.add_asset -> you can not create a folder \'assets/group\''
 			# create root folder
-			if not os.path.exists(self.asset_path):
+			if not os.path.exists(self.path):
 				try:
-					os.mkdir(self.asset_path)
+					os.mkdir(self.path)
 				except:
 					return False, '**** studio/project/asset.add_asset -> you can not create a folder \'assets/group/asset\''
 		else:
 			if os.path.exists(asset_path):
-				self.asset_path = asset_path
+				self.path = asset_path
 			else:
 				return False, '**** studio/project/asset.add_asset -> asset_path not found!'
 					
 		# create activity folders
-		for activity in self.activity_folder:
-			folder_path = os.path.join(self.asset_path, self.activity_folder[activity])
+		for activity in self.ACTIVITY_FOLDER:
+			folder_path = os.path.join(self.path, self.ACTIVITY_FOLDER[activity])
 			if not os.path.exists(folder_path):
 				os.mkdir(folder_path)
 				
-		# create additional folders  self.additional_folders
-		for activity in self.additional_folders:
-			folder_path = os.path.join(self.asset_path, self.additional_folders[activity])
+		# create additional folders  self.ADDITIONAL_FOLDERS
+		for activity in self.ADDITIONAL_FOLDERS:
+			folder_path = os.path.join(self.path, self.ADDITIONAL_FOLDERS[activity])
 			if not os.path.exists(folder_path):
 				os.mkdir(folder_path)
 		
@@ -1521,7 +1552,7 @@ class asset(project):
 		try:
 			with open(self.assets_path, 'r') as read:
 				data = json.load(read)
-				data[self.asset_name] = [self.asset_group, self.asset_path, self.asset_type]
+				data[self.name] = [self.group, self.path, self.type]
 				read.close()
 		except:
 			return False, "****** studio.project.asset.add_asset -> .assets.json  can not be read"
@@ -1544,16 +1575,16 @@ class asset(project):
 			read.close()
 			#if data[asset_name]:
 			try:
-				self.asset_type = data[asset_name][2]
-				self.asset_group = data[asset_name][0]
-				self.asset_path = data[asset_name][1]
-				self.asset_name = asset_name
+				self.type = data[asset_name][2]
+				self.group = data[asset_name][0]
+				self.path = data[asset_name][1]
+				self.name = asset_name
 				
 				# get tasks_list
 				conn = sqlite3.connect(self.tasks_path, detect_types=sqlite3.PARSE_DECLTYPES|sqlite3.PARSE_COLNAMES)
 				conn.row_factory = sqlite3.Row
 				c = conn.cursor()
-				table = '\"' + self.asset_name + ':' + self.tasks_t + '\"'
+				table = '\"' + self.name + ':' + self.tasks_t + '\"'
 				string = 'select * from ' + table
 				try:
 					c.execute(string)
@@ -1569,7 +1600,7 @@ class asset(project):
 							self.task_list.append(row['task_name'])
 									
 				#return
-				return self.asset_group, self.asset_path, self.task_list
+				return self.group, self.path, self.task_list
 			except:
 				return False, 'Not Asset!'
 				
@@ -1577,10 +1608,10 @@ class asset(project):
 		if not self.get_asset(project_name, asset_name)[0]:
 			return False, '***'
 		try:
-			activity_folder = self.activity_folder[activity]
+			activity_folder = self.ACTIVITY_FOLDER[activity]
 		except:
 			return False, '****'
-		activity_path = os.path.join(self.asset_path, activity_folder)
+		activity_path = os.path.join(self.path, activity_folder)
 		if not os.path.exists(activity_path):
 			try:
 				os.mkdir(activity_path)
@@ -1764,14 +1795,14 @@ class asset(project):
 			keys['path'] = asset_path
 			
 			# -- create activity folders
-			for activity in self.activity_folder[asset_type]:
-				folder_path = os.path.join(asset_path, self.activity_folder[asset_type][activity])
+			for activity in self.ACTIVITY_FOLDER[asset_type]:
+				folder_path = os.path.join(asset_path, self.ACTIVITY_FOLDER[asset_type][activity])
 				if not os.path.exists(folder_path):
 					os.mkdir(folder_path)
 					
-			# -- create additional folders  self.additional_folders
-			for activity in self.additional_folders:
-				folder_path = os.path.join(asset_path, self.additional_folders[activity])
+			# -- create additional folders  self.ADDITIONAL_FOLDERS
+			for activity in self.ADDITIONAL_FOLDERS:
+				folder_path = os.path.join(asset_path, self.ADDITIONAL_FOLDERS[activity])
 				if not os.path.exists(folder_path):
 					os.mkdir(folder_path)
 		
@@ -2078,9 +2109,9 @@ class asset(project):
 		# copy activity files
 		# -- copy meta data
 		new_asset_data = result[1][new_asset_name]
-		for key in self.additional_folders:
-			src_activity_path = os.path.join(old_path, self.additional_folders[key])
-			dst_activity_path = os.path.join(new_asset_data['path'], self.additional_folders[key])
+		for key in self.ADDITIONAL_FOLDERS:
+			src_activity_path = os.path.join(old_path, self.ADDITIONAL_FOLDERS[key])
+			dst_activity_path = os.path.join(new_asset_data['path'], self.ADDITIONAL_FOLDERS[key])
 			for obj in os.listdir(src_activity_path):
 				src = os.path.join(src_activity_path, obj)
 				dst = os.path.join(dst_activity_path, obj.replace(old_name, new_asset_name)) # + replace name 
@@ -2090,8 +2121,8 @@ class asset(project):
 					shutil.copytree(src, dst)
 		
 		# -- copy activity version
-		old_activites = self.activity_folder[old_type]
-		activites = self.activity_folder[new_asset_type]
+		old_activites = self.ACTIVITY_FOLDER[old_type]
+		activites = self.ACTIVITY_FOLDER[new_asset_type]
 		for key in activites:
 			# -- get activity dir
 			if not key in old_activites:
@@ -2417,7 +2448,7 @@ class asset(project):
 		data = []
 		string = 'UPDATE ' +  table + ' SET '
 		for key in keys:
-			if not key in self.unchangeable_keys:
+			if not key in self.UNCHANGEABLE_KEYS:
 				string = string + ' \"' + key + '\" = ? ,'
 				data.append(keys[key])
 		# -- >>
@@ -2465,7 +2496,7 @@ class asset(project):
 		data = []
 		string = 'UPDATE ' +  table + ' SET '
 		for key in keys:
-			if not key in self.unchangeable_keys:
+			if not key in self.UNCHANGEABLE_KEYS:
 				string = string + ' \"' + key + '\" = ? ,'
 				data.append(keys[key])
 		# -- >>
@@ -2868,7 +2899,7 @@ class task(asset):
 			return(False, 'Not Asset Path!')
 		'''
 		
-		folder_name = self.activity_folder[task_data['asset_type']][task_data['activity']]
+		folder_name = self.ACTIVITY_FOLDER[task_data['asset_type']][task_data['activity']]
 		activity_path = NormPath(os.path.join(asset_path, folder_name))
 		
 		if not os.path.exists(activity_path):
@@ -2944,7 +2975,7 @@ class task(asset):
 			return(False, 'Not Asset Path!')
 		'''
 		
-		folder_name = self.activity_folder[task_data['asset_type']][task_data['activity']]
+		folder_name = self.ACTIVITY_FOLDER[task_data['asset_type']][task_data['activity']]
 		activity_path = NormPath(os.path.join(asset_path, folder_name))
 		
 		version_file = os.path.join(activity_path, version, (task_data['asset'] + task_data['extension']))
@@ -2965,7 +2996,7 @@ class task(asset):
 		asset_path = result[2]
 		
 		# get activity path
-		folder_name = self.activity_folder[task_data['asset_type']][task_data['activity']]
+		folder_name = self.ACTIVITY_FOLDER[task_data['asset_type']][task_data['activity']]
 		activity_path = NormPath(os.path.join(asset_path, folder_name))
 		# make activity folder
 		if not os.path.exists(activity_path):
@@ -3014,7 +3045,7 @@ class task(asset):
 		if not os.path.exists(publish_dir):
 			return(False, 'in func.location_load_exists - Not Publish Folder!')
 		# -- -- get activity_dir
-		activity_dir = os.path.join(publish_dir, self.activity_folder[asset_data['type']][task_data['activity']])
+		activity_dir = os.path.join(publish_dir, self.ACTIVITY_FOLDER[asset_data['type']][task_data['activity']])
 		if not os.path.exists(activity_dir):
 			return(False, 'in func.location_load_exists - Not Publish/Activity Folder!')
 		# -- -- get file_path
@@ -3030,7 +3061,7 @@ class task(asset):
 	def get_versions_list_of_cache_by_object(self, task_data, ob_name, activity = 'cache', extension = '.pc2'):
 		asset_path = task_data['asset_path']
 		
-		folder_name = self.activity_folder[task_data['asset_type']][activity]
+		folder_name = self.ACTIVITY_FOLDER[task_data['asset_type']][activity]
 		activity_path = NormPath(os.path.join(asset_path, folder_name))
 		activity_path = NormPath(activity_path)
 		cache_dir_path = NormPath(os.path.join(asset_path, folder_name, ob_name))
@@ -3074,7 +3105,7 @@ class task(asset):
 	def get_final_cache_file_path(self, task_data, cache_dir_name, activity = 'cache', extension = '.pc2'):
 		asset_path = task_data['asset_path']
 		
-		folder_name = self.activity_folder[task_data['asset_type']][activity]
+		folder_name = self.ACTIVITY_FOLDER[task_data['asset_type']][activity]
 		activity_path = NormPath(os.path.join(asset_path, folder_name))
 		activity_path = NormPath(activity_path)
 		cache_dir_path = NormPath(os.path.join(asset_path, folder_name, cache_dir_name))
@@ -3125,7 +3156,7 @@ class task(asset):
 		asset_path = task_data['asset_path']
 		
 		# get activity path
-		folder_name = self.activity_folder[task_data['asset_type']][activity]
+		folder_name = self.ACTIVITY_FOLDER[task_data['asset_type']][activity]
 		activity_path = NormPath(os.path.join(asset_path, folder_name, cache_dir_name))
 		
 		# make activity folder
@@ -3162,7 +3193,7 @@ class task(asset):
 			
 		asset_path = task_data['asset_path']
 		
-		folder_name = self.activity_folder[task_data['asset_type']][activity]
+		folder_name = self.ACTIVITY_FOLDER[task_data['asset_type']][activity]
 		activity_path = NormPath(os.path.join(asset_path, folder_name, cache_dir_name))
 		
 		version_file = os.path.join(activity_path, version, (cache_dir_name + extension))
@@ -5257,7 +5288,7 @@ class log(task):
 		logs_keys['date_time'] = date
 		logs_keys['version'] = version
 		
-		path = os.path.join(task_data['asset_path'], self.additional_folders['meta_data'], self.camera_log_file_name)
+		path = os.path.join(task_data['asset_path'], self.ADDITIONAL_FOLDERS['meta_data'], self.camera_log_file_name)
 		path = NormPath(path)
 		
 		data = {}
@@ -5277,7 +5308,7 @@ class log(task):
 		return(True, 'Ok!')
 	
 	def camera_read_log(self, project_name, task_data):
-		path = os.path.join(task_data['asset_path'], self.additional_folders['meta_data'], self.camera_log_file_name)
+		path = os.path.join(task_data['asset_path'], self.ADDITIONAL_FOLDERS['meta_data'], self.camera_log_file_name)
 		if not os.path.exists(path):
 			return(False, 'No saved versions!')
 			
@@ -5318,7 +5349,7 @@ class log(task):
 		logs_keys['date_time'] = date
 		logs_keys['version'] = version
 		
-		path = os.path.join(task_data['asset_path'], self.additional_folders['meta_data'], self.playblast_log_file_name)
+		path = os.path.join(task_data['asset_path'], self.ADDITIONAL_FOLDERS['meta_data'], self.playblast_log_file_name)
 		path = NormPath(path)
 		
 		data = {}
@@ -5338,7 +5369,7 @@ class log(task):
 		return(True, 'Ok!')
 	
 	def playblast_read_log(self, project_name, task_data):
-		path = os.path.join(task_data['asset_path'], self.additional_folders['meta_data'], self.playblast_log_file_name)
+		path = os.path.join(task_data['asset_path'], self.ADDITIONAL_FOLDERS['meta_data'], self.playblast_log_file_name)
 		if not os.path.exists(path):
 			return(False, 'No saved versions!')
 			
@@ -6653,36 +6684,25 @@ class series(project):
 	def start(self, project, name):
 		pass
 	
-class group(project):
-	def __init__(self):
-		self.group_keys = [
-		('name', 'text'),
-		('type', 'text'),
-		('series', 'text'),
-		('comment', 'text'),
-		('id', 'text'),
-		]
-		
-		#self.group_t = 'groups'
-		
-		project.__init__(self)
+class group(studio):
+	def __init__(self, project):
+		self.project = project
+		#base fields
+		for key in self.group_keys:
+			exec('self.%s = False' % key)
 	
-	def create(self, project, keys):
-		result = self.get_project(project)
-		if not result[0]:
-			return(False, result[1])
-			
+	# keys - словарь по group_keys (name и type - обязательные ключи)
+	def create(self, keys):
 		# test name
-		if (not 'name' in keys) or (keys['name'] == ''):
+		if not keys.get('name'):
 			return(False, 'Not Name!')
 			
 		# test type
-		# test name
-		if (not 'type' in keys) or (keys['name'] == '') or (not keys['type'] in self.asset_types):
+		if not keys.get('type') or (not keys.get('type') in self.asset_types):
 			return(False, 'Not Type!')
 		
-		# get id				
-		keys['id'] = str(random.randint(0, 1000000000))
+		# get id
+		keys['id'] = hex(random.randint(0, 1000000000)).replace('0x','')
 		
 		# test series key
 		if keys['type'] in self.asset_types_with_series:
@@ -6692,85 +6712,28 @@ class group(project):
 				return(False, 'Required For This Type of Key Series!')
 		else:
 			keys['series'] = ''
+		#return(keys)
+		# create group
+		# -- create table
+		bool_, return_data  = database().create_table('project', self.project, self.group_t, self.group_keys, table_root = self.group_db)
+		if not bool_:
+			return(bool_, return_data)
 		
-		# create string
-		table = self.group_t
-		string = "insert into " + table + " values"
-		values = '('
-		data = []
-		for i, key in enumerate(self.group_keys):
-			if i< (len(self.group_keys) - 1):
-				values = values + '?, '
-			else:
-				values = values + '?'
-			if key[0] in keys:
-				data.append(keys[key[0]])
-			else:
-				if key[1] == 'real':
-					data.append(0.0)
-				elif key[1] == 'timestamp':
-					data.append(datetime.datetime.now())
-				else:
-					data.append('')
-					
-		values = values + ')'
-		data = tuple(data)
-		string = string + values
+		# -- write data
+		bool_, return_data = database().insert('project', self.project, self.group_t, self.group_keys, keys, table_root = self.group_db)
+		if not bool_:
+			return(bool_, return_data)
 		
-		# write group to db
-		conn = sqlite3.connect(self.assets_path, detect_types=sqlite3.PARSE_DECLTYPES|sqlite3.PARSE_COLNAMES)
-		conn.row_factory = sqlite3.Row
-		c = conn.cursor()
-		
-		# exists table
-		try:
-			str_ = 'select * from ' + table
-			c.execute(str_)
-			# unicum task_name test
-			r = c.fetchall()
-			for row in r:
-				if row['name'] == keys['name']:
-					conn.close()
-					return(False, 'overlap')
-				elif row['id'] == keys['id']:
-					keys['id'] = str(random.randint(0, 1000000000))
-				
-		except:
-			string2 = "CREATE TABLE " + table + " ("
-			for i,key in enumerate(self.group_keys):
-				if i == 0:
-					string2 = string2 + key[0] + ' ' + key[1]
-				else:
-					string2 = string2 + ', ' + key[0] + ' ' + key[1]
-			string2 = string2 + ')'
-			'''
-			# -- 
-			print 'String 2: ', string2
-			conn.close()
-			return
-			# --
-			'''
-			c.execute(string2)
-		
-		# add series
-		#print(string, data)
-		c.execute(string, data)
-		conn.commit()
-		conn.close()
 		return(True, 'ok')
 		
-	def create_recycle_bin(self, project_name):
-		'''
-		result = self.get_studio()
-		if not result[0]:
-			return(False, (result[1] + ' in get studio'))
+	def create_recycle_bin(self):
+		# -- create table
+		bool_, return_data  = database().create_table('project', self.project, self.group_t, self.group_keys, table_root = self.group_db)
+		if not bool_:
+			return(bool_, return_data)
 		
-		result = self.get_project(project_name)
-		if not result[0]:
-			return(False, (result[1] + ' in get project'))
-		'''
 		# get group list
-		result = self.get_list(project_name)
+		result = self.get_list()
 		if not result[0]:
 			return(False, (result[1] + ' in get group list'))
 		groups = result[1]
@@ -6798,7 +6761,7 @@ class group(project):
 				while new_name in names:
 					new_name = self.recycle_bin_name + hex(random.randint(0, 1000000000)).replace('0x','')
 				# -- rename
-				result = self.rename(project_name, self.recycle_bin_name, new_name)
+				result = self.rename(self.recycle_bin_name, new_name)
 				if not result[0]:
 					return(False, result[1])
 				
@@ -6814,127 +6777,38 @@ class group(project):
 			while keys['id'] in id_s:
 				keys['id'] = hex(random.randint(0, 1000000000)).replace('0x','')
 			#print(keys)
-			
-			# -- create string
-			table = self.group_t
-			string = "insert into " + table + " values"
-			values = '('
-			data = []
-			for i, key in enumerate(self.group_keys):
-				if i< (len(self.group_keys) - 1):
-					values = values + '?, '
-				else:
-					values = values + '?'
-				if key[0] in keys:
-					data.append(keys[key[0]])
-				else:
-					if key[1] == 'real':
-						data.append(0.0)
-					elif key[1] == 'timestamp':
-						data.append(datetime.datetime.now())
-					else:
-						data.append('')
-						
-			values = values + ')'
-			data = tuple(data)
-			string = string + values
-				
-			# CONNECT to db
-			conn = sqlite3.connect(self.assets_path, detect_types=sqlite3.PARSE_DECLTYPES|sqlite3.PARSE_COLNAMES)
-			conn.row_factory = sqlite3.Row
-			c = conn.cursor()
-			
-			# exists table
-			try:
-				str_ = 'select * from ' + table
-				c.execute(str_)
-			except:
-				string2 = "CREATE TABLE " + table + " ("
-				for i,key in enumerate(self.group_keys):
-					if i == 0:
-						string2 = string2 + key[0] + ' ' + key[1]
-					else:
-						string2 = string2 + ', ' + key[0] + ' ' + key[1]
-				string2 = string2 + ')'
-				# -- make table
-				c.execute(string2)
-							
-			# -- create group
-			c.execute(string, data)
-			conn.commit()
-			conn.close()
-			
+			# -- write data
+			bool_, return_data = database().insert('project', self.project, self.group_t, self.group_keys, keys, table_root = self.group_db)
+			if not bool_:
+				return(bool_, return_data)
 		else:
 			#print('Exist RB!')
 			if not recycle_bin:
 				# -- rename
-				result = self.rename(project_name, all_group['name'], self.recycle_bin_name)
+				result = self.rename(all_group['name'], self.recycle_bin_name)
 				if not result[0]:
 					return(False, (result[1] + 'in rename rcycle bin'))
 			
 		return(True, 'ok')
 			
 		
-	def get_list(self, project, f = False): # f = [...] - filter of types
-		result = self.get_project(project)
-		if not result[0]:
-			return(False, (result[1] + '***'))
-		
+	def get_list(self, f = False): # f = [...] - filter of types список типов
 		# write series to db
-		try:
-			conn = sqlite3.connect(self.assets_path, detect_types=sqlite3.PARSE_DECLTYPES|sqlite3.PARSE_COLNAMES)
-			conn.row_factory = sqlite3.Row
-			c = conn.cursor()
-		except Exception as e:
-			print('#'*3, 'Exception in group.get_list:')
-			print('#'*3, 'assets_path:', self.assets_path)
-			print('#'*3, e)
-			#conn.close()
-			return(False, ('Exception in group.get_list: please look the terminal'))
-		
-		try:
-			table = self.group_t
-			str_ = 'select * from ' + table
-			c.execute(str_)
-			rows = c.fetchall()
-			conn.close()
-			if not f:
-				return(True, rows)
-			else:
-				f_rows = []
-				for row in rows:
-					if row['type'] in f:
-						f_rows.append(row)
-				return(True, f_rows)
-		except:
-			string2 = "CREATE TABLE " + table + " ("
-			for i,key in enumerate(self.group_keys):
-				if i == 0:
-					string2 = string2 + key[0] + ' ' + key[1]
-				else:
-					string2 = string2 + ', ' + key[0] + ' ' + key[1]
-			string2 = string2 + ')'
-			# -- make table
-			try:
-				c.execute(string2)
-				conn.commit()
-				conn.close()
-				return(True, [])
-			except:
-				conn.close()
-				return(False, 'Not found or created!')
-							
-		'''
-		table = self.group_t
-		str_ = 'select * from ' + table
-		c.execute(str_)
-		rows = c.fetchall()
-		conn.close()
-		return(True, rows)
-		'''
+		bool_, return_data = database().read('project', self.project, self.group_t, self.group_keys, table_root=self.group_db)
+		if not bool_:
+			return(bool_, return_data)
+		# f
+		if not f:
+			return(True, return_data)
+		else:
+			f_rows = []
+			for grp_data in return_data:
+				if grp_data['type'] in f:
+					f_rows.append(grp_data)
+			return(True, f_rows)
 	
-	def get_groups_dict_by_id(self, project):
-		result = self.get_list(project)
+	def get_groups_dict_by_id(self):
+		result = self.get_list()
 		if not result[0]:
 			return(False, result[1])
 		
@@ -6944,82 +6818,52 @@ class group(project):
 			
 		return(True, group_dict)
 	
-	def get_by_keys(self, project, keys):
-		result = self.get_project(project)
-		if not result[0]:
-			return(False, result[1])
-		
-		if len(keys) == 0:
+	def get_by_keys(self, keys):
+		if not keys:
 			return(False, 'Not Keys!')
+		elif keys.__class__.__name__ != 'dict':
+			return(False, 'Wrong type of keys: %s' % keys.__class__.__name__)
 		
-		# write series to db
-		conn = sqlite3.connect(self.assets_path, detect_types=sqlite3.PARSE_DECLTYPES|sqlite3.PARSE_COLNAMES)
-		conn.row_factory = sqlite3.Row
-		c = conn.cursor()
-		
-		try:
-			data = []
-			table = self.group_t
-			string = 'select * from ' + table + ' WHERE '
-			for i,key in enumerate(keys):
-				if i == 0:
-					string = string + ' ' + key + ' = ' + '?'
-				else:
-					string = string + 'and ' + key + ' = ' + '?'
-				data.append(keys[key])	
-			
-			data = tuple(data)
-			c.execute(string, data)
-			rows = c.fetchall()
-			conn.close()
-			return(True, rows)
-		
-		except:
-			conn.close()
-			return(False, 'Not Table!')
-		
+		bool_, return_data = database().read('project', self.project, self.group_t, self.group_keys, where = keys, table_root=self.group_db)
+		return(bool_, return_data)
 	
-	def get_by_name(self, project, name):
-		rows = self.get_by_keys(project, {'name': name})
-		if rows[0]:
+	def get_by_name(self, name):
+		rows = self.get_by_keys({'name': name})
+		if rows[0] and rows[1]:
 			return(True, rows[1][0])
+		elif rows[0] and not rows[1]:
+			return(False, 'This name(%s) not Found' % name)
 		else:
 			return(False, rows[1])
 	
-	def get_by_id(self, project, id_):
-		rows = self.get_by_keys(project, {'id': id_})
-		if rows[0]:
+	def get_by_id(self, id_):
+		rows = self.get_by_keys({'id': id_})
+		if rows[0] and rows[1]:
 			return(True, rows[1][0])
+		elif rows[0] and not rows[1]:
+			return(False, 'This id(%s) not Found' % id_)
 		else:
 			return(False, rows[1])
 	
-	def get_by_series(self, project, series):
-		rows = self.get_by_keys(project, {'series': series})
+	def get_by_series(self, series):
+		rows = self.get_by_keys({'series': series})
 		if rows[0]:
 			return(True, rows[1])
 		else:
 			return(False, rows[1])
 	
-	def get_by_type_list(self, project, type_list):
-		result = self.get_project(project)
-		if not result[0]:
-			return(False, result[1])
-		
+	def get_by_type_list(self, type_list):
 		data = []
 		for type_ in type_list:
-			rows = self.get_by_keys(project, {'type':type_})
+			rows = self.get_by_keys({'type':type_})
 			if rows[0]:
 				data = data + rows[1]
 				
 		return(True, data)
 		
-	def get_dict_by_all_types(self, project):
-		result = self.get_project(project)
-		if not result[0]:
-			return(False, result[1])
-		
+	def get_dict_by_all_types(self):
 		# get all group data
-		result = self.get_list(project)
+		result = self.get_list()
 		if not result[0]:
 			return(False, result[1])
 		
@@ -7035,74 +6879,21 @@ class group(project):
 			
 		return(True, data)
 	
-	def rename(self, project, group_id, new_name):
-		result = self.get_project(project)
-		if not result[0]:
-			return(False, (result[1] + ' <in rename>'))
-			
-		# write task to db
-		conn = sqlite3.connect(self.assets_path, detect_types=sqlite3.PARSE_DECLTYPES|sqlite3.PARSE_COLNAMES)
-		conn.row_factory = sqlite3.Row
-		c = conn.cursor()
+	def rename(self, group_id, new_name):
+		update_data = {'name': new_name}
+		where = {'id': group_id}
+		bool_, return_data = database().update('project', self.project, self.group_t, self.group_keys, update_data, where, table_root=self.group_db)
+		if not bool_:
+			return(bool_, return_data)
 		
-		table = self.group_t
-		
-		# edit db
-		string = 'UPDATE ' +  table + ' SET  \"name\"  = ? WHERE \"id\" = ?'
-		data = (new_name, group_id)
-		try:
-			c.execute(string, data)
-		except Exception as e:
-			conn.close()
-			return(False, e)
-		else:
-			conn.commit()
-			conn.close()
 		return(True, 'ok')
 		
-	def edit_comment_by_name(self, project, name, comment):
-		result = self.get_project(project)
-		if not result[0]:
-			return(False, result[1])
-			
-		# write task to db
-		conn = sqlite3.connect(self.assets_path, detect_types=sqlite3.PARSE_DECLTYPES|sqlite3.PARSE_COLNAMES)
-		conn.row_factory = sqlite3.Row
-		c = conn.cursor()
-		
-		table = self.group_t
-		
-		# test old name exists
-		try:
-			str_ = 'select * from ' + table
-			c.execute(str_)
-			r = c.fetchall()
-			
-			names = []
-			for row in r:
-				names.append(row['name'])
-			
-			if not name in names:
-				conn.close()
-				return(False, 'Name Not Exists!')
-		
-		except:
-			conn.close()
-			return(False, 'Not Table!')
-			
-		# edit db
-		string = 'UPDATE ' +  table + ' SET  \"comment\"  = ? WHERE \"name\" = \"' + name + '\"'
-				
-		data = (comment,)
-		'''
-		print(string, data)
-		conn.close()
-		return(False, 'Be!')
-		'''
-		c.execute(string, data)
-		conn.commit()
-		conn.close()
-		
+	def edit_comment_by_name(self, name, comment):
+		update_data = {'comment': comment}
+		where = {'name': name}
+		bool_, return_data = database().update('project', self.project, table_name, self.group_keys, update_data, where, table_root=self.group_db)
+		if not bool_:
+			return(bool_, return_data)
 		return(True, 'ok')
 		
 class list_of_assets(group):

@@ -47,6 +47,8 @@ class MainWindow(QtGui.QMainWindow):
 		# moduls
 		self.db_studio = db.studio()
 		self.db_artist = db.artist()
+		self.project = db.project
+		self.db_asset = db.asset(self.project)
 		self.db_task = db.task()
 		self.db_log = db.log()
 		self.db_chat = db.chat()

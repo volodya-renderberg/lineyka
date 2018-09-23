@@ -67,9 +67,10 @@ class MainWindow(QtGui.QMainWindow):
 		self.artist = db.artist()
 		self.db_workroom = db.workroom()
 		self.db_series = db.series()
-		self.db_group = db.group()
 		self.db_list_of_assets = db.list_of_assets()
-		self.db_asset = db.asset()
+		self.project = db.project()
+		self.db_asset = db.asset(self.project)
+		self.db_group = db.group(self.project)
 		#self.db_task = db.task()
 		self.db_set_of_tasks = db.set_of_tasks()
 		self.db_chat = db.chat()
@@ -234,11 +235,25 @@ class MainWindow(QtGui.QMainWindow):
 			wr_name_dict = result[2]
 		   
 		# get table data
+		look_keys = [
+			'nik_name',
+			'level',
+			'status',
+			'user_name',
+			'specialty',
+			'workroom',
+			'date_time',
+			'email',
+			'phone',
+			'outsource',
+			'share_dir',
+			]
 		num_row = len(artists[1])
-		num_column = len(self.artist.artists_keys)
+		#num_column = len(self.artist.artists_keys)
+		num_column = len(look_keys)
 		headers = []
 		
-		for item in self.artist.artists_keys:
+		for item in look_keys: #self.artist.artists_keys:
 			#headers.append(item[0])
 			headers.append(item)
     
@@ -360,7 +375,7 @@ class MainWindow(QtGui.QMainWindow):
 		if data['workroom']:
 			for wr_name in json.loads(data['workroom']):
 				wr_id_list.append(self.myWidget.studio_editor_table.wr_name_dict[wr_name]['id'])
-		data['workroom'] = json.dumps(wr_id_list)
+		data['workroom'] = wr_id_list
 		
 		# get Outsource
 		if data['outsource'] == QtCore.Qt.CheckState.Checked:
@@ -1339,14 +1354,14 @@ class MainWindow(QtGui.QMainWindow):
 		
 	def fill_project_table(self, table):
 		#copy = db.studio() # self.db_studio
-		self.db_group.get_list_projects()
+		self.project.get_list_projects()
 		
-		if not self.db_group.list_projects:
+		if not self.project.list_projects:
 			return
 			
 		projects = []
-		for key in self.db_group.list_projects.keys():
-			projects.append({'name' : key,'status' : self.db_group.list_projects[key]['status'], 'path': self.db_group.list_projects[key]['path']})
+		for key in self.project.list_projects.keys():
+			projects.append({'name' : key,'status' : self.project.list_projects[key]['status'], 'path': self.project.list_projects[key]['path']})
 		
 		# get table data
 		columns = ('name', 'status', 'path')
@@ -1403,8 +1418,7 @@ class MainWindow(QtGui.QMainWindow):
 		name = window.priject_name_field.text()
 		path = window.set_project_folder.text()
 		
-		copy = self.db_group
-		result = copy.add_project(name, path)
+		result = self.project.add_project(name, path)
 		if not result[0]:
 			self.message(result[1], 3)
 			return
@@ -1475,8 +1489,7 @@ class MainWindow(QtGui.QMainWindow):
 			self.message('Not Name!', 3)
 			return
 			
-		copy = self.db_group
-		result = copy.rename_project(project, new_name)
+		result = self.project.rename_project(project, new_name)
 		if not result[0]:
 			self.message(result[1], 2)
 			return
@@ -1485,7 +1498,8 @@ class MainWindow(QtGui.QMainWindow):
 		self.fill_project_table(self.myWidget.studio_editor_table)
 		self.close_window(window)
 		
-		self.current_project = new_name
+		#self.current_project = new_name
+		self.current_project = self.project.name
 		self.get_list_active_projects()
 		self.tm_fill_project_list()
 		
@@ -1515,8 +1529,7 @@ class MainWindow(QtGui.QMainWindow):
 		
 		project = projects[0]
 		
-		copy = self.db_group
-		result = copy.remove_project(project)
+		result = self.project.remove_project(project)
 		if not result[0]:
 			self.message(result[1], 2)
 			return
@@ -1553,8 +1566,7 @@ class MainWindow(QtGui.QMainWindow):
 		
 		project = projects[0]
 		
-		copy = self.db_group
-		result = copy.edit_status(project, status)
+		result = self.project.edit_status(project, status)
 		if not result[0]:
 			self.message(result[1], 2)
 			return
@@ -1969,7 +1981,7 @@ class MainWindow(QtGui.QMainWindow):
 			addgrup_action = QtGui.QAction( '== activity == ', window)
 			window.select_from_list_data_list_table.addAction( addgrup_action )
 			#asset = db.asset() # folders.sort
-			list_activity = self.db_asset.activity_folder[asset_type].keys()
+			list_activity = self.db_asset.ACTIVITY_FOLDER[asset_type].keys()
 			list_activity.sort()
 			for activity in list_activity:
 				addgrup_action = QtGui.QAction( activity, window)
@@ -2848,8 +2860,7 @@ class MainWindow(QtGui.QMainWindow):
 			
 		# get table data
 		groups = []
-		copy = self.db_group
-		result = copy.get_list(project)
+		result = self.db_group.get_list()
 		'''
 		if result[0]:
 			groups = result[1]
@@ -3026,7 +3037,7 @@ class MainWindow(QtGui.QMainWindow):
 		}
 		
 		#result = copy.create(project, keys)
-		result = self.db_group.create(project, keys)
+		result = self.db_group.create(keys)
 		
 		self.fill_group_table(self.myWidget.studio_editor_table, project)
 		self.close_window(window)
@@ -3072,7 +3083,7 @@ class MainWindow(QtGui.QMainWindow):
 			self.message('Not Name!', 3)
 			return
 			
-		result = self.db_group.rename(project, group_id, new_name)
+		result = self.db_group.rename(group_id, new_name)
 		if not result[0]:
 			self.message('Could not rename the group, see details in the console', 2)
 			print('*'*25, result[1])
@@ -3144,7 +3155,7 @@ class MainWindow(QtGui.QMainWindow):
 		# edit comment
 		#copy = db.group()
 		#result = copy.edit_comment_by_name(project, name, comment)
-		result = self.db_group.edit_comment_by_name(project, name, comment)
+		result = self.db_group.edit_comment_by_name(name, comment)
 		if not result[0]:
 			self.message(result[1], 2)
 			return
@@ -3257,7 +3268,7 @@ class MainWindow(QtGui.QMainWindow):
 		
 		# -- get group list
 		groups = []
-		rows = self.db_group.get_list(self.current_project)
+		rows = self.db_group.get_list()
 		if rows[0]:
 			for row in rows[1]:
 				groups.append(row['name'])
@@ -3304,8 +3315,7 @@ class MainWindow(QtGui.QMainWindow):
 		group = args[2]
 		
 		# get self.current_group 
-		copy = self.db_group
-		result = copy.get_by_name(self.current_project, group)
+		result = self.db_group.get_by_name(group)
 		if not result[0]:
 			self.message(result[1], 3)
 			return
@@ -3406,7 +3416,7 @@ class MainWindow(QtGui.QMainWindow):
 				return
 				
 			# -- group dict
-			result = self.db_group.get_groups_dict_by_id(self.current_project)
+			result = self.db_group.get_groups_dict_by_id()
 			if not result[0]:
 				self.message(result[1], 3)
 				return
@@ -3449,7 +3459,7 @@ class MainWindow(QtGui.QMainWindow):
 				item.asset = asset_data
 					
 				# -- group dict
-				result = self.db_group.get_groups_dict_by_id(self.current_project)
+				result = self.db_group.get_groups_dict_by_id()
 				if not result[0]:
 					self.message(result[1], 3)
 					return
@@ -3487,7 +3497,7 @@ class MainWindow(QtGui.QMainWindow):
 				item.asset = asset_data
 					
 				# -- group dict
-				result = self.db_group.get_groups_dict_by_id(self.current_project)
+				result = self.db_group.get_groups_dict_by_id()
 				if not result[0]:
 					self.message(result[1], 3)
 					return
@@ -3604,7 +3614,7 @@ class MainWindow(QtGui.QMainWindow):
 		group_list = ['-- new groups --']
 		#result = copy.get_by_type_list(self.current_project, [self.current_group['type']])
 		#result = copy.get_by_type_list(self.current_project, [asset_data['type']])
-		result = self.db_group.get_by_type_list(self.current_project, [asset_data['type']])
+		result = self.db_group.get_by_type_list([asset_data['type']])
 		if result[0]:
 			for row in result[1]:
 				if row['name'] != self.current_group['name']:
@@ -3763,7 +3773,7 @@ class MainWindow(QtGui.QMainWindow):
 		except:
 			self.message('Asset is not selected!', 2)
 			return
-		if not asset_data['type'] in self.db_chat.copied_asset:
+		if not asset_data['type'] in self.db_chat.COPIED_ASSET:
 			self.message('This type can not be copied!', 2)
 			return
 			
@@ -3810,8 +3820,8 @@ class MainWindow(QtGui.QMainWindow):
 		for asset_type in result[1]:
 			set_of_tasks_list[asset_type] = result[1][asset_type].keys()
 		'''
-		if asset_data['type'] in self.db_chat.copied_with_task:
-			for asset_type in self.db_chat.copied_asset[asset_data['type']]:
+		if asset_data['type'] in self.db_chat.COPIED_WITH_TASK:
+			for asset_type in self.db_chat.COPIED_ASSET[asset_data['type']]:
 				result = self.db_set_of_tasks.get_list_by_type(asset_type)
 				if not result[0]:
 					self.message(result[1], 2)
@@ -3835,19 +3845,19 @@ class MainWindow(QtGui.QMainWindow):
 		window.new_dialog_label_0.setText('New Type:')
 		window.new_dialog_label_2.setText('Group:')
 		window.new_dialog_label_3.setText('Set Of Task:')
-		if not asset_data['type'] in self.db_chat.copied_with_task:
+		if not asset_data['type'] in self.db_chat.COPIED_WITH_TASK:
 			window.new_dialog_frame_3.setVisible(False)
 		
 		# -- type list
-		if asset_data['type'] in self.db_chat.copied_asset:
-			window.new_dialog_combo_box_0.addItems(self.db_chat.copied_asset[asset_data['type']])
+		if asset_data['type'] in self.db_chat.COPIED_ASSET:
+			window.new_dialog_combo_box_0.addItems(self.db_chat.COPIED_ASSET[asset_data['type']])
 		else:
 			window.new_dialog_combo_box_0.addItems([asset_data['type']])
 		# -- group list
 		window.new_dialog_combo_box_2.addItems(group_list)
 		window.new_dialog_combo_box_2.setCurrentIndex(group_id_list.index(asset_data['group']))
 		# -- set_of_task list
-		if asset_data['type'] in self.db_chat.copied_with_task:
+		if asset_data['type'] in self.db_chat.COPIED_WITH_TASK:
 			window.new_dialog_combo_box_3.addItems(set_of_tasks_list[asset_data['type']])
 		else:
 			window.new_dialog_combo_box_3.addItems([''])
@@ -3882,7 +3892,7 @@ class MainWindow(QtGui.QMainWindow):
 		# edit set_of_tasks list
 		print(window.set_of_tasks_list)
 		window.new_dialog_combo_box_3.clear()
-		if asset_type in self.db_chat.copied_with_task:
+		if asset_type in self.db_chat.COPIED_WITH_TASK:
 			window.new_dialog_combo_box_3.addItems(window.set_of_tasks_list[asset_type])
 		else:
 			window.new_dialog_combo_box_3.addItems([''])
@@ -4161,7 +4171,7 @@ class MainWindow(QtGui.QMainWindow):
 		
 		self.current_project = project_name
 		# load group list
-		result = self.db_group.get_list(self.current_project)
+		result = self.db_group.get_list()
 		if not result[0]:
 			self.message(result[1], 2)
 			return
@@ -4190,7 +4200,7 @@ class MainWindow(QtGui.QMainWindow):
 			return
 		
 		# get group id
-		result = self.db_group.get_by_name(self.current_project, group_name)
+		result = self.db_group.get_by_name(group_name)
 		if not result[0]:
 			self.message(result[1], 2)
 			return
@@ -4602,7 +4612,7 @@ class MainWindow(QtGui.QMainWindow):
 		window.group_list = []
 		if all_input:
 			# load group list
-			result = self.db_group.get_list(self.current_project)
+			result = self.db_group.get_list()
 			if not result[0]:
 				self.message(result[1], 2)
 				return
@@ -5142,7 +5152,7 @@ class MainWindow(QtGui.QMainWindow):
 		
 		# get studio
 		copy.get_list_projects()
-		self.db_group.get_list_projects()
+		self.project.get_list_projects()
 		self.db_series.get_list_projects()
 		self.db_chat.get_list_projects()
 		self.db_asset.get_list_projects()
@@ -5209,7 +5219,7 @@ class MainWindow(QtGui.QMainWindow):
 		else:
 			f = filter_of_type
 		
-		result = copy.get_list(project_name, f = f)
+		result = copy.get_list(f = f)
 		
 		copy_s = self.db_series
 		result_s = copy_s.get_list(project_name)
@@ -5273,7 +5283,7 @@ class MainWindow(QtGui.QMainWindow):
 		if not filter_of_type:
 			filter_of_type = self.db_studio.asset_types
 		# get group list
-		result = self.db_group.get_list(self.current_project, f = filter_of_type)
+		result = self.db_group.get_list(f = filter_of_type)
 		
 		# get series id
 		series_id = ''
@@ -5326,7 +5336,7 @@ class MainWindow(QtGui.QMainWindow):
 			return
 			
 		# -- group dict
-		result = self.db_group.get_groups_dict_by_id(self.current_project)
+		result = self.db_group.get_groups_dict_by_id()
 		if not result[0]:
 			self.message(result[1], 3)
 			return
@@ -5446,7 +5456,7 @@ class MainWindow(QtGui.QMainWindow):
 			
 		# get self.current_group 
 		#copy = db.group()
-		result = self.db_group.get_by_id(self.current_project, group_id)
+		result = self.db_group.get_by_id(group_id)
 		if not result[0]:
 			self.message(result[1], 3)
 			return
@@ -6283,7 +6293,7 @@ class MainWindow(QtGui.QMainWindow):
 				
 		# get list of activity
 		#copy = db.asset()
-		activity_list = self.db_asset.activity_folder[self.current_group['type']].keys()
+		activity_list = self.db_asset.ACTIVITY_FOLDER[self.current_group['type']].keys()
 		activity_list.sort()
 		
 		# create window
@@ -6904,7 +6914,7 @@ class MainWindow(QtGui.QMainWindow):
 			if head in ['input', 'output', 'activity', 'workroom', 'task_type', 'extension']:
 				textes = []
 				if head == 'activity':
-					textes = self.db_chat.activity_folder[self.current_task['asset_type']].keys()
+					textes = self.db_chat.ACTIVITY_FOLDER[self.current_task['asset_type']].keys()
 				elif head == 'extension':
 					textes = self.db_chat.extensions
 				elif head == 'workroom':
