@@ -57,7 +57,7 @@ class MainWindow(QtGui.QMainWindow):
 		self.grey_color = QtGui.QColor(150, 150, 150)
 		self.set_of_tasks_color = QtGui.QColor(183, 231, 178)
 		self.tasks_color = QtGui.QColor(255, 241, 150)
-		self.series_color = QtGui.QColor(255, 205, 227)
+		self.season_color = QtGui.QColor(255, 205, 227)
 		self.group_color = QtGui.QColor(255, 201, 190)
 		self.asset_color = QtGui.QColor(255, 218, 160)
 		self.stop_color = QtGui.QColor(142, 160, 193)
@@ -66,7 +66,7 @@ class MainWindow(QtGui.QMainWindow):
 		self.db_studio = db.studio()
 		self.artist = db.artist()
 		self.db_workroom = db.workroom()
-		self.db_series = db.series()
+		self.db_season = db.season()
 		self.db_list_of_assets = db.list_of_assets()
 		self.project = db.project()
 		self.db_asset = db.asset(self.project)
@@ -109,7 +109,7 @@ class MainWindow(QtGui.QMainWindow):
 		self.myWidget.set_of_tasks_editor_button.clicked.connect(self.edit_ui_to_set_of_tasks_editor)
 		
 		# at project
-		self.myWidget.series_editor_button.clicked.connect(self.edit_ui_to_series_editor)
+		self.myWidget.season_editor_button.clicked.connect(self.edit_ui_to_season_editor)
 		self.myWidget.groups_editor_button.clicked.connect(self.edit_ui_to_group_editor)
 		self.myWidget.location_content_editor_button.clicked.connect(partial(self.edit_ui_to_location_editor, 'location'))
 		self.myWidget.anim_shot_content_editor_button.clicked.connect(partial(self.edit_ui_to_location_editor, 'animation'))
@@ -2447,11 +2447,11 @@ class MainWindow(QtGui.QMainWindow):
 	
 	# ******************* STUDIO EDITOR /// SERIES EDITOR ****************************
 	
-	def edit_ui_to_series_editor(self):
+	def edit_ui_to_season_editor(self):
 		window = self.myWidget
 		table = window.studio_editor_table
 		
-		self.series_columns = ('name', 'status')
+		self.season_columns = ('name', 'status')
 		
 		button01 = window.studio_butt_1
 		button02 = window.studio_butt_2
@@ -2465,7 +2465,7 @@ class MainWindow(QtGui.QMainWindow):
 		button10 = window.studio_butt_10
 		
 		# edit label
-		window.studio_editor_label.setText('Series Editor')
+		window.studio_editor_label.setText('Season Editor')
 				
 		# edit button
 		button01.setVisible(True)
@@ -2474,21 +2474,21 @@ class MainWindow(QtGui.QMainWindow):
 			button01.clicked.disconnect()
 		except:
 			pass
-		button01.clicked.connect(partial(self.reload_series_list, table))
+		button01.clicked.connect(partial(self.reload_season_list, table))
 		button02.setVisible(True)
 		button02.setText('Create')
 		try:
 			button02.clicked.disconnect()
 		except:
 			pass
-		button02.clicked.connect(self.new_series_ui)
+		button02.clicked.connect(self.new_season_ui)
 		button03.setVisible(True)
 		button03.setText('Rename')
 		try:
 			button03.clicked.disconnect()
 		except:
 			pass
-		button03.clicked.connect(partial(self.rename_series_ui, table))
+		button03.clicked.connect(partial(self.rename_season_ui, table))
 		button04.setVisible(False)
 		button05.setVisible(False)
 		button06.setVisible(False)
@@ -2508,7 +2508,7 @@ class MainWindow(QtGui.QMainWindow):
 			window.set_comboBox_01.activated[str].disconnect()
 		except:
 			pass
-		window.set_comboBox_01.activated[str].connect(partial(self.fill_series_table, table))
+		window.set_comboBox_01.activated[str].connect(partial(self.fill_season_table, table))
 		window.set_comboBox_02.setVisible(False)
 		window.set_comboBox_03.setVisible(False)
 		
@@ -2521,11 +2521,11 @@ class MainWindow(QtGui.QMainWindow):
 		table.setSelectionMode(QtGui.QAbstractItemView.SingleSelection)
 		
 		self.clear_table()
-		self.reload_series_list(table)
+		self.reload_season_list(table)
 		
-	def default_state_series_table(self, table):
+	def default_state_season_table(self, table):
 		# get table data
-		columns = self.series_columns
+		columns = self.season_columns
 		num_row = 0
 		num_column = len(columns)
 		headers = columns
@@ -2536,11 +2536,11 @@ class MainWindow(QtGui.QMainWindow):
 		table.setHorizontalHeaderLabels(headers)
 		
 		#  edit label
-		self.myWidget.studio_editor_label.setText('Series Editor')
+		self.myWidget.studio_editor_label.setText('Season Editor')
 		
-		print('series table to default state')
+		print('season table to default state')
 		
-	def reload_series_list(self, table):
+	def reload_season_list(self, table):
 		# get project
 		if not self.current_project:
 			project = self.myWidget.set_comboBox_01.currentText()
@@ -2551,32 +2551,32 @@ class MainWindow(QtGui.QMainWindow):
 		
 		if project == '-- select project --':
 			self.current_project = False
-			self.default_state_series_table(table)
+			self.default_state_season_table(table)
 		else:
-			self.fill_series_table(table, project)
+			self.fill_season_table(table, project)
 		
-	def fill_series_table(self, *args):
+	def fill_season_table(self, *args):
 		table = args[0]
 		project = args[1]
 		
 		if project == '-- select project --':
 			self.current_project = False
-			self.default_state_series_table(table)
+			self.default_state_season_table(table)
 			return
 			
 		else:
 			self.current_project = project
 			
 		# get table data
-		series = []
-		#copy = db.series()
+		season = []
+		#copy = db.season()
 		#result = copy.get_list(project)
-		result = self.db_series.get_list(project)
+		result = self.db_season.get_list(project)
 		if result[0]:
-			series = result[1]
+			season = result[1]
 		
-		columns = self.series_columns
-		num_row = len(series)
+		columns = self.season_columns
+		num_row = len(season)
 		num_column = len(columns)
 		headers = columns
 		
@@ -2586,26 +2586,26 @@ class MainWindow(QtGui.QMainWindow):
 		table.setHorizontalHeaderLabels(headers)
     
 		# fill table
-		for i, data in enumerate(series):
+		for i, data in enumerate(season):
 			for j,key in enumerate(headers):
 				newItem = QtGui.QTableWidgetItem()
 				newItem.setText(data[key])
 				if key == 'name':
-					color = self.series_color
+					color = self.season_color
 					brush = QtGui.QBrush(color)
 					newItem.setBackground(brush)
 	
 				table.setItem(i, j, newItem)
 				
 		#  edit label
-		self.myWidget.studio_editor_label.setText(('Series Editor / \"' + project + '\"'))
+		self.myWidget.studio_editor_label.setText(('Season Editor / \"' + project + '\"'))
 		
 		table.resizeRowsToContents()
 		table.resizeColumnsToContents()
 		
-		print('fill series table', result)
+		print('fill season table', result)
 		
-	def new_series_ui(self):
+	def new_season_ui(self):
 		# get project
 		project = self.myWidget.set_comboBox_01.currentText()
 		if project == '-- select project --':
@@ -2616,14 +2616,14 @@ class MainWindow(QtGui.QMainWindow):
 		loader = QtUiTools.QUiLoader()
 		file = QtCore.QFile(self.new_dialog_path)
 		#file.open(QtCore.QFile.ReadOnly)
-		window = self.createSeriesDialog = loader.load(file, self)
+		window = self.createSeasonDialog = loader.load(file, self)
 		file.close()
 		
 		# edit widget
-		window.setWindowTitle(('Create Series to \"' + project + '\"'))
-		window.new_dialog_label.setText('Name of Series:')
+		window.setWindowTitle(('Create Season to \"' + project + '\"'))
+		window.new_dialog_label.setText('Name of Season:')
 		window.new_dialog_cancel.clicked.connect(partial(self.close_window, window))
-		window.new_dialog_ok.clicked.connect(partial(self.new_series_action, window, project))
+		window.new_dialog_ok.clicked.connect(partial(self.new_season_action, window, project))
 				
 		# set modal window
 		window.setWindowModality(QtCore.Qt.WindowModal)
@@ -2631,29 +2631,29 @@ class MainWindow(QtGui.QMainWindow):
 		
 		window.show()
 		
-		print('new series ui')
+		print('new season ui')
 		
-	def new_series_action(self, window, project):
-		#copy = db.series()
+	def new_season_action(self, window, project):
+		#copy = db.season()
 		#result = copy.create(project, window.new_dialog_name.text())
-		result = self.db_series.create(project, window.new_dialog_name.text())
+		result = self.db_season.create(project, window.new_dialog_name.text())
 		
 		if not result[0]:
 			self.message(result[1], 2)
 			return
 		
-		self.reload_series_list(self.myWidget.studio_editor_table)
+		self.reload_season_list(self.myWidget.studio_editor_table)
 		self.close_window(window)
-		print('new series action')
+		print('new season action')
 		
-	def rename_series_ui(self, table):
+	def rename_season_ui(self, table):
 		# get project
 		project = self.myWidget.set_comboBox_01.currentText()
 		if project == '-- select project --':
 			self.message('Not Project!', 3)
 			return
 			
-		# get old series
+		# get old season
 		column = table.columnCount()
 		name_column = None
 		for i in range(0, column):
@@ -2670,7 +2670,7 @@ class MainWindow(QtGui.QMainWindow):
 				lists.append(item.text())
 				
 		if lists == []:
-			self.message('Not Selected Series', 2)
+			self.message('Not Selected Season', 2)
 			return
 		
 		name = lists[0]
@@ -2680,24 +2680,24 @@ class MainWindow(QtGui.QMainWindow):
 		loader = QtUiTools.QUiLoader()
 		file = QtCore.QFile(self.new_dialog_path)
 		#file.open(QtCore.QFile.ReadOnly)
-		window = self.createSeriesDialog = loader.load(file, self)
+		window = self.createSeasonDialog = loader.load(file, self)
 		file.close()
 		
 		# edit widget
-		window.setWindowTitle(('Rename Series: \"' + name + '\"'))
-		window.new_dialog_label.setText('New Name of Series:')
+		window.setWindowTitle(('Rename Season: \"' + name + '\"'))
+		window.new_dialog_label.setText('New Name of Season:')
 		window.new_dialog_name.setText(name)
 		window.new_dialog_cancel.clicked.connect(partial(self.close_window, window))
-		window.new_dialog_ok.clicked.connect(partial(self.rename_series_action, window, name))
+		window.new_dialog_ok.clicked.connect(partial(self.rename_season_action, window, name))
 				
 		# set modal window
 		window.setWindowModality(QtCore.Qt.WindowModal)
 		window.setAttribute(QtCore.Qt.WA_DeleteOnClose, True)
 		
 		window.show()
-		print('rename series ui')
+		print('rename season ui')
 	
-	def rename_series_action(self, window, name):
+	def rename_season_action(self, window, name):
 		# get project
 		project = self.myWidget.set_comboBox_01.currentText()
 		if project == '-- select project --':
@@ -2705,24 +2705,24 @@ class MainWindow(QtGui.QMainWindow):
 			return
 				
 		# rename
-		#copy = db.series()
+		#copy = db.season()
 		#result = copy.rename(project, name, window.new_dialog_name.text())
-		result = self.db_series.rename(project, name, window.new_dialog_name.text())
+		result = self.db_season.rename(project, name, window.new_dialog_name.text())
 		
 		if not result[0]:
 			self.message(result[1])
 			return
 			
-		self.reload_series_list(self.myWidget.studio_editor_table)
+		self.reload_season_list(self.myWidget.studio_editor_table)
 		self.close_window(window)		
-		print('rename series action')
+		print('rename season action')
 		
 	# ******************* STUDIO EDITOR /// GROUP EDITOR ****************************
 	def edit_ui_to_group_editor(self):
 		window = self.myWidget
 		table = window.studio_editor_table
 		
-		self.group_columns = ('name', 'type', 'comment', 'series')
+		self.group_columns = ('name', 'type', 'comment', 'season')
 		
 		button01 = window.studio_butt_1
 		button02 = window.studio_butt_2
@@ -2892,10 +2892,10 @@ class MainWindow(QtGui.QMainWindow):
 					color = self.group_color
 					brush = QtGui.QBrush(color)
 					newItem.setBackground(brush)
-				elif key == 'series':
-					#copy = db.series()
+				elif key == 'season':
+					#copy = db.season()
 					#data_ = copy.get_by_id(project, data[key])
-					data_ = self.db_series.get_by_id(project, data[key])
+					data_ = self.db_season.get_by_id(project, data[key])
 					if data_[0]:
 						newItem.setText(data_[1]['name'])
 					else:
@@ -2948,7 +2948,7 @@ class MainWindow(QtGui.QMainWindow):
 		window.new_dialog_label.setText('Name of Group:')
 		window.new_dialog_comment_label.setText('Comment:')
 		window.new_dialog_label_2.setText('Type:')
-		window.new_dialog_label_3.setText('Series:')
+		window.new_dialog_label_3.setText('Season:')
 		window.new_dialog_frame_3.setVisible(False)
 		window.new_dialog_cancel.clicked.connect(partial(self.close_window, window))
 		window.new_dialog_ok.clicked.connect(partial(self.new_group_action, window, project))
@@ -2958,7 +2958,7 @@ class MainWindow(QtGui.QMainWindow):
 		copy = self.db_studio
 		types = ['-- select type --'] + copy.asset_types
 		window.new_dialog_combo_box_2.addItems(types)
-		window.new_dialog_combo_box_2.activated[str].connect(partial(self.new_group_ui_series_activation, window, project))
+		window.new_dialog_combo_box_2.activated[str].connect(partial(self.new_group_ui_season_activation, window, project))
 		
 		# set modal window
 		window.setWindowModality(QtCore.Qt.WindowModal)
@@ -2967,36 +2967,36 @@ class MainWindow(QtGui.QMainWindow):
 		window.show()
 		print('new group ui')
 		
-	def new_group_ui_series_activation(self, *args):
+	def new_group_ui_season_activation(self, *args):
 		window = args[0]
 		project = args[1]
 		type_ = args[2]
 		
-		self.series_current_data = {}
+		self.season_current_data = {}
 		
-		#copy = db.series()
+		#copy = db.season()
 		
-		#if type_ in copy.asset_types_with_series:
-		if type_ in self.db_series.asset_types_with_series:
+		#if type_ in copy.asset_types_with_season:
+		if type_ in self.db_season.asset_types_with_season:
 			window.new_dialog_frame_3.setVisible(True)
 			
-			series = ['-- select series --']
+			season = ['-- select season --']
 			#result = copy.get_list(project)
-			result = self.db_series.get_list(project)
+			result = self.db_season.get_list(project)
 			if result[0]:
 				for data in result[1]:
-					series.append(data['name'])
-					self.series_current_data[data['name']] = data['id']
-				print(self.series_current_data)
+					season.append(data['name'])
+					self.season_current_data[data['name']] = data['id']
+				print(self.season_current_data)
 			else:
 				print(result)
 			window.new_dialog_combo_box_3.clear()
-			window.new_dialog_combo_box_3.addItems(series)
+			window.new_dialog_combo_box_3.addItems(season)
 			
 		else:
 			window.new_dialog_frame_3.setVisible(False)
 		
-		print('series activation')
+		print('season activation')
 		
 	def new_group_action(self, window, project):
 		# get name, comment
@@ -3010,22 +3010,22 @@ class MainWindow(QtGui.QMainWindow):
 		# get type
 		type_ = window.new_dialog_combo_box_2.currentText()
 		
-		# get series
+		# get season
 		#copy = db.group()
 		
-		series = ''
-		#if type_ in copy.asset_types_with_series:
-		if type_ in self.db_group.asset_types_with_series:
-			series_name = window.new_dialog_combo_box_3.currentText()
-			if series_name == '-- select series --':
-				self.message('Not Series', 3)
+		season = ''
+		#if type_ in copy.asset_types_with_season:
+		if type_ in self.db_group.asset_types_with_season:
+			season_name = window.new_dialog_combo_box_3.currentText()
+			if season_name == '-- select season --':
+				self.message('Not Season', 3)
 				return
 					
 		# create group
-		# -- get series id
-		series_id = ''
+		# -- get season id
+		season_id = ''
 		try:
-			series_id = self.series_current_data[series_name]
+			season_id = self.season_current_data[season_name]
 		except:
 			pass
 		
@@ -3033,7 +3033,7 @@ class MainWindow(QtGui.QMainWindow):
 		'name': name,
 		'type': type_,
 		'comment': comment,
-		'series': series_id,
+		'season': season_id,
 		}
 		
 		#result = copy.create(project, keys)
@@ -3057,7 +3057,7 @@ class MainWindow(QtGui.QMainWindow):
 		loader = QtUiTools.QUiLoader()
 		file = QtCore.QFile(self.new_dialog_path)
 		#file.open(QtCore.QFile.ReadOnly)
-		window = self.createSeriesDialog = loader.load(file, self)
+		window = self.createSeasonDialog = loader.load(file, self)
 		file.close()
 		
 		# edit widget
@@ -3100,7 +3100,7 @@ class MainWindow(QtGui.QMainWindow):
 			self.message('Not Project!', 3)
 			return
 			
-		# get old series
+		# get old season
 		column = table.columnCount()
 		columns = {}
 		for i in range(0, column):
@@ -3122,14 +3122,14 @@ class MainWindow(QtGui.QMainWindow):
 				comment = item.text()
 				
 		if not name:
-			self.message('Not Selected Series', 2)
+			self.message('Not Selected Season', 2)
 			return
 		
 		# widget
 		loader = QtUiTools.QUiLoader()
 		file = QtCore.QFile(self.new_dialog_path)
 		#file.open(QtCore.QFile.ReadOnly)
-		window = self.createSeriesDialog = loader.load(file, self)
+		window = self.createSeasonDialog = loader.load(file, self)
 		file.close()
 		
 		# edit widget
@@ -3433,7 +3433,7 @@ class MainWindow(QtGui.QMainWindow):
 					break
 			
 			#self.myWidget.global_search_qline.setText(asset_data['name'])
-			#self.tm_fill_series_groups(self.current_project)
+			#self.tm_fill_season_groups(self.current_project)
 			
 			self.tm_reload_task_list_by_global_search_action(None, group_dict, self.myWidget.studio_editor_table.currentItem())
 		
@@ -4001,7 +4001,7 @@ class MainWindow(QtGui.QMainWindow):
 				row['asset_type'] = self.current_group['type']
 				row['path'] = ''
 				row['group'] = self.current_group['id']
-				row['series'] = self.current_group['series']
+				row['season'] = self.current_group['season']
 				row['priority'] = '0'
 				
 			if row['name'] and not row['set_of_tasks']:
@@ -4053,7 +4053,7 @@ class MainWindow(QtGui.QMainWindow):
 			self.load_asset_types = ['camera', 'light', 'shot_animation']
 		
 		self.type_editor = type_editor
-		self.location_columns = ('name', 'type', 'comment', 'series')
+		self.location_columns = ('name', 'type', 'comment', 'season')
 		
 		button01 = window.studio_butt_1
 		button02 = window.studio_butt_2
@@ -5153,7 +5153,7 @@ class MainWindow(QtGui.QMainWindow):
 		# get studio
 		copy.get_list_projects()
 		self.project.get_list_projects()
-		self.db_series.get_list_projects()
+		self.db_season.get_list_projects()
 		self.db_chat.get_list_projects()
 		self.db_asset.get_list_projects()
 		self.db_log.get_list_projects()
@@ -5175,7 +5175,7 @@ class MainWindow(QtGui.QMainWindow):
 		items = ['-- select project --'] + self.list_active_projects
 		self.myWidget.task_manager_comboBox_1.clear()
 		self.myWidget.task_manager_comboBox_1.addItems(items)
-		self.myWidget.task_manager_comboBox_1.activated[str].connect(partial(self.tm_fill_series_groups))
+		self.myWidget.task_manager_comboBox_1.activated[str].connect(partial(self.tm_fill_season_groups))
 		
 		# fill workroom list
 		self.tm_fill_workroom_list()
@@ -5211,7 +5211,7 @@ class MainWindow(QtGui.QMainWindow):
 		self.myWidget.task_manager_comboBox_4.activated[str].connect(self.tm_reload_task_list)
 			
 		
-	def tm_fill_series_groups(self, project_name):
+	def tm_fill_season_groups(self, project_name):
 		copy = self.db_group
 		filter_of_type = self.myWidget.task_manager_comboBox_5.currentText()
 		if filter_of_type == '-all types-':
@@ -5221,7 +5221,7 @@ class MainWindow(QtGui.QMainWindow):
 		
 		result = copy.get_list(f = f)
 		
-		copy_s = self.db_series
+		copy_s = self.db_season
 		result_s = copy_s.get_list(project_name)
 		
 		if project_name == '-- select project --':
@@ -5232,12 +5232,12 @@ class MainWindow(QtGui.QMainWindow):
 			self.myWidget.global_search_qline.setVisible(True)
 		
 		if result[0]:
-			# fil series list
+			# fil season list
 			if result_s[0]:
-				series_list = []
+				season_list = []
 				for row in result_s[1]:
-					series_list.append(row['name'])
-				items_ = ['-- all series --'] + series_list
+					season_list.append(row['name'])
+				items_ = ['-- all season --'] + season_list
 				self.myWidget.task_manager_comboBox_2.setVisible(True)
 				self.myWidget.task_manager_comboBox_2.clear()
 				self.myWidget.task_manager_comboBox_2.addItems(items_)
@@ -5273,36 +5273,36 @@ class MainWindow(QtGui.QMainWindow):
 			self.message(result[1], 2)
 			
 	def tm_reload_group_list_by_type(self, filter_of_type):
-		series = self.myWidget.task_manager_comboBox_2.currentText()
+		season = self.myWidget.task_manager_comboBox_2.currentText()
 		if filter_of_type != '-all types-':
-			self.tm_reload_group_list(series, filter_of_type = filter_of_type)
+			self.tm_reload_group_list(season, filter_of_type = filter_of_type)
 		else:
-			self.tm_reload_group_list(series)
+			self.tm_reload_group_list(season)
 			
-	def tm_reload_group_list(self, series, filter_of_type = False):
+	def tm_reload_group_list(self, season, filter_of_type = False):
 		if not filter_of_type:
 			filter_of_type = self.db_studio.asset_types
 		# get group list
 		result = self.db_group.get_list(f = filter_of_type)
 		
-		# get series id
-		series_id = ''
-		if series != '-- all series --':
-			copy_s = self.db_series
-			res = copy_s.get_by_name(self.current_project, series)
+		# get season id
+		season_id = ''
+		if season != '-- all season --':
+			copy_s = self.db_season
+			res = copy_s.get_by_name(self.current_project, season)
 			if not res[0]:
 				self.message(res[1], 2)
 				self.myWidget.task_manager_comboBox_2.setCurrentIndex(0)
 				return
 			else:
-				series_id = res[1]['id']
+				season_id = res[1]['id']
 		
 		# fill combobox
 		if result[0]:
 			group_list = []
 			group_id_list = []
 			for row in result[1]:
-				if row['series'] == series_id or series == '-- all series --':
+				if row['season'] == season_id or season == '-- all season --':
 					group_list.append(row['name'])
 					group_id_list.append(row['id'])
 									
@@ -5420,7 +5420,7 @@ class MainWindow(QtGui.QMainWindow):
 		self.myWidget.task_manager_comboBox_4.setCurrentIndex(0)
 		self.myWidget.task_manager_comboBox_2.setCurrentIndex(0)
 		self.myWidget.task_manager_comboBox_5.setCurrentIndex(0)
-		self.tm_fill_series_groups(self.myWidget.task_manager_comboBox_1.currentText())
+		self.tm_fill_season_groups(self.myWidget.task_manager_comboBox_1.currentText())
 		
 		self.myWidget.local_search_qline.setText(asset_data['name'])
 		for i in range(0, self.myWidget.task_manager_comboBox_3.model().rowCount()):

@@ -135,7 +135,7 @@ class studio:
 	'film'
 	]
 	
-	asset_types_with_series = [
+	asset_types_with_season = [
 	'animatic',
 	'shot_animation',
 	'camera',
@@ -149,7 +149,7 @@ class studio:
 	'group': 'text',
 	'path': 'text',
 	'type': 'text',
-	'series': 'text',
+	'season': 'text',
 	'priority': 'text',
 	'comment': 'text',
 	'content': 'text',
@@ -164,7 +164,7 @@ class studio:
 	('activity', 'text'),
 	('task_name', 'text'),
 	('task_type', 'text'),
-	('series', 'text'),
+	('season', 'text'),
 	('input', 'text'),
 	('status', 'text'),
 	('outsource', 'text'),
@@ -292,7 +292,7 @@ class studio:
 	group_keys = {
 	'name': 'text',
 	'type': 'text',
-	'series': 'text',
+	'season': 'text',
 	'comment': 'text',
 	'id': 'text',
 	}
@@ -333,9 +333,9 @@ class studio:
 	# --- statistic
 	statistic_db = '.statistic.db'
 	statistic_t = 'statistic'
-	# --- series
-	series_db = assets_db
-	series_t = 'series'
+	# --- season
+	season_db = assets_db
+	season_t = 'season'
 	# --- group
 	group_db = assets_db
 	group_t = 'groups'
@@ -842,7 +842,7 @@ class database():
 			'project': 'project_database',
 			}
 	
-	# level - studio or project; or: studio, project, series, group, asset, task, chat, log, statistic ...
+	# level - studio or project; or: studio, project, season, group, asset, task, chat, log, statistic ...
 	# read_ob - object of studio or project;
 	# table_root - assets, chats - те случаи когда имя файла ДБ не соответствует имени таблицы, если есть table_root - имя файла ДБ будет определяться по нему.
 	# table_root - может быть как именем таблицы - например: assets, так и именем файла - .assets.db
@@ -1415,7 +1415,7 @@ class asset(studio):
 			'group': 'text',
 			'path': 'text',
 			'type': 'text',
-			'series': 'text',
+			'season': 'text',
 			'priority': 'text',
 			'comment': 'text',
 			'content': 'text',
@@ -1749,9 +1749,9 @@ class asset(studio):
 			keys['type'] = asset_type
 			keys['status'] = 'active'
 			
-			if asset_type in self.asset_types_with_series and not keys['series']:
+			if asset_type in self.asset_types_with_season and not keys['season']:
 				conn.close()
-				return(False, ('\"' + keys['name'] + '\" not series'))
+				return(False, ('\"' + keys['name'] + '\" not season'))
 		
 			# get id			
 			keys['id'] = str(random.randint(0, 1000000000))
@@ -1841,7 +1841,7 @@ class asset(studio):
 				'asset_id': keys['id'],
 				'asset_type': asset_type,
 				'task_name': (keys['name'] + ':final'),
-				'series': keys['series'],
+				'season': keys['season'],
 				'status':'null',
 				'task_type':'service',
 			}
@@ -1853,7 +1853,7 @@ class asset(studio):
 				'asset_id': keys['id'],
 				'asset_type': asset_type,
 				'task_name': (keys['name'] + ':all_input'),
-				'series': keys['series'],
+				'season': keys['season'],
 				'status':'done',
 				'task_type':'service',
 				'input':'',
@@ -1897,7 +1897,7 @@ class asset(studio):
 							'asset_id': keys['id'],
 							'asset_type': asset_type,
 							'task_name': task_['input'],
-							'series': keys['series'],
+							'season': keys['season'],
 							'status':'done',
 							'task_type':'service',
 							'input':'',
@@ -1936,8 +1936,8 @@ class asset(studio):
 					task_['asset_id'] = keys['id']
 					task_['asset_type'] = asset_type
 					
-					# series
-					task_['series'] = keys['series']
+					# season
+					task_['season'] = keys['season']
 					
 					# readers
 					task_['readers'] = "{}"
@@ -2197,7 +2197,7 @@ class asset(studio):
 		if not result[0]:
 			return(False, result[1])
 		
-		# write series to db
+		# write season to db
 		conn = sqlite3.connect(self.assets_path, detect_types=sqlite3.PARSE_DECLTYPES|sqlite3.PARSE_COLNAMES)
 		conn.row_factory = sqlite3.Row
 		c = conn.cursor()
@@ -2219,7 +2219,7 @@ class asset(studio):
 		if not result[0]:
 			return(False, result[1])
 			
-		# write series to db
+		# write season to db
 		conn = sqlite3.connect(self.assets_path, detect_types=sqlite3.PARSE_DECLTYPES|sqlite3.PARSE_COLNAMES)
 		conn.row_factory = sqlite3.Row
 		c = conn.cursor()
@@ -2300,7 +2300,7 @@ class asset(studio):
 		if not result[0]:
 			return(False, result[1])
 		
-		# write series to db
+		# write season to db
 		conn = sqlite3.connect(self.assets_path, detect_types=sqlite3.PARSE_DECLTYPES|sqlite3.PARSE_COLNAMES)
 		conn.row_factory = sqlite3.Row
 		c = conn.cursor()
@@ -2325,7 +2325,7 @@ class asset(studio):
 		if not result[0]:
 			return(False, result[1])
 		
-		# write series to db
+		# write season to db
 		conn = sqlite3.connect(self.assets_path, detect_types=sqlite3.PARSE_DECLTYPES|sqlite3.PARSE_COLNAMES)
 		conn.row_factory = sqlite3.Row
 		c = conn.cursor()
@@ -2349,7 +2349,7 @@ class asset(studio):
 		if not result[0]:
 			return(False, result[1])
 		
-		# write series to db
+		# write season to db
 		conn = sqlite3.connect(self.assets_path, detect_types=sqlite3.PARSE_DECLTYPES|sqlite3.PARSE_COLNAMES)
 		conn.row_factory = sqlite3.Row
 		c = conn.cursor()
@@ -2381,7 +2381,7 @@ class asset(studio):
 		if not result[0]:
 			return(False, result[1])
 		
-		# write series to db
+		# write season to db
 		conn = sqlite3.connect(self.assets_path, detect_types=sqlite3.PARSE_DECLTYPES|sqlite3.PARSE_COLNAMES)
 		conn.row_factory = sqlite3.Row
 		c = conn.cursor()
@@ -2403,7 +2403,7 @@ class asset(studio):
 		if not result[0]:
 			return(False, result[1])
 		
-		# write series to db
+		# write season to db
 		conn = sqlite3.connect(self.assets_path, detect_types=sqlite3.PARSE_DECLTYPES|sqlite3.PARSE_COLNAMES)
 		conn.row_factory = sqlite3.Row
 		c = conn.cursor()
@@ -2430,7 +2430,7 @@ class asset(studio):
 		elif not 'type' in keys:
 			return(False, 'Not Type!')
 			
-		# write series to db
+		# write season to db
 		conn = sqlite3.connect(self.assets_path, detect_types=sqlite3.PARSE_DECLTYPES|sqlite3.PARSE_COLNAMES)
 		conn.row_factory = sqlite3.Row
 		c = conn.cursor()
@@ -2471,7 +2471,7 @@ class asset(studio):
 		elif not 'type' in keys:
 			return(False, 'Not Type!')
 			
-		# write series to db
+		# write season to db
 		conn = sqlite3.connect(self.assets_path, detect_types=sqlite3.PARSE_DECLTYPES|sqlite3.PARSE_COLNAMES)
 		conn.row_factory = sqlite3.Row
 		c = conn.cursor()
@@ -2546,7 +2546,7 @@ class task(asset):
 	'''
 	studio.project.asset.task()
 	
-	KEYS (series text, task_name text, asset text, activity text, input text, status text, artist text, planned_time text, time text, start text, end text, supervisor text, approved_date text, price real, tz text, chat text)
+	KEYS (season text, task_name text, asset text, activity text, input text, status text, artist text, planned_time text, time text, start text, end text, supervisor text, approved_date text, price real, tz text, chat text)
 	
 	self.add_task(project_name, asset_name, {key:data, ...}) - add task in .tasks.db;; return: 'ok' - all right; False - ather errors; 'overlap' - the task has not been created, this task name already exists; 'not_project' - not project;  'not_asset' - ... ; 'required' - lacking data (first three values)
 	
@@ -2875,7 +2875,7 @@ class task(asset):
 		asset_path = task_data['asset_path']
 		'''
 		# *************** get asset path *******
-		# write series to db
+		# write season to db
 		conn = sqlite3.connect(self.assets_path, detect_types=sqlite3.PARSE_DECLTYPES|sqlite3.PARSE_COLNAMES)
 		conn.row_factory = sqlite3.Row
 		c = conn.cursor()
@@ -2951,7 +2951,7 @@ class task(asset):
 		asset_path = task_data['asset_path']
 		'''
 		# *************** get asset path *******
-		# write series to db
+		# write season to db
 		conn = sqlite3.connect(self.assets_path, detect_types=sqlite3.PARSE_DECLTYPES|sqlite3.PARSE_COLNAMES)
 		conn.row_factory = sqlite3.Row
 		c = conn.cursor()
@@ -3987,7 +3987,7 @@ class task(asset):
 		changes_keys = [
 		'activity',
 		'task_type',
-		'series',
+		'season',
 		'price',
 		'tz',
 		'workroom',
@@ -6471,15 +6471,15 @@ class set_of_tasks(studio):
 		
 		return(True, 'Ok!')
 		
-class series(project):
+class season(project):
 	def __init__(self):
-		self.series_keys = [
+		self.season_keys = [
 		('name', 'text'),
 		('status','text'),
 		('id', 'text'),
 		]
 		
-		#self.series_t = 'series'
+		#self.season_t = 'season'
 		
 		project.__init__(self)
 		
@@ -6496,12 +6496,12 @@ class series(project):
 		keys['id'] = str(random.randint(0, 1000000000))
 		
 		# create string
-		table = self.series_t
+		table = self.season_t
 		string = "insert into " + table + " values"
 		values = '('
 		data = []
-		for i, key in enumerate(self.series_keys):
-			if i< (len(self.series_keys) - 1):
+		for i, key in enumerate(self.season_keys):
+			if i< (len(self.season_keys) - 1):
 				values = values + '?, '
 			else:
 				values = values + '?'
@@ -6519,7 +6519,7 @@ class series(project):
 		data = tuple(data)
 		string = string + values
 		
-		# write series to db
+		# write season to db
 		conn = sqlite3.connect(self.assets_path, detect_types=sqlite3.PARSE_DECLTYPES|sqlite3.PARSE_COLNAMES)
 		conn.row_factory = sqlite3.Row
 		c = conn.cursor()
@@ -6539,7 +6539,7 @@ class series(project):
 				
 		except:
 			string2 = "CREATE TABLE " + table + " ("
-			for i,key in enumerate(self.series_keys):
+			for i,key in enumerate(self.season_keys):
 				if i == 0:
 					string2 = string2 + key[0] + ' ' + key[1]
 				else:
@@ -6554,7 +6554,7 @@ class series(project):
 			'''
 			c.execute(string2)
 		
-		# add series
+		# add season
 		c.execute(string, data)
 		conn.commit()
 		conn.close()
@@ -6565,7 +6565,7 @@ class series(project):
 		if not result[0]:
 			return(False, result[1])
 		
-		# write series to db
+		# write season to db
 		try:
 			conn = sqlite3.connect(self.assets_path, detect_types=sqlite3.PARSE_DECLTYPES|sqlite3.PARSE_COLNAMES)
 			conn.row_factory = sqlite3.Row
@@ -6575,7 +6575,7 @@ class series(project):
 			return(False, ('Not Open .db' + self.assets_path))
 		
 		try:
-			table = self.series_t
+			table = self.season_t
 			str_ = 'select * from ' + table
 			c.execute(str_)
 			rows = c.fetchall()
@@ -6591,20 +6591,20 @@ class series(project):
 		if not result[0]:
 			return(False, result[1])
 		
-		# write series to db
+		# write season to db
 		conn = sqlite3.connect(self.assets_path, detect_types=sqlite3.PARSE_DECLTYPES|sqlite3.PARSE_COLNAMES)
 		conn.row_factory = sqlite3.Row
 		c = conn.cursor()
 		
 		try:
-			table = self.series_t
+			table = self.season_t
 			str_ = 'select * from ' + table
 			c.execute(str_)
 			rows = c.fetchall()
 			for row in rows:
 				if row['name'] == name:
 					return(True, row)
-			return(False, 'Not Found Series!')
+			return(False, 'Not Found season!')
 		except:
 			conn.close()
 			return(False, 'Not Table!')
@@ -6704,14 +6704,14 @@ class group(studio):
 		# get id
 		keys['id'] = hex(random.randint(0, 1000000000)).replace('0x','')
 		
-		# test series key
-		if keys['type'] in self.asset_types_with_series:
-			if 'series' in keys and keys['series'] == '':
+		# test season key
+		if keys['type'] in self.asset_types_with_season:
+			if 'season' in keys and keys['season'] == '':
 				return(False, 'For This Type Must Specify a Series!')
-			elif not 'series' in keys:
+			elif not 'season' in keys:
 				return(False, 'Required For This Type of Key Series!')
 		else:
-			keys['series'] = ''
+			keys['season'] = ''
 		#return(keys)
 		# create group
 		# -- create table
