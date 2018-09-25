@@ -297,6 +297,12 @@ class studio:
 	'id': 'text',
 	}
 	
+	season_keys = {
+	'name': 'text',
+	'status':'text',
+	'id': 'text',
+	}
+	
 	logs_keys = [
 	('version', 'text'),
 	('date_time', 'timestamp'),
@@ -6472,216 +6478,75 @@ class set_of_tasks(studio):
 		return(True, 'Ok!')
 		
 class season(project):
-	def __init__(self):
-		self.season_keys = [
-		('name', 'text'),
-		('status','text'),
-		('id', 'text'),
-		]
-		
-		#self.season_t = 'season'
-		
-		project.__init__(self)
-		
-	def create(self, project, name):
-		result = self.get_project(project)
-		if not result[0]:
-			return(False, result[1])
-			
-		
-		
+	def __init__(self, project):
+		self.project = project
+		# fill fields
+		for key in self.season_keys:
+			exec('self.%s = False' % key)
+
+	def create(self, name):
 		keys = {}
 		keys['name'] = name
 		keys['status'] = 'active'
 		keys['id'] = str(random.randint(0, 1000000000))
 		
-		# create string
-		table = self.season_t
-		string = "insert into " + table + " values"
-		values = '('
-		data = []
-		for i, key in enumerate(self.season_keys):
-			if i< (len(self.season_keys) - 1):
-				values = values + '?, '
-			else:
-				values = values + '?'
-			if key[0] in keys:
-				data.append(keys[key[0]])
-			else:
-				if key[1] == 'real':
-					data.append(0.0)
-				elif key[1] == 'timestamp':
-					data.append(datetime.datetime.now())
-				else:
-					data.append('')
-					
-		values = values + ')'
-		data = tuple(data)
-		string = string + values
+		# создание таблицы, если не существует.
+		# проверка на существование с даныи именем.
+		# добавление сезона.
 		
-		# write season to db
-		conn = sqlite3.connect(self.assets_path, detect_types=sqlite3.PARSE_DECLTYPES|sqlite3.PARSE_COLNAMES)
-		conn.row_factory = sqlite3.Row
-		c = conn.cursor()
+		# -- create table
+		bool_, return_data  = database().create_table('project', self.project, self.season_t, self.season_keys, table_root = self.season_db)
+		if not bool_:
+			return(bool_, return_data)
 		
-		# exists table
-		try:
-			str_ = 'select * from ' + table
-			c.execute(str_)
-			# unicum task_name test
-			r = c.fetchall()
-			for row in r:
-				if row['name'] == keys['name']:
-					conn.close()
-					return(False, 'overlap')
-				elif row['id'] == keys['id']:
-					keys['id'] = str(random.randint(0, 1000000000))
-				
-		except:
-			string2 = "CREATE TABLE " + table + " ("
-			for i,key in enumerate(self.season_keys):
-				if i == 0:
-					string2 = string2 + key[0] + ' ' + key[1]
-				else:
-					string2 = string2 + ', ' + key[0] + ' ' + key[1]
-			string2 = string2 + ')'
-			'''
-			# -- 
-			print 'String 2: ', string2
-			conn.close()
-			return
-			# --
-			'''
-			c.execute(string2)
+		# проверка на совпадение имени
+		bool_, return_data = self.get_by_name(keys['name'])
+		if bool_ and return_data:
+			return(False, 'Season with this name(%s) already exists!' % keys['name'])
 		
-		# add season
-		c.execute(string, data)
-		conn.commit()
-		conn.close()
+		# -- write data
+		bool_, return_data = database().insert('project', self.project, self.season_t, self.season_keys, keys, table_root = self.season_db)
+		if not bool_:
+			return(bool_, return_data)
 		return(True, 'ok')
 	
-	def get_list(self, project):
-		result = self.get_project(project)
-		if not result[0]:
-			return(False, result[1])
-		
+	def get_list(self):
 		# write season to db
-		try:
-			conn = sqlite3.connect(self.assets_path, detect_types=sqlite3.PARSE_DECLTYPES|sqlite3.PARSE_COLNAMES)
-			conn.row_factory = sqlite3.Row
-			c = conn.cursor()
-		except:
-			print(self.assets_path)
-			return(False, ('Not Open .db' + self.assets_path))
-		
-		try:
-			table = self.season_t
-			str_ = 'select * from ' + table
-			c.execute(str_)
-			rows = c.fetchall()
-			return(True, rows)
-		except:
-			conn.close()
-			return(False, 'Not Table!')
-			
-		
+		bool_, return_data = database().read('project', self.project, self.season_t, self.season_keys, table_root=self.season_db)
+		return(bool_, return_data)
+
+	def get_by_name(self, name):
+		keys = {'name': name}
+		bool_, return_data = database().read('project', self.project, self.season_t, self.season_keys, where = keys, table_root=self.season_db)
+		if not bool_:
+			return(bool_, return_data)
+		if return_data:
+			return(True, return_data[0])
+		else:
+			return(True, return_data)
 	
-	def get_by_name(self, project, name):
-		result = self.get_project(project)
-		if not result[0]:
-			return(False, result[1])
-		
-		# write season to db
-		conn = sqlite3.connect(self.assets_path, detect_types=sqlite3.PARSE_DECLTYPES|sqlite3.PARSE_COLNAMES)
-		conn.row_factory = sqlite3.Row
-		c = conn.cursor()
-		
-		try:
-			table = self.season_t
-			str_ = 'select * from ' + table
-			c.execute(str_)
-			rows = c.fetchall()
-			for row in rows:
-				if row['name'] == name:
-					return(True, row)
-			return(False, 'Not Found season!')
-		except:
-			conn.close()
-			return(False, 'Not Table!')
+	def get_by_id(self, id_):
+		keys = {'id': id_}
+		bool_, return_data = database().read('project', self.project, self.season_t, self.season_keys, where = keys, table_root=self.season_db)
+		if not bool_:
+			return(bool_, return_data)
+		if return_data:
+			return(True, return_data[0])
+		else:
+			return(True, return_data)
 	
-	def get_by_id(self, project, id_):
-		result = self.get_project(project)
-		if not result[0]:
-			return(False, result[1])
-		
-		# write season to db
-		conn = sqlite3.connect(self.assets_path, detect_types=sqlite3.PARSE_DECLTYPES|sqlite3.PARSE_COLNAMES)
-		conn.row_factory = sqlite3.Row
-		c = conn.cursor()
-		
-		try:
-			table = self.season_t
-			str_ = 'select * from ' + table
-			c.execute(str_)
-			rows = c.fetchall()
-			for row in rows:
-				if row['id'] == id_:
-					return(True, row)
-			return(False, 'Not Found Season!')
-		except:
-			conn.close()
-			return(False, 'Not Table!')
-	
-	def rename(self, project, name, new_name):
-		result = self.get_project(project)
-		if not result[0]:
-			return(False, result[1])
-			
-		# write task to db
-		conn = sqlite3.connect(self.assets_path, detect_types=sqlite3.PARSE_DECLTYPES|sqlite3.PARSE_COLNAMES)
-		conn.row_factory = sqlite3.Row
-		c = conn.cursor()
-		
-		table = self.season_t
-		
-		# test old name exists
-		try:
-			str_ = 'select * from ' + table
-			c.execute(str_)
-			r = c.fetchall()
-			
-			names = []
-			for row in r:
-				names.append(row['name'])
-			
-			if not name in names:
-				conn.close()
-				return(False, 'Old Name Not Exists!')
-		
-		except:
-			conn.close()
-			return(False, 'Not Table!')
-		
-		
-		# edit db
-		string = 'UPDATE ' +  table + ' SET  \"name\"  = ? WHERE \"name\" = \"' + name + '\"'
-				
-		data = (new_name,)
-		'''
-		print(string, data)
-		conn.close()
-		return(False, 'Be!')
-		'''
-		c.execute(string, data)
-		conn.commit()
-		conn.close()
-		
+	def rename(self, name, new_name):
+		update_data = {'name': new_name}
+		where = {'name': name}
+		bool_, return_data = database().update('project', self.project, self.season_t, self.season_keys, update_data, where, table_root=self.season_db)
+		if not bool_:
+			return(bool_, return_data)
 		return(True, 'ok')
 	
-	def stop(self, project, name):
+	def stop(self, name):
 		pass
 	
-	def start(self, project, name):
+	def start(self, name):
 		pass
 	
 class group(studio):
@@ -6718,6 +6583,10 @@ class group(studio):
 		bool_, return_data  = database().create_table('project', self.project, self.group_t, self.group_keys, table_root = self.group_db)
 		if not bool_:
 			return(bool_, return_data)
+		
+		# проверка на совпадение имени
+		if self.get_by_name(keys['name'])[0]:
+			return(False, 'Group with this name(%s) already exists!' % keys['name'])
 		
 		# -- write data
 		bool_, return_data = database().insert('project', self.project, self.group_t, self.group_keys, keys, table_root = self.group_db)
