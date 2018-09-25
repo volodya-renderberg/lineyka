@@ -6614,20 +6614,20 @@ class season(project):
 		if not result[0]:
 			return(False, result[1])
 		
-		# write series to db
+		# write season to db
 		conn = sqlite3.connect(self.assets_path, detect_types=sqlite3.PARSE_DECLTYPES|sqlite3.PARSE_COLNAMES)
 		conn.row_factory = sqlite3.Row
 		c = conn.cursor()
 		
 		try:
-			table = self.series_t
+			table = self.season_t
 			str_ = 'select * from ' + table
 			c.execute(str_)
 			rows = c.fetchall()
 			for row in rows:
 				if row['id'] == id_:
 					return(True, row)
-			return(False, 'Not Found Series!')
+			return(False, 'Not Found Season!')
 		except:
 			conn.close()
 			return(False, 'Not Table!')
@@ -6642,7 +6642,7 @@ class season(project):
 		conn.row_factory = sqlite3.Row
 		c = conn.cursor()
 		
-		table = self.series_t
+		table = self.season_t
 		
 		# test old name exists
 		try:
@@ -6707,9 +6707,9 @@ class group(studio):
 		# test season key
 		if keys['type'] in self.asset_types_with_season:
 			if 'season' in keys and keys['season'] == '':
-				return(False, 'For This Type Must Specify a Series!')
+				return(False, 'For This Type Must Specify a Season!')
 			elif not 'season' in keys:
-				return(False, 'Required For This Type of Key Series!')
+				return(False, 'Required For This Type of Key Season!')
 		else:
 			keys['season'] = ''
 		#return(keys)
@@ -6793,7 +6793,7 @@ class group(studio):
 			
 		
 	def get_list(self, f = False): # f = [...] - filter of types список типов
-		# write series to db
+		# write season to db
 		bool_, return_data = database().read('project', self.project, self.group_t, self.group_keys, table_root=self.group_db)
 		if not bool_:
 			return(bool_, return_data)
@@ -6845,8 +6845,8 @@ class group(studio):
 		else:
 			return(False, rows[1])
 	
-	def get_by_series(self, series):
-		rows = self.get_by_keys({'series': series})
+	def get_by_season(self, season):
+		rows = self.get_by_keys({'season': season})
 		if rows[0]:
 			return(True, rows[1])
 		else:
