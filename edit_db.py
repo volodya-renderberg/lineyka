@@ -6125,26 +6125,24 @@ class chat(task):
 	
 class set_of_tasks(studio):
 	def __init__(self):
-		# keys = ('asset_type', 'sets')
-		
 		self.set_of_tasks_keys = [
 		'task_name',
 		'input',
 		'activity',
-		'workroom',
 		'tz',
 		'cost',
 		'standart_time',
 		'task_type',
 		'extension',
 		]
-		
-		#studio.__init__(self)
 	
-	def create(self, name, asset_type):
+	def create(self, name, asset_type, keys = False):
 		# test data
 		if name == '':
 			return(False, 'Not Name!')
+		
+		if not asset_type in self.asset_types:
+			return(False, 'Wrong type of asset: "%s"' % asset_type)
 		
 		# test exists path
 		if not os.path.exists(self.set_of_tasks_path):
@@ -6155,7 +6153,6 @@ class set_of_tasks(studio):
 			with open(self.set_of_tasks_path, 'r') as read:
 				data = json.load(read)
 				read.close()
-								
 		except:
 			return(False, (self.set_of_tasks_path + " can not be read!"))
 			
@@ -6166,7 +6163,12 @@ class set_of_tasks(studio):
 		# edit data
 		data[name] = {}
 		data[name]['asset_type'] = asset_type
-		data[name]['sets'] = {}
+		if keys and keys.__class__.__name__ != 'list':
+			return(False, 'Not the correct data type from the "keys": "%s"' % keys.__class__.__name__)
+		elif keys and keys.__class__.__name__ == 'list':
+			data[name]['sets'] = keys
+		else:
+			data[name]['sets'] = {}
 
 		# write data
 		try:
@@ -6187,26 +6189,28 @@ class set_of_tasks(studio):
 				self.get_studio()
 				
 			if not os.path.exists(self.set_of_tasks_path):
-				return(False, (self.set_of_tasks_path + ' Not Found!'))
+				return(False, ('%s Not Found!' % self.set_of_tasks_path))
 				
 			# read data
 			try:
 				with open(self.set_of_tasks_path, 'r') as read:
 					data = json.load(read)
 					read.close()
-			except:
-				return(False, (self.set_of_tasks_path + " can not be read!"))
+			except Exception as e:
+				print('#'*5, e)
+				return(False, ("%s can not be read! Look The terminal!" % self.set_of_tasks_path))
 				
 		else:
 			if not os.path.exists(path):
-				return(False, ('No Exists path: ' + path))
+				return(False, ('No Exists path: %s' % path))
 			# read data
 			try:
 				with open(path, 'r') as read:
 					data = json.load(read)
 					read.close()
-			except:
-				return(False, (self.set_of_tasks_path + " can not be read!"))
+			except Exception as e:
+				print('#'*5, e)
+				return(False, ("%s can not be read! Look The terminal!" % self.set_of_tasks_path))
 			
 		return(True, data)
 		
@@ -6366,6 +6370,9 @@ class set_of_tasks(studio):
 		# test data
 		if name == '':
 			return(False, 'Not Name!')
+		
+		if keys.__class__.__name__ != 'list':
+			return(False, 'Not the correct data type from the "keys": "%s"' % keys.__class__.__name__)
 		
 		# test exists path
 		if not os.path.exists(self.set_of_tasks_path):
