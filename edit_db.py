@@ -6340,6 +6340,10 @@ class set_of_tasks(studio):
 		# test data
 		if name == '':
 			return(False, 'Not Name!')
+		
+		# test type
+		if not asset_type in self.asset_types:
+			return(False, 'Wrong type of asset: "%s"' % asset_type)
 			
 		# test exists path
 		if not os.path.exists(self.set_of_tasks_path):
@@ -6352,7 +6356,9 @@ class set_of_tasks(studio):
 				read.close()
 		except:
 			return(False, (self.set_of_tasks_path + " can not be read!"))
-			
+		# test name
+		if not data.get(name):
+			return(False, 'A set with this name: "%s" does not exist!' % name)
 		# edit data
 		data[name]['asset_type'] = asset_type
 		
@@ -6470,7 +6476,11 @@ class set_of_tasks(studio):
 				read.close()
 		except:
 			return(False, (self.set_of_tasks_path + " can not be read!"))
-			
+		
+		# test name
+		if not data.get(name):
+			return(False, 'A set with this name: "%s" does not exist!' % name)
+		
 		# Edit Data
 		data[new_name] = data[old_name]
 		
