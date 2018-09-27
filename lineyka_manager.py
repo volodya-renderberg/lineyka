@@ -387,10 +387,6 @@ class MainWindow(QtGui.QMainWindow):
 		if data['nik_name'] == '' or data['password'] == '':
 			self.message('Not Nik_Name or Password', 2)
 			return
-		'''
-		print(data)
-		return
-		'''
 		
 		# add artist
 		result = self.artist.add_artist(data, registration = False)
@@ -630,18 +626,7 @@ class MainWindow(QtGui.QMainWindow):
 		data = []
 		for item in items:
 			data.append(item.text())
-		'''	
-		copy = db.workroom()
-		result = copy.name_list_to_id_list(data)
-		if result[0]:
-			data = result[1]
-		else:
-			self.message(result[1], 2)
-			return
 		
-		print(data, result)
-		return
-		'''
 		current_widget.workroom_field.setText(json.dumps(data))
 		self.close_window(self.selectWorkroomDialog)
 		
@@ -1425,15 +1410,6 @@ class MainWindow(QtGui.QMainWindow):
 		
 		self.clear_table()
 		self.fill_project_table(self.myWidget.studio_editor_table)
-		'''
-		# recycle bin
-		result = copy.create_recycle_bin(name)
-		if not result[0]:
-			self.message(result[1], 3)
-			#return(False, result[1])
-		else:
-			print('RB created!')
-		'''
 		self.close_window(window)
 		
 		self.current_project = name
@@ -1929,15 +1905,6 @@ class MainWindow(QtGui.QMainWindow):
 			right_data = data[1]['sets']
 			asset_type = data[1]['asset_type']
 			
-		'''
-		right_data = []
-		
-		if data[1]:
-			for key in data:
-				data[key]['task_name'] = key
-				right_data.append(data[key])
-		'''
-		
 		# -- get table data
 		num_row = 100
 		num_column = len(copy.set_of_tasks_keys)
@@ -2071,11 +2038,7 @@ class MainWindow(QtGui.QMainWindow):
 			self.message(result[1], 3)
 			return
 		wr_list = result[1]
-		'''
-		# debug
-		print(wr_list)
-		return
-		'''
+		
 		# get data
 		num_column = table.columnCount()
 		num_row = table.rowCount()
@@ -2861,10 +2824,7 @@ class MainWindow(QtGui.QMainWindow):
 		# get table data
 		groups = []
 		result = self.db_group.get_list()
-		'''
-		if result[0]:
-			groups = result[1]
-		'''
+		
 		if result[0]:
 			if f:
 				for group in result[1]:
@@ -3204,15 +3164,7 @@ class MainWindow(QtGui.QMainWindow):
 			pass
 		button01.clicked.connect(partial(self.reload_asset_list, table))
 		button02.setVisible(False)
-		'''
-		button02.setVisible(True)
-		button02.setText('Rename')
-		try:
-			button02.clicked.disconnect()
-		except:
-			pass
-		button02.clicked.connect(partial(self.rename_asset_ui, table))
-		'''
+		
 		button03.setVisible(True)
 		button03.setText('Change Group')
 		try:
@@ -3515,68 +3467,6 @@ class MainWindow(QtGui.QMainWindow):
 					
 				self.tm_reload_task_list_by_global_search_action(None, group_dict, item)
 				
-	'''
-	def rename_asset_ui(self, table):
-		column = table.columnCount()
-		name_column = None
-		for i in range(0, column):
-			head_item = table.horizontalHeaderItem(i)
-			if head_item.text() == 'name':
-				name_column = i
-				break
-		
-		# get selected rows
-		selected = table.selectedItems()
-		lists = []
-		for item in selected:
-			if item.column() == name_column:
-				lists.append(item.text())
-				
-		if lists == []:
-			self.message('Not Selected Group', 2)
-			return
-		
-		asset_name = lists[0]
-		
-		# widget
-		loader = QtUiTools.QUiLoader()
-		file = QtCore.QFile(self.new_dialog_path)
-		#file.open(QtCore.QFile.ReadOnly)
-		window = self.setProjectDialog = loader.load(file, self)
-		file.close()
-		
-		# edit widget
-		window.setWindowTitle(('Rename Asset: \"' + asset_name + '\"'))
-		window.new_dialog_label.setText('New Name:')
-		if asset_name:
-			window.new_dialog_name.setText(asset_name)
-		window.new_dialog_cancel.clicked.connect(partial(self.close_window, window))
-		window.new_dialog_ok.clicked.connect(partial(self.rename_asset_action, window, asset_name))
-				
-		# set modal window
-		window.setWindowModality(QtCore.Qt.WindowModal)
-		window.setAttribute(QtCore.Qt.WA_DeleteOnClose, True)
-		
-		window.show()
-		print('rename aset ui')
-		
-	def rename_asset_action(self, window, asset_name):
-		# get new name
-		new_name = window.new_dialog_name.text()
-		
-		copy = db.asset()
-		result = copy.rename_asset(self.current_project, self.current_group['type'], asset_name, new_name)
-		if not result[0]:
-			self.message(result[1], 2)
-			return
-		
-		# reload assets list
-		self.fill_group_content_list(self.myWidget, self.myWidget.studio_editor_table, self.current_group['name'])
-		
-		self.close_window(window)
-		print('rename asset action', result)
-	'''
-		
 	def change_asset_group_ui(self, table):
 		column = table.columnCount()
 		name_column = None
@@ -3585,19 +3475,7 @@ class MainWindow(QtGui.QMainWindow):
 			if head_item.text() == 'name':
 				name_column = i
 				break
-		'''
-		# get selected rows
-		selected = table.selectedItems()
-		lists = []
-		for item in selected:
-			if item.column() == name_column:
-				lists.append(item.text())
-				
-		if lists == []:
-			self.message('Not Selected Group', 2)
-			return
-		asset_name = lists[0]
-		'''
+		
 		# get asset data
 		asset_data = table.currentItem().asset
 		asset_name = asset_data['name']
@@ -3794,18 +3672,6 @@ class MainWindow(QtGui.QMainWindow):
 		for group in group_dict_by_all_types[asset_data['type']]:
 			group_list.append(group['name'])
 			group_id_list.append(group['id'])
-		'''	
-		result = self.db_group.get_by_type_list(self.current_project, [asset_data['type']])
-		if not result[0]:
-			self.message(result[1], 2)
-			return
-		
-		group_list = []
-		group_id_list = []
-		for group in result[1]:
-			group_list.append(group['name'])
-			group_id_list.append(group['id'])
-		'''	
 		
 		# -- SET OF TASKS LIST
 		set_of_tasks_list = {}
@@ -3819,17 +3685,6 @@ class MainWindow(QtGui.QMainWindow):
 		
 		for asset_type in result[1]:
 			set_of_tasks_list[asset_type] = result[1][asset_type].keys()
-		'''
-		if asset_data['type'] in self.db_chat.COPIED_WITH_TASK:
-			for asset_type in self.db_chat.COPIED_ASSET[asset_data['type']]:
-				result = self.db_set_of_tasks.get_list_by_type(asset_type)
-				if not result[0]:
-					self.message(result[1], 2)
-					return
-				#set_of_tasks_data = result[1]
-				#set_of_tasks_list  = result[1].keys()
-				set_of_tasks_list[asset_type] = result[1].keys()
-		'''
 		
 		# window  self.new_dialog_3_path
 		loader = QtUiTools.QUiLoader()
@@ -4106,14 +3961,6 @@ class MainWindow(QtGui.QMainWindow):
 			pass
 		button05.clicked.connect(partial(self.loc_remove_task_from_input_action, table))
 		button06.setVisible(False)
-		'''
-		button06.setText('Change Task')
-		try:
-			button06.clicked.disconnect()
-		except:
-			pass
-		button06.clicked.connect(self.loc_change_input_task)
-		'''
 		button07.setVisible(False)
 		button07.setText('To Task Manager >>>')
 		try:
@@ -4303,11 +4150,6 @@ class MainWindow(QtGui.QMainWindow):
 			color = QtGui.QColor(r, g, b)
 			brush = QtGui.QBrush(color)
 			newItem.setBackground(brush)
-			'''
-			color = self.tasks_color
-			brush = QtGui.QBrush(color)
-			newItem.setBackground(brush)
-			'''
 			self.myWidget.studio_editor_table.setItem(i, 0, newItem)
 			
 		try:
@@ -5508,16 +5350,6 @@ class MainWindow(QtGui.QMainWindow):
 			self.message(result[1], 2)
 			return
 		
-		'''
-		# get assets_name_by_id
-		result = copy.get_id_name_dict_by_type(self.current_project, self.current_group['type'])
-		if not result[0]:
-			self.message(result[1], 2)
-			return
-		else:
-			self.myWidget.task_manager_table.assets_name_by_id = result[1]
-		'''
-		
 		# create tasks rows
 		num_column = []
 		self.tasks_rows = {}
@@ -5598,18 +5430,12 @@ class MainWindow(QtGui.QMainWindow):
 				label.show()
 			else:
 				label.setText('no image')
-			'''
-			label = QtGui.QLabel()
-			label.setText(asset)
-			'''
+			
 			self.myWidget.task_manager_table.setCellWidget(i, 0, label)
 			
 			for j,task_ in enumerate(self.tasks_rows[asset]):
 				j = j+1
-				'''
-				if task_['task_type'] == 'service':
-					continue
-				'''
+				
 				newItem = QtGui.QTableWidgetItem()
 				newItem.setText(task_['task_name'].replace((task_['asset'] + ':'), ''))
 				newItem.task = task_
@@ -5695,19 +5521,9 @@ class MainWindow(QtGui.QMainWindow):
 		if not task_data:
 			self.myWidget.button_area.setVisible(False)
 			return
-		'''	
-		# asset_name_by_id
-		asset_id_name = self.myWidget.task_manager_table.assets_name_by_id
-		'''					
+		
 		# ------------ Fill Task Labels -------------------
-		'''
-		# -- get task label
-		task_label = task_data['task_name'].replace(task_data['asset'], asset_id_name[task_data['asset']]).replace(':', ' : ')
-		# -- get input name
-		input_label = ''
-		if task_data['input']:
-			input_label = task_data['input'].replace(task_data['asset'], asset_id_name[task_data['asset']]).replace(':', ' : ')
-		'''
+		
 		# get labels
 		task_label = task_data['task_name'].replace(':', ' : ')
 		input_label = task_data['input'].replace(':', ' : ')
@@ -6227,14 +6043,6 @@ class MainWindow(QtGui.QMainWindow):
 			
 		# reload table
 		self.tm_reload_task_list()
-		
-		''' pablish in edit_db.py
-		# **************** PUBLISH ********************************
-		result = self.publish.publish(self.current_project, item.task)
-		if not result[0]:
-			self.message(result[1], 2)
-			return
-		'''
 		
 	# ---- close task --------------
 	def tm_close_task_action(self):
@@ -7080,10 +6888,6 @@ class MainWindow(QtGui.QMainWindow):
 			self.setWindow.set_studio_field.setText(str(copy.studio_folder))
 			self.setWindow.set_tmp_field.setText(str(copy.tmp_folder))
 			self.setWindow.set_convert_exe_field.setText(str(copy.convert_exe))
-			'''
-			for row in data[1]:
-			print row
-			'''
 	
 		else:
 			self.setWindow.set_studio_field.setText('set studio_folder')
@@ -7318,16 +7122,6 @@ class MainWindow(QtGui.QMainWindow):
 		# -- clear table
 		num_row = table.rowCount()
 		num_column = table.columnCount()
-		
-		# old
-		'''
-		for i in range(0, num_row):
-			for j in range(0, num_column):
-				item = self.myWidget.studio_editor_table.item(i, j)
-				self.myWidget.studio_editor_table.takeItem(i, j)
-
-				#self.myWidget.studio_editor_table.removeCellWidget(i, j)
-		'''
 		
 		# new
 		table.clear()
