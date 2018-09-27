@@ -1397,21 +1397,21 @@ class asset(studio):
 	
 	self.ACTIVITY_FOLDER  - {activity_name : ACTIVITY_FOLDER, ... }
 	
-	add_asset(project_name, asset_name) - create folder: assets/asset_name; create activity folders assets/asset_name/...folders; write {asset_name:folder_full_path} in .assets.json; 
+	add_asset(asset_name) - create folder: assets/asset_name; create activity folders assets/asset_name/...folders; write {asset_name:folder_full_path} in .assets.json; 
 	
-	get_asset(project_name, asset_name) - return ful path to asset_folder or False, fill self.task_list
+	get_asset(asset_name) - return ful path to asset_folder or False, fill self.task_list
 	
-	get_activity_path(project_name, asset_name, activity) - return full path of activity folder, or create activity folder, or return False
+	get_activity_path(asset_name, activity) - return full path of activity folder, or create activity folder, or return False
 	
-	get_final_file_path(project_name, asset_name, activity) - return full path to file of final version activity, or False
+	get_final_file_path(passet_name, activity) - return full path to file of final version activity, or False
 	
-	get_new_file_path(project_name, asset_name, activity) - return 	new_dir_path, new_file_path, or False
+	get_new_file_path(asset_name, activity) - return 	new_dir_path, new_file_path, or False
 	
 	'''
 	
 	def __init__(self, project):
 		# objects
-		self.db_group = group() # под сильным вопросом ?????
+		self.db_group = group(project) # под сильным вопросом ?????
 		self.project = project
 		
 		# asset keys
@@ -1514,167 +1514,11 @@ class asset(studio):
 		
 		#project.__init__(self)
 		
-	def add_asset(self, type_, group, asset_name, asset_path = ''):
-		# group - clear name
-		self.name = asset_name.replace(' ', '_')
-		self.type = type_
-		self.group = group
+	# заполнение полей по self.asset_keys - для передачи экземпляра в уровень ниже.
+	def init(self, keys):
+		for key in self.asset_keys:
+			exec('self.%s = keys.get("%s")' % (key, key))
 		
-		# create asset folder
-		if asset_path == '':
-			self.path = os.path.join(self.path, self.folders['assets'],self.group, self.name)
-			# create group folder
-			group_dir = os.path.join(self.path, self.folders['assets'],self.group)
-			if not os.path.exists(group_dir):
-				try:
-					os.mkdir(group_dir)
-				except:
-					return False, '**** studio/project/asset.add_asset -> you can not create a folder \'assets/group\''
-			# create root folder
-			if not os.path.exists(self.path):
-				try:
-					os.mkdir(self.path)
-				except:
-					return False, '**** studio/project/asset.add_asset -> you can not create a folder \'assets/group/asset\''
-		else:
-			if os.path.exists(asset_path):
-				self.path = asset_path
-			else:
-				return False, '**** studio/project/asset.add_asset -> asset_path not found!'
-					
-		# create activity folders
-		for activity in self.ACTIVITY_FOLDER:
-			folder_path = os.path.join(self.path, self.ACTIVITY_FOLDER[activity])
-			if not os.path.exists(folder_path):
-				os.mkdir(folder_path)
-				
-		# create additional folders  self.ADDITIONAL_FOLDERS
-		for activity in self.ADDITIONAL_FOLDERS:
-			folder_path = os.path.join(self.path, self.ADDITIONAL_FOLDERS[activity])
-			if not os.path.exists(folder_path):
-				os.mkdir(folder_path)
-		
-		# write data in .assets.json // self.assets_path
-		try:
-			with open(self.assets_path, 'r') as read:
-				data = json.load(read)
-				data[self.name] = [self.group, self.path, self.type]
-				read.close()
-		except:
-			return False, "****** studio.project.asset.add_asset -> .assets.json  can not be read"
-
-		try:
-			with open(self.assets_path, 'w') as f:
-				jsn = json.dump(data, f, sort_keys=True, indent=4)
-				f.close()
-				return True, 'ok'
-		except:
-			return False, "****** studio.project.asset.add_asset -> .assets.json  can not be write"
-			
-	def get_asset(self, project_name, asset_name):
-		result = self.get_project(project_name)
-		if not result[0]:
-			return(False, result[1])
-		
-		with open(self.assets_path, 'r') as read:
-			data = json.load(read)
-			read.close()
-			#if data[asset_name]:
-			try:
-				self.type = data[asset_name][2]
-				self.group = data[asset_name][0]
-				self.path = data[asset_name][1]
-				self.name = asset_name
-				
-				# get tasks_list
-				conn = sqlite3.connect(self.tasks_path, detect_types=sqlite3.PARSE_DECLTYPES|sqlite3.PARSE_COLNAMES)
-				conn.row_factory = sqlite3.Row
-				c = conn.cursor()
-				table = '\"' + self.name + ':' + self.tasks_t + '\"'
-				string = 'select * from ' + table
-				try:
-					c.execute(string)
-				except:
-					self.task_list = []
-					#print string
-				else:
-					rows = c.fetchall()
-					conn.close()
-					if len(rows) > 0:
-						self.task_list = []
-						for row in rows:
-							self.task_list.append(row['task_name'])
-									
-				#return
-				return self.group, self.path, self.task_list
-			except:
-				return False, 'Not Asset!'
-				
-	def get_activity_path(self, project_name, asset_name, activity):
-		if not self.get_asset(project_name, asset_name)[0]:
-			return False, '***'
-		try:
-			activity_folder = self.ACTIVITY_FOLDER[activity]
-		except:
-			return False, '****'
-		activity_path = os.path.join(self.path, activity_folder)
-		if not os.path.exists(activity_path):
-			try:
-				os.mkdir(activity_path)
-			except:
-				return False, '*****'
-		self.activity_path = activity_path
-		return self.activity_path
-	'''
-	def get_final_file_path(self, project_name, asset_name, activity):
-		activity_folder = self.get_activity_path(project_name, asset_name, activity)
-		if not activity_folder[0]:
-			return None
-		# - get folder list
-		folders_16 = os.listdir(activity_folder)
-		folders = []
-		
-		if len(folders_16)==0:
-			return None
-		
-		# - 16 to 10
-		for obj_ in folders_16:
-			folders.append(int(obj_, 16))
-		
-		# - sort/max
-		folders.sort(reverse = True)
-		max = folders[0]
-		
-		for obj_ in folders_16:
-			if int(obj_, 16) == max:
-				final_file = os.path.join(activity_folder, obj_, (asset_name + self.extension))
-		if os.path.exists(final_file):
-			return final_file
-		else:
-			return False
-	
-			
-	def get_new_file_path(self, project_name, asset_name, activity):
-		final_file = self.get_final_file_path(project_name, asset_name, activity)
-		if not final_file:
-			if final_file == None:
-				new_dir_path = os.path.join(self.activity_path, '0000')
-				new_file_path = os.path.join(new_dir_path, (asset_name + self.extension))
-			else:
-				return False
-		else:
-			ff_split = final_file.replace('\\','/').split('/')
-			new_num_dec = int(ff_split[len(ff_split) - 2], 16) + 1
-			new_num_hex = hex(new_num_dec).replace('0x', '')
-			if len(new_num_hex)<4:
-				for i in range(0, (4 - len(new_num_hex))):
-					new_num_hex = '0' + new_num_hex
-			new_dir_path = os.path.join(self.activity_path, new_num_hex)
-			new_file_path = os.path.join(new_dir_path, (asset_name + self.extension))
-				 
-		return new_dir_path, new_file_path
-	'''
-	
 	# **************** ASSET NEW  METODS ******************
 	
 	def create(self, project_name, asset_type, list_keys):  # create list assets from list asset_keys
@@ -6500,6 +6344,11 @@ class season(project):
 		# fill fields
 		for key in self.season_keys:
 			exec('self.%s = False' % key)
+	
+	# заполнение полей по self.season_keys - для передачи экземпляра в уровень ниже.
+	def init(self, keys):
+		for key in self.season_keys:
+			exec('self.%s = keys.get("%s")' % (key, key))
 
 	def create(self, name):
 		keys = {}
@@ -6527,9 +6376,13 @@ class season(project):
 			return(bool_, return_data)
 		return(True, 'ok')
 	
-	def get_list(self):
+	def get_list(self, active = False):
+		if active:
+			where = {'status': u'active'}
+		else:
+			where = False
 		# write season to db
-		bool_, return_data = database().read('project', self.project, self.season_t, self.season_keys, table_root=self.season_db)
+		bool_, return_data = database().read('project', self.project, self.season_t, self.season_keys, where=where, table_root=self.season_db)
 		return(bool_, return_data)
 
 	def get_by_name(self, name):
@@ -6561,10 +6414,16 @@ class season(project):
 		return(True, 'ok')
 	
 	def stop(self, name):
-		pass
+		where = {'name': name}
+		update_data = {'status': u'none'}
+		bool_, return_data = database().update('project', self.project, self.season_t, self.season_keys, update_data, where, table_root=self.season_db)
+		return(bool_, return_data)
 	
 	def start(self, name):
-		pass
+		where = {'name': name}
+		update_data = {'status': u'active'}
+		bool_, return_data = database().update('project', self.project, self.season_t, self.season_keys, update_data, where, table_root=self.season_db)
+		return(bool_, return_data)
 	
 class group(studio):
 	def __init__(self, project):
@@ -6572,6 +6431,11 @@ class group(studio):
 		#base fields
 		for key in self.group_keys:
 			exec('self.%s = False' % key)
+	
+	# заполнение полей по self.group_keys - для передачи экземпляра в уровень ниже.
+	def init(self, keys):
+		for key in self.group_keys:
+			exec('self.%s = keys.get("%s")' % (key, key))
 	
 	# keys - словарь по group_keys (name и type - обязательные ключи)
 	def create(self, keys):
