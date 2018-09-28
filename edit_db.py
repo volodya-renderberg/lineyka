@@ -6641,7 +6641,7 @@ class group(studio):
 	def edit_comment_by_name(self, name, comment):
 		update_data = {'comment': comment}
 		where = {'name': name}
-		bool_, return_data = database().update('project', self.project, table_name, self.group_keys, update_data, where, table_root=self.group_db)
+		bool_, return_data = database().update('project', self.project, self.group_t, self.group_keys, update_data, where, table_root=self.group_db)
 		if not bool_:
 			return(bool_, return_data)
 		return(True, 'ok')

@@ -63,18 +63,21 @@ class MainWindow(QtGui.QMainWindow):
 		self.stop_color = QtGui.QColor(142, 160, 193)
 		
 		# load db.
-		self.db_studio = db.studio()
+		# studio level
+		self.db_studio = db.studio
+		self.db_studio()
 		self.artist = db.artist()
 		self.db_workroom = db.workroom()
-		self.db_season = db.season()
-		self.db_list_of_assets = db.list_of_assets()
+		#self.db_list_of_assets = db.list_of_assets()
+		self.db_set_of_tasks = db.set_of_tasks()
 		self.project = db.project()
+		# project level
+		self.db_season = db.season(self.project)
 		self.db_asset = db.asset(self.project)
 		self.db_group = db.group(self.project)
 		#self.db_task = db.task()
-		self.db_set_of_tasks = db.set_of_tasks()
-		self.db_chat = db.chat()
-		self.db_log = db.log()
+		#self.db_chat = db.chat()
+		#self.db_log = db.log()
 		
 		# other moduls
 		#self.publish = lineyka_publish.publish()
@@ -148,13 +151,14 @@ class MainWindow(QtGui.QMainWindow):
 		self.myWidget.studio_editor_table_2.addAction( addgrup_action )
 		
 		# ---- List Active Projects
-		self.get_list_active_projects()
+		#self.get_list_active_projects()
+		self.list_active_projects = self.db_studio.list_active_projects
 		
 		# ---- self.WORKROOM ----------------------------
 		self.set_self_workrooms()
 		
 		# ---- TASKS MANAGER ----------------------------
-		self.preparation_to_task_manager()
+		#self.preparation_to_task_manager()
 		
 								
 	# ******************* STUDIO EDITOR ************************************************
@@ -1448,6 +1452,7 @@ class MainWindow(QtGui.QMainWindow):
 		# edit widget
 		window.setWindowTitle(('Rename Project: ' + project))
 		window.new_dialog_label.setText('New Name:')
+		window.new_dialog_name.setText(project)
 		window.new_dialog_cancel.clicked.connect(partial(self.close_window, window))
 		window.new_dialog_ok.clicked.connect(partial(self.rename_project_action, window, project))
 		
@@ -1462,7 +1467,11 @@ class MainWindow(QtGui.QMainWindow):
 		# get data
 		new_name = window.new_dialog_name.text()
 		if new_name == '':
-			self.message('Not Name!', 3)
+			self.message('Not Name!', 2)
+			return
+		
+		if new_name == project:
+			self.message('Name not changed!', 2)
 			return
 			
 		result = self.project.rename_project(project, new_name)
@@ -1798,6 +1807,7 @@ class MainWindow(QtGui.QMainWindow):
 		# edit widget
 		window.setWindowTitle(('Rename: ' + name))
 		window.new_dialog_label.setText('New Name of Set:')
+		window.new_dialog_name.setText(name)
 		window.new_dialog_cancel.clicked.connect(partial(self.close_window, window))
 		window.new_dialog_ok.clicked.connect(partial(self.rename_set_of_tasks_action, name, window))
 		
@@ -1812,6 +1822,11 @@ class MainWindow(QtGui.QMainWindow):
 	def rename_set_of_tasks_action(self, old_name, window):
 		# get data
 		new_name = window.new_dialog_name.text()
+		
+		# test new name
+		if old_name == new_name:
+			self.message('Name not changed!', 2)
+			return
 		
 		# rename
 		#copy = db.set_of_tasks()
@@ -2061,8 +2076,8 @@ class MainWindow(QtGui.QMainWindow):
 			if task_data['task_name']:
 				# get wroom id
 				wr_id = ''
-				if task_data['workroom']:
-					task_data['workroom'] = wr_list[task_data['workroom']]['id']
+				#if task_data['workroom']:
+					#task_data['workroom'] = wr_list[task_data['workroom']]['id']
 				data.append(task_data)
 				#print(task_data)
 				names.append(task_data['task_name'])
@@ -2529,6 +2544,7 @@ class MainWindow(QtGui.QMainWindow):
 			
 		else:
 			self.current_project = project
+			self.project.get_project(project)
 			
 		# get table data
 		season = []
@@ -2599,7 +2615,7 @@ class MainWindow(QtGui.QMainWindow):
 	def new_season_action(self, window, project):
 		#copy = db.season()
 		#result = copy.create(project, window.new_dialog_name.text())
-		result = self.db_season.create(project, window.new_dialog_name.text())
+		result = self.db_season.create(window.new_dialog_name.text())
 		
 		if not result[0]:
 			self.message(result[1], 2)
@@ -2664,13 +2680,20 @@ class MainWindow(QtGui.QMainWindow):
 		# get project
 		project = self.myWidget.set_comboBox_01.currentText()
 		if project == '-- select project --':
-			self.message('Not Project!', 3)
+			self.message('Not Project!', 2)
+			return
+		
+		#new name
+		new_name = window.new_dialog_name.text()
+		if not new_name:
+			self.message('Not name!', 2)
+			return
+		elif name == new_name:
+			self.message('Name not changed!', 2)
 			return
 				
 		# rename
-		#copy = db.season()
-		#result = copy.rename(project, name, window.new_dialog_name.text())
-		result = self.db_season.rename(project, name, window.new_dialog_name.text())
+		result = self.db_season.rename(name, new_name)
 		
 		if not result[0]:
 			self.message(result[1])
@@ -2808,6 +2831,7 @@ class MainWindow(QtGui.QMainWindow):
 		table = args[0]
 		project = args[1]
 		
+		# get project
 		if project == 'get_project':
 			if not self.current_project:
 				self.message('Not Current project!', 2)
@@ -2820,6 +2844,7 @@ class MainWindow(QtGui.QMainWindow):
 			return
 		else:
 			self.current_project = project
+			self.project.get_project(self.current_project)
 			
 		# get table data
 		groups = []
@@ -2855,8 +2880,8 @@ class MainWindow(QtGui.QMainWindow):
 				elif key == 'season':
 					#copy = db.season()
 					#data_ = copy.get_by_id(project, data[key])
-					data_ = self.db_season.get_by_id(project, data[key])
-					if data_[0]:
+					data_ = self.db_season.get_by_id(data[key])
+					if data_[0] and data_[1]: # может вернуть пустой список
 						newItem.setText(data_[1]['name'])
 					else:
 						print(data_[1])
@@ -2911,7 +2936,7 @@ class MainWindow(QtGui.QMainWindow):
 		window.new_dialog_label_3.setText('Season:')
 		window.new_dialog_frame_3.setVisible(False)
 		window.new_dialog_cancel.clicked.connect(partial(self.close_window, window))
-		window.new_dialog_ok.clicked.connect(partial(self.new_group_action, window, project))
+		window.new_dialog_ok.clicked.connect(partial(self.new_group_action, window))
 		
 		# edit comobox
 		#copy = db.studio()
@@ -2958,7 +2983,7 @@ class MainWindow(QtGui.QMainWindow):
 		
 		print('season activation')
 		
-	def new_group_action(self, window, project):
+	def new_group_action(self, window): #project
 		# get name, comment
 		name = 	window.new_dialog_name.text()
 		comment = window.new_dialog_comment.text()
@@ -2998,6 +3023,9 @@ class MainWindow(QtGui.QMainWindow):
 		
 		#result = copy.create(project, keys)
 		result = self.db_group.create(keys)
+		if not result[0]:
+			self.message(result[1], 2)
+			return
 		
 		self.fill_group_table(self.myWidget.studio_editor_table, project)
 		self.close_window(window)
@@ -3138,6 +3166,7 @@ class MainWindow(QtGui.QMainWindow):
 		
 		# get project
 		self.current_project = window.set_comboBox_01.currentText()
+		self.project.get_project(self.current_project)
 		self.asset_columns = ('icon', 'name', 'comment', 'priority', 'type')
 		
 		button01 = window.studio_butt_1
@@ -4017,6 +4046,7 @@ class MainWindow(QtGui.QMainWindow):
 			return
 		
 		self.current_project = project_name
+		self.project.get_project(self.current_project)
 		# load group list
 		result = self.db_group.get_list()
 		if not result[0]:
@@ -4863,7 +4893,7 @@ class MainWindow(QtGui.QMainWindow):
 								
 		# reload table_2
 		self.loc_load_content_of_asset_table(table_2.task, update = True)
-		
+	
 	# *********************** TASKS MANAGER *********************************************
 	
 	def preparation_to_task_manager(self):
@@ -4993,12 +5023,12 @@ class MainWindow(QtGui.QMainWindow):
 		copy = self.db_workroom
 		
 		# get studio
-		copy.get_list_projects()
-		self.project.get_list_projects()
-		self.db_season.get_list_projects()
-		self.db_chat.get_list_projects()
-		self.db_asset.get_list_projects()
-		self.db_log.get_list_projects()
+		self.db_studio.get_list_projects()
+		#self.project.get_list_projects()
+		#self.db_season.get_list_projects()
+		#self.db_chat.get_list_projects()
+		#self.db_asset.get_list_projects()
+		#self.db_log.get_list_projects()
 		
 		if not self.artist.nik_name:
 			self.message('Not User!', 2)
@@ -5071,6 +5101,7 @@ class MainWindow(QtGui.QMainWindow):
 			return
 		else:
 			self.current_project = project_name
+			self.project.get_project(self.current_project)
 			self.myWidget.global_search_qline.setVisible(True)
 		
 		if result[0]:
@@ -7082,8 +7113,7 @@ class MainWindow(QtGui.QMainWindow):
 	def set_self_workrooms(self, workrooms = False):
 		self.workrooms = []
 		if not workrooms:
-			copy = self.db_workroom
-			workrooms = copy.get_list_workrooms()
+			workrooms = self.db_workroom.get_list_workrooms()
 			
 			if not workrooms[0]:
 				return

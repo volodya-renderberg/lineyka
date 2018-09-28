@@ -110,9 +110,9 @@
            </widget>
           </item>
           <item>
-           <widget class="QPushButton" name="series_editor_button">
+           <widget class="QPushButton" name="season_editor_button">
             <property name="text">
-             <string>Series</string>
+             <string>Season</string>
             </property>
            </widget>
           </item>
