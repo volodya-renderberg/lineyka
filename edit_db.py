@@ -1077,17 +1077,17 @@ class database():
 	
 	def __sqlite3_create_table(self, level, read_ob, table_name, keys, table_root):
 		com = ''
+		#data_com = []
 		for i, key in enumerate(keys):
 			if keys[key] == 'json':
 				type_data = 'text'
 			else:
 				type_data = keys[key]
 			if i==0:
-				com = com + '%s %s' % (key, type_data)
+				com = com + '"%s" "%s"' % (key, type_data)
 			else:
-				com = com + ', %s %s' % (key, type_data)
+				com = com + ', "%s" "%s"' % (key, type_data)
 		com = 'CREATE TABLE IF NOT EXISTS %s (%s)' % (table_name, com)
-		#print(com)
 		return_data = self.__sqlite3_set(level, read_ob, table_name, com, False, table_root)
 		return(return_data)
 	
@@ -1521,20 +1521,51 @@ class asset(studio):
 		
 	# **************** ASSET NEW  METODS ******************
 	
+	# обязательные параметры в keys (list_keys): name, group(id), type.
 	def create(self, asset_type, list_keys):  # create list assets from list asset_keys
+		pass
+		# проверка типа ассета
+		# проверка типа list_keys
+		# список ассетов данного типа для проверки наличия
+		# создание таблицы если нет
+		# создание ассетов - проверки:
+		# -- наличие name, group(id), type
+		# -- соответствие type типу группы.
+		# -- наличия имени. 
+		# -- создание id с проверкой на совпадение.
+		
+		# test valid asset_type
+		if not asset_type in self.asset_types:
+			return(False, 'Asset_Type (%s) is Not Valid!' % asset_type)
+		# test valid type of list_keys
+		if list_keys.__class__.__name__!= 'list':
+			return(False, 'The type of "list_keys" (%s) is Not Valid! There must be a "list"' % list_keys.__class__.__name__)
+		# start data
+		tasks_of_assets = {}
+		make_assets = {}
+		# get list assets
 		assets = []
 		ids = []
-		result = self.get_list_by_all_types(project_name)
+		result = self.get_list_by_all_types()
 		if result[0]:
 			for row in result[1]:
 				assets.append(row['name'])
 				ids.append(row['id'])
+		else:
+			print('#'*5)
+			print(result[1])
 			
-		# test asset_type
-		if not asset_type in self.asset_types:
-			return(False, 'Asset_Type is Not Valid!')
-			
-		# 
+		# cteate table
+		bool_, return_data = database().create_table('project', self.project, asset_type, self.asset_keys, table_root = self.assets_db)
+		if not bool_:
+			return(bool_, return_data)
+		
+		# create assets
+		for keys in list_keys:
+			pass
+		
+		return(True, 'Ok!')
+		######################################################################## OLD
 		tasks_of_assets = {}
 		
 		# -- CONNECT  .db
@@ -1595,10 +1626,10 @@ class asset(studio):
 				conn.close()
 				return(False, ('\"' + keys['name'] + '\" not season'))
 		
-			# get id			
-			keys['id'] = str(random.randint(0, 1000000000))
+			# get id
+			keys['id'] = hex(random.randint(0, 1000000000)).replace('0x','')
 			while keys['id'] in ids:
-				keys['id'] = str(random.randint(0, 1000000000))
+				keys['id'] = hex(random.randint(0, 1000000000)).replace('0x','')
 				
 			# get priority
 			if (not 'priority' in keys) or (keys['priority'] == ''):
@@ -2034,82 +2065,38 @@ class asset(studio):
 		
 		return(True, 'Ok!')
 	
-	def get_list_by_type(self, project_name, asset_type):
-		result = self.get_project(project_name)
-		if not result[0]:
-			return(False, result[1])
-		
-		# write season to db
-		conn = sqlite3.connect(self.assets_path, detect_types=sqlite3.PARSE_DECLTYPES|sqlite3.PARSE_COLNAMES)
-		conn.row_factory = sqlite3.Row
-		c = conn.cursor()
-		
-		try:
-			table = asset_type
-			str_ = 'select * from ' + table
-			c.execute(str_)
-			rows = c.fetchall()
-			conn.close()
-			return(True, rows)
-		except:
-			conn.close()
-			return(True, [])
-			
-	def get_list_by_all_types(self):
-		assets_list = []
-		for asset_type in self.asset_types:
-			pass
-		'''
-		# write season to db
-		conn = sqlite3.connect(self.assets_path, detect_types=sqlite3.PARSE_DECLTYPES|sqlite3.PARSE_COLNAMES)
-		conn.row_factory = sqlite3.Row
-		c = conn.cursor()
-		
-		assets_list = []
-		for asset_type in self.asset_types:
-			try:
-				table = asset_type
-				str_ = 'select * from ' + table
-				c.execute(str_)
-				rows = c.fetchall()
-				for row in rows:
-					assets_list.append(row)
-			except:
-				#print(('not found table from type: \" ' + asset_type + ' \"'))
-				continue
-		conn.close()
-		'''
-		return(True, assets_list)
-	'''		
-	def get_list_by_group(self, project_name, group_name):		
-		# get group_type
-		group_type = None
-		copy = group()
-		group_data = copy.get_by_name(project_name, group_name)
-		if group_data[0]:
-			group_type = group_data[1]['type']
+	# group_id - если не False - то возвращает список ассетов данной группы
+	def get_list_by_type(self, asset_type, group_id = False):
+		if group_id:
+			where = {'group': group_id}
 		else:
-			return(False, group_data[1])
+			where = False
+		bool_, return_data = database().read('project', self.project, asset_type, self.asset_keys, where = where, table_root=self.assets_db)
+		if not bool_:
+			print('#'*5, return_data)
+			return(True, [])
+		else:
+			return(True, return_data)
+	
+	# group_id - если не False - то возвращает список ассетов данной группы
+	def get_list_by_all_types(self, group_id = False):
+		if group_id:
+			where = {'group': group_id}
+		else:
+			where = False
+		assets_list = []
+		for asset_type in self.asset_types:
+			bool_, return_data = database().read('project', self.project, asset_type, self.asset_keys, where = where, table_root=self.assets_db)
+			if not bool_:
+				print('#'*5, return_data)
+				continue
+			else:
+				assets_list = assets_list + return_data
+		return(True, assets_list)
 		
-		# get list by type
-		list_by_type = self.get_list_by_type(project_name, group_type)
-		if not list_by_type[0]:
-			return(False, list_by_type[1])
-				
-		# get list by group
-		list_by_group = []
-		for row in list_by_type[1]:
-			if row['group'] == group_name:
-				list_by_group.append(row)
-				
-		return(True, list_by_group)
-	'''
-		
-	def get_list_by_group(self, project_name, group_id):
+	def get_list_by_group(self, group_id):
 		# get group_type
-		group_type = None
-		copy = group()
-		group_data = copy.get_by_id(project_name, group_id)
+		group_data = group(self.project).get_by_id(group_id)
 		if group_data[0]:
 			group_type = group_data[1]['type']
 		else:
@@ -2117,25 +2104,19 @@ class asset(studio):
 		
 		all_list = []
 		if group_type == 'all':
-			list_by_type = self.get_list_by_all_types(project_name)
+			list_by_type = self.get_list_by_all_types(group_id = group_id)
 			if not list_by_type[0]:
 				return(False, list_by_type[1])
 			all_list = list_by_type[1]
 		
 		else:
 			# get asset list by type
-			list_by_type = self.get_list_by_type(project_name, group_type)
+			list_by_type = self.get_list_by_type(group_type, group_id = group_id)
 			if not list_by_type[0]:
 				return(False, list_by_type[1])
 			all_list = list_by_type[1]
 		
-		# get list by group
-		list_by_group = []
-		for row in all_list:
-			if row['group'] == group_id:
-				list_by_group.append(row)
-				
-		return(True, list_by_group)
+		return(True, all_list)
 	
 	def get_name_list_by_type(self, project_name, asset_type):
 		result = self.get_project(project_name)
@@ -2381,9 +2362,7 @@ class asset(studio):
 			return(False, result[1])
 		else:
 			return(True, 'Ok!')
-			
-	
-	
+
 class task(asset):
 	'''
 	studio.project.asset.task()
