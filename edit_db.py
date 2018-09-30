@@ -1521,18 +1521,10 @@ class asset(studio):
 		
 	# **************** ASSET NEW  METODS ******************
 	
-	def create(self, project_name, asset_type, list_keys):  # create list assets from list asset_keys
-		result = self.get_project(project_name)
-		if not result[0]:
-			return(False, result[1])
-			
-		result = self.get_list_by_all_types(project_name)
-		'''
-		print('*****', result)
-		return(False, 'Epte!')
-		'''
+	def create(self, asset_type, list_keys):  # create list assets from list asset_keys
 		assets = []
 		ids = []
+		result = self.get_list_by_all_types(project_name)
 		if result[0]:
 			for row in result[1]:
 				assets.append(row['name'])
@@ -2063,12 +2055,11 @@ class asset(studio):
 			conn.close()
 			return(True, [])
 			
-	def get_list_by_all_types(self, project_name):
-		# get project
-		result = self.get_project(project_name)
-		if not result[0]:
-			return(False, result[1])
-			
+	def get_list_by_all_types(self):
+		assets_list = []
+		for asset_type in self.asset_types:
+			pass
+		'''
 		# write season to db
 		conn = sqlite3.connect(self.assets_path, detect_types=sqlite3.PARSE_DECLTYPES|sqlite3.PARSE_COLNAMES)
 		conn.row_factory = sqlite3.Row
@@ -2087,6 +2078,7 @@ class asset(studio):
 				#print(('not found table from type: \" ' + asset_type + ' \"'))
 				continue
 		conn.close()
+		'''
 		return(True, assets_list)
 	'''		
 	def get_list_by_group(self, project_name, group_name):		
