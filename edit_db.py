@@ -147,7 +147,7 @@ class studio:
 	asset_keys = {
 	'name': 'text',
 	'group': 'text',
-	'path': 'text',
+	#'path': 'text',
 	'type': 'text',
 	'season': 'text',
 	'priority': 'text',
@@ -1521,7 +1521,8 @@ class asset(studio):
 		
 	# **************** ASSET NEW  METODS ******************
 	
-	# обязательные параметры в keys (list_keys): name, group(id), type.
+	# обязательные параметры в keys (list_keys): name, group(id).
+	# asset_type - тип для всех ассетов
 	def create(self, asset_type, list_keys):  # create list assets from list asset_keys
 		pass
 		# проверка типа ассета
@@ -1560,11 +1561,83 @@ class asset(studio):
 		if not bool_:
 			return(bool_, return_data)
 		
-		# create assets
+		########### create assets
+		if not list_keys:
+			return(False, 'No data to create an Asset!')
+		#
 		for keys in list_keys:
-			pass
+			# test name
+			if not keys.get('name'):
+				return(False,('No name!'))
+			# test group(id)
+			if not keys.get('group'):
+				return(False, 'In the asset "%s" does not specify a group!' % keys['name'])
+			# test season
+			if asset_type in self.asset_types_with_season and not keys.get('season'):
+				return(False, 'In the asset "%s" does not specify a season' % keys['name'])
+			# edit name
+			if asset_type in ['shot_animation']:
+				keys['name'] = keys['name'].replace(' ', '_')
+			else:
+				keys['name'] = keys['name'].replace(' ', '_').replace('.', '_')
+			# test exists name
+			if keys['name'] in assets:
+				return(False, 'The name "%s" already exists!' % keys['name'])
+			# make keys
+			keys['type'] = asset_type
+			keys['status'] = 'active'
+			# -- get id
+			keys['id'] = hex(random.randint(0, 1000000000)).replace('0x','')
+			while keys['id'] in ids:
+				keys['id'] = hex(random.randint(0, 1000000000)).replace('0x','')
+			# -- get priority
+			if not keys.get('priority'):
+				keys['priority'] = '0'
+			# create Folders
+			asset_path = os.path.join(self.project.path, self.project.folders['assets'],asset_type, keys['name'])
+			group_dir = os.path.join(self.project.path, self.project.folders['assets'],asset_type)
+			# -- create group folder
+			if not os.path.exists(group_dir):
+				try:
+					os.mkdir(group_dir)
+				except Exception as e:
+					print('#'*5, 'In asset.create() -- create group folder')
+					print(e)
+					return(False, 'Exception in asset.create() look the terminal!')
+			# -- create root folder
+			if not os.path.exists(asset_path):
+				try:
+					os.mkdir(asset_path)
+				except Exception as e:
+					print('#'*5, 'In asset.create() -- create root folder')
+					print(e)
+					return(False, 'Exception in asset.create() look the terminal!')
+			
+			# -- create activity folders
+			for activity in self.ACTIVITY_FOLDER[asset_type]:
+				folder_path = os.path.join(asset_path, self.ACTIVITY_FOLDER[asset_type][activity])
+				if not os.path.exists(folder_path):
+					os.mkdir(folder_path)
+					
+			# -- create additional folders  self.ADDITIONAL_FOLDERS
+			for activity in self.ADDITIONAL_FOLDERS:
+				folder_path = os.path.join(asset_path, self.ADDITIONAL_FOLDERS[activity])
+				if not os.path.exists(folder_path):
+					os.mkdir(folder_path)
+			
+			# create in DB
+			bool_, return_data = database().insert('project', self.project, asset_type, self.asset_keys, keys, table_root=self.assets_db)
+			if not bool_:
+				return(bool_, return_data)
+			
+			########### make task data
+			
+			
+			
+			########### make return data
+			make_assets[keys['name']] = keys
 		
-		return(True, 'Ok!')
+		return(True, make_assets)
 		######################################################################## OLD
 		tasks_of_assets = {}
 		

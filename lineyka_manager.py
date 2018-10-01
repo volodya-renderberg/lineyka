@@ -868,6 +868,8 @@ class MainWindow(QtGui.QMainWindow):
 					}
 			else:
 				keys = {'name': name}
+		else:
+			keys = {'name': name}
 		# create
 		result = self.db_workroom.add(keys)
 		if not result[0]:
@@ -3027,7 +3029,7 @@ class MainWindow(QtGui.QMainWindow):
 			self.message(result[1], 2)
 			return
 		
-		self.fill_group_table(self.myWidget.studio_editor_table, project)
+		self.fill_group_table(self.myWidget.studio_editor_table, self.current_project)
 		self.close_window(window)
 		print('new group action')
 		
@@ -3156,6 +3158,9 @@ class MainWindow(QtGui.QMainWindow):
 	
 	def pre_edit_ui_to_group_content_editor(self, *args):
 		item = self.myWidget.studio_editor_table.currentItem()
+		if not item:
+			self.message('Group not selected!', 2)
+			return
 		self.edit_ui_to_group_content_editor(item)
 		
 	def edit_ui_to_group_content_editor(self, *args):
@@ -3321,8 +3326,8 @@ class MainWindow(QtGui.QMainWindow):
 		
 		# get table data
 		f = self.myWidget.group_search_qline.text()
-		copy = self.db_asset
-		assets_list = copy.get_list_by_group(self.current_project, self.current_group['id'])
+		#copy = self.db_asset
+		assets_list = self.db_asset.get_list_by_group(self.current_group['id'])
 		if assets_list[0]:
 			if f:
 				assets_list_filter = []
@@ -3344,6 +3349,7 @@ class MainWindow(QtGui.QMainWindow):
     
 		# fill table
 		for i, row in enumerate(assets_list):
+			#self.db_asset.init(row)
 			for j,key in enumerate(headers):
 				newItem = QtGui.QTableWidgetItem()
 				if key in row.keys():
@@ -3353,10 +3359,11 @@ class MainWindow(QtGui.QMainWindow):
 					brush = QtGui.QBrush(color)
 					newItem.setBackground(brush)
 				elif key == 'priority':
-					newItem.setText(copy.priority[int(row[key])])
+					#newItem.setText(self.db_asset.priority[int(row[key])])
+					newItem.setText(str(row[key]))
 				elif key == 'icon':
 					# get img path
-					icon_path = os.path.join(self.db_asset.preview_img_path, (row['name'] + '_icon.png'))
+					icon_path = os.path.join(self.db_asset.project.preview_img_path, (row['name'] + '_icon.png'))
 					# label
 					label = QtGui.QLabel()
 					
@@ -6856,7 +6863,7 @@ class MainWindow(QtGui.QMainWindow):
 		# add line
 		# -- get extension_dict
 		ext_dict = {}
-		result = self.db_studio.get_extension_dict()
+		result = self.db_studio().get_extension_dict()
 		if result[0]:
 			ext_dict = result[1]
 		
