@@ -1518,11 +1518,14 @@ class asset(studio):
 	def init(self, keys):
 		for key in self.asset_keys:
 			exec('self.%s = keys.get("%s")' % (key, key))
+		# path
+		self.path = os.path.join(self.project.path, self.project.folders['assets'],asset_type, keys['name'])
 		
 	# **************** ASSET NEW  METODS ******************
 	
-	# обязательные параметры в keys (list_keys): name, group(id).
-	# asset_type - тип для всех ассетов
+	# list_keys (list) - список словарей по ключам asset_keys
+	# -- обязательные параметры в keys (list_keys): name, group(id).
+	# asset_type (str) - тип для всех ассетов
 	def create(self, asset_type, list_keys):  # create list assets from list asset_keys
 		pass
 		# проверка типа ассета
@@ -2190,7 +2193,7 @@ class asset(studio):
 			all_list = list_by_type[1]
 		
 		return(True, all_list)
-	
+	'''
 	def get_name_list_by_type(self, project_name, asset_type):
 		result = self.get_project(project_name)
 		if not result[0]:
@@ -2214,212 +2217,117 @@ class asset(studio):
 		except:
 			conn.close()
 			return(True, [])
+	'''
 			
+	def get_id_name_dict_by_type(self, asset_type):
+		bool_, return_data = database().read('project', self.project, asset_type, self.asset_keys, table_root=self.assets_db)
+		if not bool_:
+			return(bool_, return_data)
+		asset_id_name_dict = {}
+		for row in return_data:
+			asset_id_name_dict[row['id']] = row['name']
+		return(True, asset_id_name_dict)
+		
 			
-	def get_id_name_dict_by_type(self, project_name, asset_type):
-		result = self.get_project(project_name)
-		if not result[0]:
-			return(False, result[1])
-		
-		# write season to db
-		conn = sqlite3.connect(self.assets_path, detect_types=sqlite3.PARSE_DECLTYPES|sqlite3.PARSE_COLNAMES)
-		conn.row_factory = sqlite3.Row
-		c = conn.cursor()
-		
-		try:
-			table = asset_type
-			str_ = 'select * from ' + table
-			c.execute(str_)
-			rows = c.fetchall()
-			asset_id_name_dict = {}
-			for row in rows:
-				asset_id_name_dict[row['id']] = row['name']
-			conn.close()
-			return(True, asset_id_name_dict)
-		except:
-			conn.close()
-			return(True, [])
-			
-	def get_name_data_dict_by_all_types(self, project_name):
-		result = self.get_project(project_name)
-		if not result[0]:
-			return(False, result[1])
-		
-		# write season to db
-		conn = sqlite3.connect(self.assets_path, detect_types=sqlite3.PARSE_DECLTYPES|sqlite3.PARSE_COLNAMES)
-		conn.row_factory = sqlite3.Row
-		c = conn.cursor()
-		
-		# get assets_list
-		assets_list = []
+	def get_name_data_dict_by_all_types(self):
+		asset_list = []
 		for asset_type in self.asset_types:
-			try:
-				table = asset_type
-				str_ = 'select * from ' + table
-				c.execute(str_)
-				rows = c.fetchall()
-				for row in rows:
-					assets_list.append(row)
-			except:
-				#print(('in get_name_id_dict_by_all_types - not found table from type: \" ' + asset_type + ' \"'))
+			bool_, return_data = database().read('project', self.project, asset_type, self.asset_keys, table_root=self.assets_db)
+			if not bool_:
+				print(return_data)
 				continue
-			
+			asset_list = asset_list + return_data
 		# make dict
 		assets_dict = {}
-		for asset in assets_list:
+		for asset in asset_list:
 			assets_dict[asset['name']] = asset
-		
-		conn.close()
 		return(True, assets_dict)
 			
-	def get_by_name(self, project_name, asset_type, asset_name):
-		result = self.get_project(project_name)
-		if not result[0]:
-			return(False, result[1])
-		
-		# write season to db
-		conn = sqlite3.connect(self.assets_path, detect_types=sqlite3.PARSE_DECLTYPES|sqlite3.PARSE_COLNAMES)
-		conn.row_factory = sqlite3.Row
-		c = conn.cursor()
-		
-		try:
-			table = asset_type
-			str_ = 'select * from ' + table + ' where \"name\" = ?'
-			c.execute(str_, (asset_name,))
-			row = c.fetchone()
-			conn.close()
-			return(True, row)
-		except:
-			conn.close()
-			return(False, 'Not Asset With This Name!')
-			
+	def get_by_name(self, asset_type, asset_name):
+		where = {'name': asset_name}
+		bool_, return_data = database().read('project', self.project, asset_type, self.asset_keys, where=where, table_root=self.assets_db)
+		if not bool_:
+			return(bool_, return_data)
+		if return_data:
+			return(True, return_data[0])
+		else:
+			return(False, 'No Asset With This Name(%s)!' % asset_name)
 	
-	def get_by_id(self, project_name, asset_type, asset_id):
-		result = self.get_project(project_name)
-		if not result[0]:
-			return(False, result[1])
-		
-		# write season to db
-		conn = sqlite3.connect(self.assets_path, detect_types=sqlite3.PARSE_DECLTYPES|sqlite3.PARSE_COLNAMES)
-		conn.row_factory = sqlite3.Row
-		c = conn.cursor()
-		
-		try:
-			table = asset_type
-			str_ = 'select * from ' + table + ' where \"id\" = ?'
-			c.execute(str_, (asset_id,))
-			row = c.fetchone()
-			conn.close()
-			return(True, row)
-		except:
-			conn.close()
-			return(False, 'Not Asset With This Name!')
-			
-	def edit_asset_data_by_name(self, project_name, keys): # required keys: 'name', 'type', unchangeable keys: 'type', 'id', 'path'
-		result = self.get_project(project_name)
-		if not result[0]:
-			return(False, result[1])
-		
+	def get_by_id(self, asset_type, asset_id):
+		where = {'id': asset_id}
+		bool_, return_data = database().read('project', self.project, asset_type, self.asset_keys, where=where, table_root=self.assets_db)
+		if not bool_:
+			return(bool_, return_data)
+		if return_data:
+			return(True, return_data[0])
+		else:
+			return(False, 'No Asset With This id(%s)!' % asset_id)
+	
+	# keys - словарь по asset_keys, 
+	# -- *name - для идентификации ассета
+	# -- *type - для идентификации таблицы
+	# -- не меняемые значения 'name', 'type', 'id', 'path'
+	def edit_asset_data_by_name(self, keys): # required keys: 'name', 'type', unchangeable keys: 'type', 'id', 'path'
 		# test Name Type
 		if not 'name' in keys:
-			return(False, 'Not Name!')
+			return(False, 'Name not specified!')
 		elif not 'type' in keys:
-			return(False, 'Not Type!')
-			
-		# write season to db
-		conn = sqlite3.connect(self.assets_path, detect_types=sqlite3.PARSE_DECLTYPES|sqlite3.PARSE_COLNAMES)
-		conn.row_factory = sqlite3.Row
-		c = conn.cursor()
+			return(False, 'Type not specified!')
 		
-		# test table
-		try:
-			table = keys['type']
-			com = 'select * from ' + table
-			c.execute(com)
-		except:
-			conn.close()
-			return(False, 'Not Asset With This Type!')
+		where = {'name': keys['name']}
+		table_name = keys['type']
+		# cleaning keys
+		del keys['name']
+		for key in self.UNCHANGEABLE_KEYS:
+			if key in keys:
+				del keys[key]
+		# update
+		bool_, return_data = database().update('project', self.project, table_name, self.asset_keys, keys, where, table_root=self.assets_db)
+		if not bool_:
+			return(bool_, return_data)
 		
-		# edit db
-		data = []
-		string = 'UPDATE ' +  table + ' SET '
-		for key in keys:
-			if not key in self.UNCHANGEABLE_KEYS:
-				string = string + ' \"' + key + '\" = ? ,'
-				data.append(keys[key])
-		# -- >>
-		string = string + ' WHERE \"name\" = \"' + keys['name'] + '\"'
-		string = string.replace(', WHERE', ' WHERE')
-		
-		c.execute(string, data)
-		conn.commit()
-		conn.close()
 		return(True, 'Ok!')
-		
-	def edit_asset_data_by_id(self, project_name, keys): # required keys: 'id', 'type', unchangeable keys: 'type', 'id', 'path'
-		result = self.get_project(project_name)
-		if not result[0]:
-			return(False, result[1])
-		
+	
+	# keys - словарь по asset_keys, 
+	# -- *id - для идентификации ассета
+	# -- *type - для идентификации таблицы
+	# -- не меняемые значения: 'type', 'id', 'path'
+	def edit_asset_data_by_id(self, keys): # required keys: 'id', 'type', unchangeable keys: 'type', 'id', 'path'
 		# test Name Type
 		if not 'id' in keys:
-			return(False, 'Not id!')
+			return(False, 'Id not specified!')
 		elif not 'type' in keys:
-			return(False, 'Not Type!')
-			
-		# write season to db
-		conn = sqlite3.connect(self.assets_path, detect_types=sqlite3.PARSE_DECLTYPES|sqlite3.PARSE_COLNAMES)
-		conn.row_factory = sqlite3.Row
-		c = conn.cursor()
+			return(False, 'Type not specified!')
 		
-		# test table
-		try:
-			table = keys['type']
-			com = 'select * from ' + table
-			c.execute(com)
-						
-			if 'name' in keys:
-				rows = c.fetchall()
-				for row in rows:
-					if row['name'] == keys['name']:
-						return(False, 'Overlap Name!')
-			
-		except:
-			conn.close()
-			return(False, 'Not Asset With This Type!')
-			
-		# edit db
-		data = []
-		string = 'UPDATE ' +  table + ' SET '
-		for key in keys:
-			if not key in self.UNCHANGEABLE_KEYS:
-				string = string + ' \"' + key + '\" = ? ,'
-				data.append(keys[key])
-		# -- >>
-		string = string + ' WHERE \"id\" = \"' + keys['id'] + '\"'
-		string = string.replace(', WHERE', ' WHERE')
+		where = {'id': keys['id']}
+		table_name = keys['type']
+		# cleaning keys
+		for key in self.UNCHANGEABLE_KEYS:
+			if key in keys:
+				del keys[key]
+		# update
+		bool_, return_data = database().update('project', self.project, table_name, self.asset_keys, keys, where, table_root=self.assets_db)
+		if not bool_:
+			return(bool_, return_data)
 		
-		c.execute(string, data)
-		conn.commit()
-		conn.close()
 		return(True, 'Ok!')
 		
-	def change_group_of_asset(self, project_name, asset_type, asset_name, new_group_id):
+	def change_group_of_asset(self, asset_type, asset_name, new_group_id):
 		keys = {
 		'name': asset_name,
 		'type': asset_type,
 		'group': new_group_id,
 		}
 		
-		result = self.edit_asset_data_by_name(project_name, keys)
+		result = self.edit_asset_data_by_name(keys)
 		if not result[0]:
 			return(False, result[1])
 		else:
 			return(True, 'Ok!')
 			
-	def rename_asset(self, project_name, asset_type, old_name, new_name):
+	def rename_asset(self, asset_type, old_name, new_name):
 		# get id by name
-		result = self.get_by_name(project_name, asset_type, old_name)
+		result = self.get_by_name(asset_type, old_name)
 		if not result[0]:
 			return(False, result[1])
 		
@@ -2430,7 +2338,7 @@ class asset(studio):
 		'id': result[1]['id'],
 		}
 		
-		result = self.edit_asset_data_by_id(project_name, keys)
+		result = self.edit_asset_data_by_id(keys)
 		if not result[0]:
 			return(False, result[1])
 		else:
