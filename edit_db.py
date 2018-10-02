@@ -302,6 +302,12 @@ class studio:
 	'status':'text',
 	'id': 'text',
 	}
+
+	list_of_assets_keys = [
+	'asset_name',
+	'asset_type',
+	'set_of_tasks',
+	]
 	
 	logs_keys = [
 	('version', 'text'),
@@ -1243,6 +1249,7 @@ class project(studio):
 		self.assets_path = NormPath(os.path.join(self.path, self.assets_db))
 		self.chat_path = NormPath(os.path.join(self.path, self.chats_db))
 		self.tasks_path = NormPath(os.path.join(self.path, self.tasks_db))
+		self.list_of_assets_path = NormPath(os.path.join(self.path, '.list_of_assets_path.json'))
 		
 		# create folders
 		self.make_folders(self.path)
@@ -1287,6 +1294,7 @@ class project(studio):
 		return True, 'ok'
 		
 	def get_project(self, name):
+		pass
 		#self.get_list_projects()
 		
 		if not name in self.list_projects.keys():
@@ -1309,7 +1317,7 @@ class project(studio):
 			#if os.path.exists(tasks_path):
 			self.tasks_path = tasks_path
 			#
-			self.list_of_assets_path = NormPath(self.list_projects[name]['list_of_assets_path'])
+			self.list_of_assets_path = NormPath(os.path.join(self.list_projects[name]['path'], '.list_of_assets_path.json'))
 			#
 			chat_path = NormPath(os.path.join(self.path, self.chats_db))
 			#if os.path.exists(chat_path):
@@ -6290,7 +6298,7 @@ class set_of_tasks(studio):
 		
 		return(True, 'Ok!')
 		
-class season(project):
+class season(studio):
 	def __init__(self, project):
 		self.project = project
 		# fill fields
@@ -6598,132 +6606,128 @@ class group(studio):
 			return(bool_, return_data)
 		return(True, 'ok')
 		
-class list_of_assets(group):
-	def __init__(self):
-		self.list_of_assets_keys = [
-		'asset_name',
-		'asset_type',
-		'set_of_tasks',
-		]
+class list_of_assets(studio):
+	def __init__(self, group):
+		self.group = group
+
+	# rows (list) = [{keys}, {keys}, ...]
+	def save_list(self, rows, group_name = False):
+		list_of_assets_path = self.group.project.list_of_assets_path
+		# test data keys
+		if not group_name:
+			if not self.group.name:
+				return(False, 'No init of Group!')
+			group_name = self.group.name
 		
-		group.__init__(self)
-		
-	def save_list(self, project, group_name, rows): # rows = [{keys}, {keys}, ...]
-		get_project = self.get_project(project)
-		if not get_project[0]:
-			return(False, get_project[1])
-		
-			# test data keys
-		if group_name == '':
-			return(False, 'Not Name!')
+		if not self.group.project.name:
+			return(False, 'No init of Project!')
 		
 		# test exists path
-		if not os.path.exists(self.list_of_assets_path):
-			print(get_project[1][0])
-			return(False, (self.list_of_assets_path + ' Not Found! ***'))
+		if not os.path.exists(list_of_assets_path):
+			try:
+				with open(list_of_assets_path, 'w') as f:
+					jsn = json.dump({}, f, sort_keys=True, indent=4)
+					f.close()
+			except:
+				return(False, '"%s"  can not be write' % list_of_assets_path)
 		
 		# read data
 		try:
-			with open(self.list_of_assets_path, 'r') as read:
+			with open(list_of_assets_path, 'r') as read:
 				data = json.load(read)
 				read.close()
-								
-		except:
-			return(False, (self.list_of_assets_path + " can not be read!"))
 		
-		'''
-		# test exists of set
-		if group_name in data.keys():
-			return(False, 'This Set Already Exists!')
-		'''
-			
+		except:
+			return(False, '"%s"  can not be read' % list_of_assets_path)
+		
 		# edit data
 		data[group_name] = rows
 		
 		# write data
 		try:
-			with open(self.list_of_assets_path, 'w') as f:
+			with open(list_of_assets_path, 'w') as f:
 				jsn = json.dump(data, f, sort_keys=True, indent=4)
 				#print('data:', data)
 				f.close()
 		except:
-			return(False, (self.list_of_assets_path + "  can not be write"))
+			return(False, '"%s"  can not be write' % list_of_assets_path)
 		
 		return(True, 'ok')
 		
-	def get_list(self, project):
-		get_project = self.get_project(project)
-		if not get_project[0]:
-			return(False, get_project[1])
-			
+	def get_list(self):
+		list_of_assets_path = self.group.project.list_of_assets_path
 		# test exists path
-		if not os.path.exists(self.list_of_assets_path):
-			return(False, (self.list_of_assets_path + ' Not Found!'))
+		if not os.path.exists(list_of_assets_path):
+			return(True, [])
 		
 		# read data
 		try:
-			with open(self.list_of_assets_path, 'r') as read:
+			with open(list_of_assets_path, 'r') as read:
 				data = json.load(read)
 				read.close()
 								
 		except:
-			return(False, (self.list_of_assets_path + " can not be read!"))
+			return(False, '"%s" can not be read!' % list_of_assets_path)
 			
 		return(True, data)
 		
-	def get(self, project, group_name):
-		get_project = self.get_project(project)
-		if not get_project[0]:
-			return(False, get_project[1])
+	def get(self, group_name = False):
+		list_of_assets_path = self.group.project.list_of_assets_path
+		if not group_name:
+			if not self.group.name:
+				return(False, 'No init of group!')
+			group_name = self.group.name
 			
 		# test exists path
-		if not os.path.exists(self.list_of_assets_path):
-			return(False, (self.list_of_assets_path + ' Not Found!'))
+		if not os.path.exists(list_of_assets_path):
+			return(False, '"%s" Not Found!' % list_of_assets_path)
 		
 		# read data
 		try:
-			with open(self.list_of_assets_path, 'r') as read:
+			with open(list_of_assets_path, 'r') as read:
 				data = json.load(read)
 				read.close()
 		except:
-			return(False, (self.list_of_assets_path + " can not be read!"))
+			return(False, '"%s" can not be read!' % list_of_assets_path)
 		
 		if group_name in data:
 			return(True, data[group_name])
 		else:
-			return(False, ('list of assets for \"' + group_name + '\" not found!'))
+			return(False, 'list of assets for "%s" not found!' % group_name)
 		
 		
-	def remove(self, project, group_name):
-		get_project = self.get_project(project)
-		if not get_project[0]:
-			return(False, get_project[1])
+	def remove(self, group_name = False):
+		list_of_assets_path = self.group.project.list_of_assets_path
+		if not group_name:
+			if not self.group.name:
+				return(False, 'No init of group!')
+			group_name = self.group.name
 		
 		# test exists path
-		if not os.path.exists(self.list_of_assets_path):
-			return(False, (self.list_of_assets_path + ' Not Found!'))
+		if not os.path.exists(list_of_assets_path):
+			return(False, '"%s" Not Found!' % list_of_assets_path)
 			
 		# read data
 		try:
-			with open(self.list_of_assets_path, 'r') as read:
+			with open(list_of_assets_path, 'r') as read:
 				data = json.load(read)
 				read.close()
 		except:
-			return(False, (self.list_of_assets_path + " can not be read!"))
+			return(False, '"%s" can not be read!' % list_of_assets_path)
 			
 		if group_name in data:
 			del data[group_name]
 		else:
-			return(False, ('list of assets for \"' + group_name + '\" not found!'))
+			return(False, 'list of assets for "%s" not found!' % group_name)
 			
 		# write data
 		try:
-			with open(self.list_of_assets_path, 'w') as f:
+			with open(list_of_assets_path, 'w') as f:
 				jsn = json.dump(data, f, sort_keys=True, indent=4)
 				#print('data:', data)
 				f.close()
 		except:
-			return(False, (self.list_of_assets_path + "  can not be write"))
+			return(False, '"%s"  can not be write' % list_of_assets_path)
 			
 		return(True, 'Ok')
 		
