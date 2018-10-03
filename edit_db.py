@@ -180,8 +180,8 @@ class studio:
 	('chat_local', 'text'),
 	('web_chat', 'text'),
 	('workroom', 'text'),
-	('readers', 'text'),
-	('output', 'text'),
+	('readers', 'json'),
+	('output', 'json'),
 	('priority','text'),
 	('asset_id', 'text'),
 	('asset_type', 'text'),
@@ -1419,29 +1419,8 @@ class asset(studio):
 	
 	def __init__(self, project):
 		# objects
-		self.db_group = group(project) # под сильным вопросом ?????
 		self.project = project
 		
-		# asset keys
-		'''
-		asset_keys = {
-			'name': 'text',
-			'group': 'text',
-			'path': 'text',
-			'type': 'text',
-			'season': 'text',
-			'priority': 'text',
-			'comment': 'text',
-			'content': 'text',
-			'id': 'text',
-			'status': 'text',
-			'parent': 'text' # {'name':asset_name, 'id': asset_id}
-			}
-		self.asset_path = False # full path to asset folder
-		self.asset_name = False
-		self.asset_group = False # the group of asset
-		self.asset_type = False
-		'''
 		self.task_list = False # task lists from this asset
 		self.activity_path = False # директория какого либо активити по запросу, заполняется в get_activity_path()
 		
@@ -1522,12 +1501,12 @@ class asset(studio):
 		
 		#project.__init__(self)
 		
-	# заполнение полей по self.asset_keys - для передачи экземпляра в уровень ниже.
+	# заполнение полей по self.asset_keys - для передачи экземпляра на уровень выше.
 	def init(self, keys):
 		for key in self.asset_keys:
 			exec('self.%s = keys.get("%s")' % (key, key))
 		# path
-		self.path = os.path.join(self.project.path, self.project.folders['assets'],asset_type, keys['name'])
+		self.path = NormPath(os.path.join(self.project.path, self.project.folders['assets'],asset_type, keys['name']))
 		
 	# **************** ASSET NEW  METODS ******************
 	
@@ -1553,7 +1532,6 @@ class asset(studio):
 		if list_keys.__class__.__name__!= 'list':
 			return(False, 'The type of "list_keys" (%s) is Not Valid! There must be a "list"' % list_keys.__class__.__name__)
 		# start data
-		tasks_of_assets = {}
 		make_assets = {}
 		# get list assets
 		assets = []
@@ -1605,8 +1583,8 @@ class asset(studio):
 			if not keys.get('priority'):
 				keys['priority'] = '0'
 			# create Folders
-			asset_path = os.path.join(self.project.path, self.project.folders['assets'],asset_type, keys['name'])
-			group_dir = os.path.join(self.project.path, self.project.folders['assets'],asset_type)
+			group_dir = NormPath(os.path.join(self.project.path, self.project.folders['assets'],asset_type))
+			asset_path = NormPath(os.path.join(group_dir, keys['name']))
 			# -- create group folder
 			if not os.path.exists(group_dir):
 				try:
@@ -1626,13 +1604,13 @@ class asset(studio):
 			
 			# -- create activity folders
 			for activity in self.ACTIVITY_FOLDER[asset_type]:
-				folder_path = os.path.join(asset_path, self.ACTIVITY_FOLDER[asset_type][activity])
+				folder_path = NormPath(os.path.join(asset_path, self.ACTIVITY_FOLDER[asset_type][activity]))
 				if not os.path.exists(folder_path):
 					os.mkdir(folder_path)
 					
 			# -- create additional folders  self.ADDITIONAL_FOLDERS
 			for activity in self.ADDITIONAL_FOLDERS:
-				folder_path = os.path.join(asset_path, self.ADDITIONAL_FOLDERS[activity])
+				folder_path = NormPath(os.path.join(asset_path, self.ADDITIONAL_FOLDERS[activity]))
 				if not os.path.exists(folder_path):
 					os.mkdir(folder_path)
 			
@@ -1643,12 +1621,142 @@ class asset(studio):
 			
 			########### make task data
 			
+			this_asset_tasks = []
+			# add service tasks ("final")
+			final = {
+				'asset':keys['name'],
+				'asset_id': keys['id'],
+				'asset_type': asset_type,
+				'task_name': (keys['name'] + ':final'),
+				'season': keys['season'],
+				'status':'null',
+				'task_type':'service',
+				'input':[],
+				'output': [],
+			}
+			# create service tasks ("all_input")
+			all_input = {
+				'asset':keys['name'],
+				'asset_id': keys['id'],
+				'asset_type': asset_type,
+				'task_name': (keys['name'] + ':all_input'),
+				'season': keys['season'],
+				'status':'done',
+				'task_type':'service',
+				'input':[],
+				'output': [],
+			}
+			this_asset_tasks.append(all_input)
+			
+			# get list from set_of_tasks
+			result = set_of_tasks().get(keys['set_of_tasks'])
+			if result[0]:
+				set_tasks = result[1]['sets']
+				
+				outputs = {}
+				for task_ in set_tasks:
+					# name
+					name = task_['task_name']
+					task_['task_name'] = keys['name'] + ':' + name
+					
+					# output
+					#task_['output'] = json.dumps([final['task_name']])
+					task_['output'] = [final['task_name']]
+					
+					# input
+					input_ = task_['input']
+					if  input_ == 'all':
+						task_['input'] = all_input['task_name']
+						# status
+						task_['status'] = 'ready'
+						# add to output all_input
+						#all_outputs = json.loads(all_input['output'])
+						all_outputs = all_input['output']
+						all_outputs.append(task_['task_name'])
+						#all_input['output'] = json.dumps(all_outputs)
+						all_input['output'] = all_outputs
+						
+					elif input_ == 'pre':
+						task_['input'] = keys['name'] + ':pre_input:' + name
+						# status
+						task_['status'] = 'ready'
+						# add service tasks ("pre_input" )
+						pre_input = {
+							'asset':keys['name'],
+							'asset_id': keys['id'],
+							'asset_type': asset_type,
+							'task_name': task_['input'],
+							'season': keys['season'],
+							'status':'done',
+							'task_type':'service',
+							'input':'',
+							#'output': json.dumps([final['task_name'], task_['task_name']])
+							#'output': json.dumps([task_['task_name']])
+							'output': [task_['task_name']]
+						}
+						this_asset_tasks.append(pre_input)
+					elif input_:
+						task_['input'] = keys['name'] + ':' + input_
+						# status
+						task_['status'] = 'null'
+						
+						# outputs
+						if task_['input'] in outputs.keys():
+							outputs[task_['input']].append(task_['task_name'])
+						else:
+							outputs[task_['input']] = [task_['task_name'],]
+						
+					else:
+						# status
+						task_['status'] = 'ready'
+						
+					# price
+					task_['price'] = task_['cost']
+						
+					# asset
+					task_['asset'] = keys['name']
+					task_['asset_id'] = keys['id']
+					task_['asset_type'] = asset_type
+					
+					# season
+					task_['season'] = keys['season']
+					
+					# readers
+					task_['readers'] = "{}"
+					
+					# append task
+					this_asset_tasks.append(task_)
+					
+				for task_ in this_asset_tasks:
+					if task_['task_name'] in outputs:
+						if task_['output']:
+							#task_outputs = json.loads(task_['output'])
+							task_outputs = task_['output']
+							task_outputs = task_outputs + outputs[task_['task_name']]
+							#task_['output'] = json.dumps(task_outputs)
+							task_['output'] = task_outputs
+						else:
+							#task_['output'] = json.dumps(outputs['task_name'])
+							task_['output'] = outputs['task_name']
+			
+			# set input of "final"
+			final_input = []
+			for task_ in this_asset_tasks:
+				final_input.append(task_['task_name'])
+			#final['input'] = json.dumps(final_input)
+			final['input'] = final_input
+			
+			# append final to task list
+			this_asset_tasks.append(final)
+			
+			########### create tasks (by task data)
 			
 			
 			########### make return data
 			make_assets[keys['name']] = keys
 		
 		return(True, make_assets)
+		'''
 		######################################################################## OLD
 		tasks_of_assets = {}
 		
@@ -1818,7 +1926,7 @@ class asset(studio):
 				'output': '',
 			}
 			this_asset_tasks.append(all_input)
-			
+		
 			# get list from set_of_tasks
 			result = set_of_tasks().get(keys['set_of_tasks'])
 			if result[0]:
@@ -1873,13 +1981,13 @@ class asset(studio):
 						else:
 							outputs[task_['input']] = [task_['task_name'],]
 						
-						'''
+						
 						# outputs
-						try:
-							outputs[task_['input']].append(task_['task_name'])
-						except:
-							outputs[task_['input']] = task_['task_name']
-						'''
+						#try:
+						#	outputs[task_['input']].append(task_['task_name'])
+						#except:
+						#	outputs[task_['input']] = task_['task_name']
+						
 						
 					else:
 						# status
@@ -1920,7 +2028,7 @@ class asset(studio):
 			
 			# append final to task list
 			this_asset_tasks.append(final)
-			
+			'''
 			# make tasks to asset
 			copy = task()
 			#result = copy.create_tasks_from_list(project_name, keys['name'], keys['id'], this_asset_tasks)
@@ -1956,7 +2064,7 @@ class asset(studio):
 		
 		# ******* TO RECICLE BIN
 		# -- get recycle bin  data
-		result = self.db_group.get_by_keys(project_name, {'type': 'all'})
+		result = group(self.project).get_by_keys({'type': 'all'})
 		if not result[0]:
 			return(False, ('in asset().remove_asset' + result[1]))
 		recycle_bin_data = result[1][0]
@@ -2039,7 +2147,7 @@ class asset(studio):
 		
 		
 		# get group id
-		result = self.db_group.get_by_name(project_name, new_group_name)
+		result = group(self.project).get_by_name(new_group_name)
 		if not result[0]:
 			return(False, result[1])
 		new_group_id = result[1]['id']
