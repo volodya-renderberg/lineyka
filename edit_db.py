@@ -155,7 +155,7 @@ class studio:
 	'content': 'text',
 	'id': 'text',
 	'status': 'text',
-	'parent': 'json' # {'name':asset_name, 'id': asset_id}
+	'parent': 'json' # {'name':asset_name, 'id': asset_id} - возможно не нужно
 	}
 	
 	# constants (0 - 3 required parameters)
@@ -1522,7 +1522,8 @@ class asset(studio):
 		# создание ассетов - проверки:
 		# -- наличие name, group(id), type
 		# -- соответствие type типу группы.
-		# -- наличия имени. 
+		# -- наличия имени.
+		# -- проверка на наличие ассета с таким именем.
 		# -- создание id с проверкой на совпадение.
 		
 		# test valid asset_type
@@ -1553,6 +1554,10 @@ class asset(studio):
 		########### create assets
 		if not list_keys:
 			return(False, 'No data to create an Asset!')
+		# test exists name
+		for keys in list_keys:
+			if keys['name'] in assets:
+				return(False, 'The name "%s" already exists!' % keys['name'])
 		#
 		for keys in list_keys:
 			# test name
@@ -1564,14 +1569,13 @@ class asset(studio):
 			# test season
 			if asset_type in self.asset_types_with_season and not keys.get('season'):
 				return(False, 'In the asset "%s" does not specify a season' % keys['name'])
+			elif not asset_type in self.asset_types_with_season and not keys.get('season'):
+				keys['season'] = ''
 			# edit name
 			if asset_type in ['shot_animation']:
 				keys['name'] = keys['name'].replace(' ', '_')
 			else:
 				keys['name'] = keys['name'].replace(' ', '_').replace('.', '_')
-			# test exists name
-			if keys['name'] in assets:
-				return(False, 'The name "%s" already exists!' % keys['name'])
 			# make keys
 			keys['type'] = asset_type
 			keys['status'] = 'active'
@@ -1750,7 +1754,8 @@ class asset(studio):
 			this_asset_tasks.append(final)
 			
 			########### create tasks (by task data)
-			
+			c = json.dumps(this_asset_tasks, sort_keys=True, indent=4)
+			print(c)
 			
 			########### make return data
 			make_assets[keys['name']] = keys
@@ -2028,8 +2033,8 @@ class asset(studio):
 			
 			# append final to task list
 			this_asset_tasks.append(final)
-			'''
-			# make tasks to asset
+		
+			############################## make tasks to asset
 			copy = task()
 			#result = copy.create_tasks_from_list(project_name, keys['name'], keys['id'], this_asset_tasks)
 			result = copy.create_tasks_from_list(project_name, keys, this_asset_tasks)
@@ -2046,7 +2051,7 @@ class asset(studio):
 		# CLOSE .db
 		conn.commit()
 		conn.close()
-		
+		'''
 		'''
 		# send to tasks create  # tasks_of_assets /home/renderberg/create_tasks.json
 		with open('/home/renderberg/create_tasks.json', 'w') as f:
@@ -6155,7 +6160,7 @@ class set_of_tasks(studio):
 	
 	def get(self, name):
 		# test data
-		if name == '':
+		if not name:
 			return(False, 'Not Name!')
 			
 		# test exists path
