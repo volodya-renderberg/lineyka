@@ -2509,6 +2509,10 @@ class task(studio):
 		
 		asset.__init__(self)
 		
+	def init(self, keys):
+		for key in self.tasks_keys:
+			exec('self.%s = keys.get("%s")' % (key, key))
+		
 	# ************************ CHANGE STATUS ******************************** start
 	
 	@staticmethod
