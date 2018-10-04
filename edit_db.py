@@ -159,35 +159,35 @@ class studio:
 	}
 	
 	# constants (0 - 3 required parameters)
-	tasks_keys = [
-	('asset', 'text'),
-	('activity', 'text'),
-	('task_name', 'text'),
-	('task_type', 'text'),
-	('season', 'text'),
-	('input', 'text'),
-	('status', 'text'),
-	('outsource', 'text'),
-	('artist', 'text'),
-	('planned_time', 'text'),
-	('time', 'text'),
-	('start', 'timestamp'),
-	('end', 'timestamp'),
-	('supervisor', 'text'),
-	('approved_date', 'text'),
-	('price', 'real'),
-	('tz', 'text'),
-	('chat_local', 'text'),
-	('web_chat', 'text'),
-	('workroom', 'text'),
-	('readers', 'json'),
-	('output', 'json'),
-	('priority','text'),
-	('asset_id', 'text'),
-	('asset_type', 'text'),
-	('asset_path', 'text'),
-	('extension', 'text'),
-	]
+	tasks_keys = {
+	'asset': 'text',
+	'activity': 'text',
+	'task_name': 'text',
+	'task_type': 'text',
+	'season': 'text',
+	'input': 'text',
+	'status': 'text',
+	'outsource': 'text',
+	'artist': 'text',
+	'planned_time': 'text',
+	'time': 'text',
+	'start': 'timestamp',
+	'end': 'timestamp',
+	'supervisor': 'text',
+	'approved_date': 'text',
+	'price': 'real',
+	'tz': 'text',
+	'chat_local': 'text',
+	'web_chat': 'text',
+	'workroom': 'text',
+	'readers': 'json',
+	'output': 'json',
+	'priority':'text',
+	'asset_id': 'text',
+	'asset_type': 'text',
+	#'asset_path': 'text', каждый раз определяется при считывании данных.
+	'extension': 'text',
+	}
 	'''
 	workroom_keys = [
 	('name', 'text'),
@@ -2273,6 +2273,8 @@ class asset(studio):
 			print('#'*5, return_data)
 			return(True, [])
 		else:
+			for asset in return_data:
+				asset['path'] = NormPath(os.path.join(self.project.path, self.project.folders['assets'],asset['type'], asset['name']))
 			return(True, return_data)
 	
 	# group_id - если не False - то возвращает список ассетов данной группы
@@ -2289,6 +2291,8 @@ class asset(studio):
 				continue
 			else:
 				assets_list = assets_list + return_data
+		for asset in assets_list:
+			asset['path'] = NormPath(os.path.join(self.project.path, self.project.folders['assets'],asset['type'], asset['name']))
 		return(True, assets_list)
 		
 	def get_list_by_group(self, group_id):
@@ -2313,6 +2317,8 @@ class asset(studio):
 				return(False, list_by_type[1])
 			all_list = list_by_type[1]
 		
+		for asset in all_list:
+			asset['path'] = NormPath(os.path.join(self.project.path, self.project.folders['assets'],asset['type'], asset['name']))
 		return(True, all_list)
 	'''
 	def get_name_list_by_type(self, project_name, asset_type):
@@ -2346,6 +2352,7 @@ class asset(studio):
 			return(bool_, return_data)
 		asset_id_name_dict = {}
 		for row in return_data:
+			#row['path'] = NormPath(os.path.join(self.project.path, self.project.folders['assets'],row['type'], row['name']))
 			asset_id_name_dict[row['id']] = row['name']
 		return(True, asset_id_name_dict)
 		
@@ -2361,6 +2368,7 @@ class asset(studio):
 		# make dict
 		assets_dict = {}
 		for asset in asset_list:
+			asset['path'] = NormPath(os.path.join(self.project.path, self.project.folders['assets'],asset['type'], asset['name']))
 			assets_dict[asset['name']] = asset
 		return(True, assets_dict)
 			
@@ -2370,7 +2378,9 @@ class asset(studio):
 		if not bool_:
 			return(bool_, return_data)
 		if return_data:
-			return(True, return_data[0])
+			asset = return_data[0]
+			asset['path'] = NormPath(os.path.join(self.project.path, self.project.folders['assets'],asset['type'], asset['name']))
+			return(True, asset)
 		else:
 			return(False, 'No Asset With This Name(%s)!' % asset_name)
 	
@@ -2380,7 +2390,9 @@ class asset(studio):
 		if not bool_:
 			return(bool_, return_data)
 		if return_data:
-			return(True, return_data[0])
+			asset = return_data[0]
+			asset['path'] = NormPath(os.path.join(self.project.path, self.project.folders['assets'],asset['type'], asset['name']))
+			return(True, asset)
 		else:
 			return(False, 'No Asset With This id(%s)!' % asset_id)
 	
@@ -2465,7 +2477,7 @@ class asset(studio):
 		else:
 			return(True, 'Ok!')
 
-class task(asset):
+class task(studio):
 	'''
 	studio.project.asset.task()
 	
@@ -2481,7 +2493,8 @@ class task(asset):
 		
 	'''
 	
-	def __init__(self):
+	def __init__(self, asset):
+		self.asset = asset
 		self.variable_statuses = ('ready', 'ready_to_send', 'work', 'work_to_outsorce')
 		
 		self.change_by_outsource_statuses = {
@@ -3482,10 +3495,12 @@ class task(asset):
 	
 	# **************** Task NEW  METODS ******************
 	
-	def create_tasks_from_list(self, project_name, asset_data, list_of_tasks):
-		asset_name = asset_data['name']
-		asset_id = asset_data['id']
-		asset_path = asset_data['path']
+	# объект asset, передаваемый в task должен быть инициализирован.
+	# list_of_tasks (str) - список задачь (словари по tasks_keys).
+	def create_tasks_from_list(self, list_of_tasks):
+		asset_name = self.asset.name #asset_data['name']
+		asset_id = self.asset.id #asset_data['id']
+		#asset_path = self.asset.path #asset_data['path']
 		# Other errors test
 		result = self.get_project(project_name)
 		if not result[0]:
