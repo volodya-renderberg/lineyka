@@ -335,7 +335,7 @@ class studio:
 	projects_t = 'projects'
 	# --- assets
 	assets_db = '.assets.db'
-	#assets_t = '' # имя таблицы - тип ассета
+	#assets_t = 'assets' # имя таблицы - тип ассета
 	# --- artists
 	artists_db = '.artists.db'
 	artists_t = 'artists'
@@ -3505,6 +3505,20 @@ class task(studio):
 		asset_name = self.asset.name #asset_data['name']
 		asset_id = self.asset.id #asset_data['id']
 		#asset_path = self.asset.path #asset_data['path']
+		
+		# создаём таблицу если нет
+		# читаем список имён существующих задач в exists_tasks
+		# пробегаем по списку list_of_tasks - если есть имена из exists_tasks - записываем их в conflicting_names
+		# -- если conflicting_names не пустой - то (return False, 'Matching names, look at the terminal!'); print(conflicting_names)
+		# -- если task_name или activity вообще остутсвуют - ошибка
+		# создаём задачи
+		# -- заполняем недостающие поля: asset_name, asset_id, outsource=0
+		# -- запись базы данных.
+		
+		table_name = '"%s:%s"' % ( asset_id, self.tasks_t)
+		#create table
+		create_table(level, read_ob, table_name, keys, table_root = False)
+		'''
 		# Other errors test
 		result = self.get_project(project_name)
 		if not result[0]:
@@ -3605,18 +3619,12 @@ class task(studio):
 			data = tuple(data)
 			string = string + values
 			
-			'''
-			# write task to db
-			conn = sqlite3.connect(self.tasks_path, detect_types=sqlite3.PARSE_DECLTYPES|sqlite3.PARSE_COLNAMES)
-			conn.row_factory = sqlite3.Row
-			c = conn.cursor()
-			'''
-			
 			# add task
 			c.execute(string, data)
 			
 		conn.commit()
 		conn.close()
+		'''
 		return(True, 'ok')
 		
 	def add_single_task(self, project_name, task_data):
