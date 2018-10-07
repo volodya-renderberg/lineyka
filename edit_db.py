@@ -3506,18 +3506,41 @@ class task(studio):
 		asset_id = self.asset.id #asset_data['id']
 		#asset_path = self.asset.path #asset_data['path']
 		
-		# создаём таблицу если нет
-		# читаем список имён существующих задач в exists_tasks
-		# пробегаем по списку list_of_tasks - если есть имена из exists_tasks - записываем их в conflicting_names
-		# -- если conflicting_names не пустой - то (return False, 'Matching names, look at the terminal!'); print(conflicting_names)
-		# -- если task_name или activity вообще остутсвуют - ошибка
-		# создаём задачи
-		# -- заполняем недостающие поля: asset_name, asset_id, outsource=0
-		# -- запись базы данных.
+		# 1-создаём таблицу если нет
+		# 2-читаем список имён существующих задач в exists_tasks
+		# 3-пробегаем по списку list_of_tasks - если есть имена из exists_tasks - записываем их в conflicting_names
+		# --3.1 если conflicting_names не пустой - то (return False, 'Matching names, look at the terminal!'); print(conflicting_names)
+		# --3.2 если task_name или activity вообще остутсвуют - ошибка
+		# 4-создаём задачи
+		# --4.1 заполняем недостающие поля: asset_name, asset_id, outsource=0
+		# --4.2 запись базы данных.
 		
 		table_name = '"%s:%s"' % ( asset_id, self.tasks_t)
-		#create table
-		create_table(level, read_ob, table_name, keys, table_root = False)
+		# 1
+		bool_, return_data = database().create_table('project', self.asset.project, table_name, self.tasks_keys, table_root = self.tasks_db)
+		if not bool_:
+			return(bool_, return_data)
+		# 2
+		exists_tasks = []
+		bool_, return_data = read('project', self.asset.project, table_name, self.tasks_keys, table_root=self.tasks_db)
+		if not bool_:
+			return(bool_, return_data)
+		for task_ in return_data:
+			exists_tasks.append(task_['name'])
+		# 3
+		conflicting_names = []
+		for task_ in list_of_tasks:
+			if task_.get('name') in exists_tasks:
+				conflicting_names.append(task_['name'])
+			# 3.2
+			elif not task_.get('name') or not task_.get('activity'):
+				print('#'*5, task_)
+				return(False, 'in create_tasks_from_list() \n The task does not specify the "name" or "activity"! Look the terminal')
+		# 3.1
+		if conflicting_names:
+			print('#'*5, 'in create_tasks_from_list()')
+			print('#'*5, 'Matching names: ', conflicting_names)
+			return(False, 'in create_tasks_from_list() \n Matching names found! Look the terminal')
 		'''
 		# Other errors test
 		result = self.get_project(project_name)
