@@ -3533,14 +3533,30 @@ class task(studio):
 			if task_.get('name') in exists_tasks:
 				conflicting_names.append(task_['name'])
 			# 3.2
-			elif not task_.get('name') or not task_.get('activity'):
+			elif not task_.get('name'):
 				print('#'*5, task_)
-				return(False, 'in create_tasks_from_list() \n The task does not specify the "name" or "activity"! Look the terminal')
+				return(False, 'in create_tasks_from_list() \n The task does not specify the "name"! Look the terminal')
+			elif not task_.get('activity') and task_.get('type') != 'service':
+				print('#'*5, task_)
+				return(False, 'in create_tasks_from_list() \n The task does not specify the "activity"! Look the terminal')
 		# 3.1
 		if conflicting_names:
 			print('#'*5, 'in create_tasks_from_list()')
 			print('#'*5, 'Matching names: ', conflicting_names)
 			return(False, 'in create_tasks_from_list() \n Matching names found! Look the terminal')
+		
+		# 4
+		for task_keys in list_of_tasks:
+			# 4.1
+			if not task_keys.get('asset'):
+				task_keys['asset'] = asset_name
+			if not task_keys.get('asset_id'):
+				task_keys['asset_id'] = asset_id
+			task_keys['outsource'] = '0'
+			# 4.2
+			bool_, return_data = database().insert('project', self.asset.project, table_name, self.tasks_keys, task_keys, table_root=self.tasks_db)
+			if not bool_:
+				return(bool_, return_data)
 		'''
 		# Other errors test
 		result = self.get_project(project_name)
