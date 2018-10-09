@@ -165,7 +165,7 @@ class studio:
 	'task_name': 'text',
 	'task_type': 'text',
 	'season': 'text',
-	'input': 'text',
+	'input': 'json',
 	'status': 'text',
 	'outsource': 'text',
 	'artist': 'text',
@@ -1506,7 +1506,7 @@ class asset(studio):
 		for key in self.asset_keys:
 			exec('self.%s = keys.get("%s")' % (key, key))
 		# path
-		self.path = NormPath(os.path.join(self.project.path, self.project.folders['assets'],asset_type, keys['name']))
+		self.path = NormPath(os.path.join(self.project.path, self.project.folders['assets'],keys['type'], keys['name']))
 		
 	# **************** ASSET NEW  METODS ******************
 	
@@ -1653,7 +1653,7 @@ class asset(studio):
 			this_asset_tasks.append(all_input)
 			
 			# get list from set_of_tasks
-			result = set_of_tasks().get(keys['set_of_tasks'])
+			result = set_of_tasks().get(keys.get('set_of_tasks'))
 			if result[0]:
 				set_tasks = result[1]['sets']
 				
@@ -1754,8 +1754,12 @@ class asset(studio):
 			this_asset_tasks.append(final)
 			
 			########### create tasks (by task data)
-			c = json.dumps(this_asset_tasks, sort_keys=True, indent=4)
-			print(c)
+			#c = json.dumps(this_asset_tasks, sort_keys=True, indent=4)
+			#print(c)
+			self.init(keys)
+			result = task(self).create_tasks_from_list(this_asset_tasks)
+			if not result[0]:
+				return(False, result[1])
 			
 			########### make return data
 			make_assets[keys['name']] = keys
@@ -2502,12 +2506,12 @@ class task(studio):
 		'to_studio':{'ready_to_send':'ready', 'work_to_outsorce':'ready'},
 		}
 		
-		self.db_workroom = workroom()
+		self.db_workroom = workroom() # ??????? как всегда под вопросом
 		#self.publish = lineyka_publish.publish()
 		
-		self.publish = publish(self)
+		self.publish = publish(self) # ??????? как всегда под вопросом
 		
-		asset.__init__(self)
+		#asset.__init__(self)
 		
 	def init(self, keys):
 		for key in self.tasks_keys:
@@ -3501,7 +3505,7 @@ class task(studio):
 	
 	# объект asset, передаваемый в task должен быть инициализирован.
 	# list_of_tasks (str) - список задачь (словари по tasks_keys).
-	def create_tasks_from_list(self, list_of_tasks):
+	def create_tasks_from_list(self, list_of_tasks): #v2
 		asset_name = self.asset.name #asset_data['name']
 		asset_id = self.asset.id #asset_data['id']
 		#asset_path = self.asset.path #asset_data['path']
@@ -3522,21 +3526,21 @@ class task(studio):
 			return(bool_, return_data)
 		# 2
 		exists_tasks = []
-		bool_, return_data = read('project', self.asset.project, table_name, self.tasks_keys, table_root=self.tasks_db)
+		bool_, return_data = database().read('project', self.asset.project, table_name, self.tasks_keys, table_root=self.tasks_db)
 		if not bool_:
 			return(bool_, return_data)
 		for task_ in return_data:
-			exists_tasks.append(task_['name'])
+			exists_tasks.append(task_['task_name'])
 		# 3
 		conflicting_names = []
 		for task_ in list_of_tasks:
-			if task_.get('name') in exists_tasks:
-				conflicting_names.append(task_['name'])
+			if task_.get('task_name') in exists_tasks:
+				conflicting_names.append(task_['task_name'])
 			# 3.2
-			elif not task_.get('name'):
+			elif not task_.get('task_name'):
 				print('#'*5, task_)
 				return(False, 'in create_tasks_from_list() \n The task does not specify the "name"! Look the terminal')
-			elif not task_.get('activity') and task_.get('type') != 'service':
+			elif not task_.get('activity') and task_.get('task_type') != 'service':
 				print('#'*5, task_)
 				return(False, 'in create_tasks_from_list() \n The task does not specify the "activity"! Look the terminal')
 		# 3.1
@@ -3807,8 +3811,24 @@ class task(studio):
 				self.this_change_from_end(project_name, dict(output_row))
 				
 		return(True, 'Ok')
+	
+	# если объект asset, передаваемый в task не инициализирован, то надо указать asset_id.
+	def get_list(self, asset_id=False, task_status = False): # v2
+		if asset_id:
+			table_name = '"%s:%s"' % ( asset_id, self.tasks_t)
+		else:
+			table_name = '"%s:%s"' % ( self.asset.id, self.tasks_t)
+		if task_status and task_status in self.task_status:
+			where = {'status': task_status.lower()}
+		elif task_status and not task_status in self.task_status:
+			return(False, 'Wrong status "%s"' % task_status)
+		else:
+			where = False
+		bool_, return_data = database().read('project', self.asset.project, table_name, self.tasks_keys, where=where, table_root=self.tasks_db)
 		
-	def get_list(self, project_name, asset_id, task_status = False):
+		if not bool_:
+			return(bool_, return_data)
+		'''
 		task_list = []
 		
 		# Other errors test
@@ -3836,7 +3856,8 @@ class task(studio):
 			return(False, e)
 		
 		conn.close()
-		return(True, task_list)
+		'''
+		return(True, return_data)
 		
 	def get_tasks_data_by_name_list(self, project_name, task_name_list, assets_data = False):  # assets_data - dict{asset_name: {asset_data},...}
 		result = self.get_project(project_name)
