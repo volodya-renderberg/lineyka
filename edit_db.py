@@ -3669,20 +3669,13 @@ class task(studio):
 		conn.close()
 		'''
 		return(True, 'ok')
-		
-	def add_single_task(self, project_name, task_data):
-		# Other errors test
-		result = self.get_project(project_name)
-		if not result[0]:
-			return(False, result[1])
-			
+	
+	# если объект asset, передаваемый в task не инициализирован, то надо указать asset_id.
+	def add_single_task(self, task_data, asset_id=False):
 		# set other data
 		# -- priority
-		try:
-			if not task_data['priority']:
-				task_data['priority'] = 'normal'
-		except:
-			task_data['priority'] = 'normal'
+		if not task_data.get('priority'):
+			task_data['priority'] = '0'
 		# -- outsource
 		task_data['outsource'] = '0'
 		# -- workroom
