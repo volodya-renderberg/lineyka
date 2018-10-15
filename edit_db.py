@@ -150,7 +150,7 @@ class studio:
 	#'path': 'text',
 	'type': 'text',
 	'season': 'text',
-	'priority': 'text',
+	'priority': 'integer',
 	'comment': 'text',
 	'content': 'text',
 	'id': 'text',
@@ -167,7 +167,7 @@ class studio:
 	'season': 'text',
 	'input': 'json',
 	'status': 'text',
-	'outsource': 'text',
+	'outsource': 'integer',
 	'artist': 'text',
 	'planned_time': 'text',
 	'time': 'text',
@@ -179,10 +179,10 @@ class studio:
 	'tz': 'text',
 	'chat_local': 'text',
 	'web_chat': 'text',
-	'workroom': 'text',
+	#'workroom': 'text',- не актуально, исполнители предлагаются из отделов соответствующего типа.
 	'readers': 'json',
 	'output': 'json',
-	'priority':'text',
+	'priority':'integer',
 	'asset_id': 'text',
 	'asset_type': 'text',
 	#'asset_path': 'text', каждый раз определяется при считывании данных.
@@ -1585,7 +1585,7 @@ class asset(studio):
 				keys['id'] = hex(random.randint(0, 1000000000)).replace('0x','')
 			# -- get priority
 			if not keys.get('priority'):
-				keys['priority'] = '0'
+				keys['priority'] = 0
 			# create Folders
 			group_dir = NormPath(os.path.join(self.project.path, self.project.folders['assets'],asset_type))
 			asset_path = NormPath(os.path.join(group_dir, keys['name']))
@@ -3670,27 +3670,41 @@ class task(studio):
 		'''
 		return(True, 'ok')
 	
-	# если объект asset, передаваемый в task не инициализирован, то надо указать asset_id.
-	def add_single_task(self, task_data, asset_id=False):
-		# set other data
+	# объект asset, передаваемый в task должен быть инициализирован.
+	# обязательные поля в task_data: activity, task_name, task_type, extension
+	def add_single_task(self, task_data): # asset_id=False # v2
+		# 1 - проверка обязательных полей.
+		# 2 - назначение данных из ассета.
+		# 3 - проверка статуса, на основе статуса входящей задачи.
+		# 4 - внесение данной задачи в список output входящей задачи.
+		# 5 - создание задачи. insert
+		# 6 - внесение данной задачи в список output исходящей задачи.
+		# 7 - смена статусов для output задачь.
+		# (1) required fields
+		for field in ['activity','task_name','task_type', 'extension']:
+			if not task_data.get('%s' % field):
+				return(False, 'Not specified the "%s"!' % field)
+		# (2)
 		# -- priority
 		if not task_data.get('priority'):
-			task_data['priority'] = '0'
+			task_data['priority'] = self.asset.priority
 		# -- outsource
-		task_data['outsource'] = '0'
-		# -- workroom
-		result = self.db_workroom.get_id_by_name(task_data['workroom'])
-		if not result[0]:
-			return(result[1])
-		task_data['workroom'] = result[1]
-		
-		# get-set output task_name
-		output_task_name = None
-		if json.loads(task_data['output']):
-			output_task_name = json.loads(task_data['output'])[0]
-			task_data['output'] = json.dumps([output_task_name, (task_data['asset'] + ':final')])
+		task_data['outsource'] = 0
+		# -- output
+		if task_data.get('output'):
+			task_data['output'].append('%s:final' % task_data['asset'])
 		else:
-			task_data['output'] = json.dumps([(task_data['asset'] + ':final')])
+			task_data['output'] = ['%s:final' % task_data['asset']]
+		# -- season
+		task_data['season'] = self.asset.season
+		# -- asset_id
+		task_data['asset_id'] = self.asset.id
+		# -- asset_type
+		task_data['asset_type'] = self.asset.type
+		
+		# (3)
+		
+		# (4)
 		
 		# get table
 		table = '\"' + task_data['asset_id'] + ':' + self.tasks_t + '\"'
@@ -4679,7 +4693,17 @@ class task(studio):
 		
 		return(True, return_data)
 				
-	def read_task(self, project_name, task_name, asset_id, keys):
+	# если объект asset, передаваемый в task не инициализирован, то надо указать asset_id.
+	# возврат словаря задачи по имени задачи.
+	def read_task(self, task_name, asset_id=False):
+		if not asset_id:
+			asset_id = self.asset.id
+		table_name = '"%s:%s"' % (asset_id, self.tasks_t)
+		where={'task_name': task_name}
+		# read
+		bool_, return_data = database().read('project', self.asset.project, table_name, self.tasks_keys , where=where, table_root=self.tasks_db)
+		return(bool_, return_data)
+		'''
 		if keys == 'all':
 			new_keys = []
 			for key in self.tasks_keys:
@@ -4718,8 +4742,8 @@ class task(studio):
 			except:
 				pass
 				print(('not key: ' + key + ' in ' + row['task_name']))
-			
 		return(True, data)
+		'''
 		
 	def get_task_list_of_artist(self, project_name, nik_name):
 		pass
