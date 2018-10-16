@@ -3672,7 +3672,7 @@ class task(studio):
 	
 	# объект asset, передаваемый в task должен быть инициализирован.
 	# обязательные поля в task_data: activity, task_name, task_type, extension
-	def add_single_task(self, task_data): # asset_id=False # v2
+	def add_single_task(self, task_data): # asset_id=False # v2 **
 		# 1 - проверка обязательных полей.
 		# 2 - назначение данных из ассета.
 		# 3 - проверка статуса, на основе статуса входящей задачи.
@@ -3866,7 +3866,8 @@ class task(studio):
 		'''
 		return(True, return_data)
 		
-	def get_tasks_data_by_name_list(self, project_name, task_name_list, assets_data = False):  # assets_data - dict{asset_name: {asset_data},...}
+	# assets_data - dict{asset_name: {asset_data},...}
+	def get_tasks_data_by_name_list(self, project_name, task_name_list, assets_data = False):
 		result = self.get_project(project_name)
 		if not result[0]:
 			return(False, result[1])
@@ -4660,13 +4661,23 @@ class task(studio):
 		else:
 			return(True, new_status)
 			
-	def change_work_statuses(self, project_name, change_statuses):  # change_statuses - [(task_data, new_status), ...]
-		result = self.get_project(project_name)
-		if not result[0]:
-			return(False, result[1])
+	# change_statuses (list) - [(task_data, new_status), ...]
+	# тупо смена статусов в пределах рабочих, что не приводит к смене статусов исходящих задач.
+	def change_work_statuses(self, change_statuses): # v2
+		table_name = '"%s:%s"' % (self.asset.id, self.tasks_t)
+		return_data_ = {}
+		for data in change_statuses:
+			task_data = data[0]
+			new_status = data[1]
+			update_data = {'status': new_status}
+			where = {'task_name': task_data['task_name']}
+			bool_, return_data = database().update('project', self.asset.project, table_name, self.tasks_keys, update_data, where, table_root=self.tasks_db)
+			if not bool_:
+				return(False, return_data)
+			return_data_[task_data['task_name']] = new_status
 			
-		#return(False, json.dumps(change_statuses))
-			
+		return(True, return_data_)
+		'''
 		# -- Connect to db
 		conn = sqlite3.connect(self.tasks_path, detect_types=sqlite3.PARSE_DECLTYPES|sqlite3.PARSE_COLNAMES)
 		conn.row_factory = sqlite3.Row
@@ -4692,10 +4703,11 @@ class task(studio):
 		conn.close()
 		
 		return(True, return_data)
-				
+		'''
+	
 	# если объект asset, передаваемый в task не инициализирован, то надо указать asset_id.
 	# возврат словаря задачи по имени задачи.
-	def read_task(self, task_name, asset_id=False):
+	def read_task(self, task_name, asset_id=False): # v2
 		if not asset_id:
 			asset_id = self.asset.id
 		table_name = '"%s:%s"' % (asset_id, self.tasks_t)
