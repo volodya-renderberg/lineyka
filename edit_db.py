@@ -3941,7 +3941,7 @@ class task(studio):
 		
 		return(True, 'Ok!')
 		
-	def change_workroom(self, project_name, task_data, new_workroom):
+	def change_workroom(self, project_name, task_data, new_workroom): # не будет вообще
 		result = self.get_project(project_name)
 		if not result[0]:
 			return(False, result[1])
@@ -4229,9 +4229,8 @@ class task(studio):
 	# task_data (dict) - 
 	# new_artist (str) - 
 	def change_artist(self, task_data, new_artist): # v2 **
-		result = self.get_project(project_name)
-		if not result[0]:
-			return(False, result[1])
+		pass
+		# 1 - что-то с аутсорсом.
 		
 		# --------------- edit Status ------------
 		new_status = None
@@ -4791,12 +4790,14 @@ class task(studio):
 				task_list = task_list + return_data
 		# (3)
 		for task in task_list:
+			task_input_task_list[task['task_name']] = {'task' : task}
 			if task['input']:
 				input_asset_id = asset_list[task['input'].split(':')[0]]['id']
 				bool_, return_data = self.read_task(task['input'], asset_id=input_asset_id)
 				if not bool_:
 					return(bool_, return_data)
-				task_input_task_list[task['task_name']] = {'task' : task, 'input':return_data}
+				task_input_task_list[task['task_name']]['input'] = return_data
+				
 		'''
 		# read tasks
 		conn = sqlite3.connect(self.tasks_path, detect_types=sqlite3.PARSE_DECLTYPES|sqlite3.PARSE_COLNAMES)
