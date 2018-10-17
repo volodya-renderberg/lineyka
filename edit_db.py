@@ -160,7 +160,7 @@ class studio:
 	
 	# constants (0 - 3 required parameters)
 	tasks_keys = {
-	'asset': 'text',
+	'asset_name': 'text',
 	'activity': 'text',
 	'task_name': 'text',
 	'task_type': 'text',
@@ -1628,7 +1628,7 @@ class asset(studio):
 			this_asset_tasks = []
 			# add service tasks ("final")
 			final = {
-				'asset':keys['name'],
+				'asset_name':keys['name'],
 				'asset_id': keys['id'],
 				'asset_type': asset_type,
 				'task_name': (keys['name'] + ':final'),
@@ -1640,7 +1640,7 @@ class asset(studio):
 			}
 			# create service tasks ("all_input")
 			all_input = {
-				'asset':keys['name'],
+				'asset_name':keys['name'],
 				'asset_id': keys['id'],
 				'asset_type': asset_type,
 				'task_name': (keys['name'] + ':all_input'),
@@ -1686,7 +1686,7 @@ class asset(studio):
 						task_['status'] = 'ready'
 						# add service tasks ("pre_input" )
 						pre_input = {
-							'asset':keys['name'],
+							'asset_name':keys['name'],
 							'asset_id': keys['id'],
 							'asset_type': asset_type,
 							'task_name': task_['input'],
@@ -1718,7 +1718,7 @@ class asset(studio):
 					task_['price'] = task_['cost']
 						
 					# asset
-					task_['asset'] = keys['name']
+					task_['asset_name'] = keys['name']
 					task_['asset_id'] = keys['id']
 					task_['asset_type'] = asset_type
 					
@@ -3552,8 +3552,8 @@ class task(studio):
 		# 4
 		for task_keys in list_of_tasks:
 			# 4.1
-			if not task_keys.get('asset'):
-				task_keys['asset'] = asset_name
+			if not task_keys.get('asset_name'):
+				task_keys['asset_name'] = asset_name
 			if not task_keys.get('asset_id'):
 				task_keys['asset_id'] = asset_id
 			task_keys['outsource'] = '0'
@@ -3820,15 +3820,20 @@ class task(studio):
 		return(True, 'Ok')
 	
 	# если объект asset, передаваемый в task не инициализирован, то надо указать asset_id.
-	def get_list(self, asset_id=False, task_status = False): # v2
+	def get_list(self, asset_id=False, task_status = False, artist = False): # v2
 		if asset_id:
 			table_name = '"%s:%s"' % ( asset_id, self.tasks_t)
 		else:
 			table_name = '"%s:%s"' % ( self.asset.id, self.tasks_t)
-		if task_status and task_status in self.task_status:
-			where = {'status': task_status.lower()}
-		elif task_status and not task_status in self.task_status:
-			return(False, 'Wrong status "%s"' % task_status)
+		if task_status or artist:
+			where = {}
+			if task_status and task_status in self.task_status:
+				#where = {'status': task_status.lower()}
+				where['status'] = task_status.lower()
+			elif task_status and not task_status in self.task_status:
+				return(False, 'Wrong status "%s"' % task_status)
+			if artist:
+				where['artist'] = artist
 		else:
 			where = False
 		bool_, return_data = database().read('project', self.asset.project, table_name, self.tasks_keys, where=where, table_root=self.tasks_db)
@@ -4221,8 +4226,9 @@ class task(studio):
 		
 		return(True, readers_dict, change_status)
 		
-	
-	def change_artist(self, project_name, task_data, new_artist):
+	# task_data (dict) - 
+	# new_artist (str) - 
+	def change_artist(self, task_data, new_artist): # v2 **
 		result = self.get_project(project_name)
 		if not result[0]:
 			return(False, result[1])
@@ -4756,16 +4762,42 @@ class task(studio):
 				print(('not key: ' + key + ' in ' + row['task_name']))
 		return(True, data)
 		'''
-		
-	def get_task_list_of_artist(self, project_name, nik_name):
+	
+	# self.asset.project - должен быть инициализирован
+	# nik_name (str)
+	def get_task_list_of_artist(self, nik_name): # v2
 		pass
-		# get asset_list  get_name_data_dict_by_all_types
-		#result = self.get_list_by_all_types(project_name)
-		result = self.get_name_data_dict_by_all_types(project_name)
+		# 1 - получаем список ассетов asset_list
+		# 2 - для каждого ассета(со статусом "active") получаем список задач данного исполнителя. заполняем список task_list.
+		# 3 - бежим по task_list - и достаём входящую задачу.
+		#	-- заполняется словарь task_input_task_list = {task_name: {'task':{data}, 'input':{data}}, ... }
+		# 4 - возвращаемое значение (True, task_input_task_list, asset_list)
+		
+		# (1)
+		result = self.asset.get_name_data_dict_by_all_types()
 		if not result[0]:
 			return(False, result[1])
 		asset_list = result[1]
 		
+		# (2)
+		task_list = []
+		task_input_task_list = {}
+		for asset_name in asset_list:
+			if asset_list[asset_name]['status']== 'active':
+				asset_id = asset_list[asset_name]['id']
+				bool_, return_data = self.get_list(asset_id=asset_id, artist = nik_name)
+				if not bool_:
+					return(bool_, return_data)
+				task_list = task_list + return_data
+		# (3)
+		for task in task_list:
+			if task['input']:
+				input_asset_id = asset_list[task['input'].split(':')[0]]['id']
+				bool_, return_data = self.read_task(task['input'], asset_id=input_asset_id)
+				if not bool_:
+					return(bool_, return_data)
+				task_input_task_list[task['task_name']] = {'task' : task, 'input':return_data}
+		'''
 		# read tasks
 		conn = sqlite3.connect(self.tasks_path, detect_types=sqlite3.PARSE_DECLTYPES|sqlite3.PARSE_COLNAMES)
 		conn.row_factory = sqlite3.Row
@@ -4812,7 +4844,8 @@ class task(studio):
 				print(row)
 				continue
 		conn.close()
-		
+		'''
+		# (4)
 		return(True, task_input_task_list, asset_list)
 		
 		
