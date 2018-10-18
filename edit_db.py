@@ -3819,7 +3819,9 @@ class task(studio):
 				
 		return(True, 'Ok')
 	
-	# если объект asset, передаваемый в task не инициализирован, то надо указать asset_id.
+	# asset_id (str) - требуется если объект asset, передаваемый в task не инициализирован.
+	# task_status (str) - фильтр по статусам задач.
+	# artist (str) - фильтр по имени.
 	def get_list(self, asset_id=False, task_status = False, artist = False): # v2
 		if asset_id:
 			table_name = '"%s:%s"' % ( asset_id, self.tasks_t)
@@ -3871,19 +3873,36 @@ class task(studio):
 		'''
 		return(True, return_data)
 		
-	# assets_data - dict{asset_name: {asset_data},...}
-	def get_tasks_data_by_name_list(self, project_name, task_name_list, assets_data = False):
-		result = self.get_project(project_name)
-		if not result[0]:
-			return(False, result[1])
-		
+	# self.asset.project - инициализирован
+	# assets_data (dict) - dict{asset_name: {asset_data},...}
+	# task_name_list (list) - список имён задач.
+	def get_tasks_data_by_name_list(self, task_name_list, assets_data = False): # v2
+		# (1) получение assets_data
 		if not assets_data:
-			result = self.get_name_data_dict_by_all_types(project_name)
+			result = self.asset.get_name_data_dict_by_all_types()
 			if not result[0]:
-				return(False, ('in task().get_tasks_data_by_name_list ' + result[1]))
+				return(False, 'in task.get_tasks_data_by_name_list():\n%s' % result[1])
 			else:
 				assets_data = result[1]
-		
+		# (2) чтение БД
+		level = 'project'
+		read_ob = self.asset.project
+		table_root = self.tasks_db
+		keys = self.tasks_keys
+		task_data_dict = {}
+		#
+		for task_name in task_name_list:
+			#
+			asset_id = assets_data[task_name.split(':')[0]]['id']
+			table_name = '"%s:%s"' % (asset_id, self.tasks_t)
+			where = {'task_name': task_name}
+			#
+			bool_, return_data = database().read(level, read_ob, table_name, keys, where=where, table_root=table_root)
+			if not bool_:
+				return(bool_, return_data)
+			if return_data:
+				task_data_dict[task_name] = return_data[0]
+		'''
 		try:
 			# Connect to db
 			conn = sqlite3.connect(self.tasks_path, detect_types=sqlite3.PARSE_DECLTYPES|sqlite3.PARSE_COLNAMES)
@@ -3910,6 +3929,7 @@ class task(studio):
 				return(False, ('in task().get_tasks_data_by_name_list - Not Table! task - ' + task_name))
 				
 		conn.close()
+		'''
 		return(True, task_data_dict)
 	
 	# self.asset.project - должен быть инициализирован
