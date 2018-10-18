@@ -177,7 +177,7 @@ class studio:
 	'approved_date': 'text',
 	'price': 'real',
 	'tz': 'text',
-	'chat_local': 'text',
+	'chat_local': 'json',
 	'web_chat': 'text',
 	#'workroom': 'text',- не актуально, исполнители предлагаются из отделов соответствующего типа.
 	'readers': 'json',
@@ -3911,12 +3911,33 @@ class task(studio):
 				
 		conn.close()
 		return(True, task_data_dict)
-		
-	def change_activity(self, project_name, task_data, new_activity):
-		result = self.get_project(project_name)
-		if not result[0]:
-			return(False, result[1])
-			
+	
+	# self.asset.project - должен быть инициализирован
+	# task_data (bool / dict) - необходим если task не инициализирован
+	# new_activity (str)
+	def change_activity(self, new_activity, task_data=False): # v2
+		# (1) исходные данные
+		if task_data:
+			asset_id = task_data['asset_id']
+			task_name = task_data['task_name']
+		else:
+			asset_id = self.asset_id
+			task_name = self.task_name
+		# (2) проверка валидации new_activity
+		if not new_activity in self.asset.ACTIVITY_FOLDER[self.asset.type]:
+			return(False, 'Incorrect activity: "%s"' % new_activity)
+		# (3) запись БД
+		table_name = '"%s:%s"' % (asset_id, self.tasks_t)
+		read_ob = self.asset.project
+		update_data = {'activity':new_activity}
+		where = {'task_name':task_name}
+		#
+		bool_, return_data = database().update('project', read_ob, table_name, self.tasks_keys, update_data, where, table_root=self.tasks_db)
+		# запись нового активити в поле объекта, если он инициализирован
+		if bool_ and not task_data:
+			self.activity = new_activity
+		return(bool_, return_data)
+		'''
 		# Connect to db
 		conn = sqlite3.connect(self.tasks_path, detect_types=sqlite3.PARSE_DECLTYPES|sqlite3.PARSE_COLNAMES)
 		conn.row_factory = sqlite3.Row
@@ -3938,8 +3959,8 @@ class task(studio):
 		c.execute(string, data)
 		conn.commit()
 		conn.close()
-		
 		return(True, 'Ok!')
+		'''
 		
 	def change_workroom(self, project_name, task_data, new_workroom): # не будет вообще
 		result = self.get_project(project_name)
@@ -3976,12 +3997,28 @@ class task(studio):
 		conn.close()
 		
 		return(True, new_workroom_id)
-		
-	def change_price(self, project_name, task_data, new_price):
-		result = self.get_project(project_name)
-		if not result[0]:
-			return(False, result[1])
-			
+	
+	# self.asset.project - должен быть инициализирован
+	# task_data (bool / dict) - необходим если task не инициализирован
+	# new_price (float)
+	def change_price(self, new_price, task_data=False): # v2
+		if task_data:
+			asset_id = task_data['asset_id']
+			task_name = task_data['task_name']
+		else:
+			asset_id = self.asset_id
+			task_name = self.task_name
+		table_name = '"%s:%s"' % (asset_id, self.tasks_t)
+		read_ob = self.asset.project
+		update_data = {'price': new_price}
+		where = {'task_name':task_name}
+		#
+		bool_, return_data = database().update('project', read_ob, table_name, self.tasks_keys, update_data, where, table_root=self.tasks_db)
+		# запись новой цены в поле объекта, если он инициализирован
+		if bool_ and not task_data:
+			self.price = new_price
+		return(bool_, return_data)
+		'''
 		# Connect to db
 		conn = sqlite3.connect(self.tasks_path, detect_types=sqlite3.PARSE_DECLTYPES|sqlite3.PARSE_COLNAMES)
 		conn.row_factory = sqlite3.Row
@@ -4003,8 +4040,8 @@ class task(studio):
 		c.execute(string, data)
 		conn.commit()
 		conn.close()
-		
 		return(True, 'Ok!')
+		'''
 		
 	def changes_without_a_change_of_status(self, key, project_name, task_data, new_data):
 		changes_keys = [
@@ -4763,7 +4800,7 @@ class task(studio):
 		'''
 	
 	# self.asset.project - должен быть инициализирован
-	# nik_name (str)
+	# nik_name (str) -
 	def get_task_list_of_artist(self, nik_name): # v2
 		pass
 		# 1 - получаем список ассетов asset_list
@@ -4849,14 +4886,52 @@ class task(studio):
 		# (4)
 		return(True, task_input_task_list, asset_list)
 		
+	# возврат списка задачь со статусом checking где данный исполнитель в списке проверяющих.
+	# self.asset.project - должен быть инициализирован
+	# nik_name (str) -
+	def get_chek_list_of_artist(self, nik_name): # v2
+		# 1 - получаем список ассетов asset_list
+		# 2 - для каждого ассета(со статусом "active") получаем список задач данного исполнителя (статус - checking). заполняем список task_list.
+		# 3 - заполняем chek_list
 		
-	def get_chek_list_of_artist(self, project_name, nik_name):
-		# get all asset dict
-		result = self.get_name_data_dict_by_all_types(project_name)
+		# (1)
+		result = self.asset.get_name_data_dict_by_all_types()
 		if not result[0]:
 			return(False, result[1])
 		asset_list = result[1]
 		
+		# (2)
+		task_list = []
+		for asset_name in asset_list:
+			if asset_list[asset_name]['status']== 'active':
+				asset_id = asset_list[asset_name]['id']
+				bool_, return_data = self.get_list(asset_id=asset_id, task_status='checking')
+				if not bool_:
+					return(bool_, return_data)
+				task_list = task_list + return_data
+				
+		# (3)
+		chek_list = []
+		for task in task_list:
+			readers = task['readers']
+			readers2 = {}
+			if task['chat_local']:
+				readers2 = task['chat_local']
+			
+			if nik_name in readers and task['status'] == 'checking':
+				if readers[nik_name] == 0:
+					if 'first_reader' in readers:
+						if readers['first_reader'] == nik_name:
+							chek_list.append(task)
+						elif readers[readers['first_reader']] == 1:
+							chek_list.append(task)
+					else:
+						chek_list.append(task)
+			elif nik_name in readers and nik_name in readers2 and readers2[nik_name] == 0:
+				chek_list.append(task)
+			else:
+				pass
+		'''
 		# read tasks
 		conn = sqlite3.connect(self.tasks_path, detect_types=sqlite3.PARSE_DECLTYPES|sqlite3.PARSE_COLNAMES)
 		conn.row_factory = sqlite3.Row
@@ -4907,7 +4982,7 @@ class task(studio):
 			else:
 				pass
 				#print('epte!')
-				
+		'''
 		return(True, chek_list)
 		
 	def service_add_list_to_input(self, project_name, task_data, input_task_list):
