@@ -2581,6 +2581,7 @@ class task(studio):
 		return(True, new_status)
 	
 	def from_input_status(self, task_data, input_task_data):  # input_task_data = row{self.task_keys} or False
+		pass
 		# get task_outsource
 		task_outsource = bool(int(task_data['outsource']))
 		
@@ -2606,6 +2607,7 @@ class task(studio):
 		return(new_status)
 		
 	def this_change_from_end(self, project_name, task_data, assets = False): # ???
+		pass
 		# 
 		from_end_list = []
 		this_asset_type = task_data['asset_type']
@@ -2688,6 +2690,7 @@ class task(studio):
 		return(True, 'Ok!')
 		
 	def this_change_to_end(self, project_name, task_data, assets = False):
+		pass
 		# ******* get output task list
 		output_list = []
 		try:
@@ -2811,39 +2814,22 @@ class task(studio):
 	'''
 	# **************************** Task() File Path ************************************************
 	
-	def get_final_file_path(self, project_name, task_data):
-		result = self.get_project(project_name)
-		if not result[0]:
-			return(False, result[1])
-			
-		asset_path = task_data['asset_path']
-		'''
-		# *************** get asset path *******
-		# write season to db
-		conn = sqlite3.connect(self.assets_path, detect_types=sqlite3.PARSE_DECLTYPES|sqlite3.PARSE_COLNAMES)
-		conn.row_factory = sqlite3.Row
-		c = conn.cursor()
-		
-		table = task_data['asset_type']
-		asset_path = None
-		
-		# get path
-		try:			
-			com = 'select * from ' + table + ' WHERE id = ?'
-			data = (task_data['asset_id'],)
-			c.execute(com, data)
-			row = c.fetchone()
-			asset_path = row['path']
-		except:
-			conn.close()
-			return(False, 'Not Asset With This Type!')
-		
-		
-		if not asset_path:
-			return(False, 'Not Asset Path!')
-		'''
-		
-		folder_name = self.ACTIVITY_FOLDER[task_data['asset_type']][task_data['activity']]
+	# asset - должен быит инициализирован
+	# task_data (dict) - требуется если не инициализирован task
+	def get_final_file_path(self, task_data=False):
+		asset_path = self.asset.path
+		if not task_data:
+			asset_type = self.asset_type
+			activity = self.activity
+			asset = self.asset_name
+			extension = self.extension
+		else:
+			asset_type = task_data['asset_type']
+			activity = task_data['activity']
+			asset = task_data['asset_name']
+			extension = task_data['extension']
+            
+		folder_name = self.asset.ACTIVITY_FOLDER[asset_type][activity]
 		activity_path = NormPath(os.path.join(asset_path, folder_name))
 		
 		if not os.path.exists(activity_path):
@@ -2879,13 +2865,12 @@ class task(studio):
 			num = 4 - len(hex_)
 			hex_num = '0'*num + hex_
 			
-			final_file = os.path.join(activity_path, hex_num, (task_data['asset'] + task_data['extension']))
+			final_file = os.path.join(activity_path, hex_num, '%s%s' % (asset, extension))
 			if os.path.exists(final_file):
 				return(True, final_file, asset_path)
 			i = i-1
 		
 		return(True, None, asset_path)
-		
 	
 	def get_version_file_path(self, project_name, task_data, version):
 		result = self.get_project(project_name)
@@ -2930,6 +2915,7 @@ class task(studio):
 			return(False, 'Not Exists File!')
 			
 	def get_new_file_path(self, project_name, task_data):
+		pass
 		# get final file
 		result = self.get_final_file_path(project_name, task_data)
 		#final_file = None
@@ -2970,6 +2956,7 @@ class task(studio):
 		return(True, (new_dir_path, new_file_path))
 		
 	def get_publish_file_path(self, project_name, asset_data, activity):
+		pass
 		# get task_data
 		result = self.get_list(project_name, asset_data['id'])
 		if not result[0]:
