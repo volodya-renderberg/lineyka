@@ -2816,7 +2816,7 @@ class task(studio):
 	
 	# asset - должен быит инициализирован
 	# task_data (dict) - требуется если не инициализирован task
-	def get_final_file_path(self, task_data=False):
+	def get_final_file_path(self, task_data=False): # v2
 		asset_path = self.asset.path
 		if not task_data:
 			asset_type = self.asset_type
@@ -2872,69 +2872,65 @@ class task(studio):
 		
 		return(True, None, asset_path)
 	
-	def get_version_file_path(self, project_name, task_data, version):
-		result = self.get_project(project_name)
-		if not result[0]:
-			return(False, result[1])
-			
-		asset_path = task_data['asset_path']
-		'''
-		# *************** get asset path *******
-		# write season to db
-		conn = sqlite3.connect(self.assets_path, detect_types=sqlite3.PARSE_DECLTYPES|sqlite3.PARSE_COLNAMES)
-		conn.row_factory = sqlite3.Row
-		c = conn.cursor()
-		
-		table = task_data['asset_type']
-		asset_path = None
-		
-		# get path
-		try:			
-			com = 'select * from ' + table + ' WHERE id = ?'
-			data = (task_data['asset_id'],)
-			c.execute(com, data)
-			row = c.fetchone()
-			asset_path = row['path']
-		except:
-			conn.close()
-			return(False, 'Not Asset With This Type!')
-		
-		
-		if not asset_path:
-			return(False, 'Not Asset Path!')
-		'''
-		
-		folder_name = self.ACTIVITY_FOLDER[task_data['asset_type']][task_data['activity']]
+	# asset - должен быит инициализирован
+	# task_data (dict) - требуется если не инициализирован task
+	# version (str) - hex
+	def get_version_file_path(self, version, task_data=False): # v2
+		asset_path = self.asset.path
+		if not task_data:
+			asset_type = self.asset_type
+			activity = self.activity
+			asset = self.asset_name
+			extension = self.extension
+		else:
+			asset_type = task_data['asset_type']
+			activity = task_data['activity']
+			asset = task_data['asset_name']
+			extension = task_data['extension']
+				
+		folder_name = self.asset.ACTIVITY_FOLDER[asset_type][activity]
 		activity_path = NormPath(os.path.join(asset_path, folder_name))
 		
-		version_file = os.path.join(activity_path, version, (task_data['asset'] + task_data['extension']))
+		version_file = NormPath(os.path.join(activity_path, version, '%s%s' % (asset, extension)))
 		
 		if os.path.exists(version_file):
 			return(True, version_file)
 		else:
 			return(False, 'Not Exists File!')
-			
-	def get_new_file_path(self, project_name, task_data):
+	
+	# asset - должен быит инициализирован
+	# task_data (dict) - требуется если не инициализирован task
+	def get_new_file_path(self, task_data=False): # v2
 		pass
+		if not task_data:
+			asset_type = self.asset_type
+			activity = self.activity
+			asset = self.asset_name
+			extension = self.extension
+		else:
+			asset_type = task_data['asset_type']
+			activity = task_data['activity']
+			asset = task_data['asset_name']
+			extension = task_data['extension']
 		# get final file
-		result = self.get_final_file_path(project_name, task_data)
+		result = self.get_final_file_path(task_data)
 		#final_file = None
 		if not result[0]:
 			return(False, result[1])
 			
-		final_file = result[1]		
+		final_file = result[1]
 		asset_path = result[2]
 		
 		# get activity path
-		folder_name = self.ACTIVITY_FOLDER[task_data['asset_type']][task_data['activity']]
+		folder_name = self.asset.ACTIVITY_FOLDER[asset_type][activity]
 		activity_path = NormPath(os.path.join(asset_path, folder_name))
 		# make activity folder
 		if not os.path.exists(activity_path):
 			os.mkdir(activity_path)
 		
 		if final_file == None:
-			new_dir_path = os.path.join(activity_path, '0000')
-			new_file_path = os.path.join(new_dir_path, (task_data['asset'] + task_data['extension']))
+			new_dir_path = NormPath(os.path.join(activity_path, '0000'))
+			new_file_path = NormPath(os.path.join(new_dir_path, '%s%s' % (asset, extension)))
 			
 		else:
 			ff_split = final_file.replace('\\','/').split('/')
@@ -2944,45 +2940,41 @@ class task(studio):
 				for i in range(0, (4 - len(new_num_hex))):
 					new_num_hex = '0' + new_num_hex
 			
-			new_dir_path = os.path.join(activity_path, new_num_hex)
-			new_file_path = os.path.join(new_dir_path, (task_data['asset'] + task_data['extension']))
+			new_dir_path = NormPath(os.path.join(activity_path, new_num_hex))
+			new_file_path = NormPath(os.path.join(new_dir_path, '%s%s' % (asset, extension)))
 		
-		'''
-		# make version dir
-		if not os.path.exists(new_dir_path):
-			os.mkdir(new_dir_path)
-		'''
-				 
 		return(True, (new_dir_path, new_file_path))
-		
-	def get_publish_file_path(self, project_name, asset_data, activity):
+	
+	# asset - должен быит инициализирован
+	# activity (str)
+	def get_publish_file_path(self, activity): # v2
 		pass
 		# get task_data
-		result = self.get_list(project_name, asset_data['id'])
+		result = self.get_list(asset_id=self.asset.id)
 		if not result[0]:
 			return(False, result[1])
 			
 		task_data = None
-		for task in result[1]:
-			if task['activity'] == activity:
-				task_data = task
+		for td in result[1]:
+			if td['activity'] == activity:
+				task_data = td
 				break
 				
 		if not task_data:
-			return(False, 'No Found Task with this activity!')
+			return(False, 'No Found Task with this activity: "%s"!' % activity)
 		
 		# -- -- get publish dir
-		publish_dir = os.path.join(asset_data['path'], self.publish_folder_name)
+		publish_dir = NormPath(os.path.join(self.asset.path, self.publish_folder_name))
 		if not os.path.exists(publish_dir):
-			return(False, 'in func.location_load_exists - Not Publish Folder!')
+			return(False, 'in task.get_publish_file_path() - Not Publish Folder! (%s)' % publish_dir)
 		# -- -- get activity_dir
-		activity_dir = os.path.join(publish_dir, self.ACTIVITY_FOLDER[asset_data['type']][task_data['activity']])
+		activity_dir = NormPath(os.path.join(publish_dir, self.asset.ACTIVITY_FOLDER[self.asset.type][task_data['activity']]))
 		if not os.path.exists(activity_dir):
-			return(False, 'in func.location_load_exists - Not Publish/Activity Folder!')
+			return(False, 'in task.get_publish_file_path() - Not Publish/Activity Folder! (%s)' % activity_dir)
 		# -- -- get file_path
-		file_path = os.path.join(activity_dir, (asset_data['name'] + task_data['extension']))
+		file_path = NormPath(os.path.join(activity_dir, '%s%s' % (self.asset.name, task_data['extension'])))
 		if not os.path.exists(file_path):
-			print(file_path)
+			print('#'*5, file_path)
 			return(False, 'Publish/File Not Found!')
 			
 		return(True, file_path)
@@ -3074,6 +3066,7 @@ class task(studio):
 		return(False, 'No Found Chache! *2')
 		
 	def get_new_cache_file_path(self, project_name, task_data, cache_dir_name, activity = 'cache', extension = '.pc2'):
+		pass
 		# get final file
 		result = self.get_final_cache_file_path(task_data, cache_dir_name, activity = activity, extension = extension)
 		#final_file = None
@@ -3137,6 +3130,7 @@ class task(studio):
 	# ************************ CHANGE STATUS ******************************** end
 		
 	def add_task(self, project_name, task_key_data):
+		pass
 		# other errors test
 		result = self.get_project(project_name)
 		if not result[0]:
@@ -3255,6 +3249,7 @@ class task(studio):
 		return True, 'ok'
 	
 	def edit_task(self, project_name, task_key_data):
+		pass
 		# other errors test
 		result = self.get_project(project_name)
 		if not result[0]:
@@ -3660,6 +3655,7 @@ class task(studio):
 	# объект asset, передаваемый в task должен быть инициализирован.
 	# обязательные поля в task_data: activity, task_name, task_type, extension
 	def add_single_task(self, task_data): # asset_id=False # v2 **
+		pass
 		# 1 - проверка обязательных полей.
 		# 2 - назначение данных из ассета.
 		# 3 - проверка статуса, на основе статуса входящей задачи.
