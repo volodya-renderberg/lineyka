@@ -1418,6 +1418,7 @@ class asset(studio):
 	'''
 	
 	def __init__(self, project):
+		pass
 		# objects
 		self.project = project
 		
@@ -1498,8 +1499,7 @@ class asset(studio):
 			'char':['char', 'obj']
 			}
 		self.COPIED_WITH_TASK = ['obj', 'char']
-		
-		#project.__init__(self)
+
 		
 	# заполнение полей по self.asset_keys - для передачи экземпляра на уровень выше.
 	def init(self, keys):
@@ -2499,14 +2499,14 @@ class task(studio):
 	
 	def __init__(self, asset):
 		self.asset = asset
-		self.variable_statuses = ('ready', 'ready_to_send', 'work', 'work_to_outsorce')
+		self.VARIABLE_STATUSES = ('ready', 'ready_to_send', 'work', 'work_to_outsorce')
 		
-		self.change_by_outsource_statuses = {
+		self.CHANGE_BY_OUTSOURCE_STATUSES = {
 		'to_outsource':{'ready':'ready_to_send', 'work':'ready_to_send'},
 		'to_studio':{'ready_to_send':'ready', 'work_to_outsorce':'ready'},
 		}
 		
-		self.db_workroom = workroom() # ??????? как всегда под вопросом
+		#self.db_workroom = workroom() # ??????? как всегда под вопросом
 		#self.publish = lineyka_publish.publish()
 		
 		self.publish = publish(self) # ??????? как всегда под вопросом
@@ -3860,6 +3860,7 @@ class task(studio):
 	# assets_data (dict) - dict{asset_name: {asset_data},...}
 	# task_name_list (list) - список имён задач.
 	def get_tasks_data_by_name_list(self, task_name_list, assets_data = False): # v2
+		pass
 		# (1) получение assets_data
 		if not assets_data:
 			result = self.asset.get_name_data_dict_by_all_types()
@@ -3919,6 +3920,7 @@ class task(studio):
 	# task_data (bool / dict) - необходим если task не инициализирован
 	# new_activity (str)
 	def change_activity(self, new_activity, task_data=False): # v2
+		pass
 		# (1) исходные данные
 		if task_data:
 			asset_id = task_data['asset_id']
@@ -4292,25 +4294,25 @@ class task(studio):
 		if task_data['outsource']:
 			task_outsource = bool(int(task_data['outsource']))
 		'''
-		self.change_by_outsource_statuses = {
+		self.CHANGE_BY_OUTSOURCE_STATUSES = {
 		'to_outsource':{'ready':'ready_to_send', 'work':'ready_to_send'},
 		'to_studio':{'ready_to_send':'ready', 'work_to_outsorce':'ready'},
 		}
 		'''
 		# get new status
-		if task_data['status'] in self.variable_statuses:
+		if task_data['status'] in self.VARIABLE_STATUSES:
 			#print('****** in variable')
 			if (not task_data['artist']) or (not task_outsource):
 				#print('****** start not outsource')
 				if artist_outsource:
-					new_status = self.change_by_outsource_statuses['to_outsource'][task_data['status']]
+					new_status = self.CHANGE_BY_OUTSOURCE_STATUSES['to_outsource'][task_data['status']]
 				else:
 					pass
 					#print('****** artist not outsource')
 			else:
 				#print('****** start outsource')
 				if not artist_outsource:
-					new_status = self.change_by_outsource_statuses['to_studio'][task_data['status']]
+					new_status = self.CHANGE_BY_OUTSOURCE_STATUSES['to_studio'][task_data['status']]
 				else:
 					pass
 					#print('****** artist outsource')
@@ -4893,6 +4895,7 @@ class task(studio):
 	# self.asset.project - должен быть инициализирован
 	# nik_name (str) -
 	def get_chek_list_of_artist(self, nik_name): # v2
+		pass
 		# 1 - получаем список ассетов asset_list
 		# 2 - для каждого ассета(со статусом "active") получаем список задач данного исполнителя (статус - checking). заполняем список task_list.
 		# 3 - заполняем chek_list
@@ -5253,6 +5256,7 @@ class task(studio):
 		return(True, (new_status, input_list))
 		
 	def service_change_task_in_input(self, project_name, task_data, removed_task_data, added_task_data):
+		pass
 		# other errors test
 		result = self.get_project(project_name)
 		if not result[0]:
