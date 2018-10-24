@@ -1513,7 +1513,7 @@ class asset(studio):
 	# list_keys (list) - список словарей по ключам asset_keys
 	# -- обязательные параметры в keys (list_keys): name, group(id).
 	# asset_type (str) - тип для всех ассетов
-	def create(self, asset_type, list_keys):  # create list assets from list asset_keys
+	def create(self, asset_type, list_keys):  # v2
 		pass
 		# проверка типа ассета
 		# проверка типа list_keys
@@ -2065,19 +2065,35 @@ class asset(studio):
 		'''
 		
 		return(True, make_assets)
+	
+	# asset_data (dict) - словарь по asset_keys
+	def remove_asset(self, asset_data): # v2 **
+		pass
+		# 1 - получение id recycle_bin
+		# 2 - замена группы ассета на recycle_bin, обнуление priority, status.
+		# 3 - список задач ассета
+		# 4 - перезапись задачь ассета, обнуление: status, artist, readers.
+		# 5 - разрывы исходящих связей в другие ассеты.
 		
-	def remove_asset(self, project_name, asset_data):
+		# (1)
 		result = self.get_project(project_name)
 		if not result[0]:
 			return(False, result[1])
 		
+		# (2)
 		# ******* TO RECICLE BIN
 		# -- get recycle bin  data
 		result = group(self.project).get_by_keys({'type': 'all'})
 		if not result[0]:
 			return(False, ('in asset().remove_asset' + result[1]))
-		recycle_bin_data = result[1][0]
+		recycle_bin_data = result[1]
 		
+		update_data = {'group': recycle_bin_data['id'], 'priority': 0, 'status':'none'}
+		where = {'id': asset_data['id']}
+		bool_, return_data = database().update('project', self.project, asset_data['type'], self.asset_keys, update_data, where, table_root=self.assets_db)
+		if not bool_:
+			return(bool_, return_data)
+		'''
 		# -- edit  .db
 		try:
 			conn = sqlite3.connect(self.assets_path, detect_types=sqlite3.PARSE_DECLTYPES|sqlite3.PARSE_COLNAMES)
@@ -2092,7 +2108,36 @@ class asset(studio):
 		c.execute(string, data)
 		conn.commit()
 		conn.close()
+		'''
 		
+		# (3)
+		bool_, task_list = task(self).get_list(asset_id = asset_data['id'])
+		if not bool_:
+			return(bool_, task_list)
+		
+		output_tasks = []
+		output_tasks_name_list = []
+		table = '"%s:%s"' % (asset_data['id'], self.tasks_t)
+		# (4)
+		for row in task_list:
+			if row['task_type'] == 'service':
+				continue
+			if row.get('output'):
+				for task_name in row['output']:
+					if task_name.split(':')[0] != row['asset']:
+						output_tasks.append((row, task_name))
+						output_tasks_name_list.append(task_name)
+			# -- -- get status
+			new_status = 'null'
+			if not row['input']:
+				new_status = 'ready'
+			
+			update_data = {'artist':'', 'status': new_status, 'readers': []}
+			where = {'task_name': row['task_name']}
+			bool_, r_data = database().update('project', self.project, table, self.tasks_keys, update_data, where, table_root=self.tasks_db)
+			if not bool_:
+				bool_, r_data
+		'''
 		# ******** DISCONNECT ARTISTS, READERS
 		output_tasks = []
 		output_tasks_name_list = []
@@ -2128,10 +2173,12 @@ class asset(studio):
 			
 		conn.commit()
 		conn.close()
+		'''
 		
+		# (5)
 		# ******** DISCONNECT OUTPUTS
 		# -- get output tasks dict
-		result = task().get_tasks_data_by_name_list(project_name, output_tasks_name_list)
+		result = task(self).get_tasks_data_by_name_list(output_tasks_name_list)
 		if not result[0]:
 			return(False, ('in asset().remove_asset -' + result[1]))
 		output_tasks_data_dict = result[1]
@@ -2140,7 +2187,7 @@ class asset(studio):
 			if not key[1]:
 				continue
 			if output_tasks_data_dict[key[1]]['task_type'] == 'service':
-				result = task().service_remove_task_from_input(project_name, output_tasks_data_dict[key[1]], [key[0]])
+				result = task(self).service_remove_task_from_input(output_tasks_data_dict[key[1]], [key[0]])
 			else:
 				print((output_tasks_data_dict[key[1]]['task_name'] + ' not service!'))
 				continue
@@ -2148,6 +2195,7 @@ class asset(studio):
 		return(True, 'Ok!')
 	
 	def copy_of_asset(self, project_name, new_group_name, new_asset_name, new_asset_type, set_of_tasks, data_of_source_asset):
+		pass
 		# edit name
 		if new_asset_type in ['shot_animation']:
 			new_asset_name = new_asset_name.replace(' ', '_')
@@ -2267,7 +2315,7 @@ class asset(studio):
 		return(True, 'Ok!')
 	
 	# group_id - если не False - то возвращает список ассетов данной группы
-	def get_list_by_type(self, asset_type, group_id = False):
+	def get_list_by_type(self, asset_type, group_id = False): # v2
 		if group_id:
 			where = {'group': group_id}
 		else:
@@ -2282,7 +2330,7 @@ class asset(studio):
 			return(True, return_data)
 	
 	# group_id - если не False - то возвращает список ассетов данной группы
-	def get_list_by_all_types(self, group_id = False):
+	def get_list_by_all_types(self, group_id = False): # v2
 		if group_id:
 			where = {'group': group_id}
 		else:
@@ -2299,7 +2347,8 @@ class asset(studio):
 			asset['path'] = NormPath(os.path.join(self.project.path, self.project.folders['assets'],asset['type'], asset['name']))
 		return(True, assets_list)
 		
-	def get_list_by_group(self, group_id):
+	def get_list_by_group(self, group_id): # v2
+		pass
 		# get group_type
 		group_data = group(self.project).get_by_id(group_id)
 		if group_data[0]:
@@ -2350,7 +2399,7 @@ class asset(studio):
 			return(True, [])
 	'''
 			
-	def get_id_name_dict_by_type(self, asset_type):
+	def get_id_name_dict_by_type(self, asset_type): # v2
 		bool_, return_data = database().read('project', self.project, asset_type, self.asset_keys, table_root=self.assets_db)
 		if not bool_:
 			return(bool_, return_data)
@@ -2361,7 +2410,7 @@ class asset(studio):
 		return(True, asset_id_name_dict)
 		
 			
-	def get_name_data_dict_by_all_types(self):
+	def get_name_data_dict_by_all_types(self): # v2
 		asset_list = []
 		for asset_type in self.asset_types:
 			bool_, return_data = database().read('project', self.project, asset_type, self.asset_keys, table_root=self.assets_db)
@@ -2376,7 +2425,7 @@ class asset(studio):
 			assets_dict[asset['name']] = asset
 		return(True, assets_dict)
 			
-	def get_by_name(self, asset_type, asset_name):
+	def get_by_name(self, asset_type, asset_name): # v2
 		where = {'name': asset_name}
 		bool_, return_data = database().read('project', self.project, asset_type, self.asset_keys, where=where, table_root=self.assets_db)
 		if not bool_:
@@ -2388,7 +2437,7 @@ class asset(studio):
 		else:
 			return(False, 'No Asset With This Name(%s)!' % asset_name)
 	
-	def get_by_id(self, asset_type, asset_id):
+	def get_by_id(self, asset_type, asset_id): # v2
 		where = {'id': asset_id}
 		bool_, return_data = database().read('project', self.project, asset_type, self.asset_keys, where=where, table_root=self.assets_db)
 		if not bool_:
@@ -2404,7 +2453,8 @@ class asset(studio):
 	# -- *name - для идентификации ассета
 	# -- *type - для идентификации таблицы
 	# -- не меняемые значения 'name', 'type', 'id', 'path'
-	def edit_asset_data_by_name(self, keys): # required keys: 'name', 'type', unchangeable keys: 'type', 'id', 'path'
+	def edit_asset_data_by_name(self, keys): # v2
+		pass
 		# test Name Type
 		if not 'name' in keys:
 			return(False, 'Name not specified!')
@@ -2429,7 +2479,8 @@ class asset(studio):
 	# -- *id - для идентификации ассета
 	# -- *type - для идентификации таблицы
 	# -- не меняемые значения: 'type', 'id', 'path'
-	def edit_asset_data_by_id(self, keys): # required keys: 'id', 'type', unchangeable keys: 'type', 'id', 'path'
+	def edit_asset_data_by_id(self, keys): # v2
+		pass
 		# test Name Type
 		if not 'id' in keys:
 			return(False, 'Id not specified!')
@@ -2449,7 +2500,7 @@ class asset(studio):
 		
 		return(True, 'Ok!')
 		
-	def change_group_of_asset(self, asset_type, asset_name, new_group_id):
+	def change_group_of_asset(self, asset_type, asset_name, new_group_id): # v2
 		keys = {
 		'name': asset_name,
 		'type': asset_type,
@@ -2462,7 +2513,8 @@ class asset(studio):
 		else:
 			return(True, 'Ok!')
 			
-	def rename_asset(self, asset_type, old_name, new_name):
+	def rename_asset(self, asset_type, old_name, new_name): # v2
+		pass
 		# get id by name
 		result = self.get_by_name(asset_type, old_name)
 		if not result[0]:
@@ -3248,7 +3300,7 @@ class task(studio):
 		conn.close()
 		return True, 'ok'
 	
-	def edit_task(self, project_name, task_key_data):
+	def edit_task(self, project_name, task_key_data): # не обнаружено использование
 		pass
 		# other errors test
 		result = self.get_project(project_name)
