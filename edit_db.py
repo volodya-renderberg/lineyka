@@ -2067,12 +2067,12 @@ class asset(studio):
 		return(True, make_assets)
 	
 	# asset_data (dict) - словарь по asset_keys
-	def remove_asset(self, asset_data): # v2 **
+	def remove_asset(self, asset_data): # v2
 		pass
 		# 1 - получение id recycle_bin
 		# 2 - замена группы ассета на recycle_bin, обнуление priority, status.
 		# 3 - список задач ассета
-		# 4 - перезапись задачь ассета, обнуление: status, artist, readers.
+		# 4 - перезапись задачь ассета, обнуление: status, artist, readers, priority.
 		# 5 - разрывы исходящих связей в другие ассеты.
 		
 		# (1)
@@ -2132,7 +2132,7 @@ class asset(studio):
 			if not row['input']:
 				new_status = 'ready'
 			
-			update_data = {'artist':'', 'status': new_status, 'readers': []}
+			update_data = {'artist':'', 'status': new_status, 'readers': [], 'priority':0}
 			where = {'task_name': row['task_name']}
 			bool_, r_data = database().update('project', self.project, table, self.tasks_keys, update_data, where, table_root=self.tasks_db)
 			if not bool_:
@@ -5198,24 +5198,72 @@ class task(studio):
 		
 		return(True, result[1])
 		
-	def service_remove_task_from_input(self, project_name, task_data, removed_tasks_list):
-		if not self.tasks_path:
-			result = self.get_project(project_name)
-			if not result[0]:
-				return(False, result[1])
-		# get input_list
-		input_list = json.loads(task_data['input'])
-		# removed input list
-		for task in removed_tasks_list:
-			if task['task_name'] in input_list:
-				input_list.remove(task['task_name'])
-			else:
-				print('warning! *** ', task['task_name'], ' not in ', input_list)
+	# self.asset.project - должен быть инициализирован
+	# task_data (dict) - сервис задача из инпута которой удаляются задачи.
+	# removed_tasks_list (list) - содержит словари удаляемых из инпута задач.
+	def service_remove_task_from_input(self, task_data, removed_tasks_list, change_status = True): # v2 **
+		# 1 - тест на статус сервис-не сервис.
+		# 2 - очистка списка входящих.
+		# 3 - замена статуса очищаемой задачи.
+		# 4 - удаление данной задачи из output - входящей задачи.
+		# 5 - перезепись status, input - изменяемой задачи.
+		# 6 - изменение статуса далее по цепи.
 		
+		# (1)
+		if task_data['task_type'] != 'service':
+			comment = 'In task.service_remove_task_from_input() - incorrect type!\nThe type of task being cleared, must be "service".\nThis type: "%s"' % task_data['task_type']
+			return(False, comment)
+		
+		# (2)
+		# get input_list
+		input_list = task_data['input']
+		# removed input list
+		for tsk in removed_tasks_list:
+			if tsk['task_name'] in input_list:
+				input_list.remove(tsk['task_name'])
+			else:
+				print('warning! *** ', tsk['task_name'], ' not in ', input_list)
+		
+		# (3)
 		# GET STATUS
 		new_status = None
 		old_status = task_data['status']
-		
+		assets = False
+		if old_status == 'done' or not input_list:
+			new_status = 'done'
+		else:
+			# get assets dict
+			result = self.asset.get_name_data_dict_by_all_types()
+			if not result[0]:
+				return(False, result[1])
+			assets = result[1]
+			#
+			bool_statuses = []
+			
+			for task_name in input_list:
+				bool_, r_data = self.get_tasks_data_by_name_list([task_name], assets_data = assets.get(task_name.split(':')[0]))
+				if not bool_:
+					print('#'*5)
+					print('in task.get_tasks_data_by_name_list()')
+					print('task_name - %s' % task_name)
+					print('asset_data - ', assets_data)
+					continue
+				else:
+					if r_data:
+						inp_task_data = r_data[task_name]
+					else:
+						continue
+				
+				if inp_task_data['status'] in self.end_statuses:
+					bool_statuses.append(True)
+				else:
+					bool_statuses.append(False)
+					
+			if False in bool_statuses:
+				new_status = 'null'
+			else:
+				new_status = 'done'
+		'''
 		# ****** connect to db
 		conn = sqlite3.connect(self.tasks_path, detect_types=sqlite3.PARSE_DECLTYPES|sqlite3.PARSE_COLNAMES)
 		conn.row_factory = sqlite3.Row
@@ -5259,53 +5307,60 @@ class task(studio):
 				new_status = 'null'
 			else:
 				new_status = 'done'
-				
-			
-		# CHANGE output LIST
-		for task in removed_tasks_list:
-			
-			output_list = False
-			try:
-				output_list = json.loads(task['output'])
-			except:
+		'''	
+		# (4)
+		for tsk in removed_tasks_list:
+			output_list = tsk['output']
+			if not output_list:
 				continue
 			
-			table = '\"' + task['asset_id'] + ':' + self.tasks_t + '\"'
-			if output_list:
-				try:
-					output_list.remove(task_data['task_name'])
-				except:
-					# debug
-					print('\n')
-					print(output_list)
-					print('in \"service_remove_task_from_input\" in output not ' + task_data['task_name'])
-					continue
-					
-				string = 'UPDATE ' + table + ' SET output = ? WHERE task_name = ?'
-				data = (json.dumps(output_list), task['task_name'])
-				c.execute(string, data)
-				# debug
-				#print(task['task_name'],'CHANGE output LIST:\n', string, data)
-					
-		# CHANGE STATUS
-		# CHANGE INPUT LIST
+			if task_data['task_name'] in output_list:
+				output_list.remove(task_data['task_name'])
+			else:
+				continue
+			
+			table = '"%s:%s"' % (tsk['asset_id'], self.tasks_t)
+			update_data = {'output': output_list}
+			where = {'task_name': tsk['task_name']}
+			bool_, r_data = database().update('project', self.asset.project, table, self.tasks_keys, update_data, where, table_root=self.tasks_db)
+			if not bool_:
+				return(bool_, r_data)
+			'''
+			string = 'UPDATE ' + table + ' SET output = ? WHERE task_name = ?'
+			data = (json.dumps(output_list), tsk['task_name'])
+			c.execute(string, data)
+			'''
+		# (5)
+		table = '"%s:%s"' % (task_data['asset_id'], self.tasks_t)
+		if change_status:
+			update_data = {'input': input_list, 'status':new_status}
+		else:
+			update_data = {'input': input_list}
+		where = {'task_name': task_data['task_name']}
+		bool_, r_data = database().update('project', self.asset.project, table, self.tasks_keys, update_data, where, table_root=self.tasks_db)
+		if not bool_:
+			return(bool_, r_data)
+		
+		'''
 		table = '\"' + task_data['asset_id'] + ':' + self.tasks_t + '\"'
 		string = 'UPDATE ' + table + ' SET status = ?, input = ?  WHERE task_name = ?'
 		data = (new_status, json.dumps(input_list), task_data['task_name'])
 		c.execute(string, data)
-		# debug
-		#print(task_data['task_name'],'CHANGE INPUT LIST, STATUS:\n', string, data)
-		
 		conn.commit()
 		conn.close()
+		'''
 		
-		
-		if old_status == 'done' and new_status == 'null':
-			self.this_change_from_end(project_name, task_data, assets = assets)
-		elif old_status == 'null' and new_status == 'done':
-			self.this_change_to_end(project_name, task_data, assets = assets)
-						
-		return(True, (new_status, input_list))
+		# (6)
+		if change_status:
+			if old_status == 'done' and new_status == 'null':
+				self.this_change_from_end(task_data, assets = assets)
+			elif old_status == 'null' and new_status == 'done':
+				self.this_change_to_end(task_data, assets = assets)
+		#
+		if change_status:
+			return(True, (new_status, input_list))
+		else:
+			return(True, (old_status, input_list))
 		
 	def service_change_task_in_input(self, project_name, task_data, removed_task_data, added_task_data):
 		pass
