@@ -967,9 +967,9 @@ class database():
 		else:
 			for i, key in enumerate(update_data):
 				if i==0:
-					set_data = '%s = ?' % key
+					set_data = '"%s" = ?' % key
 				else:
-					set_data = set_data + ', %s = ?' % key
+					set_data = set_data + ', "%s" = ?' % key
 				if keys[key]=='json':
 					data_com.append(json.dumps(update_data[key]))
 				else:
@@ -2067,7 +2067,7 @@ class asset(studio):
 		return(True, make_assets)
 	
 	# asset_data (dict) - словарь по asset_keys
-	def remove_asset(self, asset_data): # v2
+	def remove_asset(self, asset_data): # v2 **
 		pass
 		# 1 - получение id recycle_bin
 		# 2 - замена группы ассета на recycle_bin, обнуление priority, status.
@@ -2076,18 +2076,13 @@ class asset(studio):
 		# 5 - разрывы исходящих связей в другие ассеты.
 		
 		# (1)
-		result = self.get_project(project_name)
-		if not result[0]:
-			return(False, result[1])
-		
-		# (2)
-		# ******* TO RECICLE BIN
 		# -- get recycle bin  data
 		result = group(self.project).get_by_keys({'type': 'all'})
 		if not result[0]:
 			return(False, ('in asset().remove_asset' + result[1]))
-		recycle_bin_data = result[1]
+		recycle_bin_data = result[1][0]
 		
+		# (2)
 		update_data = {'group': recycle_bin_data['id'], 'priority': 0, 'status':'none'}
 		where = {'id': asset_data['id']}
 		bool_, return_data = database().update('project', self.project, asset_data['type'], self.asset_keys, update_data, where, table_root=self.assets_db)
@@ -2124,7 +2119,7 @@ class asset(studio):
 				continue
 			if row.get('output'):
 				for task_name in row['output']:
-					if task_name.split(':')[0] != row['asset']:
+					if task_name.split(':')[0] != row['asset_name']:
 						output_tasks.append((row, task_name))
 						output_tasks_name_list.append(task_name)
 			# -- -- get status
