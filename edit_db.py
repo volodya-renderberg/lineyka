@@ -2501,7 +2501,7 @@ class asset(studio):
 	# keys - словарь по asset_keys, 
 	# -- *id - для идентификации ассета
 	# -- *type - для идентификации таблицы
-	# -- не меняемые значения: 'type', 'id', 'path'
+	# -- не меняемые значения: 'name', 'type', 'id', 'path'
 	def edit_asset_data_by_id(self, keys): # v2
 		pass
 		# test Name Type
@@ -2536,7 +2536,7 @@ class asset(studio):
 		else:
 			return(True, 'Ok!')
 			
-	def rename_asset(self, asset_type, old_name, new_name): # v2
+	def rename_asset(self, asset_type, old_name, new_name): # v2 ???????? ассет нельзя переименовывать!!!!!!!!!!!!!!!!!
 		pass
 		# get id by name
 		result = self.get_by_name(asset_type, old_name)
