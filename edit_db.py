@@ -1762,6 +1762,9 @@ class asset(studio):
 				return(False, result[1])
 			
 			########### make return data
+			# path
+			keys['path'] = NormPath(os.path.join(self.project.path, self.project.folders['assets'],keys['type'], keys['name']))
+			#
 			make_assets[keys['name']] = keys
 		
 		return(True, make_assets)
@@ -2067,7 +2070,7 @@ class asset(studio):
 		return(True, make_assets)
 	
 	# asset_data (dict) - словарь по asset_keys
-	def remove_asset(self, asset_data): # v2 **
+	def remove_asset(self, asset_data): # v2
 		pass
 		# 1 - получение id recycle_bin
 		# 2 - замена группы ассета на recycle_bin, обнуление priority, status.
@@ -2189,22 +2192,42 @@ class asset(studio):
 		
 		return(True, 'Ok!')
 	
-	def copy_of_asset(self, project_name, new_group_name, new_asset_name, new_asset_type, set_of_tasks, data_of_source_asset):
+	# self.project должен быть инициализирован
+	# new_group_name (str)
+	# new_asset_name (str)
+	# new_asset_type (str) из studio.asset_types
+	# set_of_tasks (str)
+	# data_of_source_asset (dict) - дата копируемого ассета, если False - то копируется инициализированный ассет.
+	def copy_of_asset(self, new_group_name, new_asset_name, new_asset_type, set_of_tasks, data_of_source_asset=False): # v2
 		pass
-		# edit name
+		# 1 приведение имени нового ассета к стандарту
+		# 2 получение id группы по имени
+		# 3 заполнение data_of_source_asset - по данным self, в случае если = False
+		# 4 составление словаря на создание ассета
+		# 5 создание ассета
+		# 6 копирование директорий
+        
+		# (1) edit name
 		if new_asset_type in ['shot_animation']:
 			new_asset_name = new_asset_name.replace(' ', '_')
 		else:
 			new_asset_name = new_asset_name.replace(' ', '_').replace('.', '_')
 		
-		
-		# get group id
+		# (2) get group id
 		result = group(self.project).get_by_name(new_group_name)
 		if not result[0]:
 			return(False, result[1])
 		new_group_id = result[1]['id']
 		
-		# get list_keys
+		# (3)
+		if not data_of_source_asset:
+			for key in self.asset_types:
+				if key in dir(self):
+					data_of_source_asset[key] = self.key
+				else:
+					data_of_source_asset[key] = None
+		
+		# (4) get list_keys
 		old_path = data_of_source_asset['path']
 		old_name = data_of_source_asset['name']
 		old_type = data_of_source_asset['type']
@@ -2218,20 +2241,25 @@ class asset(studio):
 		
 		print(json.dumps(list_keys, sort_keys = True, indent = 4))
 		
-		# make asset
-		result = self.create(project_name, new_asset_type, list_keys)
+		# (5) make asset
+		result = self.create(new_asset_type, list_keys)
 		if not result[0]:
 			return(False, result[1])
 			
-		# copy activity files
+		# (6) copy activity files
 		# -- copy meta data
 		new_asset_data = result[1][new_asset_name]
 		for key in self.ADDITIONAL_FOLDERS:
-			src_activity_path = os.path.join(old_path, self.ADDITIONAL_FOLDERS[key])
-			dst_activity_path = os.path.join(new_asset_data['path'], self.ADDITIONAL_FOLDERS[key])
+			#print('*'*50)
+			#print('old_path', old_path)
+			src_activity_path = NormPath(os.path.join(old_path, self.ADDITIONAL_FOLDERS[key]))
+			dst_activity_path = NormPath(os.path.join(new_asset_data['path'], self.ADDITIONAL_FOLDERS[key]))
 			for obj in os.listdir(src_activity_path):
-				src = os.path.join(src_activity_path, obj)
-				dst = os.path.join(dst_activity_path, obj.replace(old_name, new_asset_name)) # + replace name 
+				src = NormPath(os.path.join(src_activity_path, obj))
+				dst = NormPath(os.path.join(dst_activity_path, obj.replace(old_name, new_asset_name))) # + replace name
+				#print('*'*50)
+				#print('src', src)
+				#print('dst', dst)
 				if os.path.isfile(src):
 					shutil.copyfile(src, dst)
 				elif os.path.isdir(src):
@@ -2295,8 +2323,8 @@ class asset(studio):
 					shutil.copytree(src, dst)
 					#print(int_hex[str(max(numbers))], obj)
 		
-		# copy preview image
-		img_folder_path = NormPath(os.path.join(self.path, self.folders['preview_images']))
+		# (7) copy preview image
+		img_folder_path = NormPath(os.path.join(self.project.path, self.project.folders['preview_images']))
 		old_img_path = NormPath(os.path.join(img_folder_path, (old_name + '.png')))
 		old_img_icon_path = NormPath(os.path.join(img_folder_path, (old_name + '_icon.png')))
 		new_img_path = NormPath(os.path.join(img_folder_path, (new_asset_name + '.png')))
@@ -4014,7 +4042,7 @@ class task(studio):
 		return(True, 'Ok!')
 		'''
 		
-	def change_workroom(self, project_name, task_data, new_workroom): # не будет вообще
+	def change_workroom(self, project_name, task_data, new_workroom): # не будет вообще - надо менять тип задачи в changes_without_a_change_of_status()
 		result = self.get_project(project_name)
 		if not result[0]:
 			return(False, result[1])
@@ -4316,7 +4344,7 @@ class task(studio):
 		return(True, readers_dict, change_status)
 		
 	# task_data (dict) - 
-	# new_artist (str) - 
+	# new_artist (str) - nik_name
 	def change_artist(self, task_data, new_artist): # v2 **
 		pass
 		# 1 - что-то с аутсорсом.
@@ -5197,6 +5225,7 @@ class task(studio):
 	# task_data (dict) - сервис задача из инпута которой удаляются задачи.
 	# removed_tasks_list (list) - содержит словари удаляемых из инпута задач.
 	def service_remove_task_from_input(self, task_data, removed_tasks_list, change_status = True): # v2 **
+		pass
 		# 1 - тест на статус сервис-не сервис.
 		# 2 - очистка списка входящих.
 		# 3 - замена статуса очищаемой задачи.
