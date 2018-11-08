@@ -2681,42 +2681,44 @@ class task(studio):
 					new_status = 'ready'
 		return(new_status)
 		
-	def this_change_from_end(self, project_name, task_data, assets = False): # ???
+	# замена статусов исходящих задачь при изменении статуса текущей задачи.
+	# task_data (dict) - текущая задача.
+	# assets (dict) - словарь всех ассетов по всем типам (ключи - имена, данные - ассеты (словари)) - результат функции asset.get_name_data_dict_by_all_types()
+	def this_change_from_end(self, task_data, assets = False): # v2 *** no test
 		pass
-		# 
+		# 1 - список исходящих задачь
+		# 2 - получение списка всех ассетов
+		# 3 - цикл по списку исходящих задачь (output_list)
+		
+		#
 		from_end_list = []
 		this_asset_type = task_data['asset_type']
 		
-		# ******* get output task list
-		output_list = []
-		try:
-			output_list = json.loads(task_data['output'])
-		except:
-			pass
-		
+		# (1)
+		output_list = task_data.get('output')
 		if not output_list:
 			return(True, 'Ok!')
-		
+		# (2)
 		if not assets:
 			# get assets dict
-			result = self.get_name_data_dict_by_all_types(project_name)
+			result = self.asset.get_name_data_dict_by_all_types()
 			if not result[0]:
 				return(False, result[1])
 			assets = result[1]
-		
+		'''
 		# ****** connect to db
 		conn = sqlite3.connect(self.tasks_path, detect_types=sqlite3.PARSE_DECLTYPES|sqlite3.PARSE_COLNAMES)
 		conn.row_factory = sqlite3.Row
 		c = conn.cursor()
-		
-		# ****** change status
+		'''
+		# (3) ****** change status
 		for task_name in output_list:
-			try:
-				asset_id = assets[task_name.split(':')[0]]['id']
-			except:
-				print(('in this_change_from_end incorrect key ' + task_name.split(':')[0] + ' in ' + task_name))
+			asset_id = assets[task_name.split(':')[0]].get('id')
+			if not asset_id:
+				print('in this_change_from_end incorrect key "id" in  "%s"' % task_name.split(':')[0])
 				continue
-			table = '\"' + asset_id + ':' + self.tasks_t + '\"'
+			'''
+			#table = '\"' + asset_id + ':' + self.tasks_t + '\"'
 			
 			string = 'select * from ' + table + ' WHERE task_name = \"' + task_name + '\"'
 			try:
@@ -2726,6 +2728,17 @@ class task(studio):
 				conn.close()
 				return(False, ('in this_change_from_end can not read ', string))
 				#return(False, string)
+			'''
+			table_name = '"%s:%s"' % (asset_id, self.tasks_t)
+			read_ob = self.asset.project
+			where = {'task_name': task_name}
+			bool_, return_data = database().read('project', read_ob, table_name, self.tasks_keys, where=where, table_root=self.tasks_db)
+			if not bool_:
+				return(bool_, return_data)
+			elif return_data:
+				task_data = return_data[0]
+			else:
+				return(False, 'Task Data Not Found! Task_name - "%s"' % table_name)
 				
 			if task_data['status'] == 'close':
 				continue
@@ -2739,27 +2752,34 @@ class task(studio):
 			# edit readers
 			readers = {}
 			try:
-				readers = json.loads(task_data['readers'])
+				readers = task_data['readers']
 			except:
 				pass
 			if readers:
 				for key in readers:
 					readers[key] = 0
-				string = 'UPDATE ' +  table + ' SET  readers = ?, status  = ? WHERE task_name = ?'
-				data = (json.dumps(readers), new_status, task_name)
+				#string = 'UPDATE ' +  table + ' SET  readers = ?, status  = ? WHERE task_name = ?'
+				#data = (json.dumps(readers), new_status, task_name)
+				update_data = {'readers': readers, 'status': new_status}
 			else:
-				string = 'UPDATE ' +  table + ' SET  status  = ? WHERE task_name = ?'
-				data = (new_status, task_name)
+				#string = 'UPDATE ' +  table + ' SET  status  = ? WHERE task_name = ?'
+				#data = (new_status, task_name)
+				update_data = {'status': new_status}
 				
-			c.execute(string, data)
-	
+			#c.execute(string, data)
+			where = {'task_name': task_name}
+			bool_, return_data = database().update('project', read_ob, table_name, self.tasks_keys, update_data, where, table_root=self.tasks_db)
+			if not bool_:
+				return(bool_, return_data)
+		'''
 		conn.commit()
 		conn.close()
+		'''
 		
 		# ****** edit from_end_list
 		if from_end_list:
 			for t_d in from_end_list:
-				self.this_change_from_end(project_name, t_d)
+				self.this_change_from_end(t_d, assets = assets)
 		
 		
 		return(True, 'Ok!')
