@@ -3353,7 +3353,7 @@ class MainWindow(QtGui.QMainWindow):
 			for j,key in enumerate(headers):
 				newItem = QtGui.QTableWidgetItem()
 				if key in row.keys():
-					newItem.setText(row[key])
+					newItem.setText(str(row[key]))
 				if key == 'name':
 					color = self.asset_color
 					brush = QtGui.QBrush(color)
