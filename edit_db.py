@@ -2606,30 +2606,33 @@ class task(studio):
 		else:
 			return('ready')
 	
-	def service_input_to_end(self, task_data, assets):
+	# изменение статуса сервис задачи, по проверке статусов входящих задачь.
+	# task_data (dict) - текущая задача.
+	# assets (dict) - словарь всех ассетов по всем типам (ключи - имена, данные - ассеты (словари)) - результат функции asset.get_name_data_dict_by_all_types()
+	def service_input_to_end(self, task_data, assets): # v2 *** не тестилось.
 		new_status = False
 		
-		# get input_list
-		input_list = json.loads(task_data['input'])
+		# (1) get input_list
+		input_list = task_data['input']
 		if not input_list:
 			return(True, new_status)
 		
 		# get status
 		bool_statuses = []
 		# --------------- fill end_statuses -------------
-		
+		'''
 		# ****** connect to db
 		conn = sqlite3.connect(self.tasks_path, detect_types=sqlite3.PARSE_DECLTYPES|sqlite3.PARSE_COLNAMES)
 		conn.row_factory = sqlite3.Row
 		c = conn.cursor()
-		
+		'''
 		for task_name in input_list:
-			try:
-				asset_id = assets[task_name.split(':')[0]]['id']
-			except:
-				print(('in from_service_remove_input_tasks incorrect key: ' + task_name.split(':')[0] + ' in ' + task_name))
+			# (2) asse id
+			asset_id = assets[task_name.split(':')[0]].get('id')
+			if not asset_id:
+				print('in task.service_input_to_end() incorrect key "id" in  "%s"' % task_name.split(':')[0])
 				continue
-			
+			'''
 			table = '\"' + asset_id + ':' + self.tasks_t + '\"'
 			
 			string = 'select * from ' + table + ' WHERE task_name = \"' + task_name + '\"'
@@ -2639,13 +2642,25 @@ class task(studio):
 			except:
 				conn.close()
 				return(False, ('in from_service_remove_input_tasks can not read ', string))
-				
+			'''
+			# (3) get task data
+			table_name = '"%s:%s"' % (asset_id, self.tasks_t)
+			read_ob = self.asset.project
+			where = {'task_name': task_name}
+			bool_, return_data = database().read('project', read_ob, table_name, self.tasks_keys, where=where, table_root=self.tasks_db)
+			if not bool_:
+				return(bool_, return_data)
+			elif return_data:
+				task_data = return_data[0]
+			else:
+				return(False, 'Task Data Not Found! Task_name - "%s"' % task_name)
+			# (4) make status
 			if task_data['status'] in self.end_statuses:
 				bool_statuses.append(True)
 			else:
 				bool_statuses.append(False)
 		
-		conn.close()
+		#conn.close()
 		
 		if False in bool_statuses:
 			new_status = 'null'
