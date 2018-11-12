@@ -2681,7 +2681,7 @@ class task(studio):
 					new_status = 'ready'
 		return(new_status)
 		
-	# замена статусов исходящих задачь при изменении статуса текущей задачи.
+	# замена статусов исходящих задачь при изменении статуса текущей задачи с done или с close.
 	# task_data (dict) - текущая задача.
 	# assets (dict) - словарь всех ассетов по всем типам (ключи - имена, данные - ассеты (словари)) - результат функции asset.get_name_data_dict_by_all_types()
 	def this_change_from_end(self, task_data, assets = False): # v2 *** no test
@@ -2694,6 +2694,7 @@ class task(studio):
 		# - 6 - определение нового статуса
 		# - 7 - изменения в readers
 		# - 8 - запись таск
+		# 9 - отправка далее в себя же - this_change_from_end() - по списку from_end_list
 		
 		#
 		from_end_list = []
@@ -2745,7 +2746,7 @@ class task(studio):
 			elif return_data:
 				task_data = return_data[0]
 			else:
-				return(False, 'Task Data Not Found! Task_name - "%s"' % table_name)
+				return(False, 'Task Data Not Found! Task_name - "%s"' % task_name)
 			# (6) make new status char и obj не отключают локацию и аним шот, а локация отключает аним шот.
 			if task_data['status'] == 'close':
 				continue
@@ -2782,7 +2783,7 @@ class task(studio):
 		conn.close()
 		'''
 		
-		# ****** edit from_end_list
+		# (9) ****** edit from_end_list
 		if from_end_list:
 			for t_d in from_end_list:
 				self.this_change_from_end(t_d, assets = assets)
@@ -2790,40 +2791,47 @@ class task(studio):
 		
 		return(True, 'Ok!')
 		
-	def this_change_to_end(self, project_name, task_data, assets = False):
+	# замена статусов исходящих задачь при изменении статуса текущей задачи на done или close.
+	# task_data (dict) - текущая задача.
+	# assets (dict) - словарь всех ассетов по всем типам (ключи - имена, данные - ассеты (словари)) - результат функции asset.get_name_data_dict_by_all_types()
+	def this_change_to_end(self, task_data, assets = False): # v2 *** no test
 		pass
-		# ******* get output task list
-		output_list = []
-		try:
-			output_list = json.loads(task_data['output'])
-		except:
-			pass
-		
+		# 1 - список исходящих задачь
+		# 2 - получение списка всех ассетов
+		# 3 - цикл по списку исходящих задачь (output_list)
+		# - 4 - получение id ассета
+		# - 5 - чтение таск даты
+		# - 6 - определение нового статуса
+		# - 7 - запись таск
+		# 8 - отправка далее в себя же - this_change_to_end() - по списку service_to_done
+        
+		# (1)
+		output_list = task_data.get('output')
 		if not output_list:
 			return(True, 'Ok!')
-			
-		# get assets dict
+		# (2)
 		if not assets:
-			result = self.get_name_data_dict_by_all_types(project_name)
+			# get assets dict
+			result = self.asset.get_name_data_dict_by_all_types()
 			if not result[0]:
 				return(False, result[1])
 			assets = result[1]
-		
+		'''
 		# ****** connect to db
 		conn = sqlite3.connect(self.tasks_path, detect_types=sqlite3.PARSE_DECLTYPES|sqlite3.PARSE_COLNAMES)
 		conn.row_factory = sqlite3.Row
 		c = conn.cursor()
-		
+		'''
 		service_to_done = []
 		# ****** change status
 		for task_name in output_list:
-			try:
-				asset_id = assets[task_name.split(':')[0]]['id']
-			except:
-				print(('in this_change_to_end incorrect key: ' + task_name.split(':')[0] + ' in ' + task_name))
+			# (4) asse id
+			asset_id = assets[task_name.split(':')[0]].get('id')
+			if not asset_id:
+				print('in this_change_to_end incorrect key "id" in  "%s"' % task_name.split(':')[0])
 				continue
+			'''
 			table = '\"' + asset_id + ':' + self.tasks_t + '\"'
-			
 			string = 'select * from ' + table + ' WHERE task_name = \"' + task_name + '\"'
 			try:
 				c.execute(string)
@@ -2831,8 +2839,20 @@ class task(studio):
 			except:
 				conn.close()
 				return(False, ('in this_change_to_end can not read ', string))
-							
-			# get new status
+			'''
+			# (5) get task data
+			table_name = '"%s:%s"' % (asset_id, self.tasks_t)
+			read_ob = self.asset.project
+			where = {'task_name': task_name}
+			bool_, return_data = database().read('project', read_ob, table_name, self.tasks_keys, where=where, table_root=self.tasks_db)
+			if not bool_:
+				return(bool_, return_data)
+			elif return_data:
+				task_data = return_data[0]
+			else:
+				return(False, 'Task Data Not Found! Task_name - "%s"' % task_name)
+            
+			# (6) make new status
 			if task_data_['task_type'] == 'service':
 				result = self.service_input_to_end(task_data_, assets)
 				if not result[0]:
@@ -2845,17 +2865,23 @@ class task(studio):
 				
 			if not new_status:
 				continue
-			
+			'''
 			string = 'UPDATE ' +  table + ' SET  status  = ? WHERE task_name = ?'
 			data = (new_status, task_name)
 			c.execute(string, data)
-			
-		conn.commit()
-		conn.close()
-		
+			'''
+			# (7)
+			update_data = {'status': new_status}
+			where = {'task_name': task_name}
+			bool_, return_data = database().update('project', read_ob, table_name, self.tasks_keys, update_data, where, table_root=self.tasks_db)
+			if not bool_:
+				return(bool_, return_data)
+		#conn.commit()
+		#conn.close()
+		# (8)
 		if service_to_done:
 			for task in service_to_done:
-				self.this_change_to_end(project_name, task, assets = assets)
+				self.this_change_to_end(task, assets = assets)
 		
 		return(True, 'Ok!')
 	'''	
