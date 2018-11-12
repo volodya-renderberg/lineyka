@@ -2689,6 +2689,11 @@ class task(studio):
 		# 1 - список исходящих задачь
 		# 2 - получение списка всех ассетов
 		# 3 - цикл по списку исходящих задачь (output_list)
+		# - 4 - получение id ассета
+		# - 5 - чтение таск даты
+		# - 6 - определение нового статуса
+		# - 7 - изменения в readers
+		# - 8 - запись таск
 		
 		#
 		from_end_list = []
@@ -2713,6 +2718,7 @@ class task(studio):
 		'''
 		# (3) ****** change status
 		for task_name in output_list:
+            # (4) asse id
 			asset_id = assets[task_name.split(':')[0]].get('id')
 			if not asset_id:
 				print('in this_change_from_end incorrect key "id" in  "%s"' % task_name.split(':')[0])
@@ -2729,6 +2735,7 @@ class task(studio):
 				return(False, ('in this_change_from_end can not read ', string))
 				#return(False, string)
 			'''
+			# (5) get task data
 			table_name = '"%s:%s"' % (asset_id, self.tasks_t)
 			read_ob = self.asset.project
 			where = {'task_name': task_name}
@@ -2739,17 +2746,16 @@ class task(studio):
 				task_data = return_data[0]
 			else:
 				return(False, 'Task Data Not Found! Task_name - "%s"' % table_name)
-				
+			# (6) make new status char и obj не отключают локацию и аним шот, а локация отключает аним шот.
 			if task_data['status'] == 'close':
 				continue
-			elif task_data['asset_type'] == 'location' and this_asset_type != 'location':
+			elif task_data['asset_type'] in ['location', 'shot_animation'] and this_asset_type not in ['location', 'shot_animation']:
 				continue
 			elif task_data['status'] == 'done':
 				from_end_list.append(task_data)
 				
 			new_status = 'null'
-			
-			# edit readers
+			# (7) edit readers
 			readers = {}
 			try:
 				readers = task_data['readers']
@@ -2765,7 +2771,7 @@ class task(studio):
 				#string = 'UPDATE ' +  table + ' SET  status  = ? WHERE task_name = ?'
 				#data = (new_status, task_name)
 				update_data = {'status': new_status}
-				
+			# (8)
 			#c.execute(string, data)
 			where = {'task_name': task_name}
 			bool_, return_data = database().update('project', read_ob, table_name, self.tasks_keys, update_data, where, table_root=self.tasks_db)
