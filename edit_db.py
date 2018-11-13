@@ -4296,14 +4296,38 @@ class task(studio):
 		
 		return(True, readers_dict, change_status)
 	
+	# nik_name (str) - никнейм артиста
+	# task_data (dict) - изменяемая задача, если False - значит предполагается, что task инициализирован.
+	def make_first_reader(self, nik_name, task_data=False): # v2
+		pass
+		# ? - проверять ли актуальность читателя.
+		# 1 - получение task_data
+		# 2 - чтение словаря 'readers' и определение change_status
+		# 3 - перезапись задачи
 		
-	def make_first_reader(self, project_name, task_data, nik_name):
-		result = self.get_project(project_name)
-		if not result[0]:
-			return(False, result[1])
-		
+		#
 		readers_dict = {}
+		# (1)
+		if task_data:
+			asset_id = task_data['asset_id']
+			task_name = task_data['task_name']
+		else:
+			asset_id = self.asset_id
+			task_name = self.task_name
 		
+		# (2)
+		read_ob = self.asset.project
+		table_name = '"%s:%s"' % (asset_id, self.tasks_t)
+		keys = self.tasks_keys
+		where = {'task_name': task_name}
+		bool_, r_data = database().read('project', read_ob, table_name, keys, where=where, table_root=self.tasks_db)
+		if not bool_:
+			return(bool_, r_data)
+		elif not r_data:
+			return(False, 'This Task (%s) Not Found' % task_name)
+		else:
+			readers_dict = r_data[0].get('readers')
+		'''
 		try:
 			# Connect to db
 			conn = sqlite3.connect(self.tasks_path, detect_types=sqlite3.PARSE_DECLTYPES|sqlite3.PARSE_COLNAMES)
@@ -4328,9 +4352,15 @@ class task(studio):
 		except:
 			conn.close()
 			return(False, ('in task().add_readers Not Table! - ' + table))
-		
+		'''
 		readers_dict['first_reader'] = nik_name
-		
+			
+		# (3)
+		update_data = {'readers': readers_dict}
+		bool_, r_data = database().update('project', read_ob, table_name, keys, update_data, where, table_root=self.tasks_db)
+		if not bool_:
+			return(bool_, r_data)
+		'''
 		# edit .db
 		string = 'UPDATE ' +  table + ' SET  readers  = ? WHERE task_name = ?'
 		data = (json.dumps(readers_dict), task_data['task_name'])
@@ -4338,7 +4368,7 @@ class task(studio):
 		c.execute(string, data)
 		conn.commit()
 		conn.close()
-		
+		'''		
 		return(True, readers_dict)
 	
 	
