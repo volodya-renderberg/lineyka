@@ -1726,7 +1726,7 @@ class asset(studio):
 					task_['season'] = keys['season']
 					
 					# readers
-					task_['readers'] = "{}"
+					task_['readers'] = {}
 					
 					# append task
 					this_asset_tasks.append(task_)
@@ -4168,7 +4168,7 @@ class task(studio):
 		
 	# key (str) - ключ для которого идёт замена
 	# new_data (по типу ключа) - данные на замену
-	# task_data (bool/dict) - изменяемая задача, если False - значит предполагается, что она инициализирована.
+	# task_data (bool/dict) - изменяемая задача, если False - значит предполагается, что task инициализирован.
 	def changes_without_a_change_of_status(self, key, new_data, task_data=False): # v2
 		changes_keys = [
 		'activity',
@@ -4203,14 +4203,45 @@ class task(studio):
 				exec('self.%s = %s' % (key, new_data))
 		return(True, 'Ok!')
 		
-	def add_readers(self, project_name, task_data, add_readers_list):
-		result = self.get_project(project_name)
-		if not result[0]:
-			return(False, result[1])
+	# add_readers_list (list) - список никнеймов проверяющих (читателей)
+	# task_data (dict) - изменяемая задача, если {} - значит предполагается, что task инициализирован.
+	def add_readers(self, add_readers_list, task_data={}): # v2 *** тестилось без смены статуса.
+		pass
+		# ? - проверять ли актуальность списка читателей.
+		# 1 - получение task_data
+		# 2 - чтение словаря 'readers' и определение change_status
+		# 3 - определение update_data
+		# 4 - перезапись задачи
+		# 5 - смена исходящих статусов если change_status=True
 		
+		#
+		if not isinstance(add_readers_list, list) and not isinstance(add_readers_list, tuple):
+			return(False, '###\nin task.add_readers()\nInvalid type of "add_readers_list": "%s"' % add_readers_list.__class__.__name__)
+		
+		# (1)
+		if not task_data:
+			for key in self.tasks_keys:
+				exec('task_data["%s"] = self.%s' % (key, key))
+	
 		change_status = False
 		readers_dict = {}
 		
+		# (2)
+		read_ob = self.asset.project
+		table_name = '"%s:%s"' % (task_data['asset_id'], self.tasks_t)
+		keys = self.tasks_keys
+		where = {'task_name': task_data['task_name']}
+		bool_, r_data = database().read('project', read_ob, table_name, keys, where=where, table_root=self.tasks_db)
+		if not bool_:
+			return(bool_, r_data)
+		elif not r_data:
+			return(False, 'This Task (%s) Not Found' % task_data['task_name'])
+		else:
+			readers_dict = r_data[0].get('readers')
+			if r_data[0].get('status') == 'done':
+				change_status = True
+		
+		'''
 		try:
 			# Connect to db
 			conn = sqlite3.connect(self.tasks_path, detect_types=sqlite3.PARSE_DECLTYPES|sqlite3.PARSE_COLNAMES)
@@ -4238,29 +4269,30 @@ class task(studio):
 		except:
 			conn.close()
 			return(False, ('in task().add_readers Not Table! - ' + table))
-		
-		###
-		#print(add_readers_list)
-		#return(False, '***')
-		###
-		
+		'''
 		for artist_name in add_readers_list:
 			readers_dict[artist_name] = 0
 			
-		# edit .db
+		# (3)
 		if change_status:
-			string = 'UPDATE ' +  table + ' SET  status  = ?, readers  = ? WHERE task_name = ?'
-			data = ('checking', json.dumps(readers_dict), task_data['task_name'])
+			update_data = {'status': 'checking', 'readers': readers_dict}
+			#string = 'UPDATE ' +  table + ' SET  status  = ?, readers  = ? WHERE task_name = ?'
+			#data = ('checking', json.dumps(readers_dict), task_data['task_name'])
 		else:
-			string = 'UPDATE ' +  table + ' SET  readers  = ? WHERE task_name = ?'
-			data = (json.dumps(readers_dict), task_data['task_name'])
+			update_data = {'readers': readers_dict}
+			#string = 'UPDATE ' +  table + ' SET  readers  = ? WHERE task_name = ?'
+			#data = (json.dumps(readers_dict), task_data['task_name'])
+			
+		# (4)
+		bool_, r_data = database().update('project', read_ob, table_name, keys, update_data, where, table_root=self.tasks_db)
+		if not bool_:
+			return(bool_, r_data)
 		
-		c.execute(string, data)
-		conn.commit()
-		conn.close()
-		
-		# change output statuses
-		self.this_change_from_end(project_name, task_data)
+		# (5) change output statuses
+		if change_status:
+			bool_, r_data = self.this_change_from_end(task_data)
+			if not bool_:
+				return(bool_, r_data)
 		
 		return(True, readers_dict, change_status)
 	
