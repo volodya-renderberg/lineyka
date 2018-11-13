@@ -2595,7 +2595,7 @@ class task(studio):
 	# ************************ CHANGE STATUS ******************************** start
 	
 	@staticmethod
-	def _input_to_end(task_data):
+	def _input_to_end(task_data): # v2
 		if task_data['status'] == 'close':
 			return(False)
 		
@@ -3271,7 +3271,7 @@ class task(studio):
 		
 	# ************************ CHANGE STATUS ******************************** end
 		
-	def add_task(self, project_name, task_key_data):
+	def add_task(self, project_name, task_key_data): # не обнаружено использование
 		pass
 		# other errors test
 		result = self.get_project(project_name)
@@ -3539,7 +3539,7 @@ class task(studio):
 		
 		return(True, 'ok')
 	
-	def edit_status_to_output(self, project_name, task_name, new_status = None):
+	def edit_status_to_output(self, project_name, task_name, new_status = None): # не обнаружено использование
 		asset_name = task_name.split(':')[0]
 		table = '\"' + asset_name + ':' + self.tasks_t + '\"'
 		data = (task_name,)
@@ -4165,70 +4165,42 @@ class task(studio):
 		if bool_ and not task_data:
 			self.price = new_price
 		return(bool_, return_data)
-		'''
-		# Connect to db
-		conn = sqlite3.connect(self.tasks_path, detect_types=sqlite3.PARSE_DECLTYPES|sqlite3.PARSE_COLNAMES)
-		conn.row_factory = sqlite3.Row
-		c = conn.cursor()
 		
-		# Exists table
-		table = '\"' + task_data['asset_id'] + ':' + self.tasks_t + '\"'
-		try:
-			str_ = 'select * from ' + table
-		except:
-			conn.close()
-			return(False, 'Not Table!')
-			
-		# edit db
-		string = 'UPDATE ' +  table + ' SET  \"price\"  = ? WHERE \"task_name\" = \"' + task_data['task_name'] + '\"'
-				
-		data = (new_price,)
-		
-		c.execute(string, data)
-		conn.commit()
-		conn.close()
-		return(True, 'Ok!')
-		'''
-		
-	def changes_without_a_change_of_status(self, key, project_name, task_data, new_data):
+	# key (str) - ключ для которого идёт замена
+	# new_data (по типу ключа) - данные на замену
+	# task_data (bool/dict) - изменяемая задача, если False - значит предполагается, что она инициализирована.
+	def changes_without_a_change_of_status(self, key, new_data, task_data=False): # v2
 		changes_keys = [
 		'activity',
 		'task_type',
 		'season',
 		'price',
 		'tz',
-		'workroom',
+		#'workroom',
 		'extension'
 		]
 		if not key in changes_keys:
-			return(False, 'This key invalid!')
-			
-		result = self.get_project(project_name)
-		if not result[0]:
-			return(False, result[1])
-			
-		# Connect to db
-		conn = sqlite3.connect(self.tasks_path, detect_types=sqlite3.PARSE_DECLTYPES|sqlite3.PARSE_COLNAMES)
-		conn.row_factory = sqlite3.Row
-		c = conn.cursor()
+			return(False, 'This key invalid! You can only edit keys from this list: %s' % json.dumps(changes_keys))
 		
-		# Exists table
-		table = '\"' + task_data['asset_id'] + ':' + self.tasks_t + '\"'
-		try:
-			str_ = 'select * from ' + table
-		except:
-			conn.close()
-			return(False, 'Not Table!')
-			
-		# edit db
-		string = 'UPDATE ' +  table + ' SET  \"' + key + '\"  = ? WHERE task_name = ?'
-				
-		data = (new_data, task_data['task_name'])
-		
-		c.execute(string, data)
-		conn.commit()
-		conn.close()
-		
+		if task_data:
+			asset_id = task_data['asset_id']
+			task_name = task_data['task_name']
+		else:
+			asset_id = self.asset_id
+			task_name = self.task_name
+		read_ob = self.asset.project
+		table_name = '"%s:%s"' % (asset_id, self.tasks_t)
+		update_data = {key: new_data}
+		where = {'task_name': task_name}
+		bool_, r_data = database().update('project', read_ob, table_name, self.tasks_keys, update_data, where, table_root=self.tasks_db)
+		if not bool_:
+			return(bool_, r_data)
+		# запись новых данных в поле объекта, если он инициализирован
+		if not task_data:
+			if isinstance(new_data, str):
+				exec('self.%s = "%s"' % (key, new_data))
+			else:
+				exec('self.%s = %s' % (key, new_data))
 		return(True, 'Ok!')
 		
 	def add_readers(self, project_name, task_data, add_readers_list):
