@@ -4211,8 +4211,9 @@ class task(studio):
 		# 1 - получение task_data
 		# 2 - чтение словаря 'readers' и определение change_status
 		# 3 - определение update_data
-		# 4 - перезапись задачи
-		# 5 - смена исходящих статусов если change_status=True
+		# 4 - если задача инициализирована - редактирование данного объекта задачи.
+		# 5 - перезапись задачи
+		# 6 - смена исходящих статусов если change_status=True
 		
 		#
 		if not isinstance(add_readers_list, list) and not isinstance(add_readers_list, tuple):
@@ -4274,8 +4275,10 @@ class task(studio):
 			readers_dict[artist_name] = 0
 			
 		# (3)
+		new_status = False
 		if change_status:
-			update_data = {'status': 'checking', 'readers': readers_dict}
+			new_status = 'checking'
+			update_data = {'status': new_status, 'readers': readers_dict}
 			#string = 'UPDATE ' +  table + ' SET  status  = ?, readers  = ? WHERE task_name = ?'
 			#data = ('checking', json.dumps(readers_dict), task_data['task_name'])
 		else:
@@ -4284,11 +4287,17 @@ class task(studio):
 			#data = (json.dumps(readers_dict), task_data['task_name'])
 			
 		# (4)
+		if self.task_name == task_data['task_name']:
+			self.readers = readers_dict
+			if new_status:
+				self.status = new_status
+		
+		# (5)
 		bool_, r_data = database().update('project', read_ob, table_name, keys, update_data, where, table_root=self.tasks_db)
 		if not bool_:
 			return(bool_, r_data)
 		
-		# (5) change output statuses
+		# (6) change output statuses
 		if change_status:
 			bool_, r_data = self.this_change_from_end(task_data)
 			if not bool_:
@@ -4303,7 +4312,8 @@ class task(studio):
 		# ? - проверять ли актуальность читателя.
 		# 1 - получение task_data
 		# 2 - чтение словаря 'readers' и определение change_status
-		# 3 - перезапись задачи
+		# 3 - редактирование задачи в случае если она инициализирована.
+		# 4 - перезапись задачи
 		
 		#
 		readers_dict = {}
@@ -4354,8 +4364,12 @@ class task(studio):
 			return(False, ('in task().add_readers Not Table! - ' + table))
 		'''
 		readers_dict['first_reader'] = nik_name
-			
+		
 		# (3)
+		if self.task_name == task_name:
+			self.readers = readers_dict
+			
+		# (4)
 		update_data = {'readers': readers_dict}
 		bool_, r_data = database().update('project', read_ob, table_name, keys, update_data, where, table_root=self.tasks_db)
 		if not bool_:
@@ -4371,16 +4385,39 @@ class task(studio):
 		'''		
 		return(True, readers_dict)
 	
-	
-	def remove_readers(self, project_name, task_data, remove_readers_list):
-		result = self.get_project(project_name)
-		if not result[0]:
-			return(False, result[1])
+	# надо ли удалять first_reader - если его ник нейм в списке на удаление ???????????????????
+	# remove_readers_list (list) - список никнеймов удаляемых из списка читателей
+	# task_data (dict) - изменяемая задача, если {} - значит предполагается, что task инициализирован.
+	def remove_readers(self, remove_readers_list, task_data={}): # v2
+		pass
+		# 1 - получение task_data
+		# 2 - чтение БД - readers_dict
+		# 3 - очистка списка читателей
+		# 4 - определение изменения статуса
+		# 5 - запись изменения readers в БД
+		# 6 - в случае если данная задача инициализирована - внесение в неё изменений.
+		# 7 - в случае изменения статуса - изменение статуса исходящих задачь.
 
 		change_status = False
 		readers_dict = {}
-		task_data = dict(task_data)
 		
+		# (1)
+		if not task_data:
+			for key in self.tasks_keys:
+				exec('task_data["%s"] = self.%s' % (key, key))
+		# (2)
+		read_ob = self.asset.project
+		table_name = '"%s:%s"' % (task_data['asset_id'], self.tasks_t)
+		keys = self.tasks_keys
+		where = {'task_name': task_data['task_name']}
+		bool_, r_data = database().read('project', read_ob, table_name, keys, where=where, table_root=self.tasks_db)
+		if not bool_:
+			return(bool_, r_data)
+		elif not r_data:
+			return(False, 'This Task (%s) Not Found' % task_name)
+		else:
+			readers_dict = r_data[0].get('readers')
+		'''
 		try:
 			# Connect to db
 			conn = sqlite3.connect(self.tasks_path, detect_types=sqlite3.PARSE_DECLTYPES|sqlite3.PARSE_COLNAMES)
@@ -4388,7 +4425,7 @@ class task(studio):
 			c = conn.cursor()
 		except:
 			return(False, ('in task().remove_readers Not Connect Table - path = ' + self.tasks_path))
-			
+					
 		# Exists table
 		table = '\"' + task_data['asset_id'] + ':' + self.tasks_t + '\"'
 		string = 'select * from ' + table
@@ -4405,15 +4442,16 @@ class task(studio):
 		except:
 			conn.close()
 			return(False, ('in task().remove_readers Not Table! - ' + table))
+		'''
 		
-		# remove artists
+		# (3) remove artists
 		for artist_name in remove_readers_list:
 			try:
 				del readers_dict[artist_name]
 			except:
 				pass
-			
-		# get change status
+		
+		# (4) get change status
 		if task_data['status'] == 'checking':
 			change_status = True
 		if not readers_dict:
@@ -4424,21 +4462,35 @@ class task(studio):
 					change_status = False
 					break
 		
-		# edit db
+		# (5) edit db
+		new_status = False
 		if change_status:
-			string = 'UPDATE ' +  table + ' SET  status = ?, readers  = ? WHERE task_name = ?'
-			data = ('done', json.dumps(readers_dict), task_data['task_name'])
+			new_status = 'done'
+			update_data = {'status': new_status, 'readers': readers_dict}
+			#string = 'UPDATE ' +  table + ' SET  status = ?, readers  = ? WHERE task_name = ?'
+			#data = ('done', json.dumps(readers_dict), task_data['task_name'])
 		else:
-			string = 'UPDATE ' +  table + ' SET  readers  = ? WHERE task_name = ?'
-			data = (json.dumps(readers_dict), task_data['task_name'])
-		
+			update_data = {'readers': readers_dict}
+			#string = 'UPDATE ' +  table + ' SET  readers  = ? WHERE task_name = ?'
+			#data = (json.dumps(readers_dict), task_data['task_name'])
+		bool_, r_data = database().update('project', read_ob, table_name, keys, update_data, where, table_root=self.tasks_db)
+		if not bool_:
+			return(bool_, r_data)
+		'''
 		c.execute(string, data)
 		conn.commit()
 		conn.close()
+		'''
 		
-		# change output statuses
+		# (6)
+		if self.task_name == task_data['task_name']:
+			self.readers = readers_dict
+			if new_status:
+				self.status = new_status
+		
+		# (7) change output statuses
 		if change_status:
-			result = self.this_change_to_end(project_name, task_data)
+			result = self.this_change_to_end(task_data)
 			if not result[0]:
 				return(False, result[1])
 		
@@ -4446,7 +4498,7 @@ class task(studio):
 		
 	# task_data (dict) - 
 	# new_artist (str) - nik_name
-	def change_artist(self, task_data, new_artist): # v2 **
+	def change_artist(self, new_artist, task_data={}): # v2 **
 		pass
 		# 1 - что-то с аутсорсом.
 		
