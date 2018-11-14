@@ -248,7 +248,7 @@ class studio:
 	'email': 'text',
 	'phone': 'text',
 	'specialty': 'text',
-	'outsource': 'text',
+	'outsource': 'integer',
 	'workroom': 'json',
 	'level': 'text',
 	'share_dir': 'text',
@@ -2599,7 +2599,7 @@ class task(studio):
 		if task_data['status'] == 'close':
 			return(False)
 		
-		autsource = bool(int(task_data['outsource']))
+		autsource = bool(task_data['outsource'])
 				
 		if autsource:
 			return('ready_to_send')
@@ -2673,7 +2673,7 @@ class task(studio):
 	def from_input_status(self, task_data, input_task_data):  # input_task_data = row{self.task_keys} or False
 		pass
 		# get task_outsource
-		task_outsource = bool(int(task_data['outsource']))
+		task_outsource = bool(task_data['outsource'])
 		
 		new_status = None
 		# change status
@@ -3436,7 +3436,7 @@ class task(studio):
 		if artist_name:
 			artist_data = artist().read_artist({'nik_name':artist_name})
 			if artist_data[0]:
-				if artist_data[1][0]['outsource'] == '1':
+				if artist_data[1][0]['outsource'] == 1:
 					outsource = True
 		#########
 		
@@ -3565,7 +3565,7 @@ class task(studio):
 			'''
 			if not new_status:
 				if row['status'] == 'null':
-					if artist().read_artist({'nik_name':row['artist']})[1][0]['outsource'] == '1':
+					if artist().read_artist({'nik_name':row['artist']})[1][0]['outsource'] == 1:
 						string2 = 'UPDATE ' +  table + ' SET status = \"ready_to_send\" WHERE task_name = \"' + row['task_name'] + '\"'
 					else:	
 						string2 = 'UPDATE ' +  table + ' SET status = \"ready\" WHERE task_name = \"' + row['task_name'] + '\"'
@@ -3680,7 +3680,7 @@ class task(studio):
 				task_keys['asset_name'] = asset_name
 			if not task_keys.get('asset_id'):
 				task_keys['asset_id'] = asset_id
-			task_keys['outsource'] = '0'
+			task_keys['outsource'] = 0
 			# 4.2
 			bool_, return_data = database().insert('project', self.asset.project, table_name, self.tasks_keys, task_keys, table_root=self.tasks_db)
 			if not bool_:
@@ -4496,31 +4496,36 @@ class task(studio):
 		
 		return(True, readers_dict, change_status)
 		
-	# task_data (dict) - 
 	# new_artist (str) - nik_name
+	# task_data (dict) - изменяемая задача, если {} - значит предполагается, что task инициализирован.
 	def change_artist(self, new_artist, task_data={}): # v2 **
 		pass
-		# 1 - что-то с аутсорсом.
+		# 1 - получение task_data.
+		# 2 - чтение нового артиста и определение аутсорсер он или нет.
+		
+		# (1)
+		if not task_data:
+			for key in self.tasks_keys:
+				exec('task_data["%s"] = self.%s' % (key, key))
 		
 		# --------------- edit Status ------------
 		new_status = None
 				
-		# get artist outsource
+		# (2) get artist outsource
 		artist_outsource = False
-		art = artist()
 		if new_artist:
-			result = art.read_artist({'nik_name':new_artist})
+			result = artist().read_artist({'nik_name':new_artist})
 			if not result[0]:
 				return(False, result[1])
-			if result[1][0]['outsource']:
-				artist_outsource = bool(int(result[1][0]['outsource']))
+			if result[1][0].get('outsource'):
+				artist_outsource = bool(result[1][0]['outsource'])
 		else:
 			new_artist = ''
 			
 		# get task_outsource
 		task_outsource = False
 		if task_data['outsource']:
-			task_outsource = bool(int(task_data['outsource']))
+			task_outsource = bool(task_data['outsource'])
 		'''
 		self.CHANGE_BY_OUTSOURCE_STATUSES = {
 		'to_outsource':{'ready':'ready_to_send', 'work':'ready_to_send'},
@@ -5993,7 +5998,7 @@ class artist(studio):
 				return True, (rows[0]['nik_name'], rows[0]['user_name'], None, rows[0])
 			else:
 				if rows[0]['outsource']:
-					out_source = bool(int(rows[0]['outsource']))
+					out_source = bool(rows[0]['outsource'])
 				else:
 					out_source = False
 				return True, (rows[0]['nik_name'], rows[0]['user_name'], out_source, rows[0])
