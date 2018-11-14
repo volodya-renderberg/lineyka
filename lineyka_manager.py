@@ -279,7 +279,7 @@ class MainWindow(QtGui.QMainWindow):
 							wr_list.append(wr_id_dict[wr_id]['name'])
 						newItem.setText(','.join(wr_list))
 				else:
-					newItem.setText(artist[key])
+					newItem.setText(str(artist[key]))
 				if key == 'nik_name':
 					color = self.artist_color
 					brush = QtGui.QBrush(color)
