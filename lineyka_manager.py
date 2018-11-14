@@ -459,7 +459,7 @@ class MainWindow(QtGui.QMainWindow):
 		window.level_combobox.addItems(levels)
 		window.level_combobox.setCurrentIndex(window.level_combobox.findText(selected_data['level']))
 		
-		if selected_data['outsource'] == '1':
+		if selected_data['outsource'] == 1:
 			window.autsource_check_box.setCheckState(QtCore.Qt.CheckState.Checked)
 			
 		# button connect
