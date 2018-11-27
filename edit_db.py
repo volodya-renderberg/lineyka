@@ -4581,22 +4581,31 @@ class task(studio):
 		
 		return(True, (new_status, str(int(artist_outsource))))
 		
-	def change_input(self, project_name, task_data, new_input):
-		result = self.get_project(project_name)
-		if not result[0]:
-			return(False, result[1])
+	# new_input (str) - имя новой входящей задачи
+	# task_data (dict) - изменяемая задача, если {} - значит предполагается, что task инициализирован.
+	def change_input(self, new_input, task_data={}): # v2 *** тестилось без смены статуса.
+		pass
+		# 1 - получение task_data, task_outsource, old_input_task_data, new_input_task_data, new_status, list_output_old, list_output_new
+		# 2 - перезапись БД
+		# 3 - если task инициализирована - внеси в неё изменения.
+		# 4 - подготовка return_data
 		
+		# (1)
+		if not task_data:
+			for key in self.tasks_keys:
+				exec('task_data["%s"] = self.%s' % (key, key))
+		
+		#
 		new_status = False
-		
 		# get task_outsource
 		task_outsource = False
 		if task_data['outsource']:
-			task_outsource = bool(int(task_data['outsource']))
+			task_outsource = bool(task_data['outsource'])
 		
 		# get old inputs tasks data
 		old_input_task_data = None
 		if task_data['input']:
-			result = self.read_task(project_name, task_data['input'], task_data['asset_id'], 'all')
+			result = self.read_task(task_data['input'], task_data['asset_id'])
 			if not result[0]:
 				return(False, result[1])
 			old_input_task_data = result[1]
@@ -4604,7 +4613,7 @@ class task(studio):
 		# get new inputs task data
 		new_input_task_data = None
 		if new_input:
-			result = self.read_task(project_name, new_input, task_data['asset_id'], 'all')
+			result = self.read_task(new_input, task_data['asset_id'])
 			if not result[0]:
 				return(False, result[1])
 			new_input_task_data = result[1]
@@ -4614,16 +4623,15 @@ class task(studio):
 		# change status
 		new_status = self.from_input_status(task_data, new_input_task_data)
 		if task_data['status'] in self.end_statuses and not new_status in self.end_statuses:
-			self.this_change_from_end(project_name, task_data)
+			self.this_change_from_end(task_data)
 				
 		# change outputs
 		# -- in old input
 		list_output_old = None
 		if old_input_task_data:
-			list_output_old = json.loads(old_input_task_data['output'])
+			list_output_old = old_input_task_data['output']
 			if task_data['task_name'] in list_output_old:
 				list_output_old.remove(task_data['task_name'])
-			list_output_old = json.dumps(list_output_old)
 			
 		# -- in new input
 		list_output_new = None
@@ -4631,10 +4639,48 @@ class task(studio):
 			if not new_input_task_data['output']:
 				list_output_new = []
 			else:
-				list_output_new = json.loads(new_input_task_data['output'])
+				list_output_new = new_input_task_data['output']
 			list_output_new.append(task_data['task_name'])
-			list_output_new = json.dumps(list_output_new)
-				
+		
+		# (2)
+		read_ob = self.asset.project
+		table_name = '"%s:%s"' % (task_data['asset_id'], self.tasks_t)
+		keys = self.tasks_keys
+		# edit old_output
+		if list_output_old:
+			where = {'task_name': old_input_task_data['task_name']}
+			update_data = {'output': list_output_old}
+			bool_, r_data = database().update('project', read_ob, table_name, keys, update_data, where, table_root=self.tasks_db)
+			if not bool_:
+				return(bool_, r_data)
+		if list_output_new:
+			# edit new_output
+			where = {'task_name': new_input_task_data['task_name']}
+			update_data = {'output': list_output_new}
+			bool_, r_data = database().update('project', read_ob, table_name, keys, update_data, where, table_root=self.tasks_db)
+			if not bool_:
+				return(bool_, r_data)
+			# edit new_input
+			where = {'task_name': task_data['task_name']}
+			update_data = {'input': new_input_task_data['task_name']}
+			bool_, r_data = database().update('project', read_ob, table_name, keys, update_data, where, table_root=self.tasks_db)
+			if not bool_:
+				return(bool_, r_data)
+		else:
+			where = {'task_name': task_data['task_name']}
+			update_data = {'input': ''}
+			bool_, r_data = database().update('project', read_ob, table_name, keys, update_data, where, table_root=self.tasks_db)
+			if not bool_:
+				return(bool_, r_data)
+		# edit status
+		if new_status:
+			where = {'task_name': task_data['task_name']}
+			update_data = {'status': new_status}
+			bool_, r_data = database().update('project', read_ob, table_name, keys, update_data, where, table_root=self.tasks_db)
+			if not bool_:
+				return(bool_, r_data)
+		
+		'''
 		# edit db
 		# -- Connect to db
 		conn = sqlite3.connect(self.tasks_path, detect_types=sqlite3.PARSE_DECLTYPES|sqlite3.PARSE_COLNAMES)
@@ -4682,7 +4728,18 @@ class task(studio):
 		
 		conn.commit()
 		conn.close()
+		'''
 		
+		# (3)
+		if self.task_name == task_data['task_name']:
+			if list_output_new:
+				self.input = new_input_task_data['task_name']
+			else:
+				self.input = ''
+			if new_status:
+				self.status = new_status
+		
+		# (4)
 		if list_output_old:
 			old_input_task_data['output'] = list_output_old
 		if list_output_new:
@@ -4994,7 +5051,7 @@ class task(studio):
 		where={'task_name': task_name}
 		# read
 		bool_, return_data = database().read('project', self.asset.project, table_name, self.tasks_keys , where=where, table_root=self.tasks_db)
-		return(bool_, return_data)
+		return(bool_, return_data[0])
 		'''
 		if keys == 'all':
 			new_keys = []
