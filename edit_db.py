@@ -4498,10 +4498,14 @@ class task(studio):
 		
 	# new_artist (str) - nik_name
 	# task_data (dict) - изменяемая задача, если {} - значит предполагается, что task инициализирован.
-	def change_artist(self, new_artist, task_data={}): # v2 **
+	def change_artist(self, new_artist, task_data={}): # v2 ***
 		pass
 		# 1 - получение task_data.
 		# 2 - чтение нового артиста и определение аутсорсер он или нет.
+		# 3 - чтение outsource - изменяемой задачи.
+		# 4 - определение нового статуса задачи
+		# 5 - внесение изменений в БД
+		# 6 - если task инициализирована - внеси в неё изменения.
 		
 		# (1)
 		if not task_data:
@@ -4521,38 +4525,50 @@ class task(studio):
 				artist_outsource = bool(result[1][0]['outsource'])
 		else:
 			new_artist = ''
+		print('*** artist_outsource: %s' % str(artist_outsource))
 			
-		# get task_outsource
+		# (3) get task_outsource
 		task_outsource = False
 		if task_data['outsource']:
 			task_outsource = bool(task_data['outsource'])
-		'''
-		self.CHANGE_BY_OUTSOURCE_STATUSES = {
-		'to_outsource':{'ready':'ready_to_send', 'work':'ready_to_send'},
-		'to_studio':{'ready_to_send':'ready', 'work_to_outsorce':'ready'},
-		}
-		'''
-		# get new status
+		print('*** task_outsource: %s' % str(task_outsource))
+		
+		# (4) get new status
 		if task_data['status'] in self.VARIABLE_STATUSES:
-			#print('****** in variable')
+			print('****** in variable')
 			if (not task_data['artist']) or (not task_outsource):
-				#print('****** start not outsource')
+				print('****** start not outsource')
 				if artist_outsource:
 					new_status = self.CHANGE_BY_OUTSOURCE_STATUSES['to_outsource'][task_data['status']]
 				else:
 					pass
-					#print('****** artist not outsource')
+					print('****** artist not outsource')
 			else:
-				#print('****** start outsource')
+				print('****** start outsource')
 				if not artist_outsource:
 					new_status = self.CHANGE_BY_OUTSOURCE_STATUSES['to_studio'][task_data['status']]
 				else:
 					pass
-					#print('****** artist outsource')
+					print('****** artist outsource')
 		else:
 			pass
-			#print('****** not in variable')
+			print('****** not in variable')
+		print('*** new_status: %s' % str(new_status))
+			
+		# (5)
+		read_ob = self.asset.project
+		table_name = '"%s:%s"' % (task_data['asset_id'], self.tasks_t)
+		keys = self.tasks_keys
+		where = {'task_name': task_data['task_name']}
+		if new_status:
+			update_data = {'artist': new_artist, 'outsource': int(artist_outsource), 'status':new_status}
+		else:
+			update_data = {'artist': new_artist, 'outsource': int(artist_outsource)}
+		bool_, r_data = database().update('project', read_ob, table_name, keys, update_data, where, table_root=self.tasks_db)
+		if not bool_:
+			return(bool_, r_data)
 		
+		'''
 		# ------------- edit DB -----------------
 		# Connect to db
 		conn = sqlite3.connect(self.tasks_path, detect_types=sqlite3.PARSE_DECLTYPES|sqlite3.PARSE_COLNAMES)
@@ -4578,8 +4594,18 @@ class task(studio):
 		c.execute(string, data)
 		conn.commit()
 		conn.close()
+		'''
+		# (6)
+		if self.task_name == task_data['task_name']:
+			if new_status:
+				self.status = new_status
+				self.outsource = int(artist_outsource)
+				self.artist = new_artist
+			else:
+				self.outsource = int(artist_outsource)
+				self.artist = new_artist
 		
-		return(True, (new_status, str(int(artist_outsource))))
+		return(True, (new_status, int(artist_outsource)))
 		
 	# new_input (str) - имя новой входящей задачи
 	# task_data (dict) - изменяемая задача, если {} - значит предполагается, что task инициализирован.
