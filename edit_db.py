@@ -4498,7 +4498,7 @@ class task(studio):
 		
 	# new_artist (str) - nik_name
 	# task_data (dict) - изменяемая задача, если {} - значит предполагается, что task инициализирован.
-	def change_artist(self, new_artist, task_data={}): # v2 ***
+	def change_artist(self, new_artist, task_data=False): # v2
 		pass
 		# 1 - получение task_data.
 		# 2 - чтение нового артиста и определение аутсорсер он или нет.
@@ -4509,8 +4509,11 @@ class task(studio):
 		
 		# (1)
 		if not task_data:
+			task_data = {}
 			for key in self.tasks_keys:
 				exec('task_data["%s"] = self.%s' % (key, key))
+        
+		print('### task_data["outsource"].type = %s, value = %s' % (task_data["outsource"].__class__.__name__, str(task_data["outsource"])))
 		
 		# --------------- edit Status ------------
 		new_status = None
@@ -4528,21 +4531,29 @@ class task(studio):
 		print('*** artist_outsource: %s' % str(artist_outsource))
 			
 		# (3) get task_outsource
+		task_outsource = task_data['outsource']
+		'''
 		task_outsource = False
 		if task_data['outsource']:
 			task_outsource = bool(task_data['outsource'])
+		'''
 		print('*** task_outsource: %s' % str(task_outsource))
 		
 		# (4) get new status
 		if task_data['status'] in self.VARIABLE_STATUSES:
 			print('****** in variable')
-			if (not task_data['artist']) or (not task_outsource):
+			if not new_artist :
+				new_status = 'ready'
+			elif (not task_data['artist']) or (not task_outsource):
 				print('****** start not outsource')
 				if artist_outsource:
 					new_status = self.CHANGE_BY_OUTSOURCE_STATUSES['to_outsource'][task_data['status']]
 				else:
 					pass
 					print('****** artist not outsource')
+			elif task_outsource and (not artist_outsource):
+				print('****** to studio 1')
+				new_status = self.CHANGE_BY_OUTSOURCE_STATUSES['to_studio'][task_data['status']]
 			else:
 				print('****** start outsource')
 				if not artist_outsource:
