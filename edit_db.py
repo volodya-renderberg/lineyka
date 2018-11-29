@@ -4204,8 +4204,8 @@ class task(studio):
 		return(True, 'Ok!')
 		
 	# add_readers_list (list) - список никнеймов проверяющих (читателей)
-	# task_data (dict) - изменяемая задача, если {} - значит предполагается, что task инициализирован.
-	def add_readers(self, add_readers_list, task_data={}): # v2 *** тестилось без смены статуса.
+	# task_data (dict) - изменяемая задача, если False - значит предполагается, что task инициализирован.
+	def add_readers(self, add_readers_list, task_data=False): # v2 *** тестилось без смены статуса.
 		pass
 		# ? - проверять ли актуальность списка читателей.
 		# 1 - получение task_data
@@ -4221,6 +4221,7 @@ class task(studio):
 		
 		# (1)
 		if not task_data:
+			task_data={}
 			for key in self.tasks_keys:
 				exec('task_data["%s"] = self.%s' % (key, key))
 	
@@ -4387,8 +4388,8 @@ class task(studio):
 	
 	# надо ли удалять first_reader - если его ник нейм в списке на удаление ???????????????????
 	# remove_readers_list (list) - список никнеймов удаляемых из списка читателей
-	# task_data (dict) - изменяемая задача, если {} - значит предполагается, что task инициализирован.
-	def remove_readers(self, remove_readers_list, task_data={}): # v2
+	# task_data (dict) - изменяемая задача, если False - значит предполагается, что task инициализирован.
+	def remove_readers(self, remove_readers_list, task_data=False): # v2
 		pass
 		# 1 - получение task_data
 		# 2 - чтение БД - readers_dict
@@ -4403,6 +4404,7 @@ class task(studio):
 		
 		# (1)
 		if not task_data:
+			task_data = {}
 			for key in self.tasks_keys:
 				exec('task_data["%s"] = self.%s' % (key, key))
 		# (2)
@@ -4497,8 +4499,8 @@ class task(studio):
 		return(True, readers_dict, change_status)
 		
 	# new_artist (str) - nik_name
-	# task_data (dict) - изменяемая задача, если {} - значит предполагается, что task инициализирован.
-	def change_artist(self, new_artist, task_data=False): # v2
+	# task_data (dict) - изменяемая задача, если False - значит предполагается, что task инициализирован.
+	def change_artist(self, new_artist, task_data=False): # v2  !!!!! надо рассмотреть варианты когда меняется артист в завершённых статусах задачь.
 		pass
 		# 1 - получение task_data.
 		# 2 - чтение нового артиста и определение аутсорсер он или нет.
@@ -4619,8 +4621,8 @@ class task(studio):
 		return(True, (new_status, int(artist_outsource)))
 		
 	# new_input (str) - имя новой входящей задачи
-	# task_data (dict) - изменяемая задача, если {} - значит предполагается, что task инициализирован.
-	def change_input(self, new_input, task_data={}): # v2 *** тестилось без смены статуса.
+	# task_data (dict) - изменяемая задача, если False - значит предполагается, что task инициализирован.
+	def change_input(self, new_input, task_data=False): # v2 *** тестилось без смены статуса.
 		pass
 		# 1 - получение task_data, task_outsource, old_input_task_data, new_input_task_data, new_status, list_output_old, list_output_new
 		# 2 - перезапись БД
@@ -4629,6 +4631,7 @@ class task(studio):
 		
 		# (1)
 		if not task_data:
+			task_data={}
 			for key in self.tasks_keys:
 				exec('task_data["%s"] = self.%s' % (key, key))
 		
@@ -4784,10 +4787,16 @@ class task(studio):
 		
 		return(True, (new_status, old_input_task_data, new_input_task_data))
 		
-	def accept_task(self, project_name, task_data):
-		result = self.get_project(project_name)
-		if not result[0]:
-			return(False, result[1])
+	# task_data (dict) - изменяемая задача, если False - значит предполагается, что task инициализирован.
+	def accept_task(self, task_data=False): # v2 ** start
+		pass
+		# 1 - получение task_data,
+		
+		# (1)
+		if not task_data:
+			task_data={}
+			for key in self.tasks_keys:
+				exec('task_data["%s"] = self.%s' % (key, key))
 			
 		# -- publish
 		#result = lineyka_publish.publish().publish(project_name, task_data)
