@@ -2584,9 +2584,7 @@ class task(studio):
 		#self.db_workroom = workroom() # ??????? как всегда под вопросом
 		#self.publish = lineyka_publish.publish()
 		
-		self.publish = publish(self) # ??????? как всегда под вопросом
-		
-		#asset.__init__(self)
+		self.publish = publish(self, NormPath) # ??????? как всегда под вопросом
 		
 	def init(self, keys):
 		for key in self.tasks_keys:
@@ -4500,7 +4498,7 @@ class task(studio):
 		
 	# new_artist (str) - nik_name
 	# task_data (dict) - изменяемая задача, если False - значит предполагается, что task инициализирован.
-	def change_artist(self, new_artist, task_data=False): # v2  !!!!! надо рассмотреть варианты когда меняется артист в завершённых статусах задачь.
+	def change_artist(self, new_artist, task_data=False): # v2  !!!!! возможно надо рассмотреть варианты когда меняется артист в завершённых статусах задачь.
 		pass
 		# 1 - получение task_data.
 		# 2 - чтение нового артиста и определение аутсорсер он или нет.
@@ -4788,9 +4786,12 @@ class task(studio):
 		return(True, (new_status, old_input_task_data, new_input_task_data))
 		
 	# task_data (dict) - изменяемая задача, если False - значит предполагается, что task инициализирован.
-	def accept_task(self, task_data=False): # v2 ** start
+	def accept_task(self, task_data=False): # v2 *** не тестилось, нельзя протестить без рабочего файла
 		pass
 		# 1 - получение task_data,
+		# 2 - паблиш Хуки
+		# 3 - перезапись БД задачи
+		# 4 - изменение статусов исходящих задачь
 		
 		# (1)
 		if not task_data:
@@ -4798,12 +4799,23 @@ class task(studio):
 			for key in self.tasks_keys:
 				exec('task_data["%s"] = self.%s' % (key, key))
 			
-		# -- publish
+		# (2) publish
 		#result = lineyka_publish.publish().publish(project_name, task_data)
-		result = self.publish.publish(project_name, task_data)
+		result = self.publish.publish(task_data)
 		if not result[0]:
 			return(False, result[1])
-			
+		
+		# (3)
+		read_ob = self.asset.project
+		table_name = '"%s:%s"' % (task_data['asset_id'], self.tasks_t)
+		keys = self.tasks_keys
+		update_data = {'readers':{}, 'status':'done'}
+		where = {'task_name': task_data['task_name']}
+		bool_, r_data = database().update('project', read_ob, table_name, keys, update_data, where, table_root=self.tasks_db)
+		if not bool_:
+			return(bool_, r_data)
+		
+		'''	
 		# -- Connect to db
 		conn = sqlite3.connect(self.tasks_path, detect_types=sqlite3.PARSE_DECLTYPES|sqlite3.PARSE_COLNAMES)
 		conn.row_factory = sqlite3.Row
@@ -4820,13 +4832,10 @@ class task(studio):
 		c.execute(string, data)
 		conn.commit()
 		conn.close()
-		'''				
-		except:
-			conn.close()
-			return(False, 'in accept_task - Not Edit Table!')
-		'''	
-		# -- change output statuses
-		result = self.this_change_to_end(project_name, task_data)
+		'''
+		
+		# (4) change output statuses
+		result = self.this_change_to_end(task_data)
 		if not result[0]:
 			return(False, result[1])
 			
