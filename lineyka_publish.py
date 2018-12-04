@@ -99,6 +99,7 @@ class publish:
 		res, data  = self.moving_files()
 		if not res:
 			return(False, data)
+		new_file_path = data
 		'''
 		#  ************* moving Files
 		# -- get publish folder path
@@ -143,7 +144,7 @@ class publish:
 	def moving_files(self):
 		#  ************* moving Files
 		# -- get publish folder path
-		activity_dir_name = self.task.ACTIVITY_FOLDER[self.task_data['asset_type']][self.task_data['activity']]
+		activity_dir_name = self.task.asset.ACTIVITY_FOLDER[self.task_data['asset_type']][self.task_data['activity']]
 		
 		publish_dir = self.NormPath(os.path.join(self.asset_path, self.task.publish_folder_name))
 		if not os.path.exists(publish_dir):
@@ -164,4 +165,4 @@ class publish:
 			# -- moving file
 			shutil.copyfile(self.final_file_path, new_file_path)
 		
-		return(True, 'Ok')
+		return(True, new_file_path)

@@ -2861,7 +2861,7 @@ class task(studio):
 			if not bool_:
 				return(bool_, return_data)
 			elif return_data:
-				task_data = return_data[0]
+				task_data_ = return_data
 			else:
 				return(False, 'Task Data Not Found! Task_name - "%s"' % task_name)
             
@@ -4545,25 +4545,25 @@ class task(studio):
 			if not new_artist :
 				new_status = 'ready'
 			elif (not task_data['artist']) or (not task_outsource):
-				print('****** start not outsource')
+				#print('****** start not outsource')
 				if artist_outsource:
 					new_status = self.CHANGE_BY_OUTSOURCE_STATUSES['to_outsource'][task_data['status']]
 				else:
 					pass
-					print('****** artist not outsource')
+					#print('****** artist not outsource')
 			elif task_outsource and (not artist_outsource):
-				print('****** to studio 1')
+				#print('****** to studio 1')
 				new_status = self.CHANGE_BY_OUTSOURCE_STATUSES['to_studio'][task_data['status']]
 			else:
-				print('****** start outsource')
+				#print('****** start outsource')
 				if not artist_outsource:
 					new_status = self.CHANGE_BY_OUTSOURCE_STATUSES['to_studio'][task_data['status']]
 				else:
 					pass
-					print('****** artist outsource')
+					#print('****** artist outsource')
 		else:
 			pass
-			print('****** not in variable')
+			#print('****** not in variable')
 		print('*** new_status: %s' % str(new_status))
 			
 		# (5)
@@ -4786,12 +4786,13 @@ class task(studio):
 		return(True, (new_status, old_input_task_data, new_input_task_data))
 		
 	# task_data (dict) - изменяемая задача, если False - значит предполагается, что task инициализирован.
-	def accept_task(self, task_data=False): # v2 *** не тестилось, нельзя протестить без рабочего файла
+	def accept_task(self, task_data=False): # v2 *** правиться надо изменить return_a_job_task
 		pass
 		# 1 - получение task_data,
 		# 2 - паблиш Хуки
 		# 3 - перезапись БД задачи
 		# 4 - изменение статусов исходящих задачь
+		# 5 - внесение изменений в объект если он инициализирован
 		
 		# (1)
 		if not task_data:
@@ -4838,6 +4839,10 @@ class task(studio):
 		result = self.this_change_to_end(task_data)
 		if not result[0]:
 			return(False, result[1])
+		
+		# (5)
+		if self.task_name == task_data['task_name']:
+			self.status = 'done'
 			
 		return(True, 'Ok!')
 			
@@ -4992,7 +4997,7 @@ class task(studio):
 			
 		return(True, 'Ok!')
 			
-	def return_a_job_task(self, project_name, task_data):
+	def return_a_job_task(self, task_data): # v2 ** start
 		result = self.get_project(project_name)
 		if not result[0]:
 			return(False, result[1])
