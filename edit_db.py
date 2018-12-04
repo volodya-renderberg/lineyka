@@ -4786,7 +4786,7 @@ class task(studio):
 		return(True, (new_status, old_input_task_data, new_input_task_data))
 		
 	# task_data (dict) - изменяемая задача, если False - значит предполагается, что task инициализирован.
-	def accept_task(self, task_data=False): # v2 *** правиться надо изменить return_a_job_task
+	def accept_task(self, task_data=False): # v2
 		pass
 		# 1 - получение task_data,
 		# 2 - паблиш Хуки
@@ -4846,10 +4846,8 @@ class task(studio):
 			
 		return(True, 'Ok!')
 			
-	def readers_accept_task(self, project_name, task_data, nik_name):
-		result = self.get_project(project_name)
-		if not result[0]:
-			return(False, result[1])
+	def readers_accept_task(self, nik_name, task_data=False): # v2 ** start
+		pass
 			
 		# -- publish
 		#result = lineyka_publish.publish().publish(project_name, task_data)
@@ -4998,7 +4996,7 @@ class task(studio):
 		return(True, 'Ok!')
 	
 	# task_data (dict) - изменяемая задача, если False - значит предполагается, что task инициализирован.
-	def return_a_job_task(self, task_data=False): # v2 ** start
+	def return_a_job_task(self, task_data=False): # v2
 		pass
 		# 1 - получение task_data,
 		# 2 - чтение входящей задачи
