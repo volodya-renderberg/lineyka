@@ -2861,7 +2861,7 @@ class task(studio):
 			if not bool_:
 				return(bool_, return_data)
 			elif return_data:
-				task_data_ = return_data
+				task_data_ = return_data[0]
 			else:
 				return(False, 'Task Data Not Found! Task_name - "%s"' % task_name)
             
@@ -4996,27 +4996,47 @@ class task(studio):
 		'''
 			
 		return(True, 'Ok!')
-			
-	def return_a_job_task(self, task_data): # v2 ** start
-		result = self.get_project(project_name)
-		if not result[0]:
-			return(False, result[1])
+	
+	# task_data (dict) - изменяемая задача, если False - значит предполагается, что task инициализирован.
+	def return_a_job_task(self, task_data=False): # v2 ** start
+		pass
+		# 1 - получение task_data,
+		# 2 - чтение входящей задачи
+		# 3 - получение статуса на основе статуса входящей задачи.
+		# 4 - внесение изменений в БД
+		# 5 - внесение изменений в объект если он инициализирован
+		# 6 - изменение статусов исходящих задач
 		
-		# dict task_data
-		task_data = dict(task_data)
-		
-		# get input_task_data
+		# (1)
+		if not task_data:
+			task_data={}
+			for key in self.tasks_keys:
+				exec('task_data["%s"] = self.%s' % (key, key))
+	
+		# (2)
 		input_task_name = task_data['input']
 		input_task_data = False
 		if input_task_name:
-			result = self.read_task(project_name, input_task_name, task_data['asset_id'], 'all')
+			result = self.read_task(input_task_name, task_data['asset_id'])
 			if not result[0]:
 				return(False, result[1])
 			input_task_data = result[1]
 		
+		# (3)
 		task_data['status'] = 'null'
 		new_status = self.from_input_status(task_data, input_task_data)
-				
+		
+		# (4)
+		read_ob = self.asset.project
+		table_name = '"%s:%s"' % (task_data['asset_id'], self.tasks_t)
+		keys = self.tasks_keys
+		update_data = {'readers':{}, 'status':new_status}
+		where = {'task_name': task_data['task_name']}
+		bool_, r_data = database().update('project', read_ob, table_name, keys, update_data, where, table_root=self.tasks_db)
+		if not bool_:
+			return(bool_, r_data)
+		
+		'''
 		# -- Connect to db
 		conn = sqlite3.connect(self.tasks_path, detect_types=sqlite3.PARSE_DECLTYPES|sqlite3.PARSE_COLNAMES)
 		conn.row_factory = sqlite3.Row
@@ -5050,9 +5070,14 @@ class task(studio):
 		except:
 			conn.close()
 			return(False, 'in return_a_job_task - Not Edit Table!')
+		'''
 		
-		# -- change output statuses
-		result = self.this_change_from_end(project_name, task_data)
+		# (5)
+		if self.task_name == task_data['task_name']:
+			self.status = new_status
+		
+		# (6) change output statuses
+		result = self.this_change_from_end(task_data)
 		if not result[0]:
 			return(False, result[1])
 		else:
