@@ -4845,16 +4845,56 @@ class task(studio):
 			self.status = 'done'
 			
 		return(True, 'Ok!')
-			
+	
+	# task_data (dict) - изменяемая задача, если False - значит предполагается, что task инициализирован.
 	def readers_accept_task(self, nik_name, task_data=False): # v2 ** start
 		pass
+		# 1 - получение task_data,
+		# 2 - изменения в readers, определение change_status
+		# 3 - паблиш Хуки
+		# 4 - запись изменений задачи в БД
+		# 5 - изменение статусов исходящих задачь
+		# 6 - внесение изменений в объект если он инициализирован
+		
+		# (1)
+		if not task_data:
+			task_data={}
+			for key in self.tasks_keys:
+				exec('task_data["%s"] = self.%s' % (key, key))
 			
-		# -- publish
-		#result = lineyka_publish.publish().publish(project_name, task_data)
-		result = self.publish.publish(project_name, task_data)
-		if not result[0]:
-			return(False, result[1])
+		# (2)
+		change_status = True
+		readers = task_data['readers']
+		if nik_name in readers:
+			readers[nik_name] = 1
+		#
+		for key in readers:
+			if key == 'first_reader':
+				continue
+			elif readers[key] == 0:
+				change_status = False
+				break
 			
+		# (3) -- publish
+		if change_status:
+			result = self.publish.publish(task_data)
+			if not result[0]:
+				return(False, result[1])
+			
+		# (4)
+		read_ob = self.asset.project
+		table_name = '"%s:%s"' % (task_data['asset_id'], self.tasks_t)
+		keys = self.tasks_keys
+		if change_status:
+			update_data = {'readers':readers, 'status':'done'}
+		else:
+			update_data = {'readers':readers}
+		where = {'task_name': task_data['task_name']}
+		bool_, r_data = database().update('project', read_ob, table_name, keys, update_data, where, table_root=self.tasks_db)
+		if not bool_:
+			return(bool_, r_data)
+		
+		'''
 		# -- Connect to db
 		conn = sqlite3.connect(self.tasks_path, detect_types=sqlite3.PARSE_DECLTYPES|sqlite3.PARSE_COLNAMES)
 		conn.row_factory = sqlite3.Row
@@ -4895,13 +4935,20 @@ class task(studio):
 			
 		conn.commit()
 		conn.close()
+		'''
 		
-		# change output statuses
+		# (5) change output statuses
 		if change_status:
 			# -- change output statuses
-			result = self.this_change_to_end(project_name, task_data)
+			result = self.this_change_to_end(task_data)
 			if not result[0]:
 				return(False, result[1])
+		
+		# (6)
+		if self.task_name == task_data['task_name']:
+			if change_status:
+				self.status = 'done'
+				#self.readers = readers
 		
 		return(True, 'Ok')
 	
