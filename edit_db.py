@@ -4846,15 +4846,21 @@ class task(studio):
 			
 		return(True, 'Ok!')
 	
+	# current_artist (artist) - экземпляр класса артист, должен быть инициализирован - artist.get_user()
 	# task_data (dict) - изменяемая задача, если False - значит предполагается, что task инициализирован.
-	def readers_accept_task(self, nik_name, task_data=False): # v2 ** start
+	def readers_accept_task(self, current_artist, task_data=False): # v2 ** start
 		pass
+		# 0 - проверка, чтобы current_artist был экземпляром класса artist
 		# 1 - получение task_data,
 		# 2 - изменения в readers, определение change_status
 		# 3 - паблиш Хуки
 		# 4 - запись изменений задачи в БД
 		# 5 - изменение статусов исходящих задачь
 		# 6 - внесение изменений в объект если он инициализирован
+		
+		# (0)
+		if not isinstance(current_artist, artist):
+			return(False, 'in task.readers_accept_task() - "current_artist" must be an instance of "artist" class, and not "%s"' % current_artist.__class__.__name__)
 		
 		# (1)
 		if not task_data:
@@ -4865,8 +4871,8 @@ class task(studio):
 		# (2)
 		change_status = True
 		readers = task_data['readers']
-		if nik_name in readers:
-			readers[nik_name] = 1
+		if current_artist.nik_name in readers:
+			readers[current_artist.nik_name] = 1
 		#
 		for key in readers:
 			if key == 'first_reader':
