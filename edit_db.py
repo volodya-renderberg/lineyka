@@ -4846,9 +4846,10 @@ class task(studio):
 			
 		return(True, 'Ok!')
 	
+	# приём задачи текущим ридером
 	# current_artist (artist) - экземпляр класса артист, должен быть инициализирован - artist.get_user()
 	# task_data (dict) - изменяемая задача, если False - значит предполагается, что task инициализирован.
-	def readers_accept_task(self, current_artist, task_data=False): # v2 ** start
+	def readers_accept_task(self, current_artist, task_data=False): # v2
 		pass
 		# 0 - проверка, чтобы current_artist был экземпляром класса artist
 		# 1 - получение task_data,
@@ -4873,6 +4874,8 @@ class task(studio):
 		readers = task_data['readers']
 		if current_artist.nik_name in readers:
 			readers[current_artist.nik_name] = 1
+		else:
+			return(False, 'Current user is not a reader of this task!')
 		#
 		for key in readers:
 			if key == 'first_reader':
@@ -4958,11 +4961,30 @@ class task(studio):
 		
 		return(True, 'Ok')
 	
-	def close_task(self, project_name, task_data):
-		result = self.get_project(project_name)
-		if not result[0]:
-			return(False, result[1])
-			
+	# task_data (dict) - изменяемая задача, если False - значит предполагается, что task инициализирован.
+	def close_task(self, task_data=False): # v2
+		pass
+		# 1 - получение task_data
+		# 2 - запись изменений задачи в БД
+		# 3 - изменение статусов исходящих задачь
+		# 4 - внесение изменений в объект если он инициализирован
+		
+		# (1)
+		if not task_data:
+			task_data={}
+			for key in self.tasks_keys:
+				exec('task_data["%s"] = self.%s' % (key, key))
+				
+		# (2)
+		read_ob = self.asset.project
+		table_name = '"%s:%s"' % (task_data['asset_id'], self.tasks_t)
+		keys = self.tasks_keys
+		update_data = {'status':'close'}
+		where = {'task_name': task_data['task_name']}
+		bool_, r_data = database().update('project', read_ob, table_name, keys, update_data, where, table_root=self.tasks_db)
+		if not bool_:
+			return(bool_, r_data)
+		'''	
 		# -- Connect to db
 		conn = sqlite3.connect(self.tasks_path, detect_types=sqlite3.PARSE_DECLTYPES|sqlite3.PARSE_COLNAMES)
 		conn.row_factory = sqlite3.Row
@@ -4980,14 +5002,20 @@ class task(studio):
 		except:
 			conn.close()
 			return(False, 'in accept_task - Not Edit Table!')
-			
-		result = self.this_change_to_end(project_name, task_data)
+		'''
+		
+		# (3) change output statuses
+		result = self.this_change_to_end(task_data)
 		if not result[0]:
 			return(False, result[1])
-		else:
-			return(True, 'Ok!')
+		
+		# (4)
+		if self.task_name == task_data['task_name']:
+			self.status = 'close'
 			
-	def rework_task(self, project_name, task_data, current_user = False):
+		return(True, 'Ok!')
+			
+	def rework_task(self, project_name, task_data, current_user = False): # v2 ** start
 		result = self.get_project(project_name)
 		if not result[0]:
 			return(False, result[1])
