@@ -5593,11 +5593,37 @@ class task(studio):
 		
 		return(True, (task_data['status'], append_task_name_list))
 		
-	def service_add_list_to_input_from_asset_list(self, project_name, task_data, asset_list):
-		result = self.get_project(project_name)
-		if not result[0]:
-			return(False, result[1])
-			
+	# asset_list (list) - подсоединяемые ассеты (словари)
+	# task_data (dict) - изменяемая задача, если False - значит предполагается, что task инициализирован.
+	def service_add_list_to_input_from_asset_list(self, asset_list, task_data=False): # v2 ** start
+		pass
+		# 1 - получение task_data.
+		# 2 - проверка на srvice
+		# 3 - получение списка задачь для добавления в инпут
+		
+		# (1)
+		if not task_data:
+			task_data={}
+			for key in self.tasks_keys:
+				exec('task_data["%s"] = self.%s' % (key, key))
+				
+		# (2)
+		if task_data['task_type'] != 'service':
+			comment = 'In task.service_add_list_to_input_from_asset_list() - incorrect type!\nThe type of task to be changed must be "service".\nThis type: "%s"' % task_data['task_type']
+			return(False, comment)
+		
+		# (3)
+		final_tasks_list = []
+		types = {'obj':'model', 'char':'rig'}
+		for ast in asset_list:
+			ast_ob = asset(self.project)
+			ast_ob.init(ast)
+			tsk_ob = task(ast_ob)
+			if task_data['asset_type'] in ['location', 'shot_animation'] and ast['type'] in types:
+				activity = types[ast['type']]
+				
+		
+		'''
 		# edit db
 		# -- Connect to db
 		conn = sqlite3.connect(self.tasks_path, detect_types=sqlite3.PARSE_DECLTYPES|sqlite3.PARSE_COLNAMES)
@@ -5646,6 +5672,7 @@ class task(studio):
 					print(('not found task: ' + task_name))
 		
 		conn.close()
+		'''
 		
 		result = self.service_add_list_to_input(final_tasks_list, task_data)
 		if not result[0]:
