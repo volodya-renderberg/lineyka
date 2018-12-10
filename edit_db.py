@@ -5014,11 +5014,18 @@ class task(studio):
 			self.status = 'close'
 			
 		return(True, 'Ok!')
-			
-	def rework_task(self, project_name, task_data, current_user = False): # v2 ** start
-		result = self.get_project(project_name)
-		if not result[0]:
-			return(False, result[1])
+	
+	# task_data (dict) - изменяемая задача, если False - значит предполагается, что task инициализирован.
+	def rework_task(self, task_data=False, current_user = False): # v2 ** продолжение возможно только после редактирования chat().read_the_chat()
+		pass
+		# 1 - получение task_data
+		
+		
+		# (1)
+		if not task_data:
+			task_data={}
+			for key in self.tasks_keys:
+				exec('task_data["%s"] = self.%s' % (key, key))
 		
 		# get exists chat
 		if current_user:
