@@ -5171,6 +5171,7 @@ class task(studio):
 			
 	# change_statuses (list) - [(task_data, new_status), ...]
 	# тупо смена статусов в пределах рабочих, что не приводит к смене статусов исходящих задач.
+	# task инициализирован
 	def change_work_statuses(self, change_statuses): # v2
 		table_name = '"%s:%s"' % (self.asset.id, self.tasks_t)
 		return_data_ = {}
@@ -5451,15 +5452,31 @@ class task(studio):
 				#print('epte!')
 		'''
 		return(True, chek_list)
+	
+	# input_task_list (list) - список задач (словари)
+	# task_data (dict) - изменяемая задача, если False - значит предполагается, что task инициализирован.
+	def service_add_list_to_input(self, input_task_list, task_data=False): # v2
+		pass
+		# 0 - получение task_data.
+		# 1 - проверка на srvice
+		# 2 - получение данных для перезаписи инпута данной задачи и аутпутов новых входящих задач.
+		# 3 - изменение статуса данной задачи.
+		# 4 - внесение изменений в БД по данной задаче.
+		# 5 - внесение изменений в БД по входящим задачам.
+		# 6 - внесение изменений в объект, если он инициализирован
 		
-	def service_add_list_to_input(self, project_name, task_data, input_task_list):
-		task_data = dict(task_data)
+		# (0)
+		if not task_data:
+			task_data={}
+			for key in self.tasks_keys:
+				exec('task_data["%s"] = self.%s' % (key, key))
+				
+		# (1)
+		if task_data['task_type'] != 'service':
+			comment = 'In task.service_add_list_to_input() - incorrect type!\nThe type of task to be changed must be "service".\nThis type: "%s"' % task_data['task_type']
+			return(False, comment)
 		
-		# other errors test
-		result = self.get_project(project_name)
-		if not result[0]:
-			return(False, result[1])
-			
+		# (2)
 		# add input list
 		# -- get_input_list
 		overlap_list = []
@@ -5467,12 +5484,11 @@ class task(studio):
 		done_statuses = []
 		rebild_input_task_list = []
 		for task in input_task_list:
-			task = dict(task)
 			# -- get inputs list
 			if task_data['input']:
 				ex_inputs = []
 				try:
-					ex_inputs = json.loads(task_data['input'])
+					ex_inputs = task_data['input']
 				except:
 					pass
 				if task['task_name'] in ex_inputs:
@@ -5486,34 +5502,62 @@ class task(studio):
 			if task['output']:
 				ex_outputs = []
 				try:
-					ex_outputs = json.loads(task['output'])
+					ex_outputs = task['output']
 				except:
 					pass
 				ex_outputs.append(task_data['task_name'])
-				task['output'] = json.dumps(ex_outputs)
+				task['output'] = ex_outputs
 			else:
 				this_outputs = []
 				this_outputs.append(task_data['task_name'])
-				task['output'] = json.dumps(this_outputs)
+				task['output'] = this_outputs
 				
 			rebild_input_task_list.append(task)
 			
 		if not task_data['input']:
-			task_data['input'] = json.dumps(inputs)
+			task_data['input'] = inputs
 		else:
 			ex_inputs = []
 			try:
-				ex_inputs = json.loads(task_data['input'])
+				ex_inputs = task_data['input']
 			except:
 				pass
-			task_data['input'] = json.dumps(ex_inputs + inputs)
+			task_data['input'] = ex_inputs + inputs
 		
-		# change status
+		# (3) change status
 		if task_data['status'] in self.end_statuses:
 			if False in done_statuses:
 				task_data['status'] = 'null'
-				self.this_change_from_end(project_name, task_data)
+				self.this_change_from_end(task_data)
+				
+		# (4)
+		read_ob = self.asset.project
+		table_name = '"%s:%s"' % (task_data['asset_id'], self.tasks_t)
+		keys = self.tasks_keys
+		update_data = {'input':task_data['input'], 'status':task_data['status']}
+		where = {'task_name': task_data['task_name']}
+		bool_, r_data = database().update('project', read_ob, table_name, keys, update_data, where, table_root=self.tasks_db)
+		if not bool_:
+			return(bool_, r_data)
 		
+		# (5)
+		append_task_name_list = []
+		for task in rebild_input_task_list:
+			if not task['task_name'] in overlap_list:
+				table_name = '"%s:%s"' % (task['asset_id'], self.tasks_t)
+				update_data = {'output':task['output']}
+				where = {'task_name': task['task_name']}
+				append_task_name_list.append(task['task_name'])
+				bool_, r_data = database().update('project', read_ob, table_name, keys, update_data, where, table_root=self.tasks_db)
+				if not bool_:
+					return(bool_, r_data)
+				
+		# (6)
+		if self.task_name == task_data['task_name']:
+			self.status = task_data['status']
+			self.input = task_data['input']
+		
+		'''
 		# edit db
 		# -- Connect to db
 		conn = sqlite3.connect(self.tasks_path, detect_types=sqlite3.PARSE_DECLTYPES|sqlite3.PARSE_COLNAMES)
@@ -5545,6 +5589,8 @@ class task(studio):
 		
 		conn.commit()
 		conn.close()
+		'''
+		
 		return(True, (task_data['status'], append_task_name_list))
 		
 	def service_add_list_to_input_from_asset_list(self, project_name, task_data, asset_list):
@@ -5601,23 +5647,31 @@ class task(studio):
 		
 		conn.close()
 		
-		result = self.service_add_list_to_input(project_name, task_data, final_tasks_list)
+		result = self.service_add_list_to_input(final_tasks_list, task_data)
 		if not result[0]:
 			return(False, result[1])
 		
 		return(True, result[1])
 		
 	# self.asset.project - должен быть инициализирован
-	# task_data (dict) - сервис задача из инпута которой удаляются задачи.
+	# task_data (dict) - изменяемая задача, если False - значит предполагается, что task инициализирован.
 	# removed_tasks_list (list) - содержит словари удаляемых из инпута задач.
-	def service_remove_task_from_input(self, task_data, removed_tasks_list, change_status = True): # v2 **
+	def service_remove_task_from_input(self, removed_tasks_list, task_data=False, change_status = True): # v2
 		pass
+		# 0 - получение task_data.
 		# 1 - тест на статус сервис-не сервис.
 		# 2 - очистка списка входящих.
 		# 3 - замена статуса очищаемой задачи.
 		# 4 - удаление данной задачи из output - входящей задачи.
 		# 5 - перезепись status, input - изменяемой задачи.
 		# 6 - изменение статуса далее по цепи.
+		# 7 - внесение изменений в объект, если он инициализирован
+		
+		# (0)
+		if not task_data:
+			task_data={}
+			for key in self.tasks_keys:
+				exec('task_data["%s"] = self.%s' % (key, key))
 		
 		# (1)
 		if task_data['task_type'] != 'service':
@@ -5726,7 +5780,9 @@ class task(studio):
 			
 			if task_data['task_name'] in output_list:
 				output_list.remove(task_data['task_name'])
+				print('#'*5, tsk['task_name'], output_list)
 			else:
+				print('#'*5)
 				continue
 			
 			table = '"%s:%s"' % (tsk['asset_id'], self.tasks_t)
@@ -5766,7 +5822,14 @@ class task(studio):
 				self.this_change_from_end(task_data, assets = assets)
 			elif old_status == 'null' and new_status == 'done':
 				self.this_change_to_end(task_data, assets = assets)
-		#
+				
+		# (7)
+		if self.task_name == task_data['task_name']:
+			if change_status:
+				self.status = new_status
+			self.input = input_list
+		
+		# return
 		if change_status:
 			return(True, (new_status, input_list))
 		else:
