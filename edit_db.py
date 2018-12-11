@@ -5883,37 +5883,45 @@ class task(studio):
 		else:
 			return(True, (old_status, input_list))
 		
-	def service_change_task_in_input(self, project_name, task_data, removed_task_data, added_task_data):
+	# 
+	# removed_task_data (dict) - удаляемая задача
+	# added_task_data (dict) - добавляемая задача
+	# task_data (dict) - изменяемая задача, если False - значит предполагается, что task инициализирован.
+	def service_change_task_in_input(self, removed_task_data, added_task_data, task_data=False): # v2
 		pass
-		# other errors test
-		result = self.get_project(project_name)
-		if not result[0]:
-			return(False, result[1])
+		# 0 - получение task_data.
+		
+		# (0)
+		if not task_data:
+			task_data={}
+			for key in self.tasks_keys:
+				exec('task_data["%s"] = self.%s' % (key, key))
+		
 		# debug	
-		print(task_data['task_name'])
-		print(removed_task_data['task_name'])
-		print(added_task_data['task_name'])
+		#print(task_data['task_name'])
+		#print(removed_task_data['task_name'])
+		#print(added_task_data['task_name'])
 		
 		# remove task
-		result = self.service_remove_task_from_input(project_name, task_data, [removed_task_data])
+		result = self.service_remove_task_from_input([removed_task_data], task_data=task_data)
 		if not result[0]:
 			return(False, result[1])
 		
 		new_status, input_list = result[1]
 		
-		# edit task_data.input
-		task_data = dict(task_data)
-		#input_tasks = json.loads(task_data['input'])
-		#input_tasks.remove(removed_task_data['task_name'])
-		#task_data['input'] = json.dumps(input_tasks)
-		task_data['input'] = json.dumps(input_list)
+		# edit task_data
+		print(task_data['input'], task_data['status'])
+		#
+		task_data['input'] = input_list
 		task_data['status'] = new_status
+		#
+		print(task_data['input'], task_data['status'])
 		
 		#print(json.dumps(task_data, sort_keys = True, indent = 4))
 		#return(False, 'Epteeeee!')
 		
 		# add task
-		result = self.service_add_list_to_input(project_name, task_data, [added_task_data])
+		result = self.service_add_list_to_input([added_task_data], task_data=task_data)
 		if not result[0]:
 			return(False, result[1])
 			
