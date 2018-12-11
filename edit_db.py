@@ -5593,9 +5593,9 @@ class task(studio):
 		
 		return(True, (task_data['status'], append_task_name_list))
 		
-	# asset_list (list) - подсоединяемые ассеты (словари)
-	# task_data (dict) - изменяемая задача, если False - значит предполагается, что task инициализирован.
-	def service_add_list_to_input_from_asset_list(self, asset_list, task_data=False): # v2 ** start
+	# asset_list (list) - подсоединяемые ассеты (словари, или объекты)
+	# task_data (dict) - изменяемая задача, если False - значит предполагается, что task инициализирован
+	def service_add_list_to_input_from_asset_list(self, asset_list, task_data=False): # v2
 		pass
 		# 1 - получение task_data.
 		# 2 - проверка на srvice
@@ -5616,13 +5616,34 @@ class task(studio):
 		final_tasks_list = []
 		types = {'obj':'model', 'char':'rig'}
 		for ast in asset_list:
-			ast_ob = asset(self.project)
-			ast_ob.init(ast)
+			if isinstance(ast, dict):
+				ast_ob = asset(self.asset.project)
+				ast_ob.init(ast)
+			elif isinstance(ast, asset):
+				ast_ob = ast
+			else:
+				continue
 			tsk_ob = task(ast_ob)
-			if task_data['asset_type'] in ['location', 'shot_animation'] and ast['type'] in types:
-				activity = types[ast['type']]
-				
-		
+			if task_data['asset_type'] in ['location', 'shot_animation'] and ast_ob.type in types:
+				activity = types[ast_ob.type]
+				bool_, task_list = tsk_ob.get_list()
+				if not bool_:
+					return(bool_, task_list)
+				#
+				td_dict = {}
+				for td in task_list:
+					td_dict[td['task_name']] = td
+				#
+				for td in task_list:
+					if td.get('activity') == activity:
+						if not td.get('input') or td_dict[td['input']]['activity'] != activity:
+								final_tasks_list.append(td)
+			else:
+				task_name = (ast_ob.name + ':final')
+				bool_, td = tsk_ob.read_task(task_name)
+				if not bool_:
+					return(bool_, td)
+				final_tasks_list.append(td)
 		'''
 		# edit db
 		# -- Connect to db
