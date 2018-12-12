@@ -2574,6 +2574,10 @@ class task(studio):
 	
 	def __init__(self, asset):
 		self.asset = asset
+		
+		for key in self.tasks_keys:
+			exec('self.%s = False' % key)
+		
 		self.VARIABLE_STATUSES = ('ready', 'ready_to_send', 'work', 'work_to_outsorce')
 		
 		self.CHANGE_BY_OUTSOURCE_STATUSES = {
@@ -3796,17 +3800,23 @@ class task(studio):
 	# обязательные поля в task_data: activity, task_name, task_type, extension
 	def add_single_task(self, task_data): # asset_id=False # v2 **
 		pass
-		# 1 - проверка обязательных полей.
+		# 0 - проверка обязательных полей.
+		# 1 - проверка уникальности имени.
 		# 2 - назначение данных из ассета.
 		# 3 - создание задачи. insert
-		# 4 - внесение данной задачи в список output входящей задачи.
-		# 5 - внесение данной задачи в список input исходящей задачи.
-		# 6 - смена статусов для output задачь.
+		# 4 - внесение данной задачи в список output входящей задачи. change_input()
+		# 5 - внесение данной задачи в список input исходящей задачи. change_input()
 		
-		# (1) required fields
+		# (0) required fields
 		for field in ['activity','task_name','task_type', 'extension']:
 			if not task_data.get('%s' % field):
 				return(False, 'Not specified the "%s"!' % field)
+			
+		# (1)
+		for td in self.get_list()[1]:
+			if td['task_name'] == task_data['task_name']:
+				return(False, 'Task with this name: "%s" already exists!' % task_data['task_name'])
+			
 		# (2)
 		# -- priority
 		if not task_data.get('priority'):
@@ -3841,24 +3851,26 @@ class task(studio):
 		task_data['asset_type'] = self.asset.type
 		
 		# (3)
-		table_name = '"%s:%s"' % ( asset_id, self.tasks_t)
+		table_name = '"%s:%s"' % ( self.asset.id, self.tasks_t)
 		bool_, return_data = database().insert('project', self.asset.project, table_name, self.tasks_keys, task_data, table_root=self.tasks_db)
 		if not bool_:
 			return(bool_, return_data)
 		
 		# (4)
-		bool_, return_data = self.change_input(input_task_name, task_data)
-		if not bool_:
-			return(bool_, return_data)
+		if input_task_name:
+			bool_, return_data = self.change_input(input_task_name, task_data)
+			if not bool_:
+				return(bool_, return_data)
 		
 		# (5)
-		bool_, output_task_data = self.read_task(output_task_name)
-		if not bool_:
-			return(bool_, return_data)
-		# --
-		bool_, return_data = self.change_input(task_data['task_name'], output_task_data)
-		if not bool_:
-			return(bool_, return_data)
+		if output_task_name:
+			bool_, output_task_data = self.read_task(output_task_name)
+			if not bool_:
+				return(bool_, return_data)
+			# --
+			bool_, return_data = self.change_input(task_data['task_name'], output_task_data)
+			if not bool_:
+				return(bool_, return_data)
 		
 		'''
 		# get table
