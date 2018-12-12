@@ -3798,11 +3798,11 @@ class task(studio):
 		pass
 		# 1 - проверка обязательных полей.
 		# 2 - назначение данных из ассета.
-		# 3 - проверка статуса, на основе статуса входящей задачи.
+		# 3 - создание задачи. insert
 		# 4 - внесение данной задачи в список output входящей задачи.
-		# 5 - создание задачи. insert
-		# 6 - внесение данной задачи в список output исходящей задачи.
-		# 7 - смена статусов для output задачь.
+		# 5 - внесение данной задачи в список input исходящей задачи.
+		# 6 - смена статусов для output задачь.
+		
 		# (1) required fields
 		for field in ['activity','task_name','task_type', 'extension']:
 			if not task_data.get('%s' % field):
@@ -3811,24 +3811,56 @@ class task(studio):
 		# -- priority
 		if not task_data.get('priority'):
 			task_data['priority'] = self.asset.priority
-		# -- outsource
-		task_data['outsource'] = 0
 		# -- output
+		output_task_name = False
 		if task_data.get('output'):
-			task_data['output'].append('%s:final' % task_data['asset'])
+			output_task_name = task_data.get('output')
+			task_data['output'] = ['%s:final' % self.asset.name]
+		# -- input
+		input_task_name = False
+		if task_data.get('input'):
+			input_task_name = task_data.get('input')
+			task_data['input']= ''
 		else:
-			task_data['output'] = ['%s:final' % task_data['asset']]
-		# -- season
+			task_data['input'] = ''
+		#
+		#other_fields = [
+			#'artist',
+			#'planned_time',
+			#'time',
+			#'supervisor',
+			#'price',
+			#'tz',
+			#]
+		#
+		task_data['status'] = 'ready'
+		task_data['outsource'] = 0
 		task_data['season'] = self.asset.season
-		# -- asset_id
+		task_data['asset_name'] = self.asset.name
 		task_data['asset_id'] = self.asset.id
-		# -- asset_type
 		task_data['asset_type'] = self.asset.type
 		
 		# (3)
+		table_name = '"%s:%s"' % ( asset_id, self.tasks_t)
+		bool_, return_data = database().insert('project', self.asset.project, table_name, self.tasks_keys, task_data, table_root=self.tasks_db)
+		if not bool_:
+			return(bool_, return_data)
 		
 		# (4)
+		bool_, return_data = self.change_input(input_task_name, task_data)
+		if not bool_:
+			return(bool_, return_data)
 		
+		# (5)
+		bool_, output_task_data = self.read_task(output_task_name)
+		if not bool_:
+			return(bool_, return_data)
+		# --
+		bool_, return_data = self.change_input(task_data['task_name'], output_task_data)
+		if not bool_:
+			return(bool_, return_data)
+		
+		'''
 		# get table
 		table = '\"' + task_data['asset_id'] + ':' + self.tasks_t + '\"'
 			
@@ -3939,6 +3971,7 @@ class task(studio):
 			if (old_status != 'close') and (old_status in self.end_statuses):
 				#print('change status')
 				self.this_change_from_end(project_name, dict(output_row))
+		'''
 				
 		return(True, 'Ok')
 	
