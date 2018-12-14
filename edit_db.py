@@ -2672,7 +2672,10 @@ class task(studio):
 			
 		return(True, new_status)
 	
-	def from_input_status(self, task_data, input_task_data):  # input_task_data = row{self.task_keys} or False
+	# возвращает новый статус задачи, на основе входящей задачи.
+	# input_task_data (dict / False) входящая задача.
+	# task_data (dict) - текущая задача.
+	def from_input_status(self, task_data, input_task_data):  # v2
 		pass
 		# get task_outsource
 		task_outsource = bool(task_data['outsource'])
@@ -3798,7 +3801,7 @@ class task(studio):
 	
 	# объект asset, передаваемый в task должен быть инициализирован.
 	# обязательные поля в task_data: activity, task_name, task_type, extension
-	def add_single_task(self, task_data): # asset_id=False # v2 **
+	def add_single_task(self, task_data): # asset_id=False # v2
 		pass
 		# 0 - проверка обязательных полей.
 		# 1 - проверка уникальности имени.
