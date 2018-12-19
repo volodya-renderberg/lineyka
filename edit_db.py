@@ -2448,28 +2448,34 @@ class asset(studio):
 			assets_dict[asset['name']] = asset
 		return(True, assets_dict)
 			
-	def get_by_name(self, asset_type, asset_name): # v2
+	def get_by_name(self, asset_name): # v2
 		where = {'name': asset_name}
-		bool_, return_data = database().read('project', self.project, asset_type, self.asset_keys, where=where, table_root=self.assets_db)
-		if not bool_:
-			return(bool_, return_data)
-		if return_data:
-			asset = return_data[0]
-			asset['path'] = NormPath(os.path.join(self.project.path, self.project.folders['assets'],asset['type'], asset['name']))
-			return(True, asset)
-		else:
+		asset_data = False
+		for asset_type in self.asset_types:
+			bool_, return_data = database().read('project', self.project, asset_type, self.asset_keys, where=where, table_root=self.assets_db)
+			if not bool_:
+				print(return_data)
+				continue
+			if return_data:
+				asset_data = return_data[0]
+				asset_data['path'] = NormPath(os.path.join(self.project.path, self.project.folders['assets'],asset_data['type'], asset_data['name']))
+				return(True, asset_data)
+		if not asset_data:
 			return(False, 'No Asset With This Name(%s)!' % asset_name)
 	
-	def get_by_id(self, asset_type, asset_id): # v2
+	def get_by_id(self, asset_id): # v2
 		where = {'id': asset_id}
-		bool_, return_data = database().read('project', self.project, asset_type, self.asset_keys, where=where, table_root=self.assets_db)
-		if not bool_:
-			return(bool_, return_data)
-		if return_data:
-			asset = return_data[0]
-			asset['path'] = NormPath(os.path.join(self.project.path, self.project.folders['assets'],asset['type'], asset['name']))
-			return(True, asset)
-		else:
+		asset_data = False
+		for asset_type in self.asset_types:
+			bool_, return_data = database().read('project', self.project, asset_type, self.asset_keys, where=where, table_root=self.assets_db)
+			if not bool_:
+				print(return_data)
+				continue
+			if return_data:
+				asset_data = return_data[0]
+				asset_data['path'] = NormPath(os.path.join(self.project.path, self.project.folders['assets'],asset_data['type'], asset_data['name']))
+				return(True, asset_data)
+		if not asset_data:
 			return(False, 'No Asset With This id(%s)!' % asset_id)
 	
 	# keys - словарь по asset_keys, 
@@ -5264,14 +5270,36 @@ class task(studio):
 	
 	# если объект asset, передаваемый в task не инициализирован, то надо указать asset_id.
 	# возврат словаря задачи по имени задачи.
-	def read_task(self, task_name, asset_id=False): # v2
+	def read_task(self, task_name, asset_id=False): # v2 ** переделка
+		pass
+		
+		# (1)
+		asset_path = False
 		if not asset_id:
+			asset_path = self.asset.path
 			asset_id = self.asset.id
+		# asset_path
+		else:
+			bool_, r_data = self.asset.get_by_name(task_name.split(':')[0])
+			if not bool_:
+				return(bool_, r_data)
+			asset_path = r_data['path']
+			asset_id = r_data['id']
+		# read task
 		table_name = '"%s:%s"' % (asset_id, self.tasks_t)
 		where={'task_name': task_name}
-		# read
+		# -- read
 		bool_, return_data = database().read('project', self.asset.project, table_name, self.tasks_keys , where=where, table_root=self.tasks_db)
-		return(bool_, return_data[0])
+		if not bool_:
+			return(bool_, return_data)
+		if not return_data:
+			return(False, 'Not Found task whith name "%s"!' % task_name)
+		
+		task_data = return_data[0]
+		task_data['asset_path'] = asset_path
+		
+		return(True, task_data)
+	
 		'''
 		if keys == 'all':
 			new_keys = []
