@@ -185,7 +185,7 @@ class studio:
 	'priority':'integer',
 	'asset_id': 'text',
 	'asset_type': 'text',
-	#'asset_path': 'text', каждый раз определяется при считывании данных.
+	'asset_path': 'text', # каждый раз определяется при считывании данных.
 	'extension': 'text',
 	}
 	'''
@@ -1500,13 +1500,47 @@ class asset(studio):
 			}
 		self.COPIED_WITH_TASK = ['obj', 'char']
 
-		
+	# инициализация по имени
 	# заполнение полей по self.asset_keys - для передачи экземпляра на уровень выше.
-	def init(self, keys):
-		for key in self.asset_keys:
-			exec('self.%s = keys.get("%s")' % (key, key))
-		# path
-		self.path = NormPath(os.path.join(self.project.path, self.project.folders['assets'],keys['type'], keys['name']))
+	# new (bool) - если True - то возвращается новый инициализированный объект класса asset, если False - то инициализируется текущий объект
+	def init(self, asset_name, new = True):
+		pass
+		# get keys
+		bool_, keys = self.get_by_name(asset_name)
+		if not bool_:
+			return(bool_, keys)
+		
+		if new:
+			new_asset = asset(self.project)
+			for key in self.asset_keys:
+				exec('new_asset.%s = keys.get("%s")' % (key, key))
+			# path
+			new_asset.path = NormPath(os.path.join(self.project.path, self.project.folders['assets'],keys['type'], keys['name']))
+			return new_asset
+		else:
+			for key in self.asset_keys:
+				exec('self.%s = keys.get("%s")' % (key, key))
+			# path
+			self.path = NormPath(os.path.join(self.project.path, self.project.folders['assets'],keys['type'], keys['name']))
+			return(True, 'Ok!')
+		
+	# инициализация по словарю ассета
+	# заполнение полей по self.asset_keys - для передачи экземпляра на уровень выше.
+	# new (bool) - если True - то возвращается новый инициализированный объект класса asset, если False - то инициализируется текущий объект
+	def init_by_keys(self, keys, new = True):
+		if new:
+			new_asset = asset(self.project)
+			for key in self.asset_keys:
+				exec('new_asset.%s = keys.get("%s")' % (key, key))
+			# path
+			new_asset.path = NormPath(os.path.join(self.project.path, self.project.folders['assets'],keys['type'], keys['name']))
+			return new_asset
+		else:
+			for key in self.asset_keys:
+				exec('self.%s = keys.get("%s")' % (key, key))
+			# path
+			self.path = NormPath(os.path.join(self.project.path, self.project.folders['assets'],keys['type'], keys['name']))
+			return(True, 'Ok!')
 		
 	# **************** ASSET NEW  METODS ******************
 	
@@ -2596,9 +2630,40 @@ class task(studio):
 		
 		self.publish = publish(self, NormPath) # ??????? как всегда под вопросом
 		
-	def init(self, keys):
-		for key in self.tasks_keys:
-			exec('self.%s = keys.get("%s")' % (key, key))
+	# инициализация по имени
+	# new (bool) - если True - то возвращается новый инициализированный объект класса task, если False - то инициализируется текущий объект
+	def init(self, task_name, new = True):
+		pass
+		# get keys
+		bool_, keys = self.read_task(task_name)
+		if not bool_:
+			return(bool_, keys)
+				
+		# fill fields
+		if new:
+			new_task = task(self.asset)
+			for key in self.tasks_keys:
+				exec('new_task.%s = keys.get("%s")' % (key, key))
+			return new_task
+		else:
+			for key in self.tasks_keys:
+				exec('self.%s = keys.get("%s")' % (key, key))
+			#self.asset_path = keys.get('asset_path')
+			return(True, 'Ok')
+		
+	# инициализация по словарю
+	# new (bool) - если True - то возвращается новый инициализированный объект класса task, если False - то инициализируется текущий объект
+	def init_by_keys(self, keys, new = True):
+		if new:
+			new_task = task(self.asset)
+			for key in self.tasks_keys:
+				exec('new_task.%s = keys.get("%s")' % (key, key))
+			return new_task
+		else:
+			for key in self.tasks_keys:
+				exec('self.%s = keys.get("%s")' % (key, key))
+			#self.asset_path = keys.get('asset_path')
+			return(True, 'Ok')
 		
 	# ************************ CHANGE STATUS ******************************** start
 	
@@ -3134,7 +3199,16 @@ class task(studio):
 		
 	
 	# **************************** CACHE  ( file path ) ****************************
-	def get_versions_list_of_cache_by_object(self, task_data, ob_name, activity = 'cache', extension = '.pc2'):
+	# task_data (dict) - изменяемая задача, если False - значит предполагается, что task инициализирован.
+	def get_versions_list_of_cache_by_object(self, ob_name, activity = 'cache', extension = '.pc2', task_data=False): # v2 ** start
+		pass
+		# 1 - получение task_data
+		# (1)
+		if not task_data:
+			task_data={}
+			for key in self.tasks_keys:
+				exec('task_data["%s"] = self.%s' % (key, key))
+		
 		asset_path = task_data['asset_path']
 		
 		folder_name = self.ACTIVITY_FOLDER[task_data['asset_type']][activity]
@@ -3691,6 +3765,7 @@ class task(studio):
 				task_keys['asset_name'] = asset_name
 			if not task_keys.get('asset_id'):
 				task_keys['asset_id'] = asset_id
+			task_keys['asset_path'] = ''
 			task_keys['outsource'] = 0
 			# 4.2
 			bool_, return_data = database().insert('project', self.asset.project, table_name, self.tasks_keys, task_keys, table_root=self.tasks_db)
@@ -4019,6 +4094,9 @@ class task(studio):
 		
 		if not bool_:
 			return(bool_, return_data)
+		
+		for td in return_data:
+			td['asset_path'] = self.asset.path
 		'''
 		task_list = []
 		
@@ -4050,6 +4128,7 @@ class task(studio):
 		'''
 		return(True, return_data)
 		
+	# возвращает задачи (словари) по списку имён задачь, из различных ассетов.
 	# self.asset.project - инициализирован
 	# assets_data (dict) - dict{asset_name: {asset_data},...}
 	# task_name_list (list) - список имён задач.
@@ -4079,6 +4158,7 @@ class task(studio):
 			if not bool_:
 				return(bool_, return_data)
 			if return_data:
+				return_data[0]['asset_path'] = assets_data[task_name.split(':')[0]]['path']
 				task_data_dict[task_name] = return_data[0]
 		'''
 		try:
@@ -5270,7 +5350,7 @@ class task(studio):
 	
 	# если объект asset, передаваемый в task не инициализирован, то надо указать asset_id.
 	# возврат словаря задачи по имени задачи.
-	def read_task(self, task_name, asset_id=False): # v2 ** переделка
+	def read_task(self, task_name, asset_id=False): # v2
 		pass
 		
 		# (1)
@@ -7449,10 +7529,38 @@ class group(studio):
 		for key in self.group_keys:
 			exec('self.%s = False' % key)
 	
-	# заполнение полей по self.group_keys - для передачи экземпляра в уровень ниже.
-	def init(self, keys):
-		for key in self.group_keys:
-			exec('self.%s = keys.get("%s")' % (key, key))
+	# инициализация по имени группы
+	# new (bool) - если True - то возвращается новый инициализированный объект класса group, если False - то инициализируется текущий объект
+	def init(self, group_name, new = True):
+		pass
+		# get keys
+		bool_, keys = self.get_by_name(group_name)
+		if not bool_:
+			return(bool_, keys)
+		
+		if new:
+			new_group = group(self.project)
+			for key in self.group_keys:
+				exec('new_group.%s = keys.get("%s")' % (key, key))
+			return new_group
+		else:
+			for key in self.group_keys:
+				exec('self.%s = keys.get("%s")' % (key, key))
+			return(True, 'Ok!')
+		
+	# инициализация по словарю
+	# new (bool) - если True - то возвращается новый инициализированный объект класса group, если False - то инициализируется текущий объект
+	# keys (dict) - словарь данных группы
+	def init_by_keys(self, keys, new = True):
+		if new:
+			new_group = group(self.project)
+			for key in self.group_keys:
+				exec('new_group.%s = keys.get("%s")' % (key, key))
+			return new_group
+		else:
+			for key in self.group_keys:
+				exec('self.%s = keys.get("%s")' % (key, key))
+			return(True, 'Ok!')
 	
 	# keys - словарь по group_keys (name и type - обязательные ключи)
 	def create(self, keys):
