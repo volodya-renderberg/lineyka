@@ -3203,8 +3203,11 @@ class task(studio):
 		
 	
 	# **************************** CACHE  ( file path ) ****************************
+	# ob_name (str) - имя 3d объекта
+	# activity (str) - по умолчанию cache (для blender) - для других программ может быть другим, например "maya_cache"
+	# extension (str) - расширение файла кеша.
 	# task_data (dict) - изменяемая задача, если False - значит предполагается, что task инициализирован.
-	def get_versions_list_of_cache_by_object(self, ob_name, activity = 'cache', extension = '.pc2', task_data=False): # v2 ** start
+	def get_versions_list_of_cache_by_object(self, ob_name, activity = 'cache', extension = '.pc2', task_data=False): # v2 *** без тестов
 		pass
 		# 1 - получение task_data
 		# (1)
@@ -3255,8 +3258,19 @@ class task(studio):
 		else:
 			return(False, 'No Found Cache Versions! *')
 		
-	
-	def get_final_cache_file_path(self, task_data, cache_dir_name, activity = 'cache', extension = '.pc2'):
+	# cache_dir_name (str) - "asset_name + '_' + ob_name"
+	# activity (str) - по умолчанию cache (для blender) - для других программ может быть другим, например "maya_cache"
+	# extension (str) - расширение файла кеша.
+	# task_data (dict) - изменяемая задача, если False - значит предполагается, что task инициализирован.
+	def get_final_cache_file_path(self, cache_dir_name, activity = 'cache', extension = '.pc2', task_data=False): # v2 *** без тестов
+		pass
+		# 1 - получение task_data
+		# (1)
+		if not task_data:
+			task_data={}
+			for key in self.tasks_keys:
+				exec('task_data["%s"] = self.%s' % (key, key))
+		
 		asset_path = task_data['asset_path']
 		
 		folder_name = self.ACTIVITY_FOLDER[task_data['asset_type']][activity]
@@ -3289,17 +3303,28 @@ class task(studio):
 			num = 4 - len(hex_)
 			hex_num = '0'*num + hex_
 			
-			final_file = os.path.join(cache_dir_path, hex_num, (cache_dir_name + extension))
+			final_file = NormPath(os.path.join(cache_dir_path, hex_num, (cache_dir_name + extension)))
 			if os.path.exists(final_file):
 				return(True, final_file)
 			i = i-1
 		
 		return(False, 'No Found Chache! *2')
 		
-	def get_new_cache_file_path(self, project_name, task_data, cache_dir_name, activity = 'cache', extension = '.pc2'):
+	# cache_dir_name (str) - "asset_name + '_' + ob_name"
+	# activity (str) - по умолчанию cache (для blender) - для других программ может быть другим, например "maya_cache"
+	# extension (str) - расширение файла кеша.
+	# task_data (dict) - изменяемая задача, если False - значит предполагается, что task инициализирован.
+	def get_new_cache_file_path(self, cache_dir_name, activity = 'cache', extension = '.pc2', task_data=False): # v2 *** без тестов
 		pass
+		# 1 - получение task_data
+		# (1)
+		if not task_data:
+			task_data={}
+			for key in self.tasks_keys:
+				exec('task_data["%s"] = self.%s' % (key, key))
+		
 		# get final file
-		result = self.get_final_cache_file_path(task_data, cache_dir_name, activity = activity, extension = extension)
+		result = self.get_final_cache_file_path(cache_dir_name, activity = activity, extension = extension, task_data=task_data)
 		#final_file = None
 		if not result[0]:
 			if result[1] == 'No Found Chache! *1' or result[1] == 'No Found Chache! *2':
@@ -3319,8 +3344,8 @@ class task(studio):
 			os.mkdir(activity_path)
 		
 		if final_file == None:
-			new_dir_path = os.path.join(activity_path, '0000')
-			new_file_path = os.path.join(new_dir_path, (cache_dir_name + extension))
+			new_dir_path = NormPath(os.path.join(activity_path, '0000'))
+			new_file_path = NormPath(os.path.join(new_dir_path, (cache_dir_name + extension)))
 			
 		else:
 			ff_split = final_file.replace('\\','/').split('/')
@@ -3330,8 +3355,8 @@ class task(studio):
 				for i in range(0, (4 - len(new_num_hex))):
 					new_num_hex = '0' + new_num_hex
 			
-			new_dir_path = os.path.join(activity_path, new_num_hex)
-			new_file_path = os.path.join(new_dir_path, (cache_dir_name + extension))
+			new_dir_path = NormPath(os.path.join(activity_path, new_num_hex))
+			new_file_path = NormPath(os.path.join(new_dir_path, (cache_dir_name + extension)))
 		
 		
 		# make version dir
@@ -3341,17 +3366,26 @@ class task(studio):
 				 
 		return(True, (new_dir_path, new_file_path))
 		
-	def get_version_cache_file_path(self, project_name, task_data, version, cache_dir_name, activity = 'cache', extension = '.pc2'):
-		result = self.get_project(project_name)
-		if not result[0]:
-			return(False, result[1])
-			
+	# version (str) - hex 4 символа
+	# cache_dir_name (str) - "asset_name + '_' + ob_name"
+	# activity (str) - по умолчанию cache (для blender) - для других программ может быть другим, например "maya_cache"
+	# extension (str) - расширение файла кеша.
+	# task_data (dict) - изменяемая задача, если False - значит предполагается, что task инициализирован.
+	def get_version_cache_file_path(self, version, cache_dir_name, activity = 'cache', extension = '.pc2', task_data=False): # v2 *** без тестов
+		pass
+		# 1 - получение task_data
+		# (1)
+		if not task_data:
+			task_data={}
+			for key in self.tasks_keys:
+				exec('task_data["%s"] = self.%s' % (key, key))
+		
 		asset_path = task_data['asset_path']
 		
 		folder_name = self.ACTIVITY_FOLDER[task_data['asset_type']][activity]
 		activity_path = NormPath(os.path.join(asset_path, folder_name, cache_dir_name))
 		
-		version_file = os.path.join(activity_path, version, (cache_dir_name + extension))
+		version_file = NormPath(os.path.join(activity_path, version, (cache_dir_name + extension)))
 		
 		if os.path.exists(version_file):
 			return(True, version_file)
