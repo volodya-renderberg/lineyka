@@ -1549,21 +1549,23 @@ class asset(studio):
 	# asset_type (str) - тип для всех ассетов
 	def create(self, asset_type, list_keys):  # v2
 		pass
-		# проверка типа ассета
-		# проверка типа list_keys
-		# список ассетов данного типа для проверки наличия
-		# создание таблицы если нет
-		# создание ассетов - проверки:
-		# -- наличие name, group(id), type
-		# -- соответствие type типу группы.
-		# -- наличия имени.
-		# -- проверка на наличие ассета с таким именем.
-		# -- создание id с проверкой на совпадение.
+		# 1 - проверка типа ассета
+		# 2 - проверка типа list_keys
+		# 3 - список ассетов данного типа для проверки наличия
+		# 4 - создание таблицы если нет
+		# 5 - проверка на совпадение имени ассета
+		# 6 - создание ассетов - проверки:
+		# --6.1 - наличие name, group(id), season
+		# --6.2 - изменение имени
+		# --6.3 - добавление значений (type, status, priority) в словарь ассета
+		# --6.4 - создание id с проверкой на совпадение.
+		# --6.5 - создание директорий
+		# --6.6 - создание ассета в БД
 		
-		# test valid asset_type
+		# (1) test valid asset_type
 		if not asset_type in self.asset_types:
 			return(False, 'Asset_Type (%s) is Not Valid!' % asset_type)
-		# test valid type of list_keys
+		# (2) test valid type of list_keys
 		if list_keys.__class__.__name__!= 'list':
 			return(False, 'The type of "list_keys" (%s) is Not Valid! There must be a "list"' % list_keys.__class__.__name__)
 		# start data
@@ -1580,20 +1582,21 @@ class asset(studio):
 			print('#'*5)
 			print(result[1])
 			
-		# cteate table
+		# (4) cteate table
 		bool_, return_data = database().create_table('project', self.project, asset_type, self.asset_keys, table_root = self.assets_db)
 		if not bool_:
 			return(bool_, return_data)
 		
-		########### create assets
+		#
 		if not list_keys:
 			return(False, 'No data to create an Asset!')
-		# test exists name
+		# (5) test exists name
 		for keys in list_keys:
 			if keys['name'] in assets:
 				return(False, 'The name "%s" already exists!' % keys['name'])
-		#
+		# (6) create assets
 		for keys in list_keys:
+			# (6.1)
 			# test name
 			if not keys.get('name'):
 				return(False,('No name!'))
@@ -1605,22 +1608,23 @@ class asset(studio):
 				return(False, 'In the asset "%s" does not specify a season' % keys['name'])
 			elif not asset_type in self.asset_types_with_season and not keys.get('season'):
 				keys['season'] = ''
-			# edit name
+			# (6.2) edit name
 			if asset_type in ['shot_animation']:
 				keys['name'] = keys['name'].replace(' ', '_')
 			else:
 				keys['name'] = keys['name'].replace(' ', '_').replace('.', '_')
-			# make keys
+			# (6.3) make keys
 			keys['type'] = asset_type
 			keys['status'] = 'active'
-			# -- get id
+			if not keys.get('priority'):
+				keys['priority'] = 0
+			
+			# (6.4) get id
 			keys['id'] = hex(random.randint(0, 1000000000)).replace('0x','')
 			while keys['id'] in ids:
 				keys['id'] = hex(random.randint(0, 1000000000)).replace('0x','')
-			# -- get priority
-			if not keys.get('priority'):
-				keys['priority'] = 0
-			# create Folders
+
+			# (6.5) create Folders
 			group_dir = NormPath(os.path.join(self.project.path, self.project.folders['assets'],asset_type))
 			asset_path = NormPath(os.path.join(group_dir, keys['name']))
 			# -- create group folder
@@ -1652,7 +1656,7 @@ class asset(studio):
 				if not os.path.exists(folder_path):
 					os.mkdir(folder_path)
 			
-			# create in DB
+			# (6.6) create in DB init
 			bool_, return_data = database().insert('project', self.project, asset_type, self.asset_keys, keys, table_root=self.assets_db)
 			if not bool_:
 				return(bool_, return_data)
@@ -1790,8 +1794,8 @@ class asset(studio):
 			########### create tasks (by task data)
 			#c = json.dumps(this_asset_tasks, sort_keys=True, indent=4)
 			#print(c)
-			self.init(keys)
-			result = task(self).create_tasks_from_list(this_asset_tasks)
+			new_asset = self.init_by_keys(keys)
+			result = task(new_asset).create_tasks_from_list(this_asset_tasks)
 			if not result[0]:
 				return(False, result[1])
 			
@@ -5774,7 +5778,7 @@ class task(studio):
 		for ast in asset_list:
 			if isinstance(ast, dict):
 				ast_ob = asset(self.asset.project)
-				ast_ob.init(ast)
+				ast_ob.init_by_keys(ast, new=False)
 			elif isinstance(ast, asset):
 				ast_ob = ast
 			else:
