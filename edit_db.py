@@ -1501,7 +1501,8 @@ class asset(studio):
 		self.COPIED_WITH_TASK = ['obj', 'char']
 
 	# инициализация по имени
-	# заполнение полей по self.asset_keys - для передачи экземпляра на уровень выше.
+	# заполнение полей по self.asset_keys
+	# asset_name (str) - имя ассета. данные ассета будут считаны из базы данных.
 	# new (bool) - если True - то возвращается новый инициализированный объект класса asset, если False - то инициализируется текущий объект
 	def init(self, asset_name, new = True):
 		pass
@@ -1525,7 +1526,7 @@ class asset(studio):
 			return(True, 'Ok!')
 		
 	# инициализация по словарю ассета
-	# заполнение полей по self.asset_keys - для передачи экземпляра на уровень выше.
+	# заполнение полей по self.asset_keys
 	# new (bool) - если True - то возвращается новый инициализированный объект класса asset, если False - то инициализируется текущий объект
 	def init_by_keys(self, keys, new = True):
 		if new:
@@ -3087,7 +3088,7 @@ class task(studio):
 			num = 4 - len(hex_)
 			hex_num = '0'*num + hex_
 			
-			final_file = os.path.join(activity_path, hex_num, '%s%s' % (asset, extension))
+			final_file = NormPath(os.path.join(activity_path, hex_num, '%s%s' % (asset, extension)))
 			if os.path.exists(final_file):
 				return(True, final_file, asset_path)
 			i = i-1
@@ -3096,7 +3097,7 @@ class task(studio):
 	
 	# asset - должен быит инициализирован
 	# task_data (dict) - требуется если не инициализирован task
-	# version (str) - hex
+	# version (str) - hex 4 символа
 	def get_version_file_path(self, version, task_data=False): # v2
 		asset_path = self.asset.path
 		if not task_data:
@@ -3751,7 +3752,7 @@ class task(studio):
 	# **************** Task NEW  METODS ******************
 	
 	# объект asset, передаваемый в task должен быть инициализирован.
-	# list_of_tasks (str) - список задачь (словари по tasks_keys).
+	# list_of_tasks (list) - список задачь (словари по tasks_keys).
 	def create_tasks_from_list(self, list_of_tasks): #v2
 		asset_name = self.asset.name #asset_data['name']
 		asset_id = self.asset.id #asset_data['id']
@@ -4556,7 +4557,6 @@ class task(studio):
 		'''		
 		return(True, readers_dict)
 	
-	# надо ли удалять first_reader - если его ник нейм в списке на удаление ???????????????????
 	# remove_readers_list (list) - список никнеймов удаляемых из списка читателей
 	# task_data (dict) - изменяемая задача, если False - значит предполагается, что task инициализирован.
 	def remove_readers(self, remove_readers_list, task_data=False): # v2
@@ -4622,6 +4622,8 @@ class task(studio):
 				del readers_dict[artist_name]
 			except:
 				pass
+			if artist_name == readers_dict.get('first_reader'):
+				del readers_dict['first_reader']
 		
 		# (4) get change status
 		if task_data['status'] == 'checking':
