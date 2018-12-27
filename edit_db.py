@@ -5190,7 +5190,8 @@ class task(studio):
 		return(True, 'Ok!')
 	
 	# task_data (dict) - изменяемая задача, если False - значит предполагается, что task инициализирован.
-	def rework_task(self, task_data=False, current_user = False): # v2 ** продолжение возможно только после редактирования chat().read_the_chat()
+	# current_user (artist) - экземпляр класса артист, должен быть инициализирован - artist.get_user() - если False - то чат проверятся не будет (для тех нужд)
+	def rework_task(self, current_user = False, task_data=False): # v2 ** продолжение возможно только после редактирования chat().read_the_chat()
 		pass
 		# 1 - получение task_data
 		
@@ -5203,6 +5204,8 @@ class task(studio):
 		
 		# get exists chat
 		if current_user:
+			if not isinstance(current_user, artist):
+				return(False, 'in task.rework_task() - "current_user" must be an instance of "artist" class, and not "%s"' % current_user.__class__.__name__)
 			exists_chat = False
 			result = chat().read_the_chat(project_name, task_data['task_name'])
 			if not result[0]:
@@ -5345,7 +5348,7 @@ class task(studio):
 			
 	# change_statuses (list) - [(task_data, new_status), ...]
 	# тупо смена статусов в пределах рабочих, что не приводит к смене статусов исходящих задач.
-	# task инициализирован
+	# task.asset инициализирован
 	def change_work_statuses(self, change_statuses): # v2
 		table_name = '"%s:%s"' % (self.asset.id, self.tasks_t)
 		return_data_ = {}
@@ -5388,7 +5391,8 @@ class task(studio):
 		return(True, return_data)
 		'''
 	
-	# если объект asset, передаваемый в task не инициализирован, то надо указать asset_id.
+	# task_name (str) - имя задачи
+	# asset_id (str) - если объект asset, передаваемый в task не инициализирован, либо если предполагается задача другого ассета (не инициализированного), то надо указать asset_id.
 	# возврат словаря задачи по имени задачи.
 	def read_task(self, task_name, asset_id=False): # v2
 		pass
@@ -5895,6 +5899,13 @@ class task(studio):
 		if not result[0]:
 			return(False, result[1])
 		
+		#
+		if self.task_name == task_data['task_name']:
+			self.status = result[1][0]
+			for task_name in result[1][1]:
+				if not task_name in self.input:
+					self.input.append(task_name)
+		
 		return(True, result[1])
 		
 	# self.asset.project - должен быть инициализирован
@@ -6120,6 +6131,11 @@ class task(studio):
 		result = self.service_add_list_to_input([added_task_data], task_data=task_data)
 		if not result[0]:
 			return(False, result[1])
+		
+		#
+		if self.task_name == task_data['task_name']:
+			self.status = result[1][0]
+			self.input = input_list + result[1][1]
 			
 		return(True, result[1])
 			
@@ -6140,7 +6156,7 @@ class log(task):
 		task.__init__(self)
 	
 	def notes_log(self, project_name, logs_keys, asset_id):
-		
+		pass
 		# other errors test
 		result = self.get_project(project_name)
 		if not result[0]:
