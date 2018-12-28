@@ -309,15 +309,15 @@ class studio:
 	'set_of_tasks',
 	]
 	
-	logs_keys = [
-	('version', 'text'),
-	('date_time', 'timestamp'),
-	('activity', 'text'),
-	('task_name', 'text'),
-	('action', 'text'),
-	('artist', 'text'),
-	('comment', 'text'),
-	]
+	logs_keys = {
+	'version': 'text',
+	'date_time': 'timestamp',
+	'activity': 'text',
+	'task_name': 'text',
+	'action': 'text',
+	'artist': 'text',
+	'comment': 'text',
+	}
 	
 	init_folder = '.lineyka'
 	init_file = 'lineyka_init.json'
@@ -910,6 +910,11 @@ class database():
 		#return(db_name, db_data)
 		
 		if db_name == 'sqlite3':
+			# create table
+			bool_, r_data = self.__sqlite3_create_table(level, read_ob, table_name, keys, table_root)
+			if not bool_:
+				return(bool_, r_data)
+			# write
 			return_data = self.__sqlite3_insert(level, read_ob, table_name, keys, write_data, table_root)
 			return(return_data)
 	
@@ -1417,10 +1422,11 @@ class asset(studio):
 	
 	'''
 	
-	def __init__(self, project):
-		pass
+	def __init__(self, project_ob):
+		if not isinstance(project_ob, project):
+			raise Exception('in asset.__init__() - Object is not the right type "%s", must be "project"' % project_ob.__class__.__name__)
 		# objects
-		self.project = project
+		self.project = project_ob
 		
 		self.task_list = False # task lists from this asset
 		self.activity_path = False # директория какого либо активити по запросу, заполняется в get_activity_path()
@@ -2617,8 +2623,10 @@ class task(studio):
 		
 	'''
 	
-	def __init__(self, asset):
-		self.asset = asset
+	def __init__(self, asset_ob):
+		if not isinstance(asset_ob, asset):
+			raise Exception('in task.__init__() - Object is not the right type "%s", must be "asset"' % asset_ob.__class__.__name__)
+		self.asset = asset_ob
 		
 		for key in self.tasks_keys:
 			exec('self.%s = False' % key)
@@ -6139,41 +6147,75 @@ class task(studio):
 			
 		return(True, result[1])
 			
-class log(task):
+class log(studio):
 	'''
-	notes_log(project_name, task_name, {key: data, ...}) 
+	write_log(project_name, task_name, {key: data, ...}) 
 	
 	read_log(project_name, asset_name, {key: key_name, ...});; example: self.read_log(project, asset, {'activity':'rig_face', 'action':'push'});; return: (True, ({key: data, ...}, {key: data, ...}, ...))  or (False, comment)
 	
 	'''
 	
-	def __init__(self):
+	def __init__(self, task_ob):
+		if not isinstance(task_ob, task):
+			raise Exception('in log.__init__() - Object is not the right type "%s", must be "task"' % task_ob.__class__.__name__)
+		self.task = task_ob
+		#
+		for key in self.logs_keys:
+			exec('self.%s = False' % key)
+		
 		self.camera_log_file_name = 'camera_logs.json'
 		self.playblast_log_file_name = 'playblast_logs.json'
 		
-		self.log_actions = ['push', 'open', 'report','recast' , 'change_artist', 'close', 'done', 'return_a_job', 'send_to_outsource', 'load_from_outsource']
-		
-		task.__init__(self)
+		self.log_actions = ['push', 'publish', 'open', 'report','recast' , 'change_artist', 'close', 'done', 'return_a_job', 'send_to_outsource', 'load_from_outsource']
 	
-	def notes_log(self, project_name, logs_keys, asset_id):
+	# запись лога для задачи
+	# self.task - должен быть инициализирован
+	# logs_keys (dict) - словарь по studio.logs_keys - обязательные ключи: comment, version, action
+	# artist (bool/artist) - если False - значит создаётся новый объект artist и определяется текущий пользователь.
+	def write_log(self, logs_keys, artist_ob=False): # v2 - процедура бывшая notes_log 
 		pass
-		# other errors test
-		result = self.get_project(project_name)
-		if not result[0]:
-			return(False, result[1])
+		# 1 - тест обязательных полей: comment, version, action
+		# 2 - чтение artist
+		# 3 - заполнение полей task_name, date_time, artist
+		# 4 - запись БД
 		
-		# test task_name
-		try:
-			task_name = (logs_keys['task_name'],)
-		except:
-			return False, 'not task_name'
+		# (1)
+		for item in ["comment", "version", "action"]:
+			if not logs_keys.get(item):
+				return(False, 'in log.write_log() - no "%s" submitted!' % item)
 		
-		# date time
-		try:
-			time = logs_keys['date_time']
-		except:
+		if not logs_keys['action'] in self.log_actions:
+			return(False, 'in log.write_log() - wrong action - "%s"!' % logs_keys['action'])
+		
+		# (2)
+		if not artist_ob:
+			artist_ob = artist()
+			bool_, r_data = artist_ob.get_user()
+			if not bool_:
+				return(bool_, r_data)
+
+		# (3)		
+		# task_name
+		if not self.task.task_name:
+			return(False, 'in log.write_log() - value "self.task.task_name" not defined!')
+		else:
+			logs_keys['task_name'] = self.task.task_name
+		#
+		if not logs_keys.get('date_time'):
 			logs_keys['date_time'] = datetime.datetime.now()
+		#
+		logs_keys['artist'] = artist_ob.nik_name
+		#
+		logs_keys['activity'] = self.task.activity
 		
+		# (4)
+		table_name = '"%s:%s:logs"' % (self.task.asset_id, logs_keys['activity'])
+		read_ob = self.task.asset.project
+		#
+		bool_, r_data = database().insert('project', read_ob, table_name, self.logs_keys, logs_keys, table_root=self.logs_db)
+		if not bool_:
+			return(bool_, r_data)
+		'''
 		# open db
 		conn = sqlite3.connect(self.tasks_path, detect_types=sqlite3.PARSE_DECLTYPES|sqlite3.PARSE_COLNAMES)
 		conn.row_factory = sqlite3.Row
@@ -6223,15 +6265,37 @@ class log(task):
 		c.execute(string, data)
 		conn.commit()
 		conn.close()
+		'''
 		
 		return(True, 'ok')
+	
+	# запись лога задачи
+	# self.task - должен быть инициализирован
+	def read_log(self, action=False): # v2
+		pass
+		# 1 - проверка инициализации ассета.
+		# 2 - проверка action
+		# 3 - чтение БД.
+	
+		# (1)
+		if not self.task.task_name:
+			return(False, 'in log.write_log() - value "self.task.task_name" not defined!')
 		
-	def read_log(self, project_name, asset_id, activity):
-		# other errors test
-		result = self.get_project(project_name)
-		if not result[0]:
-			return(False, result[1])
+		# (2)
+		if action and not action in self.log_actions:
+			return(False, 'in log.read_log() - wrong "action" - "%s"!' % action)
 		
+		# (3)
+		table_name = '"%s:%s:logs"' % (self.task.asset_id, self.task.activity)
+		read_ob = self.task.asset.project
+		if action:
+			where = {'action': action}
+		else:
+			where = False
+		bool_, r_data = database().read('project', read_ob, table_name, self.logs_keys, where=where, table_root=self.logs_db)
+		return(bool_, r_data)
+		
+		'''
 		# read tasks
 		conn = sqlite3.connect(self.tasks_path, detect_types=sqlite3.PARSE_DECLTYPES|sqlite3.PARSE_COLNAMES)
 		conn.row_factory = sqlite3.Row
@@ -6249,32 +6313,47 @@ class log(task):
 		except:
 			conn.close()
 			return(False, 'can_not_read_logs!')
-		'''
-		c.execute(string)
-		rows = c.fetchall()
-		'''
 		conn.close()
-		return(True, rows)
+		'''
 		
-	def get_push_logs(self, project_name, task_data):
+	# task_data (bool/dict) - если False - значит читается self.task
+	def get_push_logs(self, task_data=False): # v2 возможно устаревшая
+		pass
 		# get all logs
-		result = self.read_log(project_name, task_data['asset_id'], task_data['activity'])
-		if not result[0]:
-			return(False, result[1])
+		if not task_data:
+			bool_, logs_list = self.read_log()
+			if not bool_:
+				return(False, logs_list)
+		else:
+			# get asset/task
+			if task_data['asset_name'] != self.task.asset.name:
+				asset_ob = self.task.asset.init(task_data['asset_name'])
+				task_ob = task(asset_ob)
+			else:
+				task_ob = task(self.task.asset)
+			#
+			task_ob.init_by_keys(task_data, new=False)
+			# get log
+			log_new = log(task_ob)
+			# read log
+			bool_, logs_list = log_new.read_log()
+			if not bool_:
+				return(False, logs_list)
+			
 		
 		push_logs = []
-		for row in result[1]:
+		for row in logs_list:
 			if row['action'] == 'push':
 				row = dict(row)
 				dt = row['date_time']
-				data = str(dt.year) + '/' + str(dt.month) + '/' + str(dt.day) + '/' + str(dt.hour) + ':' + str(dt.minute)
+				data = dt.strftime("%d-%m-%Y %H:%M:%S")
 				row['date_time'] = data
 				push_logs.append(row)
 				
 		return(True, push_logs)
 	
 	# *** CAMERA LOGS ***
-	def camera_notes_log(self, project_name, task_data, comment, version):
+	def camera_write_log(self, project_name, task_data, comment, version):
 		logs_keys = {}
 		tasks_keys = []
 		for key in self.tasks_keys:
@@ -6335,7 +6414,7 @@ class log(task):
 		return(True, sort_data)
 		
 	# *** PLAYBLAST LOGS ***
-	def playblast_notes_log(self, project_name, task_data, comment, version):
+	def playblast_write_log(self, project_name, task_data, comment, version):
 		logs_keys = {}
 		tasks_keys = []
 		for key in self.tasks_keys:
@@ -6424,9 +6503,31 @@ class artist(studio):
 		#studio.__init__(self)
 		pass
 	
+	# инициализация по имени
+	# new (bool) - если True - то возвращается новый инициализированный объект класса artist, если False - то инициализируется текущий объект
+	def init(self, nik_name, new = True):
+		pass
+		# get keys
+		bool_, keys = self.read_artist({'nik_name': nik_name})
+		if not bool_:
+			return(bool_, keys)
+				
+		# fill fields
+		if new:
+			new_artist = artist()
+			for key in self.artists_keys:
+				exec('new_artist.%s = keys[0].get("%s")' % (key, key))
+			return new_artist
+		else:
+			for key in self.artists_keys:
+				exec('self.%s = keys[0].get("%s")' % (key, key))
+			#self.asset_path = keys.get('asset_path')
+			return(True, 'Ok')
+	
 	# если registration=True - произойдёт заполнение полей artists_keys, поле user_name будет заполнено.
 	# если registration=False - поля artists_keys заполняться не будут, поле user_name - останется пустым.
 	def add_artist(self, keys, registration = True):
+		pass
 		# test nik_name
 		if not keys.get('nik_name'):
 			return(False, '\"Nik Name\" not specified!')
@@ -6506,6 +6607,7 @@ class artist(studio):
 		return(True, artists_dict)
 		
 	def login_user(self, nik_name, password):
+		pass
 		# проверка наличия юзера
 		# проверка пароля
 		# очистка данного юзернейма
@@ -7492,8 +7594,10 @@ class set_of_tasks(studio):
 		return(True, 'Ok!')
 		
 class season(studio):
-	def __init__(self, project):
-		self.project = project
+	def __init__(self, project_ob):
+		if not isinstance(project_ob, project):
+			raise Exception('in season.__init__() - Object is not the right type "%s", must be "project"' % project_ob.__class__.__name__)
+		self.project = project_ob
 		# fill fields
 		for key in self.season_keys:
 			exec('self.%s = False' % key)
@@ -7579,8 +7683,10 @@ class season(studio):
 		return(bool_, return_data)
 	
 class group(studio):
-	def __init__(self, project):
-		self.project = project
+	def __init__(self, project_ob):
+		if not isinstance(project_ob, project):
+			raise Exception('in group.__init__() - Object is not the right type "%s", must be "project"' % project_ob.__class__.__name__)
+		self.project = project_ob
 		#base fields
 		for key in self.group_keys:
 			exec('self.%s = False' % key)
@@ -7828,8 +7934,10 @@ class group(studio):
 		return(True, 'ok')
 		
 class list_of_assets(studio):
-	def __init__(self, group):
-		self.group = group
+	def __init__(self, group_ob):
+		if not isinstance(group_ob, group):
+			raise Exception('in list_of_assets.__init__() - Object is not the right type "%s", must be "group"' % group_ob.__class__.__name__)
+		self.group = group_ob
 
 	# rows (list) = [{keys}, {keys}, ...]
 	def save_list(self, rows, group_name = False):
