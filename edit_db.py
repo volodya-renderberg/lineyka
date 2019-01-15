@@ -6155,7 +6155,7 @@ class log(studio):
 	
 	'''
 	
-	def __init__(self, task_ob):
+	def __init__(self, task_ob): # v2
 		if not isinstance(task_ob, task):
 			raise Exception('in log.__init__() - Object is not the right type "%s", must be "task"' % task_ob.__class__.__name__)
 		self.task = task_ob
@@ -6271,6 +6271,7 @@ class log(studio):
 	
 	# запись лога задачи
 	# self.task - должен быть инициализирован
+	# action (bool / str) если False - то возврат для всех action
 	def read_log(self, action=False): # v2
 		pass
 		# 1 - проверка инициализации ассета.
@@ -6316,12 +6317,15 @@ class log(studio):
 		conn.close()
 		'''
 		
+	# читает только push логи
+	# преобразует datetime в строку
 	# task_data (bool/dict) - если False - значит читается self.task
-	def get_push_logs(self, task_data=False): # v2 возможно устаревшая
+	# time_to_str (bool) - если True - то преобразует дату в строку.
+	def get_push_logs(self, task_data=False, time_to_str = False): # v2 возможно устаревшая
 		pass
 		# get all logs
 		if not task_data:
-			bool_, logs_list = self.read_log()
+			bool_, logs_list = self.read_log(action='push')
 			if not bool_:
 				return(False, logs_list)
 		else:
@@ -6336,41 +6340,52 @@ class log(studio):
 			# get log
 			log_new = log(task_ob)
 			# read log
-			bool_, logs_list = log_new.read_log()
+			bool_, logs_list = log_new.read_log(action='push')
 			if not bool_:
 				return(False, logs_list)
 			
 		
-		push_logs = []
-		for row in logs_list:
-			if row['action'] == 'push':
-				row = dict(row)
+		if time_to_str:
+			for row in logs_list:
 				dt = row['date_time']
 				data = dt.strftime("%d-%m-%Y %H:%M:%S")
 				row['date_time'] = data
-				push_logs.append(row)
 				
-		return(True, push_logs)
+		return(True, logs_list)
 	
 	# *** CAMERA LOGS ***
-	def camera_write_log(self, project_name, task_data, comment, version):
-		logs_keys = {}
-		tasks_keys = []
-		for key in self.tasks_keys:
-			tasks_keys.append(key[0])
+	# task_data (bool/dict) - если False - значит читается self.task
+	def camera_write_log(self, comment, version, task_data=False): # v2 - возможно надо передавать артиста для записи в лог.
+		pass
+		# 1 - заполнение task_data
+		# 2 - тест обязательных полей: comment, version
+		# 3 - заполнение logs_keys
+		# 4 - запись jason
 		
+		# (1)
+		if not task_data:
+			task_data={}
+			for key in self.tasks_keys:
+				exec('task_data["%s"] = self.task.%s' % (key, key))
+				
+		# (2)
+		for item in [comment, version]:
+			if not item:
+				return(False, '"%s" parameter not passed!' % item)
+		
+		# (3)
+		logs_keys = {}
 		for key in self.logs_keys:
-			if key[0] in tasks_keys:
-				logs_keys[key[0]] = task_data[key[0]]
+			if key in self.tasks_keys:
+				logs_keys[key] = task_data[key]
 				
 		logs_keys['comment'] = comment
 		logs_keys['action'] = 'push_camera'
-		dt = datetime.datetime.now()
-		date = str(dt.year) + '/' + str(dt.month) + '/' + str(dt.day) + '/' + str(dt.hour) + ':' + str(dt.minute)
-		logs_keys['date_time'] = date
+		logs_keys['date_time'] = datetime.datetime.now().strftime("%d-%m-%Y %H:%M:%S")
 		logs_keys['version'] = version
 		
-		path = os.path.join(task_data['asset_path'], self.ADDITIONAL_FOLDERS['meta_data'], self.camera_log_file_name)
+		# (4)
+		path = os.path.join(task_data['asset_path'], self.task.asset.ADDITIONAL_FOLDERS['meta_data'], self.camera_log_file_name)
 		path = NormPath(path)
 		
 		data = {}
@@ -6390,7 +6405,7 @@ class log(studio):
 		return(True, 'Ok!')
 	
 	def camera_read_log(self, project_name, task_data):
-		path = os.path.join(task_data['asset_path'], self.ADDITIONAL_FOLDERS['meta_data'], self.camera_log_file_name)
+		path = os.path.join(task_data['asset_path'], self.task.asset.ADDITIONAL_FOLDERS['meta_data'], self.camera_log_file_name)
 		if not os.path.exists(path):
 			return(False, 'No saved versions!')
 			
