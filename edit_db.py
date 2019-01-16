@@ -6353,20 +6353,32 @@ class log(studio):
 				
 		return(True, logs_list)
 	
-	# *** CAMERA LOGS ***
-	# task_data (bool/dict) - если False - значит читается self.task
-	def camera_write_log(self, comment, version, task_data=False): # v2 - возможно надо передавать артиста для записи в лог.
+	# artist_ob - (artist) - объект artist, его никнейм записывается в лог.
+	# comment (str) - комментарий
+	# version (str) - номер версии
+	# task_data (bool/dict) - если False - значит читается self.task, если передаётся, то только задача данного ассета.
+	def camera_write_log(self, artist_ob, comment, version, task_data=False): # v2
 		pass
+		# 0 - проверка user
 		# 1 - заполнение task_data
 		# 2 - тест обязательных полей: comment, version
 		# 3 - заполнение logs_keys
-		# 4 - запись jason
+		# 4 - запись json
+		
+		# (0)
+		if not isinstance(artist_ob, artist):
+			return(False, 'in log.camera_write_log() - "artist_ob" parameter is not an instance of "artist" class')
+		if not artist_ob.nik_name:
+			return(False, 'in log.camera_write_log() - required login!')
 		
 		# (1)
 		if not task_data:
 			task_data={}
 			for key in self.tasks_keys:
 				exec('task_data["%s"] = self.task.%s' % (key, key))
+		else:
+			if not taks_data['asset_name'] == self.task.asset.name:
+				return(False, 'in log.camera_write_log() - transferred "task_data" is not from the correct asset: transferred: "%s", required: "%s"' % (taks_data['asset_name'], self.task.asset.name))
 				
 		# (2)
 		for item in [comment, version]:
@@ -6383,6 +6395,7 @@ class log(studio):
 		logs_keys['action'] = 'push_camera'
 		logs_keys['date_time'] = datetime.datetime.now().strftime("%d-%m-%Y %H:%M:%S")
 		logs_keys['version'] = version
+		logs_keys['artist'] = artist_ob.nik_name
 		
 		# (4)
 		path = os.path.join(task_data['asset_path'], self.task.asset.ADDITIONAL_FOLDERS['meta_data'], self.camera_log_file_name)
