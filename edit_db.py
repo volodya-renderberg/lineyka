@@ -6356,9 +6356,9 @@ class log(studio):
 	# *** CAMERA LOGS ***
 	# artist_ob - (artist) - объект artist, его никнейм записывается в лог.
 	# comment (str) - комментарий
-	# version (str) - номер версии, десятичное число в четыре символа (0001, 0002 итд.)
+	# version (str/int) - номер версии <= 9999
 	# task_data (bool/dict) - если False - значит читается self.task, если передаётся, то только задача данного ассета.
-	def camera_write_log(self, artist_ob, comment, version, task_data=False): # v2
+	def camera_write_log(self, artist_ob, comment, version, task_data=False): # v2 - возможно нужна поверка существования версии ?
 		pass
 		# 0 - проверка user
 		# 1 - заполнение task_data
@@ -6391,11 +6391,12 @@ class log(studio):
 		for key in self.logs_keys:
 			if key in self.tasks_keys:
 				logs_keys[key] = task_data[key]
-				
+		
+		str_version = '%04d' % int(version)
 		logs_keys['comment'] = comment
 		logs_keys['action'] = 'push_camera'
 		logs_keys['date_time'] = datetime.datetime.now().strftime("%d-%m-%Y %H:%M:%S")
-		logs_keys['version'] = version
+		logs_keys['version'] = str_version
 		logs_keys['artist'] = artist_ob.nik_name
 		
 		# (4)
@@ -6411,7 +6412,7 @@ class log(studio):
 				except:
 					pass
 		
-		data[version] = logs_keys
+		data[str_version] = logs_keys
 		
 		with open(path, 'w') as f:
 			jsn = json.dump(data, f, sort_keys=True, indent=4)
@@ -6455,8 +6456,9 @@ class log(studio):
 		nums.sort()
 		
 		for num in nums:
-			key = '0'*(4 - len(str(num))) + str(num)
-			if data.get(str(key)):
+			#key = '0'*(4 - len(str(num))) + str(num)
+			key = '%04d' % int(num)
+			if data.get(key):
 				sort_data.append(data[str(key)])
 			else:
 				print('*** not key')
@@ -6464,24 +6466,52 @@ class log(studio):
 		return(True, sort_data)
 		
 	# *** PLAYBLAST LOGS ***
-	def playblast_write_log(self, project_name, task_data, comment, version):
-		logs_keys = {}
-		tasks_keys = []
-		for key in self.tasks_keys:
-			tasks_keys.append(key[0])
+	# artist_ob - (artist) - объект artist, его никнейм записывается в лог.
+	# comment (str) - комментарий
+	# version (str/int) - номер версии <= 9999
+	# task_data (bool/dict) - если False - значит читается self.task, если передаётся, то только задача данного ассета.
+	def playblast_write_log(self, artist_ob, comment, version, task_data=False): # v2
+		pass
+		# 0 - проверка user
+		# 1 - заполнение task_data
+		# 2 - тест обязательных полей: comment, version
+		# 3 - заполнение logs_keys
+		# 4 - запись json
 		
-		for key in self.logs_keys:
-			if key[0] in tasks_keys:
-				logs_keys[key[0]] = task_data[key[0]]
+		# (0)
+		if not isinstance(artist_ob, artist):
+			return(False, 'in log.playblast_write_log() - "artist_ob" parameter is not an instance of "artist" class')
+		if not artist_ob.nik_name:
+			return(False, 'in log.playblast_write_log() - required login!')
+		
+		# (1)
+		if not task_data:
+			task_data={}
+			for key in self.tasks_keys:
+				exec('task_data["%s"] = self.task.%s' % (key, key))
+		else:
+			if not taks_data['asset_name'] == self.task.asset.name:
+				return(False, 'in log.playblast_write_log() - transferred "task_data" is not from the correct asset: transferred: "%s", required: "%s"' % (taks_data['asset_name'], self.task.asset.name))
 				
+		# (2)
+		for item in [comment, version]:
+			if not item:
+				return(False, '"%s" parameter not passed!' % item)
+		
+		# (3)
+		logs_keys = {}
+		for key in self.logs_keys:
+			if key in self.tasks_keys:
+				logs_keys[key] = task_data[key]
+		
+		str_version = '%04d' % int(version)
 		logs_keys['comment'] = comment
 		logs_keys['action'] = 'playblast'
-		dt = datetime.datetime.now()
-		date = str(dt.year) + '/' + str(dt.month) + '/' + str(dt.day) + '/' + str(dt.hour) + ':' + str(dt.minute)
-		logs_keys['date_time'] = date
-		logs_keys['version'] = version
+		logs_keys['date_time'] = datetime.datetime.now().strftime("%d-%m-%Y %H:%M:%S")
+		logs_keys['version'] = str_version
+		logs_keys['artist'] = artist_ob.nik_name
 		
-		path = os.path.join(task_data['asset_path'], self.ADDITIONAL_FOLDERS['meta_data'], self.playblast_log_file_name)
+		path = os.path.join(task_data['asset_path'], self.task.asset.ADDITIONAL_FOLDERS['meta_data'], self.playblast_log_file_name)
 		path = NormPath(path)
 		
 		data = {}
@@ -6493,18 +6523,36 @@ class log(studio):
 				except:
 					pass
 		
-		data[version] = logs_keys
+		data[str_version] = logs_keys
 		
 		with open(path, 'w') as f:
 			jsn = json.dump(data, f, sort_keys=True, indent=4)
 		
 		return(True, 'Ok!')
 	
-	def playblast_read_log(self, project_name, task_data):
-		path = os.path.join(task_data['asset_path'], self.ADDITIONAL_FOLDERS['meta_data'], self.playblast_log_file_name)
+	# task_data (bool/dict) - если False - значит читается self.task, если передаётся, то только задача данного ассета.
+	def playblast_read_log(self, task_data=False): # v2
+		pass
+		# 1 - заполнение task_data
+		# 2 - определение пути к файлу
+		# 3 - чтение json
+		# 4 - сортировка
+		
+		# (1)
+		if not task_data:
+			task_data={}
+			for key in self.tasks_keys:
+				exec('task_data["%s"] = self.task.%s' % (key, key))
+		else:
+			if not taks_data['asset_name'] == self.task.asset.name:
+				return(False, 'in log.camera_read_log() - transferred "task_data" is not from the correct asset: transferred: "%s", required: "%s"' % (taks_data['asset_name'], self.task.asset.name))	
+			
+		# (2)
+		path = os.path.join(task_data['asset_path'], self.task.asset.ADDITIONAL_FOLDERS['meta_data'], self.playblast_log_file_name)
 		if not os.path.exists(path):
 			return(False, 'No saved versions!')
-			
+		
+		# (3)
 		with open(path, 'r') as f:
 			data = None
 			try:
@@ -6512,6 +6560,7 @@ class log(studio):
 			except:
 				return(False, ('problems with file versions: ' + path))
 		
+		# (4)
 		nums = []
 		sort_data = []
 		for key in data:
@@ -6519,13 +6568,14 @@ class log(studio):
 		nums.sort()
 		
 		for num in nums:
-			key = '0'*(4 - len(str(num))) + str(num)
-			sort_data.append(data[str(key)])
+			#key = '0'*(4 - len(str(num))) + str(num)
+			key = '%04d' % int(num)
+			sort_data.append(data[key])
 			
 		return(True, sort_data)
 		
 	
-	def camera_get_push_logs(self, project_name, task_data):
+	def camera_get_push_logs(self, project_name, task_data): # возможно никогда не понадобится
 		pass
 		
 class artist(studio):
