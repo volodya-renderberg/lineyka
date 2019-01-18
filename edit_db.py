@@ -254,14 +254,14 @@ class studio:
 	'share_dir': 'text',
 	'status': 'text'
 	}
-	chats_keys = [
-	('date_time', 'timestamp'),
-	('author', 'text'),
-	('topic', 'text'),
-	('color', 'text'),
-	('status', 'text'),
-	('reading_status', 'text')
-	]
+	chats_keys = {
+	'date_time': 'timestamp',
+	'author': 'text',
+	'topic': 'text',
+	'color': 'text',
+	'status': 'text',
+	'reading_status': 'text',
+	}
 	'''
 	projects_keys = [
 	('name', 'text'),
@@ -7129,14 +7129,19 @@ class workroom(studio):
 		return(True, 'Ok!')
 		
 	
-class chat(task):
+class chat(studio):
 	'''
 	self.record_messages(project_name, task_name, topic) - records topic to '.chats.db';; topic = dumps({line1:(img, img_icon, text), ...})
 	
 	self.read_the_chat(self, project_name, task_name, reverse = 0) - It returns a list of all messages for a given task;;
 	'''
-	def __init__(self):
-		task.__init__(self)
+	def __init__(self, task_ob):
+		if not isinstance(task_ob, task):
+			raise Exception('in chat.__init__() - Object is not the right type "%s", must be "task"' % task_ob.__class__.__name__)
+		self.task = task_ob
+		# 
+		for key in self.chats_keys:
+			exec('self.%s = False' % key)
 	
 	#def record_messages(self, project_name, task_name, author, color, topic, status, date_time = ''):
 	def record_messages(self, project_name, task_name, input_keys):
