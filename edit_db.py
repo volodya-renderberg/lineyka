@@ -7144,17 +7144,38 @@ class chat(studio):
 			exec('self.%s = False' % key)
 	
 	#def record_messages(self, project_name, task_name, author, color, topic, status, date_time = ''):
-	def record_messages(self, project_name, task_name, input_keys):
-		# test project
-		result = self.get_project(project_name)
-		if not result[0]:
-			return(False, result[1])
-		'''	
-		# get date time
-		if date_time == '' or type(date_time) != datetime.datetime:
-			date_time = datetime.datetime.now()
-		'''
+	# запись сообщения в чат для задачи
+	# self.task - должен быть инициализирован
+	# input_keys (dict) - словарь по studio.chats_keys - обязательные ключи: 'topic','color','status', 'reading_status'  ??????? список обязательных полей будет пересмотрен
+	# artist_ob (bool/artist) - если False - значит создаётся новый объект artist и определяется текущий пользователь.
+	def record_messages(self, input_keys, artist_ob=False): # v2 ** start
+		pass
+		# 1 - artist_ob test
+		# 2 - тест обязательных полей
+		# 3 - datetime
 		
+		# (1)
+		if artist_ob and not isinstance(artist_ob, artist):
+			return(False, 'in chat.record_messages() - Wrong type of "artist_ob"! - "%s"' % artist_ob.__class__.__name__)
+		elif artist_ob:
+			if not artist_ob.nik_name:
+				return(False, 'in chat.record_messages() - User is not logged in!')
+			input_keys['author'] = artist_ob.nik_name
+		elif not artist_ob:
+			artist_ob = artist()
+			bool_, r_data = artist_ob.get_user()
+			if not bool_:
+				return(bool_, r_data)
+			input_keys['author'] = artist_ob.nik_name
+			
+		# (2)
+		for item in ['topic','color','status', 'reading_status']:
+			if not input_keys[item]:
+				return(False, 'in chat.record_messages() - missing "%s"!' % item)
+			
+		# (3)
+		input_keys['date_time'] = datetime.datetime.now()
+				
 		# create string  timestamp
 		table = '\"' + task_name + '\"'
 		string = "insert into " + table + " values("
