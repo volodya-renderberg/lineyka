@@ -9,6 +9,7 @@ import datetime
 import getpass
 import random
 import shutil
+import uuid
 
 try:
 	from .lineyka_publish import publish
@@ -255,7 +256,9 @@ class studio:
 	'status': 'text'
 	}
 	chats_keys = {
+	'message_id':'text',
 	'date_time': 'timestamp',
+	'date_time_of_edit': 'timestamp',
 	'author': 'text',
 	'topic': 'text',
 	'color': 'text',
@@ -7249,7 +7252,7 @@ class chat(studio):
 		pass
 		# 1 - artist_ob test
 		# 2 - тест обязательных полей
-		# 3 - datetime
+		# 3 - datetime, message_id
 		# 4 - запись БД
 		
 		# (1)
@@ -7272,7 +7275,8 @@ class chat(studio):
 				return(False, 'in chat.record_messages() - missing "%s"!' % item)
 			
 		# (3)
-		input_keys['date_time'] = datetime.datetime.now()
+		input_keys['date_time_of_edit'] = input_keys['date_time'] = datetime.datetime.now()
+		input_keys['message_id'] = uuid.uuid4().hex
 		
 		# (4)
 		table_name = '"%s"' % self.task.task_name
