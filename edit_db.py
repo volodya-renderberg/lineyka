@@ -7148,11 +7148,12 @@ class chat(studio):
 	# self.task - должен быть инициализирован
 	# input_keys (dict) - словарь по studio.chats_keys - обязательные ключи: 'topic','color','status', 'reading_status'  ??????? список обязательных полей будет пересмотрен
 	# artist_ob (bool/artist) - если False - значит создаётся новый объект artist и определяется текущий пользователь.
-	def record_messages(self, input_keys, artist_ob=False): # v2 ** start
+	def record_messages(self, input_keys, artist_ob=False): # v2
 		pass
 		# 1 - artist_ob test
 		# 2 - тест обязательных полей
 		# 3 - datetime
+		# 4 - запись БД
 		
 		# (1)
 		if artist_ob and not isinstance(artist_ob, artist):
@@ -7175,7 +7176,16 @@ class chat(studio):
 			
 		# (3)
 		input_keys['date_time'] = datetime.datetime.now()
-				
+		
+		# (4)
+		table_name = '"%s"' % self.task.task_name
+		read_ob = self.task.asset.project
+		#
+		bool_, r_data = database().insert('project', read_ob, table_name, self.chats_keys, input_keys, table_root=self.chats_db)
+		if not bool_:
+			return(bool_, r_data)
+		
+		'''
 		# create string  timestamp
 		table = '\"' + task_name + '\"'
 		string = "insert into " + table + " values("
@@ -7198,7 +7208,6 @@ class chat(studio):
 				elif key[1] == 'timestamp':
 					data.append(datetime.datetime.now())
 				
-			
 		string = string + ')'
 		data = tuple(data)
 		
@@ -7229,6 +7238,7 @@ class chat(studio):
 		c.execute(string, data)
 		conn.commit()
 		conn.close()
+		'''
 		return(True, 'ok')
 	
 	def read_the_chat(self, project_name, task_name, reverse = 0):
