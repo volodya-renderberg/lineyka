@@ -7241,20 +7241,19 @@ class chat(studio):
 		'''
 		return(True, 'ok')
 	
-	def read_the_chat(self, project_name, task_name, reverse = 0):
-		# test project
-		result = self.get_project(project_name)
-		if not result[0]:
-			return(False, result[1])
+	# чтение сообщений чата задачи
+	# self.task - должен быть инициализирован
+	# reverse (bool) - пока никак не используется
+	def read_the_chat(self, reverse = False): # v2
+		# 1 - чтение БД
 		
+		# (1)
+		table_name = '"%s"' % self.task.task_name
+		return(database().read('project', self.task.asset.project, table_name, self.chats_keys, table_root = self.chats_db))
+
+		'''
 		table = '\"' + task_name + '\"'
 		
-		# connect to self.chat_path
-		'''
-		conn = sqlite3.connect(self.chat_path, detect_types=sqlite3.PARSE_DECLTYPES|sqlite3.PARSE_COLNAMES)
-		conn.row_factory = sqlite3.Row
-		c = conn.cursor()
-		'''
 		try:
 			conn = sqlite3.connect(self.chat_path, detect_types=sqlite3.PARSE_DECLTYPES|sqlite3.PARSE_COLNAMES)
 			conn.row_factory = sqlite3.Row
@@ -7273,8 +7272,9 @@ class chat(studio):
 			return False, ('topic with name ' + table + ' not Found!')
 		
 		conn.close()
-		
-		return True, rows
+				
+		return(True, rows)
+		'''
 		
 	def task_edit_rid_status_unread(self, project_name, task_data):
 		# test project
