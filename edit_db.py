@@ -6146,6 +6146,103 @@ class task(studio):
 			self.input = input_list + result[1][1]
 			
 		return(True, result[1])
+	
+	# заменяет все рид статусы задачи на 0
+	# task_data (dict) - изменяемая задача, если False - значит предполагается, что task инициализирован.
+	def task_edit_read_status_unread(self, task_data=False): # v2 ** start - не обнаружено использование
+		pass
+		# 0 - получение task_data.
+		# 1 - принудительное прочтение задачи из БД - ???????????? зачееемм!!!!!!
+		
+		# (0)
+		if not task_data:
+			task_data={}
+			for key in self.tasks_keys:
+				exec('task_data["%s"] = self.%s' % (key, key))
+				
+		# (1)
+		read_ob = self.asset.project
+		table_name = '"%s:%s"' % (task_data['asset_id'], self.tasks_t)
+		keys = self.tasks_keys
+		where = {'task_name': task_data['task_name']}
+		
+		
+		'''
+		table = '\"' + task_data['asset_id'] + ':' + self.tasks_t + '\"'
+		string = 'SELECT * FROM ' + table + ' WHERE task_name = ?'
+		data = (task_data['task_name'],)
+		
+		# connect db
+		try:
+			conn = sqlite3.connect(self.tasks_path, detect_types=sqlite3.PARSE_DECLTYPES|sqlite3.PARSE_COLNAMES)
+			conn.row_factory = sqlite3.Row
+			c = conn.cursor()
+		except:
+			return(False, 'in task_edit_read_status_unread - not connect db!')
+		
+		# read-edit data
+		c.execute(string, data)
+		task_data = dict(c.fetchone())
+		try:
+			readers = json.loads(task_data['readers'])
+			for nik_name in readers:
+				readers[nik_name] = 0
+			task_data['chat_local'] = json.dumps(readers)
+		except:
+			task_data['chat_local'] = json.dumps({})
+			
+		# write data
+		string = 'UPDATE ' + table + 'SET chat_local = ? WHERE task_name = ?'
+		data = (task_data['chat_local'], task_data['task_name'])
+		c.execute(string, data)
+		
+		conn.commit()
+		conn.close()
+		'''
+		return(True, 'Ok!')
+	
+	# заменяет все рид статусы задачи на 1
+	# self.task - должен быть инициализирован
+	def task_edit_read_status_read(self, project_name, task_data, nik_name): # v2 ** - не обнаружено использование
+		pass
+		# test project
+		result = self.get_project(project_name)
+		if not result[0]:
+			return(False, result[1])
+			
+		table = '\"' + task_data['asset_id'] + ':' + self.tasks_t + '\"'
+		string = 'SELECT * FROM ' + table + ' WHERE task_name = ?'
+		data = (task_data['task_name'],)
+		
+		# connect db
+		try:
+			conn = sqlite3.connect(self.tasks_path, detect_types=sqlite3.PARSE_DECLTYPES|sqlite3.PARSE_COLNAMES)
+			conn.row_factory = sqlite3.Row
+			c = conn.cursor()
+		except:
+			return(False, 'in task_edit_read_status_read - not connect db!')
+		
+		# read-edit data
+		c.execute(string, data)
+		task_data = dict(c.fetchone())
+		
+		readers2 = {}
+		try:
+			readers2 = json.loads(task_data['chat_local'])
+			readers2[nik_name] = 1
+		except:
+			readers2[nik_name] = 1
+		task_data['chat_local'] = json.dumps(readers2)
+		
+		# write data
+		string = 'UPDATE ' + table + 'SET chat_local = ? WHERE task_name = ?'
+		data = (task_data['chat_local'], task_data['task_name'])
+		c.execute(string, data)
+		
+		conn.commit()
+		conn.close()
+		
+		return(True, 'Ok!')
 			
 class log(studio):
 	'''
@@ -7245,6 +7342,7 @@ class chat(studio):
 	# self.task - должен быть инициализирован
 	# reverse (bool) - пока никак не используется
 	def read_the_chat(self, reverse = False): # v2
+		pass
 		# 1 - чтение БД
 		
 		# (1)
@@ -7275,85 +7373,6 @@ class chat(studio):
 				
 		return(True, rows)
 		'''
-		
-	def task_edit_rid_status_unread(self, project_name, task_data):
-		# test project
-		result = self.get_project(project_name)
-		if not result[0]:
-			return(False, result[1])
-			
-		table = '\"' + task_data['asset_id'] + ':' + self.tasks_t + '\"'
-		string = 'SELECT * FROM ' + table + ' WHERE task_name = ?'
-		data = (task_data['task_name'],)
-		
-		# connect db
-		try:
-			conn = sqlite3.connect(self.tasks_path, detect_types=sqlite3.PARSE_DECLTYPES|sqlite3.PARSE_COLNAMES)
-			conn.row_factory = sqlite3.Row
-			c = conn.cursor()
-		except:
-			return(False, 'in task_edit_rid_status_unread - not connect db!')
-		
-		# read-edit data
-		c.execute(string, data)
-		task_data = dict(c.fetchone())
-		try:
-			readers = json.loads(task_data['readers'])
-			for nik_name in readers:
-				readers[nik_name] = 0
-			task_data['chat_local'] = json.dumps(readers)
-		except:
-			task_data['chat_local'] = json.dumps({})
-			
-		# write data
-		string = 'UPDATE ' + table + 'SET chat_local = ? WHERE task_name = ?'
-		data = (task_data['chat_local'], task_data['task_name'])
-		c.execute(string, data)
-		
-		conn.commit()
-		conn.close()
-		
-		return(True, 'Ok!')
-	
-	def task_edit_rid_status_read(self, project_name, task_data, nik_name):
-		# test project
-		result = self.get_project(project_name)
-		if not result[0]:
-			return(False, result[1])
-			
-		table = '\"' + task_data['asset_id'] + ':' + self.tasks_t + '\"'
-		string = 'SELECT * FROM ' + table + ' WHERE task_name = ?'
-		data = (task_data['task_name'],)
-		
-		# connect db
-		try:
-			conn = sqlite3.connect(self.tasks_path, detect_types=sqlite3.PARSE_DECLTYPES|sqlite3.PARSE_COLNAMES)
-			conn.row_factory = sqlite3.Row
-			c = conn.cursor()
-		except:
-			return(False, 'in task_edit_rid_status_unread - not connect db!')
-		
-		# read-edit data
-		c.execute(string, data)
-		task_data = dict(c.fetchone())
-		
-		readers2 = {}
-		try:
-			readers2 = json.loads(task_data['chat_local'])
-			readers2[nik_name] = 1
-		except:
-			readers2[nik_name] = 1
-		task_data['chat_local'] = json.dumps(readers2)
-		
-		# write data
-		string = 'UPDATE ' + table + 'SET chat_local = ? WHERE task_name = ?'
-		data = (task_data['chat_local'], task_data['task_name'])
-		c.execute(string, data)
-		
-		conn.commit()
-		conn.close()
-		
-		return(True, 'Ok!')
 	
 	def edit_message(self, project_name, task_name, keys):
 		pass
