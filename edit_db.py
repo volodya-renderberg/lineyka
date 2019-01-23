@@ -7344,13 +7344,17 @@ class chat(studio):
 	
 	# чтение сообщений чата задачи
 	# self.task - должен быть инициализирован
+	# message_id (hex/bool) - id читаемого сообщения, если False - то читаются все сообщения чата.
 	# reverse (bool) - пока никак не используется
-	def read_the_chat(self, reverse = False): # v2
+	def read_the_chat(self, message_id=False, reverse = False): # v2
 		pass
 		# 1 - чтение БД
 		
 		# (1)
 		table_name = '"%s"' % self.task.task_name
+		if message_id:
+			where = {'message_id': message_id}
+			return(database().read('project', self.task.asset.project, table_name, self.chats_keys, where = where, table_root = self.chats_db))
 		return(database().read('project', self.task.asset.project, table_name, self.chats_keys, table_root = self.chats_db))
 
 		'''
@@ -7378,8 +7382,53 @@ class chat(studio):
 		return(True, rows)
 		'''
 	
-	def edit_message(self, project_name, task_name, keys):
-		pass
+	# изменение записи автором сообщения.
+	# self.task - должен быть инициализирован.
+	# artist_ob (bool/artist) - если False - значит создаётся новый объект artist и определяется текущий пользователь.
+	# message_id (hex) - id изменяемого сообщения
+	# new_data (dict) - словарь данных на замену - topic, color
+	def edit_message(self, message_id, new_data, artist_ob=False):
+		VALID_DATA = ['topic', 'color']
+		# 0 - тест new_data
+		# 1 - artist_ob test
+		# 2 - проверка автора
+		# 3 - запись изменений
+		
+		# (0)
+		for key in new_data:
+			if not key in ['topic', 'color']:
+				del(new_data[key])
+		
+		# (1)
+		if artist_ob and not isinstance(artist_ob, artist):
+			return(False, 'in chat.record_messages() - Wrong type of "artist_ob"! - "%s"' % artist_ob.__class__.__name__)
+		elif artist_ob and not artist_ob.nik_name:
+			return(False, 'in chat.record_messages() - User is not logged in!')
+		elif not artist_ob:
+			artist_ob = artist()
+			bool_, r_data = artist_ob.get_user()
+			if not bool_:
+				return(bool_, r_data)
+			
+		# (2)
+		bool_, r_data = self.read_the_chat(message_id=message_id)
+		if not bool_:
+			return(bool_, r_data)
+		message = r_data[0]
+		if message['author'] != artist_ob.nik_name:
+			return(False, 'Only author can edit messages!')
+			
+		# (3)
+		new_data['date_time_of_edit'] = datetime.datetime.now()
+		read_ob = self.task.asset.project
+		table_name = '"%s"' % self.task.task_name
+		where = {'message_id': message_id}
+		
+		bool_, r_data = database().update('project', read_ob, table_name, self.chats_keys, new_data, where=where, table_root=self.chats_db)
+		if not bool_:
+			return(bool_, r_data)
+		
+		return(True, 'Ok!')
 	
 class set_of_tasks(studio):
 	def __init__(self):
