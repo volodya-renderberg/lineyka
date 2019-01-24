@@ -7038,16 +7038,30 @@ class workroom(studio):
 	def __init__(self):
 		pass
 		#artist.__init__(self)
+		
+	# инициализация по словарю
+	# new (bool) - если True - то возвращается новый инициализированный объект класса workroom, если False - то инициализируется текущий объект
+	def init_by_keys(self, keys, new = True):
+		if new:
+			new_ob = workroom()
+			for key in self.workroom_keys:
+				exec('new_ob.%s = keys.get("%s")' % (key, key))
+			return new_ob
+		else:
+			for key in self.workroom_keys:
+				exec('self.%s = keys.get("%s")' % (key, key))
+			return(True, 'Ok')
 	
 	# keys['type'] - must be a list, False or None
 	def add(self, keys):
+		pass
 		# test name
 		try:
 			name = keys['name']
 		except:
 			return(False, 'not Name!')
 			
-		keys['id'] = str(random.randint(0, 1000000000))
+		keys['id'] = uuid.uuid4().hex
 		
 		# создание таблицы, если отсутствует.
 		# проверка на совпадение имени
@@ -7083,7 +7097,7 @@ class workroom(studio):
 		
 		return(True, 'ok')
 		
-	def get_list_workrooms(self, DICTONARY = False):
+	def get_list_workrooms(self, return_type = False, objects=False):
 		bool_, return_data = database().read('studio', self, self.workroom_t, self.workroom_keys, table_root=self.artists_db)
 		if not bool_:
 			return(bool_, return_data)
@@ -7108,16 +7122,16 @@ class workroom(studio):
 			return_data_1.append(work_room_data_1)
 			return_data_2[row['id']] = work_room_data_2
 		
-		if not DICTONARY:
+		if not return_type:
 			return(True, return_data_1)
-		elif DICTONARY == 'by_name':
+		elif return_type == 'by_name':
 			return(True, return_data_0)
-		elif DICTONARY == 'by_id':
+		elif return_type == 'by_id':
 			return(True, return_data_2)
-		elif DICTONARY == 'by_id_by_name':
+		elif return_type == 'by_id_by_name':
 			return(True, return_data_2, return_data_0)
 		else:
-			return(False, ('Incorrect DICTONARY: ' + DICTONARY))
+			return(False, ('Incorrect "return_type": %s' % return_type))
 	
 	
 	def get_name_by_id(self, id_):
