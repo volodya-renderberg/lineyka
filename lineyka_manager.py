@@ -25,7 +25,6 @@ class G(object):
 class MainWindow(QtGui.QMainWindow):
 	def __init__(self, parent = None):
 		# get Path
-		#path = '/home/renderberg/Yandex.Disk/Lineyka_'
 		path = os.path.dirname(ui.__file__)
 		self.lineyka_path = os.path.dirname(path)
 		self.main_window_path = os.path.join(path, "lineyka_manager.ui")

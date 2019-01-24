@@ -1301,51 +1301,39 @@ class project(studio):
 		
 		return True, 'ok'
 		
-	def get_project(self, name):
+	def get_project(self, name, new=False):
 		pass
 		#self.get_list_projects()
 		
 		if not name in self.list_projects.keys():
 			return(False, "This project Not Found!")
-		else:
-			#self.assets_path = self.list_projects[name]['assets_path']
-			#self.tasks_path = self.list_projects[name]['tasks_path']
-			#self.chat_path = self.list_projects[name]['chat_path']
-			#self.chat_img_path = self.list_projects[name]['chat_img_path']
-			#self.preview_img_path = self.list_projects[name]['preview_img_path']
+		if not new:
 			self.name = name
-			#
 			self.path = self.list_projects[name]['path']
-			#
-			assets_path = NormPath(os.path.join(self.path, self.assets_db))
-			#if os.path.exists(assets_path):
-			self.assets_path = assets_path
-			#
-			tasks_path = NormPath(os.path.join(self.path, self.tasks_db))
-			#if os.path.exists(tasks_path):
-			self.tasks_path = tasks_path
-			#
+			self.assets_path = NormPath(os.path.join(self.path, self.assets_db))
+			self.tasks_path = NormPath(os.path.join(self.path, self.tasks_db))
 			self.list_of_assets_path = NormPath(os.path.join(self.list_projects[name]['path'], '.list_of_assets_path.json'))
-			#
-			chat_path = NormPath(os.path.join(self.path, self.chats_db))
-			#if os.path.exists(chat_path):
-			self.chat_path = chat_path
-			#
-			chat_img_path = NormPath(os.path.join(self.path, self.folders['chat_img_folder']))
-			#if os.path.exists(chat_img_path):
-			self.chat_img_path = chat_img_path
-			#
-			preview_img_path = NormPath(os.path.join(self.path, self.folders['preview_images']))
-			#if os.path.exists(preview_img_path):
-			self.preview_img_path = preview_img_path
-			#
+			self.chat_path = NormPath(os.path.join(self.path, self.chats_db))
+			self.chat_img_path = NormPath(os.path.join(self.path, self.folders['chat_img_folder']))
+			self.preview_img_path = NormPath(os.path.join(self.path, self.folders['preview_images']))
 			self.status = self.list_projects[name]['status']
-			# database
-			#self.project_database = json.loads(self.list_projects[name]['project_database'])
 			self.project_database = self.list_projects[name]['project_database']
-				
-		self.get_list_of_assets()
-		return(True, (self.list_projects[name], self.assets_list))
+			#	
+			self.get_list_of_assets()
+			return(True, (self.list_projects[name], self.assets_list))
+		else:
+			ob = project()
+			ob.name = name
+			ob.path = self.list_projects[name]['path']
+			ob.assets_path = NormPath(os.path.join(self.path, self.assets_db))
+			ob.tasks_path = NormPath(os.path.join(self.path, self.tasks_db))
+			ob.list_of_assets_path = NormPath(os.path.join(self.list_projects[name]['path'], '.list_of_assets_path.json'))
+			ob.chat_path = NormPath(os.path.join(self.path, self.chats_db))
+			ob.chat_img_path = NormPath(os.path.join(self.path, self.folders['chat_img_folder']))
+			ob.preview_img_path = NormPath(os.path.join(self.path, self.folders['preview_images']))
+			ob.status = self.list_projects[name]['status']
+			ob.project_database = self.list_projects[name]['project_database']
+			return ob
 		
 	def get_list_of_assets(self):
 		# self.assets_list - list of dictonary by self.asset_keys
@@ -7228,7 +7216,6 @@ class workroom(studio):
 			return(bool_, return_data)
 		return(True, 'Ok!')
 		
-	
 class chat(studio):
 	'''
 	self.record_messages(project_name, task_name, topic) - records topic to '.chats.db';; topic = dumps({line1:(img, img_icon, text), ...})
