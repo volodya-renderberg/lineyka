@@ -24,6 +24,7 @@ class G(object):
 
 class MainWindow(QtGui.QMainWindow):
 	def __init__(self, parent = None):
+		pass
 		# get Path
 		path = os.path.dirname(ui.__file__)
 		self.lineyka_path = os.path.dirname(path)
