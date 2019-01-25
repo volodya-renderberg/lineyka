@@ -68,13 +68,13 @@ class MainWindow(QtGui.QMainWindow):
 		self.db_studio()
 		self.artist = db.artist()
 		self.db_workroom = db.workroom()
-		#self.db_list_of_assets = db.list_of_assets()
 		self.db_set_of_tasks = db.set_of_tasks()
 		self.project = db.project()
 		# project level
 		self.db_season = db.season(self.project)
 		self.db_asset = db.asset(self.project)
 		self.db_group = db.group(self.project)
+		self.db_list_of_assets = db.list_of_assets(self.db_group)
 		#self.db_task = db.task()
 		#self.db_chat = db.chat()
 		#self.db_log = db.log()
@@ -220,6 +220,7 @@ class MainWindow(QtGui.QMainWindow):
 		self.fill_artist_table()
 				
 	def fill_artist_table(self):
+		pass
 		#copy = self.db_artist
 		artists = self.artist.read_artist('all')
 		
@@ -227,16 +228,15 @@ class MainWindow(QtGui.QMainWindow):
 			return
 		
 		# get workroom data
-		wr_id_dict = {}
-		wr_name_dict = {}
+		#wr_id_dict = {}
+		#wr_name_dict = {}
 		
-		result = self.db_workroom.get_list_workrooms(DICTONARY = 'by_id_by_name')
+		result = self.db_workroom.get_list_workrooms('by_id', True)
 		if not result[0]:
 			self.message(result[1], 3)
 			#return
 		else:
-			wr_id_dict = result[1]
-			wr_name_dict = result[2]
+			self.workrooms = result[1]
 		   
 		# get table data
 		look_keys = [
@@ -253,12 +253,10 @@ class MainWindow(QtGui.QMainWindow):
 			'share_dir',
 			]
 		num_row = len(artists[1])
-		#num_column = len(self.artist.artists_keys)
 		num_column = len(look_keys)
 		headers = []
 		
-		for item in look_keys: #self.artist.artists_keys:
-			#headers.append(item[0])
+		for item in look_keys:
 			headers.append(item)
     
 		# make table
@@ -269,31 +267,31 @@ class MainWindow(QtGui.QMainWindow):
 		# fill table
 		for i, artist in enumerate(artists[1]):
 			for j,key in enumerate(headers):
-				if key == 'date_time':
-					continue
 				newItem = QtGui.QTableWidgetItem()
-				if key == 'workroom':
-					if artist[key]:
+				if key == 'date_time':
+					newItem.setText(artist[key].strftime("%d-%m-%Y %H:%M:%S"))
+					#newItem.setText('time')
+				elif key == 'workroom':
+					if artist['workroom']:
 						wr_list = []
-						for wr_id in artist[key]:
-							wr_list.append(wr_id_dict[wr_id]['name'])
+						for wr_id in artist['workroom']:
+							wr_list.append(self.workrooms[wr_id].name)
 						newItem.setText(','.join(wr_list))
-				else:
-					newItem.setText(str(artist[key]))
-				if key == 'nik_name':
+				elif key == 'nik_name':
 					color = self.artist_color
 					brush = QtGui.QBrush(color)
 					newItem.setBackground(brush)
+					newItem.setText(str(artist['nik_name']))
+				else:
+					newItem.setText(str(artist[key]))
 				newItem.artist = artist
 				self.myWidget.studio_editor_table.setItem(i, j, newItem)
-				
-		self.myWidget.studio_editor_table.wr_id_dict = wr_id_dict
-		self.myWidget.studio_editor_table.wr_name_dict = wr_name_dict
-        
+
 		print('fill artist table')
 		
 			
 	def reload_artist_list(self):
+		pass
 		# clear table
 		num_row = self.myWidget.studio_editor_table.rowCount()
 		num_column = self.myWidget.studio_editor_table.columnCount()
@@ -412,8 +410,8 @@ class MainWindow(QtGui.QMainWindow):
 			self.message('Not Selected Artists!', 2)
 			return
 		
-		selected_data = current_item.artist
-		level = selected_data['level']
+		self.selected_artist = current_item.artist
+		level = self.selected_artist['level']
 		
 		if self.artist.level not in self.artist.manager_levels:
 			self.message('No Access! your level: "%s"' % self.artist.level, 3)
@@ -434,38 +432,34 @@ class MainWindow(QtGui.QMainWindow):
 		file.close()
 		
 		# get workrooms list
-		if selected_data['workroom']:
-			wr_id_list = selected_data['workroom']
-		else:
-			wr_id_list = []
-		
 		wr_name_list = []
-		for wr_id in wr_id_list:
-			wr_name_list.append(self.myWidget.studio_editor_table.wr_id_dict[wr_id]['name'])
+		if self.selected_artist['workroom']:
+			for wr_id in  self.selected_artist['workroom']:
+				wr_name_list.append(self.workrooms[wr_id].name)
 		
 		# edit widget
 		window.setWindowTitle('Edit Artist Data')
 		window.nik_name_field.setEnabled(False)
-		window.nik_name_field.setText(selected_data['nik_name'])
+		window.nik_name_field.setText(self.selected_artist['nik_name'])
 		window.workroom_field.setEnabled(False)
 		window.workroom_field.setText(json.dumps(wr_name_list))
 		window.share_dir_field.setEnabled(False)
-		window.share_dir_field.setText(selected_data['share_dir'])
-		window.password_field.setText(selected_data['password'])
-		window.email_field.setText(selected_data['email'])
-		window.phone_field.setText(selected_data['phone'])
-		window.specialty_field.setText(selected_data['specialty'])
+		window.share_dir_field.setText(self.selected_artist['share_dir'])
+		window.password_field.setText(self.selected_artist['password'])
+		window.email_field.setText(self.selected_artist['email'])
+		window.phone_field.setText(self.selected_artist['phone'])
+		window.specialty_field.setText(self.selected_artist['specialty'])
 		
 		window.level_combobox.addItems(levels)
-		window.level_combobox.setCurrentIndex(window.level_combobox.findText(selected_data['level']))
+		window.level_combobox.setCurrentIndex(window.level_combobox.findText(self.selected_artist['level']))
 		
-		if selected_data['outsource'] == 1:
+		if self.selected_artist['outsource'] == 1:
 			window.autsource_check_box.setCheckState(QtCore.Qt.CheckState.Checked)
 			
 		# button connect
 		window.get_share_dir_button.clicked.connect(partial(self.get_share_dir, window.share_dir_field))
 		window.artist_edit_workroom_button.clicked.connect(partial(self.artist_edit_workroom2_ui, window))
-		window.artist_dialog_ok.clicked.connect(partial(self.edit_artist_action, selected_data))
+		window.artist_dialog_ok.clicked.connect(partial(self.edit_artist_action))
 		window.artist_dialog_cancel.clicked.connect(partial(self.close_window, window))
 		
 		# set modal window
@@ -478,15 +472,18 @@ class MainWindow(QtGui.QMainWindow):
 		print('edit artist ui')
 		
 	
-	def edit_artist_action(self, selected_data):
+	def edit_artist_action(self):
 		window = self.editArtistDialog
 		# get data
 		# -- get workroom id list
 		wr_name_list = json.loads(window.workroom_field.text())
 		wr_id_list = []
 		
-		for name in wr_name_list:
-			wr_id_list.append(self.myWidget.studio_editor_table.wr_name_dict[name]['id'])
+		bool_, r_data = self.db_workroom.name_list_to_id_list(wr_name_list)
+		if not bool_:
+			self.message(rdata, 2)
+			return
+		wr_id_list=r_data
 		
 		# -- fill table
 		nik_name = window.nik_name_field.text()
@@ -509,7 +506,7 @@ class MainWindow(QtGui.QMainWindow):
 			data['outsource'] = False
 		
 		# save artist data
-		result = self.artist.edit_artist(data, artist_current_data = selected_data)
+		result = self.artist.edit_artist(data, artist_current_data = self.selected_artist)
 		
 		if not result[0]:
 			self.message(result[1], 2)
@@ -714,19 +711,13 @@ class MainWindow(QtGui.QMainWindow):
 		self.fill_workroom_table(self.myWidget.studio_editor_table)
 				
 	def fill_workroom_table(self, table):
-		copy = self.db_workroom
-		workrooms = copy.get_list_workrooms()
-    
-		if not workrooms[0]:
-			return
-			
-		self.set_self_workrooms(workrooms = workrooms)
+		self.set_self_workrooms()
 		
 		# look_keys
 		look_keys = ['name', 'type']
 		
 		# get table data
-		num_row = len(workrooms[1])
+		num_row = len(self.workrooms)
 		num_column = len(look_keys)
 		headers = []
 		
@@ -740,22 +731,24 @@ class MainWindow(QtGui.QMainWindow):
     
 		
 		# fill table
-		for i, workroom in enumerate(workrooms[1]):
+		for i, wr_id in enumerate(self.workrooms):
+			workroom = self.workrooms[wr_id]
 			for j,key in enumerate(headers):
 				if key == 'date_time':
 					continue
 				newItem = QtGui.QTableWidgetItem()
 				#
 				if key == 'type':
-					if workroom[key]:
-						type_string = ','.join(workroom[key]).replace(',', ', ')
+					if workroom.type:
+						type_string = ','.join(workroom.type).replace(',', ', ')
 						newItem.setText(type_string)
 					else:
 						newItem.setText('')
 				else:
-					newItem.setText(workroom[key])
+					exec('data = workroom.%s' % key)
+					newItem.setText(data)
 				#
-				newItem.workroom = workroom
+				newItem.wr_id = workroom.id
 				#
 				if key == 'name':
 					color = self.workroom_color
@@ -806,6 +799,7 @@ class MainWindow(QtGui.QMainWindow):
 		print('new workroom ui')
 		
 	def new_workroom_set_type_ui(self, field):
+		pass
 		# widget
 		loader = QtUiTools.QUiLoader()
 		file = QtCore.QFile(self.select_from_check_button_dialog_path)
@@ -838,6 +832,7 @@ class MainWindow(QtGui.QMainWindow):
 		window.show()
 		
 	def new_workroom_set_type_action(self, field, window, checkbox_list):
+		pass
 		# get data
 		data = []
 		for obj in checkbox_list:
@@ -886,7 +881,7 @@ class MainWindow(QtGui.QMainWindow):
 			self.message('Not Selected Workroom!', 2)
 			return
 		else:
-			wr_data = current_item.workroom
+			self.workroom = self.workrooms[current_item.wr_id]
 		
 		# widget
 		loader = QtUiTools.QUiLoader()
@@ -901,7 +896,7 @@ class MainWindow(QtGui.QMainWindow):
 		for task_type in self.db_workroom.task_types:
 			box = QtGui.QCheckBox(task_type, window.check_buttons_frame)
 			checkbox_list.append(box)
-			if wr_data['type'] and task_type in wr_data['type']:
+			if self.workroom.type and task_type in self.workroom.type:
 				box.setCheckState(QtCore.Qt.CheckState.Checked)
 			
 			layout.addWidget(box)
@@ -909,7 +904,7 @@ class MainWindow(QtGui.QMainWindow):
 		
 		# -- edit button
 		window.select_from_chbut_cansel_button.clicked.connect(partial(self.close_window, window))
-		window.select_from_chbut_apply_button.clicked.connect(partial(self.edit_type_workroom_action, window, checkbox_list, wr_data['id']))
+		window.select_from_chbut_apply_button.clicked.connect(partial(self.edit_type_workroom_action, window, checkbox_list))
 		
 		# set modal window
 		window.setWindowModality(QtCore.Qt.WindowModal)
@@ -918,13 +913,13 @@ class MainWindow(QtGui.QMainWindow):
 		#field.setText('type')
 		window.show()
 		
-	def edit_type_workroom_action(self, window, checkbox_list, wr_id):
+	def edit_type_workroom_action(self, window, checkbox_list):
 		data = []
 		for obj in checkbox_list:
 			if obj.checkState() == QtCore.Qt.CheckState.Checked:
 				data.append(obj.text())
 		# set data
-		bool_, return_data = self.db_workroom.edit_type(wr_id, data)
+		bool_, return_data = self.workroom.edit_type(data)
 		if not bool_:
 			return(False, return_data)
 		
@@ -940,8 +935,7 @@ class MainWindow(QtGui.QMainWindow):
 			self.message('Not Selected Workroom!', 2)
 			return
 		else:
-			wr_data = current_item.workroom
-			name = wr_data['name']
+			self.workroom = self.workrooms[current_item.wr_id]
 		
 		loader = QtUiTools.QUiLoader()
 		file = QtCore.QFile(self.new_dialog_path)
@@ -952,7 +946,7 @@ class MainWindow(QtGui.QMainWindow):
 		# edit widget
 		self.newWorkroomDialog.setWindowTitle('Rename WorkRoom')
 		self.newWorkroomDialog.new_dialog_label.setText('New Name:')
-		self.newWorkroomDialog.new_dialog_name.setText(name)
+		self.newWorkroomDialog.new_dialog_name.setText(self.workroom.name)
 		
 		# edit button
 		self.newWorkroomDialog.new_dialog_cancel.clicked.connect(partial(self.rename_workroom_action, False))
@@ -969,27 +963,15 @@ class MainWindow(QtGui.QMainWindow):
 			self.newWorkroomDialog.close()
 			return
 		else:
-			# get old_name
-			old_name = None
-			table = self.myWidget.studio_editor_table
-			current_item = table.currentItem()
-			if not current_item:
-				self.message('Not Selected Workroom!', 2)
-				return
-			else:
-				wr_data = current_item.workroom
-				old_name = wr_data['name']
-			
+			# rename
 			new_name = self.newWorkroomDialog.new_dialog_name.text().replace(' ','_')
-			
-			result = self.db_workroom.rename_workroom(old_name, new_name)
-			if not result[0]:
-				self.message(result[1], 3)
+			bool_, rdata = self.workroom.rename_workroom(new_name)
+			if not bool_:
+				self.message(rdata, 3)
 				return
-			else:
-				print(result[1])
-				
+			# close dialog
 			self.newWorkroomDialog.close()
+			# reload workroom table
 			self.fill_workroom_table(self.myWidget.studio_editor_table)
 			
 	# -------------------- Workroom ADD  Artists Editor ---------------------------------------
@@ -1002,11 +984,10 @@ class MainWindow(QtGui.QMainWindow):
 			self.message('Not Selected Workroom!', 2)
 			return
 		else:
-			self.workroom = current_item.workroom
-		name = self.workroom['name']
+			self.workroom = self.workrooms[current_item.wr_id]
 				
 		# edit label
-		self.myWidget.studio_editor_label.setText(('WorkRoom Editor / \"' + name + '\" - edit Artist List'))
+		self.myWidget.studio_editor_label.setText(('WorkRoom Editor / "%s" - edit Artist List' % self.workroom.name))
 		
 		# edit button
 		self.myWidget.studio_butt_1.setVisible(True)
@@ -1066,7 +1047,7 @@ class MainWindow(QtGui.QMainWindow):
 		print('edit ui to edit artist list')
 		
 	def add_artists_to_workroom_dialog(self):
-		workroom = self.workroom['name']
+		pass
 		# widget
 		loader = QtUiTools.QUiLoader()
 		file = QtCore.QFile(self.select_from_list_dialog_path)
@@ -1075,7 +1056,7 @@ class MainWindow(QtGui.QMainWindow):
 		file.close()
 		
 		# edit widget
-		window.setWindowTitle(('Add Artist To \"' + self.workroom['name'] + '\"'))
+		window.setWindowTitle(('Add Artist To \"' + self.workroom.name + '\"'))
 		window.select_from_list_apply_button.setText('Add Select Artists')
 		window.select_from_list_apply_button.clicked.connect(partial(self.add_select_artists_to_workroom, window))
 		window.select_from_list_cansel_button.clicked.connect(partial(self.close_window, window))
@@ -1103,15 +1084,13 @@ class MainWindow(QtGui.QMainWindow):
 		if not bool_:
 			self.message(artists, 2)
 			return
-		
-		wr_id = self.workroom.get('id')
 			
 		# get artist list
 		active_artists = []
 		for artist in artists:
 			# get workroom
 			wr_list = []
-			if wr_id in artist['workroom'] and artist['status'] == 'active':
+			if self.workroom.id in artist['workroom'] and artist['status'] == 'active':
 				active_artists.append(artist)
     
 		# get table data
@@ -7120,13 +7099,17 @@ class MainWindow(QtGui.QMainWindow):
 	def set_self_workrooms(self, workrooms = False):
 		self.workrooms = []
 		if not workrooms:
-			workrooms = self.db_workroom.get_list_workrooms()
+			workrooms = self.db_workroom.get_list_workrooms('by_id', True)
 			
 			if not workrooms[0]:
 				return
+			else:
+				workrooms = workrooms[1]
 		
-		for row in workrooms[1]:
-			self.workrooms.append(row['name'])
+		#for row in workrooms[1]:
+			#self.workrooms.append(row['name'])
+		self.workrooms=workrooms
+		#print(self.workrooms)
 			
 	
 	def get_artist_data(self, read = True):
