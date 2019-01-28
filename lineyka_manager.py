@@ -42,6 +42,7 @@ class MainWindow(QtGui.QMainWindow):
 		self.artist_dialog_path = os.path.join(path, "artist_dialog.ui")
 		self.select_from_list_dialog_path = os.path.join(path, "select_from_list_dialog.ui")
 		self.select_from_list_dialog_combobox_path = os.path.join(path, "select_from_list_dialog_combobox.ui")
+		self.select_from_list_dialog_combobox_line_path = os.path.join(path, "select_from_list_dialog_combobox_line.ui")
 		self.select_from_list_dialog_3button_path = os.path.join(path, "select_from_list_dialog_3_button.ui")
 		self.select_from_check_button_dialog_path = os.path.join(path, "select_from_check_button_dialog.ui")
 		
@@ -84,6 +85,7 @@ class MainWindow(QtGui.QMainWindow):
 		
 		# VARS
 		self.workrooms = {} # словарь отделов(объекты) по id - заполняется в set_self_workrooms()
+		self.workrooms_by_name = {} # словарь отделов(объекты) по name - заполняется в set_self_workrooms()
 		self.workroom = None # текущий отдел (объект)
 		self.selected_artist = None # выбранный в таблице артист (словарь)
 		self.current_user = None # nik_name авторизированного юзера
@@ -237,12 +239,15 @@ class MainWindow(QtGui.QMainWindow):
 		#wr_id_dict = {}
 		#wr_name_dict = {}
 		
+		'''
 		result = self.db_workroom.get_list_workrooms('by_id', True)
 		if not result[0]:
 			self.message(result[1], 3)
 			#return
 		else:
 			self.workrooms = result[1]
+		'''
+		self.set_self_workrooms()
 		   
 		# get table data
 		look_keys = [
@@ -1056,16 +1061,28 @@ class MainWindow(QtGui.QMainWindow):
 		pass
 		# widget
 		loader = QtUiTools.QUiLoader()
-		file = QtCore.QFile(self.select_from_list_dialog_path)
+		#file = QtCore.QFile(self.select_from_list_dialog_path)
+		file = QtCore.QFile(self.select_from_list_dialog_combobox_line_path)
 		#file.open(QtCore.QFile.ReadOnly)
 		window = self.addArtistToWorkroomDialog = loader.load(file, self)
 		file.close()
+		
+		# get wr_name_list
+		wr_name_list = []
+		for id in self.workrooms:
+			wr_name_list.append(self.workrooms[id].name)
+		wr_name_list = ['-- all --'] + sorted(wr_name_list)
 		
 		# edit widget
 		window.setWindowTitle(('Add Artist To \"' + self.workroom.name + '\"'))
 		window.select_from_list_apply_button.setText('Add Select Artists')
 		window.select_from_list_apply_button.clicked.connect(partial(self.add_select_artists_to_workroom, window))
 		window.select_from_list_cansel_button.clicked.connect(partial(self.close_window, window))
+		window.dialog_comboBox_1.addItems(wr_name_list)
+		#window.dialog_comboBox_1.activated[str].connect(partial(self.print_data, window))
+		window.dialog_comboBox_1.activated[str].connect(partial(self.fill_active_artist_table_for_workroom, window))
+		window.name_filter.setPlaceholderText('Filter by Name')
+		window.name_filter.textChanged.connect(partial(self.fill_active_artist_table_for_workroom, window))
 		
 		# edit table
 		#self.myWidget.studio_editor_table_2.setVisible(False)
@@ -1128,17 +1145,28 @@ class MainWindow(QtGui.QMainWindow):
         
 		print('fill active artist table')
 		
-	def fill_active_artist_table_for_workroom(self, window):
+	def fill_active_artist_table_for_workroom(self, window, arg=False):
 		artists = self.artist.read_artist('all')
-    
 		if not artists[0]:
 			return
-			
-		# get active list
+		filter_ = window.name_filter.text().lower()
+		wr_name = window.dialog_comboBox_1.currentText()
+		#
 		active_artists = []
-		for artist in artists[1]:
-			if artist['status'] == 'active':
-				active_artists.append(artist)
+		#
+		if wr_name and wr_name != '-- all --':
+			wr_id = self.workrooms_by_name[wr_name].id
+			self.clear_table(window.select_from_list_data_list_table)
+			for artist in artists[1]:
+				if artist['status'] == 'active' and wr_id in artist['workroom']:
+					if not filter_ or filter_ in artist['nik_name']:
+						active_artists.append(artist)
+		elif not wr_name or wr_name == '-- all --':
+			# get active list
+			for artist in artists[1]:
+				if artist['status'] == 'active':
+					if not filter_ or filter_ in artist['nik_name']:
+						active_artists.append(artist)
 				
 		# get table data
 		num_row = len(active_artists)
@@ -7113,16 +7141,17 @@ class MainWindow(QtGui.QMainWindow):
 	def set_self_workrooms(self, workrooms = False):
 		self.workrooms = []
 		if not workrooms:
-			workrooms = self.db_workroom.get_list_workrooms('by_id', True)
+			workrooms = self.db_workroom.get_list_workrooms('by_id_by_name', True)
 			
 			if not workrooms[0]:
 				return
 			else:
-				workrooms = workrooms[1]
+				self.workrooms = workrooms[1]
+				self.workrooms_by_name = workrooms[2]
 		
 		#for row in workrooms[1]:
 			#self.workrooms.append(row['name'])
-		self.workrooms=workrooms
+		#self.workrooms=workrooms
 		#print(self.workrooms)
 			
 	
@@ -7191,7 +7220,7 @@ class MainWindow(QtGui.QMainWindow):
 			return(False)
       
 	def print_data(self, *args):
-		print(args[0])
+		print(args)
 		
     
 app = QtGui.QApplication(sys.argv)
