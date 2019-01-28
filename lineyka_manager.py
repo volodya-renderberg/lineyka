@@ -82,6 +82,12 @@ class MainWindow(QtGui.QMainWindow):
 		# other moduls
 		#self.publish = lineyka_publish.publish()
 		
+		# VARS
+		self.workrooms = {} # словарь отделов(объекты) по id - заполняется в set_self_workrooms()
+		self.workroom = None # текущий отдел (объект)
+		self.selected_artist = None # выбранный в таблице артист (словарь)
+		self.current_user = None # nik_name авторизированного юзера
+		
 		#
 		self.look_keys = ['nik_name','specialty','outsource','level']
 		self.current_project = False
@@ -1109,7 +1115,10 @@ class MainWindow(QtGui.QMainWindow):
 				if not (key in self.look_keys):
 					continue
 				newItem = QtGui.QTableWidgetItem()
-				newItem.setText(artist[key])
+				if key in ['outsource']:
+					newItem.setText(str(artist[key]))
+				else:
+					newItem.setText(artist[key])
 				newItem.artist = artist
 				if key == 'nik_name':
 					color = self.artist_color
@@ -1131,8 +1140,6 @@ class MainWindow(QtGui.QMainWindow):
 			if artist['status'] == 'active':
 				active_artists.append(artist)
 				
-		wr_id = self.workroom.get('id')
-    
 		# get table data
 		num_row = len(active_artists)
 		num_column = len(self.look_keys)
@@ -1152,13 +1159,16 @@ class MainWindow(QtGui.QMainWindow):
 				if not (key in self.look_keys):
 					continue
 				newItem = QtGui.QTableWidgetItem()
-				newItem.setText(artist[key])
+				if key=='outsource':
+					newItem.setText(str(artist[key]))
+				else:
+					newItem.setText(artist[key])
 				newItem.artist = artist
-				if key == 'nik_name' and not wr_id in wr_list:
+				if key == 'nik_name' and not self.workroom.id in wr_list:
 					color = self.artist_color
 					brush = QtGui.QBrush(color)
 					newItem.setBackground(brush)
-				elif wr_id in wr_list:
+				elif self.workroom.id in wr_list:
 					color = self.grey_color
 					brush = QtGui.QBrush(color)
 					newItem.setBackground(brush)
@@ -1170,7 +1180,8 @@ class MainWindow(QtGui.QMainWindow):
 	def add_select_artists_to_workroom(self, window):
 		table = window.select_from_list_data_list_table
 		column = table.columnCount()
-		name_column = None
+		#
+		name_column = None # номер колонки с именем
 		for i in range(0, column):
 			head_item = table.horizontalHeaderItem(i)
 			if head_item.text() == 'nik_name':
@@ -1184,28 +1195,31 @@ class MainWindow(QtGui.QMainWindow):
 			if item.column() == name_column:
 				artists.append(item.artist)
 		
-		wr_id = self.workroom.get('id')
+		#wr_id = self.workroom.get('id')
 		
 		for artist in artists:
 			workrooms = []
 			if artist['workroom']:
 				workrooms = artist['workroom']
 			
-			if not wr_id in workrooms:
-				workrooms.append(wr_id)
+			if not self.workroom.id in workrooms:
+				workrooms.append(self.workroom.id)
 				#keys = {'nik_name': artist_, 'workroom' : json.dumps(workrooms)}
 				keys = {'nik_name': artist['nik_name'], 'workroom' : workrooms}
 				bool_, return_data = self.artist.edit_artist(keys)
 				if not bool_:
 					self.message(return_data, 2)
 				
-			print(wr_id, workrooms)
+			#print(self.workroom.id, workrooms)
 				
 		self.fill_active_artist_table_for_workroom(window)
 		self.fill_active_artist_table_at_workroom()
 		
 		# get artist data
-		self.get_artist_data()
+		#self.get_artist_data()
+		
+		#
+		print('add artists to workroom "%s"' % self.workroom.name)
 		
 		
 	def remove_artists_from_workroom_action(self, table):
@@ -1224,7 +1238,7 @@ class MainWindow(QtGui.QMainWindow):
 			if item.column() == name_column:
 				artists.append(item.artist)
 				
-		wr_id = self.workroom.get('id')
+		#wr_id = self.workroom.get('id')
 		
 		# remove artist from workroom
 		for artist in artists:
@@ -1232,13 +1246,13 @@ class MainWindow(QtGui.QMainWindow):
 			if artist.get('workroom'):
 				workrooms = artist.get('workroom')
 			
-			if wr_id in workrooms:
-				workrooms.remove(wr_id)
+			if self.workroom.id in workrooms:
+				workrooms.remove(self.workroom.id)
 				keys = {'nik_name': artist['nik_name'], 'workroom' : workrooms}
 				bool_, return_data = self.artist.edit_artist(keys)
 				if not bool_:
-					self.message('look terminal', 2)
-					print(return_data)
+					self.message('Look the terminal!', 2)
+					#print(return_data)
 					return
 				
 		
@@ -1246,7 +1260,7 @@ class MainWindow(QtGui.QMainWindow):
 		self.get_artist_data()
 				
 		self.fill_active_artist_table_at_workroom()
-		print('remove select artists from workroom', artists)
+		print('remove select artists from workroom "%s"' % self.workroom.name)
 		
 	# ******************* STUDIO EDITOR /// PROJECT EDITOR ****************************
 	def edit_ui_to_project_editor(self):
@@ -7114,12 +7128,9 @@ class MainWindow(QtGui.QMainWindow):
 	
 	def get_artist_data(self, read = True):
 		# ---- get artist data
-		#artist_row = None
 		if read:
 			result = self.artist.get_user()
 			if result[0]:
-				#artist_row = result[1][3]
-				#self.current_user = artist_row['nik_name']
 				self.current_user = self.artist.nik_name
 			else:
 				self.message(result[1], 2)
@@ -7127,6 +7138,7 @@ class MainWindow(QtGui.QMainWindow):
 				self.setWindowTitle(('Lineyka  ' + self.artist.nik_name))
 			except:
 				self.setWindowTitle('Lineyka  Not User!')
+				self.current_user = None
 		else:
 			self.current_user = self.artist.nik_name
 			self.setWindowTitle(('Lineyka  ' + self.artist.nik_name))
