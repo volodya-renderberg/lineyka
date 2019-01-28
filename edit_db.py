@@ -6787,7 +6787,7 @@ class artist(studio):
 		artists_dict = {}
 		for row in return_data:
 			try:
-				workrooms = json.loads(row['workroom'])
+				workrooms = row['workroom']
 			except:
 				continue
 			if workroom_id in workrooms:
