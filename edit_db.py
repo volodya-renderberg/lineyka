@@ -6685,6 +6685,7 @@ class artist(studio):
 	self.edit_stat(user_name, project_name, task_name, {key:data, ...}) - 
 	'''
 	def __init__(self):
+		pass
 		#base fields
 		for key in self.artists_keys:
 			exec('self.%s = False' % key)
@@ -6709,6 +6710,22 @@ class artist(studio):
 		else:
 			for key in self.artists_keys:
 				exec('self.%s = keys[0].get("%s")' % (key, key))
+			#self.asset_path = keys.get('asset_path')
+			return(True, 'Ok')
+		
+	# инициализация по словарю
+	# new (bool) - если True - то возвращается новый инициализированный объект класса artist, если False - то инициализируется текущий объект
+	def init_by_keys(self, keys, new = True):
+		pass
+		# fill fields
+		if new:
+			new_artist = artist()
+			for key in self.artists_keys:
+				exec('new_artist.%s = keys.get("%s")' % (key, key))
+			return new_artist
+		else:
+			for key in self.artists_keys:
+				exec('self.%s = keys.get("%s")' % (key, key))
 			#self.asset_path = keys.get('asset_path')
 			return(True, 'Ok')
 	
@@ -6773,13 +6790,24 @@ class artist(studio):
 					exec(com)
 			return(True, 'ok')
 		
-	def read_artist(self, keys):
+	# keys (dict) - фильтр по ключам artists_keys
+	# objects (bool) - если True - то возвращаются объекты, если False - то словари.
+	def read_artist(self, keys, objects=True):
 		if keys == 'all':
 			keys = False
-		bool_, return_data = database().read('studio', self, self.artists_t, self.artists_keys, where=keys)
-		return(bool_, return_data)
+		bool_, r_data = database().read('studio', self, self.artists_t, self.artists_keys, where=keys)
+		if not bool_:
+			return(bool_, r_data)
+		if not objects:
+			return(bool_, r_data)
+		else:
+			objects = []
+			for data in r_data:
+				objects.append(self.init_by_keys(data))
+			return(True, objects)
+			
 		
-	def read_artist_of_workroom(self, workroom_id):
+	def read_artist_of_workroom(self, workroom_id, objects=True):
 		bool_, return_data = database().read('studio', self, self.artists_t, self.artists_keys)
 		if not bool_:
 			return(bool_, return_data)
@@ -6791,7 +6819,10 @@ class artist(studio):
 			except:
 				continue
 			if workroom_id in workrooms:
-				artists_dict[row['nik_name']] = row
+				if objects:
+					artists_dict[row['nik_name']] = self.init_by_keys(row)
+				else:
+					artists_dict[row['nik_name']] = row
 		return(True, artists_dict)
 		
 	def login_user(self, nik_name, password):
@@ -6854,7 +6885,8 @@ class artist(studio):
 	
 	# key_data = обязательное поле nik_name
 	# artist_current_data - текущие данные пользователя на момент редактирования.
-	def edit_artist(self, key_data, artist_current_data = False):
+	def edit_artist_old(self, key_data, artist_current_data = False):
+		pass
 		# test nik_name
 		nik_name = key_data.get('nik_name')
 		if not nik_name:
@@ -6885,12 +6917,62 @@ class artist(studio):
 			return(False, 'Not Access! (attempt to change a user with a higher level)')
 		# update
 		del key_data['nik_name']
-		bool_, return_data = database().update('studio', self, self.artists_t, self.artists_keys, key_data, {'nik_name': nik_name})
+		bool_, return_data = database().update('studio', self, self.artists_t, self.artists_keys, key_data, where = {'nik_name': nik_name})
 		if not bool_:
 			return(bool_, return_data)
 		return True, 'ok'
+	
+	# редактирование объекта артиста. текущий объект artist должен быть инициализирован. редактирует параметры текущего-редактируемого объекта.
+	# keys (dict) - данные на замену - nik_name - не редактируется, поэтому удаляется из данных перед записью.
+	# current_user (artist) - редактор - залогиненный пользователь.
+	def edit_artist(self, keys, current_user=False):
+		pass
+		# 1 - проверка заполненности keys
+		# 2 - тест current_user
+		# 3 - уровни доступа
+		# 4 - запись данных в БД
+		# 5 - изменение данных текущего объекта
+		
+		# (1)
+		if not keys:
+			return(False, 'No data to write!')
+		# (2)
+		if current_user and not isinstance(current_user, artist):
+			return(False, 'In artist.edit_artist() - wrong type of "current_user" - %s' % current_user.__class__.__name__)
+		elif not current_user:
+			current_user = artist()
+			bool_, return_data = current_user.get_user()
+			if not bool_:
+				return(bool_, return_data)
+		
+		# (3)
+		# -- user не менеджер
+		if not current_user.level in self.manager_levels:
+			return(False, 'Not Access! (your level does not allow you to make similar changes)')
+		# -- попытка возвести в ранг выше себя
+		elif keys.get("level") and self.user_levels.index(current_user.level) < self.user_levels.index(keys.get("level")):
+			return(False, 'Not Access! (attempt to assign a level higher than yourself)')
+		# -- попытка сделать изменения пользователя с более высоким уровнем.
+		elif self.user_levels.index(current_user.level) < self.user_levels.index(self.level):
+			return(False, 'Not Access! (attempt to change a user with a higher level)')
+		
+		# (4)
+		# update
+		if 'nik_name' in keys:
+			del keys['nik_name']
+		bool_, return_data = database().update('studio', self, self.artists_t, self.artists_keys, keys, where = {'nik_name': self.nik_name}, table_root=self.artists_db)
+		if not bool_:
+			return(bool_, return_data)
+		
+		# (5)
+		for key in self.artists_keys:
+			if key in keys:
+				exec('self.%s = keys.get("%s")' % (key, key))
+		
+		return True, 'ok'
 		
 	def add_stat(self, user_name, keys):
+		pass
 		# test project_name
 		try:
 			project_name = keys['project_name']
@@ -6964,6 +7046,7 @@ class artist(studio):
 		return True, 'ok'
 	
 	def read_stat(self, nik_name, keys):
+		pass
 		# create string
 		table = '\"' + nik_name + ':' + self.statistic_t + '\"'
 		
@@ -7004,6 +7087,7 @@ class artist(studio):
 		return True, rows
 		
 	def edit_stat(self, user_name, project_name, task_name, keys):
+		pass
 		# create string	
 		table = '\"' + user_name + ':' + self.statistic_t + '\"'
 		# edit db
@@ -7101,7 +7185,8 @@ class workroom(studio):
 		else:
 			return(self.init_by_keys(keys, True))
 		
-	def get_list_workrooms(self, return_type = False, objects=False):
+	def get_list_workrooms(self, return_type = False, objects=True):
+		pass
 		bool_, return_data = database().read('studio', self, self.workroom_t, self.workroom_keys, table_root=self.workroom_db)
 		if not bool_:
 			return(bool_, return_data)

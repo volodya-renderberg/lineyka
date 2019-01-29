@@ -67,7 +67,7 @@ class MainWindow(QtGui.QMainWindow):
 		# studio level
 		self.db_studio = db.studio
 		self.db_studio()
-		self.artist = db.artist()
+		self.artist = db.artist() # - по совместительству current user - все объекты artist - не текущего юзера, должны быть другими объектами.
 		self.db_workroom = db.workroom()
 		self.db_set_of_tasks = db.set_of_tasks()
 		self.project = db.project()
@@ -88,7 +88,7 @@ class MainWindow(QtGui.QMainWindow):
 		self.workrooms_by_name = {} # словарь отделов(объекты) по name - заполняется в set_self_workrooms()
 		self.workroom = None # текущий отдел (объект)
 		self.selected_artist = None # выбранный в таблице артист (словарь)
-		self.current_user = None # nik_name авторизированного юзера
+		#self.current_user = None # авторизированный юзер (объект) - устарело
 		
 		#
 		self.look_keys = ['nik_name','specialty','outsource','level']
@@ -173,6 +173,7 @@ class MainWindow(QtGui.QMainWindow):
 	
 	# ******************* STUDIO EDITOR /// ARTIST EDITOR ****************************
 	def edit_ui_to_artist_editor(self):
+		pass
 		# edit label
 		self.myWidget.studio_editor_label.setText('Artist Editor')
 				
@@ -303,6 +304,8 @@ class MainWindow(QtGui.QMainWindow):
 			
 	def reload_artist_list(self):
 		pass
+		self.clear_table()
+		'''
 		# clear table
 		num_row = self.myWidget.studio_editor_table.rowCount()
 		num_column = self.myWidget.studio_editor_table.columnCount()
@@ -313,6 +316,7 @@ class MainWindow(QtGui.QMainWindow):
 				self.myWidget.studio_editor_table.takeItem(i, j)
 
 				#self.myWidget.studio_editor_table.removeCellWidget(i, j)
+		'''
     
 		# fill table
 		self.fill_artist_table()
@@ -536,6 +540,7 @@ class MainWindow(QtGui.QMainWindow):
 	
 	# ----------------- Artist Edit Workroom ----------------------------
 	def artist_edit_workroom2_ui(self, current_widget):
+		pass
 		# get all workrooms
 		bool_, workrooms = self.db_workroom.get_list_workrooms()
 		
@@ -582,6 +587,7 @@ class MainWindow(QtGui.QMainWindow):
 		window.show()
 		
 	def artist_edit_workroom2_action(self, current_widget, window, checkbox_list):
+		pass
 		# get data
 		data = []
 		for obj in checkbox_list:
@@ -596,6 +602,7 @@ class MainWindow(QtGui.QMainWindow):
 		
 	
 	def artist_edit_workroom_ui(self, current_widget):
+		pass
 		# select_from_list_dialog.ui
 		loader = QtUiTools.QUiLoader()
 		file = QtCore.QFile(self.select_from_list_dialog_path)
@@ -648,6 +655,7 @@ class MainWindow(QtGui.QMainWindow):
 	
 	# ------------------ Artist Get Share Dir ---------------------------
 	def get_share_dir(self, field):
+		pass
 		# get path
 		home = os.path.expanduser('~')
 		folder = QtGui.QFileDialog.getExistingDirectory(self, home)
@@ -658,6 +666,7 @@ class MainWindow(QtGui.QMainWindow):
 	# ******************* STUDIO EDITOR /// WORKROOM EDITOR ****************************
 	
 	def edit_ui_to_workroom_editor(self):
+		pass
 		# edit label
 		self.myWidget.studio_editor_label.setText('WorkRoom Editor')
 				
@@ -7159,17 +7168,13 @@ class MainWindow(QtGui.QMainWindow):
 		# ---- get artist data
 		if read:
 			result = self.artist.get_user()
-			if result[0]:
-				self.current_user = self.artist.nik_name
-			else:
+			if not result[0]:
 				self.message(result[1], 2)
 			try:
-				self.setWindowTitle(('Lineyka  ' + self.artist.nik_name))
+				self.setWindowTitle(('Lineyka  %s' % self.artist.nik_name))
 			except:
 				self.setWindowTitle('Lineyka  Not User!')
-				self.current_user = None
 		else:
-			self.current_user = self.artist.nik_name
 			self.setWindowTitle(('Lineyka  ' + self.artist.nik_name))
 	
 	def close_window(self, window):
