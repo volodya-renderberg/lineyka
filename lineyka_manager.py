@@ -539,7 +539,7 @@ class MainWindow(QtGui.QMainWindow):
 		print('edit artist action', data)
 	
 	# ----------------- Artist Edit Workroom ----------------------------
-	def artist_edit_workroom2_ui(self, current_widget):
+	def artist_edit_workroom2_ui(self, current_widget): # используется при редактировании артиста (с чек боксами).
 		pass
 		# get all workrooms
 		bool_, workrooms = self.db_workroom.get_list_workrooms()
@@ -601,7 +601,7 @@ class MainWindow(QtGui.QMainWindow):
 		#self.get_artist_data()
 		
 	
-	def artist_edit_workroom_ui(self, current_widget):
+	def artist_edit_workroom_ui(self, current_widget): # используется при создании артиста (с таблицей).
 		pass
 		# select_from_list_dialog.ui
 		loader = QtUiTools.QUiLoader()
@@ -1000,6 +1000,7 @@ class MainWindow(QtGui.QMainWindow):
 	# -------------------- Workroom ADD  Artists Editor ---------------------------------------
 	
 	def edit_ui_to_edit_artist_list(self):
+		pass
 		# get workroom data
 		wr_data = {}
 		current_item = self.myWidget.studio_editor_table.currentItem()
@@ -1246,7 +1247,7 @@ class MainWindow(QtGui.QMainWindow):
 				workrooms.append(self.workroom.id)
 				#keys = {'nik_name': artist_, 'workroom' : json.dumps(workrooms)}
 				keys = {'nik_name': artist.nik_name, 'workroom' : workrooms}
-				bool_, return_data = self.artist.edit_artist(keys)
+				bool_, return_data = artist.edit_artist(keys, self.artist)
 				if not bool_:
 					self.message(return_data, 2)
 				
@@ -1289,7 +1290,7 @@ class MainWindow(QtGui.QMainWindow):
 			if self.workroom.id in workrooms:
 				workrooms.remove(self.workroom.id)
 				keys = {'nik_name': artist.nik_name, 'workroom' : workrooms}
-				bool_, return_data = self.artist.edit_artist(keys)
+				bool_, return_data = artist.edit_artist(keys, self.artist)
 				if not bool_:
 					self.message('Look the terminal!', 2)
 					#print(return_data)
