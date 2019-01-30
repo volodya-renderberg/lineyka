@@ -281,21 +281,21 @@ class MainWindow(QtGui.QMainWindow):
 			for j,key in enumerate(headers):
 				newItem = QtGui.QTableWidgetItem()
 				if key == 'date_time':
-					newItem.setText(artist[key].strftime("%d-%m-%Y %H:%M:%S"))
+					newItem.setText(getattr(artist, key).strftime("%d-%m-%Y %H:%M:%S"))
 					#newItem.setText('time')
 				elif key == 'workroom':
-					if artist['workroom']:
+					if getattr(artist, key):
 						wr_list = []
-						for wr_id in artist['workroom']:
+						for wr_id in getattr(artist, key):
 							wr_list.append(self.workrooms[wr_id].name)
 						newItem.setText(','.join(wr_list))
 				elif key == 'nik_name':
 					color = self.artist_color
 					brush = QtGui.QBrush(color)
 					newItem.setBackground(brush)
-					newItem.setText(str(artist['nik_name']))
+					newItem.setText(str(getattr(artist, key)))
 				else:
-					newItem.setText(str(artist[key]))
+					newItem.setText(str(getattr(artist, key)))
 				newItem.artist = artist
 				self.myWidget.studio_editor_table.setItem(i, j, newItem)
 
@@ -426,7 +426,7 @@ class MainWindow(QtGui.QMainWindow):
 			return
 		
 		self.selected_artist = current_item.artist
-		level = self.selected_artist['level']
+		level = getattr(self.selected_artist, 'level')
 		
 		if self.artist.level not in self.artist.manager_levels:
 			self.message('No Access! your level: "%s"' % self.artist.level, 3)
@@ -448,27 +448,27 @@ class MainWindow(QtGui.QMainWindow):
 		
 		# get workrooms list
 		wr_name_list = []
-		if self.selected_artist['workroom']:
-			for wr_id in  self.selected_artist['workroom']:
+		if self.selected_artist.workroom:
+			for wr_id in  self.selected_artist.workroom:
 				wr_name_list.append(self.workrooms[wr_id].name)
 		
 		# edit widget
 		window.setWindowTitle('Edit Artist Data')
 		window.nik_name_field.setEnabled(False)
-		window.nik_name_field.setText(self.selected_artist['nik_name'])
+		window.nik_name_field.setText(self.selected_artist.nik_name)
 		window.workroom_field.setEnabled(False)
 		window.workroom_field.setText(json.dumps(wr_name_list))
 		window.share_dir_field.setEnabled(False)
-		window.share_dir_field.setText(self.selected_artist['share_dir'])
-		window.password_field.setText(self.selected_artist['password'])
-		window.email_field.setText(self.selected_artist['email'])
-		window.phone_field.setText(self.selected_artist['phone'])
-		window.specialty_field.setText(self.selected_artist['specialty'])
+		window.share_dir_field.setText(self.selected_artist.share_dir)
+		window.password_field.setText(self.selected_artist.password)
+		window.email_field.setText(self.selected_artist.email)
+		window.phone_field.setText(self.selected_artist.phone)
+		window.specialty_field.setText(self.selected_artist.specialty)
 		
 		window.level_combobox.addItems(levels)
-		window.level_combobox.setCurrentIndex(window.level_combobox.findText(self.selected_artist['level']))
+		window.level_combobox.setCurrentIndex(window.level_combobox.findText(self.selected_artist.level))
 		
-		if self.selected_artist['outsource'] == 1:
+		if self.selected_artist.outsource == 1:
 			window.autsource_check_box.setCheckState(QtCore.Qt.CheckState.Checked)
 			
 		# button connect
@@ -521,7 +521,7 @@ class MainWindow(QtGui.QMainWindow):
 			data['outsource'] = False
 		
 		# save artist data
-		result = self.artist.edit_artist(data, artist_current_data = self.selected_artist)
+		result = self.selected_artist.edit_artist(data, current_user = self.artist)
 		
 		if not result[0]:
 			self.message(result[1], 2)
@@ -567,7 +567,7 @@ class MainWindow(QtGui.QMainWindow):
 		checkbox_list = []
 		layout = QtGui.QVBoxLayout()
 		for wr in workrooms:
-			wr_name = wr['name']
+			wr_name = wr.name
 			box = QtGui.QCheckBox(wr_name, window.check_buttons_frame)
 			checkbox_list.append(box)
 			if wr_name in workroom_list:
@@ -644,7 +644,10 @@ class MainWindow(QtGui.QMainWindow):
 				
 		data = []
 		for item in items:
-			data.append(item.text())
+			data.append(self.workrooms[item.wr_id].name)
+			
+		data = set(data)
+		data = list(data)
 		
 		current_widget.workroom_field.setText(json.dumps(data))
 		self.close_window(self.selectWorkroomDialog)
@@ -1122,7 +1125,7 @@ class MainWindow(QtGui.QMainWindow):
 		for artist in artists:
 			# get workroom
 			wr_list = []
-			if self.workroom.id in artist['workroom'] and artist['status'] == 'active':
+			if self.workroom.id in artist.workroom and artist.status == 'active':
 				active_artists.append(artist)
     
 		# get table data
@@ -1142,9 +1145,9 @@ class MainWindow(QtGui.QMainWindow):
 					continue
 				newItem = QtGui.QTableWidgetItem()
 				if key in ['outsource']:
-					newItem.setText(str(artist[key]))
+					newItem.setText(str(getattr(artist, key)))
 				else:
-					newItem.setText(artist[key])
+					newItem.setText(getattr(artist, key))
 				newItem.artist = artist
 				if key == 'nik_name':
 					color = self.artist_color
@@ -1167,14 +1170,14 @@ class MainWindow(QtGui.QMainWindow):
 			wr_id = self.workrooms_by_name[wr_name].id
 			self.clear_table(window.select_from_list_data_list_table)
 			for artist in artists[1]:
-				if artist['status'] == 'active' and wr_id in artist['workroom']:
-					if not filter_ or filter_ in artist['nik_name']:
+				if artist.status == 'active' and wr_id in artist.workroom:
+					if not filter_ or filter_ in artist.nik_name:
 						active_artists.append(artist)
 		elif not wr_name or wr_name == '-- all --':
 			# get active list
 			for artist in artists[1]:
-				if artist['status'] == 'active':
-					if not filter_ or filter_ in artist['nik_name']:
+				if artist.status == 'active':
+					if not filter_ or filter_ in artist.nik_name:
 						active_artists.append(artist)
 				
 		# get table data
@@ -1190,16 +1193,16 @@ class MainWindow(QtGui.QMainWindow):
 		# fill table
 		for i, artist in enumerate(active_artists):
 			wr_list = []
-			if artist['workroom']:
-				wr_list = artist['workroom']
+			if artist.workroom:
+				wr_list = artist.workroom
 			for j,key in enumerate(headers):
 				if not (key in self.look_keys):
 					continue
 				newItem = QtGui.QTableWidgetItem()
 				if key=='outsource':
-					newItem.setText(str(artist[key]))
+					newItem.setText(str(getattr(artist, key)))
 				else:
-					newItem.setText(artist[key])
+					newItem.setText(getattr(artist, key))
 				newItem.artist = artist
 				if key == 'nik_name' and not self.workroom.id in wr_list:
 					color = self.artist_color
@@ -1236,13 +1239,13 @@ class MainWindow(QtGui.QMainWindow):
 		
 		for artist in artists:
 			workrooms = []
-			if artist['workroom']:
-				workrooms = artist['workroom']
+			if artist.workroom:
+				workrooms = artist.workroom
 			
 			if not self.workroom.id in workrooms:
 				workrooms.append(self.workroom.id)
 				#keys = {'nik_name': artist_, 'workroom' : json.dumps(workrooms)}
-				keys = {'nik_name': artist['nik_name'], 'workroom' : workrooms}
+				keys = {'nik_name': artist.nik_name, 'workroom' : workrooms}
 				bool_, return_data = self.artist.edit_artist(keys)
 				if not bool_:
 					self.message(return_data, 2)
@@ -1280,12 +1283,12 @@ class MainWindow(QtGui.QMainWindow):
 		# remove artist from workroom
 		for artist in artists:
 			workrooms = []
-			if artist.get('workroom'):
-				workrooms = artist.get('workroom')
+			if artist.workroom:
+				workrooms = artist.workroom
 			
 			if self.workroom.id in workrooms:
 				workrooms.remove(self.workroom.id)
-				keys = {'nik_name': artist['nik_name'], 'workroom' : workrooms}
+				keys = {'nik_name': artist.nik_name, 'workroom' : workrooms}
 				bool_, return_data = self.artist.edit_artist(keys)
 				if not bool_:
 					self.message('Look the terminal!', 2)
@@ -5097,8 +5100,8 @@ class MainWindow(QtGui.QMainWindow):
 			if result[0]:
 				wr_list = []
 				for wr in result[1]:
-					wr_list.append(wr['name'])
-				items = ['all workrooms'] + wr_list
+					wr_list.append(wr.name)
+				items = ['all workrooms'] + sorted(wr_list)
 				self.myWidget.task_manager_comboBox_4.setVisible(True)
 				self.myWidget.task_manager_comboBox_4.clear()
 				self.myWidget.task_manager_comboBox_4.addItems(items)
@@ -5108,10 +5111,10 @@ class MainWindow(QtGui.QMainWindow):
 			if result[0]:
 				wr_list = []
 				for wr in result[1]:
-					if wr['id'] in user_wr_list:
-						wr_list.append(wr['name'])
+					if wr.id in user_wr_list:
+						wr_list.append(wr.name)
 									
-				items = ['all workrooms'] + wr_list
+				items = ['all workrooms'] + sorted(wr_list)
 				self.myWidget.task_manager_comboBox_4.setVisible(True)
 				self.myWidget.task_manager_comboBox_4.clear()
 				self.myWidget.task_manager_comboBox_4.addItems(items)

@@ -7247,7 +7247,7 @@ class workroom(studio):
 	
 	# возможно лучше не использовать
 	def name_list_to_id_list(self, name_list):
-		bool_, data = self.get_list_workrooms('by_name')
+		bool_, data = self.get_list_workrooms('by_name', False)
 		if not bool_:
 			return(bool_, data)
 		if data:
@@ -7263,7 +7263,7 @@ class workroom(studio):
 	
 	# возможно лучше не использовать
 	def id_list_to_name_list(self, id_list):
-		bool_, data = self.get_list_workrooms('by_id')
+		bool_, data = self.get_list_workrooms('by_id', False)
 		if not bool_:
 			return(bool_, data)
 		if data:
@@ -7289,7 +7289,7 @@ class workroom(studio):
 		# (1)
 		if self.name == new_name:
 			return(False, 'Match names!')
-		bool_, return_data = self.get_list_workrooms('by_name')
+		bool_, return_data = self.get_list_workrooms('by_name', False)
 		if not bool_:
 			return(bool_, return_data)
 		if new_name in return_data:
