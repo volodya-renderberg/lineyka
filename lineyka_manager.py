@@ -70,7 +70,7 @@ class MainWindow(QtGui.QMainWindow):
 		self.artist = db.artist() # - по совместительству current user - все объекты artist - не текущего юзера, должны быть другими объектами.
 		self.db_workroom = db.workroom()
 		self.db_set_of_tasks = db.set_of_tasks()
-		self.project = db.project()
+		self.project = db.project() # он же текущий проект
 		# project level
 		self.db_season = db.season(self.project)
 		self.db_asset = db.asset(self.project)
@@ -92,7 +92,7 @@ class MainWindow(QtGui.QMainWindow):
 		
 		#
 		self.look_keys = ['nik_name','specialty','outsource','level']
-		self.current_project = False
+		#self.current_project = False # удаляем.
 		self.current_group = False
 		self.type_editor = False
 		
@@ -1305,6 +1305,7 @@ class MainWindow(QtGui.QMainWindow):
 		
 	# ******************* STUDIO EDITOR /// PROJECT EDITOR ****************************
 	def edit_ui_to_project_editor(self):
+		pass
 		# edit label
 		self.myWidget.studio_editor_label.setText('Project Editor')
 				
@@ -1370,24 +1371,22 @@ class MainWindow(QtGui.QMainWindow):
 		self.myWidget.studio_editor_table.setSelectionBehavior(QtGui.QAbstractItemView.SelectRows)
 		self.myWidget.studio_editor_table.setSelectionMode(QtGui.QAbstractItemView.SingleSelection)
 		
-		self.clear_table()
-		self.fill_project_table(self.myWidget.studio_editor_table)
+		self.reload_project_list()
 		
 	def reload_project_list(self):
 		self.clear_table()
 		self.fill_project_table(self.myWidget.studio_editor_table)
 		
 	def fill_project_table(self, table):
+		pass
 		#copy = db.studio() # self.db_studio
 		self.project.get_list_projects()
 		
 		if not self.project.list_projects:
 			return
 			
-		projects = []
-		for key in self.project.list_projects.keys():
-			projects.append({'name' : key,'status' : self.project.list_projects[key]['status'], 'path': self.project.list_projects[key]['path']})
-		
+		projects = self.project.get_list_of_projects()
+				
 		# get table data
 		columns = ('name', 'status', 'path')
 		num_row = len(projects)
@@ -1404,7 +1403,8 @@ class MainWindow(QtGui.QMainWindow):
 		for i, project in enumerate(projects):
 			for j,key in enumerate(headers):
 				newItem = QtGui.QTableWidgetItem()
-				newItem.setText(project[key])
+				newItem.setText(getattr(project, key))
+				newItem.project = project
 				if key == 'name':
 					color = self.project_color
 					brush = QtGui.QBrush(color)
@@ -1418,6 +1418,7 @@ class MainWindow(QtGui.QMainWindow):
 		print('fill project table')
 	
 	def new_project_ui(self):
+		pass
 		# widget
 		loader = QtUiTools.QUiLoader()
 		file = QtCore.QFile(self.qt_set_project_path)
@@ -1439,6 +1440,7 @@ class MainWindow(QtGui.QMainWindow):
 		print('new project ui')
 		
 	def new_project_action(self, window):
+		pass
 		# get data
 		name = window.priject_name_field.text()
 		path = window.set_project_folder.text()
@@ -1448,35 +1450,21 @@ class MainWindow(QtGui.QMainWindow):
 			self.message(result[1], 3)
 			return
 		
-		self.clear_table()
-		self.fill_project_table(self.myWidget.studio_editor_table)
+		self.reload_project_list()
 		self.close_window(window)
 		
-		self.current_project = name
-		self.get_list_active_projects()
 		self.tm_fill_project_list()
 		
 	def rename_project_ui(self, table):
-		column = table.columnCount()
-		name_column = None
-		for i in range(0, column):
-			head_item = table.horizontalHeaderItem(i)
-			if head_item.text() == 'name':
-				name_column = i
-				break
-		
+		pass		
 		# get selected rows
 		selected = table.selectedItems()
-		projects = []
-		for item in selected:
-			if item.column() == name_column:
-				projects.append(item.text())
-				
-		if projects == []:
+						
+		if not selected:
 			self.message('Not Selected Project', 2)
 			return
 		
-		project = projects[0]
+		self.selected_project = selected[0].project
 		
 		# widget
 		loader = QtUiTools.QUiLoader()
@@ -1486,31 +1474,25 @@ class MainWindow(QtGui.QMainWindow):
 		file.close()
 		
 		# edit widget
-		window.setWindowTitle(('Rename Project: ' + project))
+		window.setWindowTitle(('Rename Project: ' + self.selected_project.name))
 		window.new_dialog_label.setText('New Name:')
-		window.new_dialog_name.setText(project)
+		window.new_dialog_name.setText(self.selected_project.name)
 		window.new_dialog_cancel.clicked.connect(partial(self.close_window, window))
-		window.new_dialog_ok.clicked.connect(partial(self.rename_project_action, window, project))
+		window.new_dialog_ok.clicked.connect(partial(self.rename_project_action, window))
 		
 		# set modal window
 		window.setWindowModality(QtCore.Qt.WindowModal)
 		window.setAttribute(QtCore.Qt.WA_DeleteOnClose, True)
 		
 		window.show()
-		print('new project ui', project)
+		print('new project ui', self.selected_project.name)
 		
-	def rename_project_action(self, window, project):
+	def rename_project_action(self, window):
+		pass
 		# get data
 		new_name = window.new_dialog_name.text()
-		if new_name == '':
-			self.message('Not Name!', 2)
-			return
-		
-		if new_name == project:
-			self.message('Name not changed!', 2)
-			return
-			
-		result = self.project.rename_project(project, new_name)
+					
+		result = self.selected_project.rename_project(new_name)
 		if not result[0]:
 			self.message(result[1], 2)
 			return
@@ -1519,82 +1501,57 @@ class MainWindow(QtGui.QMainWindow):
 		self.fill_project_table(self.myWidget.studio_editor_table)
 		self.close_window(window)
 		
-		#self.current_project = new_name
-		self.current_project = self.project.name
-		self.get_list_active_projects()
 		self.tm_fill_project_list()
 		
 	def remove_project_action(self, table):
-		ask = self.message('You Are Soure?', 0)
-		if not ask:
-			return
-		
-		column = table.columnCount()
-		name_column = None
-		for i in range(0, column):
-			head_item = table.horizontalHeaderItem(i)
-			if head_item.text() == 'name':
-				name_column = i
-				break
-		
+		pass		
 		# get selected rows
 		selected = table.selectedItems()
-		projects = []
-		for item in selected:
-			if item.column() == name_column:
-				projects.append(item.text())
-				
-		if projects == []:
+						
+		if not selected:
 			self.message('Not Selected Project', 2)
 			return
 		
-		project = projects[0]
+		self.selected_project = selected[0].project
 		
-		result = self.project.remove_project(project)
+		ask = self.message('Are you sure you want to delete the project - "%s"?' % self.selected_project.name, 0)
+		if not ask:
+			return
+		
+		result = self.selected_project.remove_project()
 		if not result[0]:
 			self.message(result[1], 2)
 			return
 		
-		self.clear_table()
-		self.fill_project_table(self.myWidget.studio_editor_table)
+		self.reload_project_list()
 		
-		self.get_list_active_projects()
 		self.tm_fill_project_list()
 		
 	def edit_status_project_action(self, table, status):
-		ask = self.message('You Are Soure?', 0)
-		if not ask:
-			return
-		
-		column = table.columnCount()
-		name_column = None
-		for i in range(0, column):
-			head_item = table.horizontalHeaderItem(i)
-			if head_item.text() == 'name':
-				name_column = i
-				break
-		
+		pass		
 		# get selected rows
 		selected = table.selectedItems()
-		projects = []
-		for item in selected:
-			if item.column() == name_column:
-				projects.append(item.text())
-				
-		if projects == []:
+						
+		if not selected:
 			self.message('Not Selected Project', 2)
 			return
 		
-		project = projects[0]
+		self.selected_project = selected[0].project
 		
-		result = self.project.edit_status(project, status)
+		if self.selected_project.status == status:
+			self.message('This project already has status "%s"' % status, 2)
+			return
+		
+		ask = self.message('Change project(%s) status to "%s"?' % (self.selected_project.name, status), 0)
+		if not ask:
+			return
+		
+		result = self.selected_project.edit_status(status)
 		if not result[0]:
 			self.message(result[1], 2)
 			return
 		
-		self.clear_table()
-		self.fill_project_table(self.myWidget.studio_editor_table)
-		self.get_list_active_projects()
+		self.reload_project_list()
 		self.tm_fill_project_list()
 		print('deactivate project action')
 		
@@ -5061,16 +5018,10 @@ class MainWindow(QtGui.QMainWindow):
 		self.clear_table(table = self.myWidget.task_manager_table)
 				
 	def tm_fill_project_list(self):
-		copy = self.db_workroom
+		pass	
 		
-		# get studio
-		self.db_studio.get_list_projects()
-		#self.project.get_list_projects()
-		#self.db_season.get_list_projects()
-		#self.db_chat.get_list_projects()
-		#self.db_asset.get_list_projects()
-		#self.db_log.get_list_projects()
-		
+		self.get_list_active_projects()
+				
 		if not self.artist.nik_name:
 			self.message('Not User!', 2)
 			self.boxes_default_state()

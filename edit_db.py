@@ -1381,12 +1381,12 @@ class project(studio):
 			ob = project()
 			ob.name = name
 			ob.path = self.list_projects[name]['path']
-			ob.assets_path = NormPath(os.path.join(self.path, self.assets_db))
-			ob.tasks_path = NormPath(os.path.join(self.path, self.tasks_db))
+			ob.assets_path = NormPath(os.path.join(ob.path, self.assets_db))
+			ob.tasks_path = NormPath(os.path.join(ob.path, self.tasks_db))
 			ob.list_of_assets_path = NormPath(os.path.join(self.list_projects[name]['path'], '.list_of_assets_path.json'))
-			ob.chat_path = NormPath(os.path.join(self.path, self.chats_db))
-			ob.chat_img_path = NormPath(os.path.join(self.path, self.folders['chat_img_folder']))
-			ob.preview_img_path = NormPath(os.path.join(self.path, self.folders['preview_images']))
+			ob.chat_path = NormPath(os.path.join(ob.path, self.chats_db))
+			ob.chat_img_path = NormPath(os.path.join(ob.path, self.folders['chat_img_folder']))
+			ob.preview_img_path = NormPath(os.path.join(ob.path, self.folders['preview_images']))
 			ob.status = self.list_projects[name]['status']
 			ob.project_database = self.list_projects[name]['project_database']
 			return ob
@@ -1410,6 +1410,8 @@ class project(studio):
 	# объект должен быть инициализирован
 	def rename_project(self, new_name): # v2
 		pass
+		if not new_name:
+			return(False, 'Not Name!')
 		ud = {'name': new_name}
 		wh = {'name': self.name}
 		bool_, rdata = database().update('studio', self, self.projects_t, self.projects_keys, update_data=ud, where=wh, table_root=self.projects_db)
