@@ -949,6 +949,21 @@ class database():
 		if db_name == 'sqlite3':
 			return_data = self.__sqlite3_update(level, read_ob, table_name, keys, update_data, where, table_root)
 			return(return_data)
+		
+	# удаление строки из таблицы БД
+	# where - словарь по ключам, так как значения маскируются под "?" не может быть None или False
+	# table_root - может быть как именем таблицы - например: assets, так и именем файла - .assets.db
+	def delete(self, level, read_ob, table_name, where, table_root=False):
+		attr = self.use_db_attr.get(level)
+		if not attr:
+			raise Exception('database.update()', 'Unknown Level : %s' % level)
+		
+		db_name, db_data = eval('read_ob.%s' % attr)
+		#return(db_name, db_data)
+		
+		if db_name == 'sqlite3':
+			return_data = self.__sqlite3_delete(level, read_ob, table_name, where, table_root)
+			return(return_data)
 	
 	### SQLITE3
 	# table_root - может быть как именем таблицы - например: assets, так и именем файла - .assets.db
@@ -1013,6 +1028,45 @@ class database():
 			print('#'*3, e)
 			conn.close()
 			return(False, 'Exception in database.__sqlite3_update, please look the terminal!')
+		conn.commit()
+		conn.close()
+		return(True, 'Ok!')
+	
+	# where - словарь по ключам, так как значения маскируются под "?" не может быть None или False
+	def __sqlite3_delete(self, level, read_ob, table_name, where, table_root):
+		data_com = []
+		
+		# where
+		where_data = ''
+		if where.__class__.__name__ != 'dict':
+			return(False, 'where not dict!')
+		else:
+			for i, key in enumerate(where):
+				if i==0:
+					where_data = '%s = ?' % key
+				else:
+					where_data = where_data + ', %s = ?' % key
+				data_com.append(where[key])
+		# com
+		com = 'DELETE FROM %s WHERE %s' % (table_name, where_data)
+		
+		# connect
+		# -- db_path
+		db_path = self.__get_db_path(level, read_ob, table_name, table_root)
+		# -- connect
+		conn = sqlite3.connect(db_path, detect_types=sqlite3.PARSE_DECLTYPES|sqlite3.PARSE_COLNAMES)
+		conn.row_factory = sqlite3.Row
+		c = conn.cursor()
+		# -- com
+		try:
+			c.execute(com, data_com)
+		except Exception as e:
+			print('#'*3, 'Exception in database.__sqlite3_delete:')
+			print('#'*3, 'com:', com)
+			print('#'*3, 'data_com:', data_com)
+			print('#'*3, e)
+			conn.close()
+			return(False, 'Exception in database.__sqlite3_delete, please look the terminal!')
 		conn.commit()
 		conn.close()
 		return(True, 'Ok!')
@@ -1213,6 +1267,7 @@ class project(studio):
 	
 	'''
 	def __init__(self):
+		pass
 		#base fields
 		for key in self.projects_keys:
 			exec('self.%s = False' % key)
@@ -1222,7 +1277,7 @@ class project(studio):
 		# constans
 		self.folders = {'assets':'assets', 'chat_img_folder':'.chat_images', 'preview_images': '.preview_images'}
 
-	def add_project(self, project_name, project_path):
+	def add_project(self, project_name, project_path): # v2
 		project_path = NormPath(project_path)
 		# project_name, get project_path
 		if not project_path and project_name == '':
@@ -1301,7 +1356,8 @@ class project(studio):
 		
 		return True, 'ok'
 		
-	def get_project(self, name, new=False):
+	# if new=True - возвращает новый инициализированный объект, если False то инициализирует текущий объект и возвращает (True, 'Ok')
+	def get_project(self, name, new=False): # v2
 		pass
 		#self.get_list_projects()
 		
@@ -1320,7 +1376,7 @@ class project(studio):
 			self.project_database = self.list_projects[name]['project_database']
 			#	
 			self.get_list_of_assets()
-			return(True, (self.list_projects[name], self.assets_list))
+			return(True, 'Ok!')
 		else:
 			ob = project()
 			ob.name = name
@@ -1335,56 +1391,65 @@ class project(studio):
 			ob.project_database = self.list_projects[name]['project_database']
 			return ob
 		
-	def get_list_of_assets(self):
+	def get_list_of_assets(self): # какая-то чушь!
+		pass
 		# self.assets_list - list of dictonary by self.asset_keys
 		self.assets_list = []
 		return(True, 'Ok')
 	
-	def rename_project(self, old_name, new_name):
-		# test old name
-		if not old_name in self.list_projects.keys():
-			return(False, ('in rename_project -> No such project: \"%s\"' % old_name))
-		# database
-		com = 'UPDATE %s SET \"name\" = ? WHERE name = ?' % self.projects_t
-		data_com = (new_name, old_name)
-		bool_, return_data = database().set_db('studio', self, self.projects_t, com, data_com=data_com)
+	# возвращает список проектов - объекты.
+	def get_list_of_projects(self): # v2
+		pass
+		list_projects = []
+		for pname in self.list_projects:
+			prj = self.get_project(pname, new=True)
+			list_projects.append(prj)
+		return(list_projects)
+	
+	# переименование проекта, перезагружает studio.list_projects
+	# объект должен быть инициализирован
+	def rename_project(self, new_name): # v2
+		pass
+		ud = {'name': new_name}
+		wh = {'name': self.name}
+		bool_, rdata = database().update('studio', self, self.projects_t, self.projects_keys, update_data=ud, where=wh, table_root=self.projects_db)
 		if not bool_:
-			return(False, return_data)
-		# перезапись списка проэктов
+			return(bool_, rdata)
+		
+		self.name = new_name
 		self.get_list_projects()
-		# переименованный проект - стал текущим
-		result = self.get_project(new_name)
-		if not result[0]:
-			return(False, ('in rename_project -> ' + result[1]))
+		
 		return(True, 'Ok!')
 		
-	def remove_project(self, name):
-		if not name in self.list_projects:
-			return(False, ('No such project: \"' + name + '\"'))
-			
-		result = self.get_project(name)
-		if not result[0]:
-			return(False, result[1])
+	# удаляет проект из БД, перезагружает studio.list_projects, приводит объектк empty.
+	# объект должен быть инициализирован
+	def remove_project(self): # v2
+		pass
+		# edit DB
+		wh = {'name': self.name}
+		bool_, return_data = database().delete('studio', self, self.projects_t, where=wh, table_root=self.projects_db)
 		
+		# to empty
+		self.get_list_projects()
+		for key in self.projects_keys:
+			setattr(self, key, False)
+		#
+		return(True, 'Ok!')
+		
+	# меняет статус проекта
+	# объект должен быть инициализирован
+	def edit_status(self, status):
+		pass
 		# database
-		com = 'DELETE FROM %s WHERE name = ?' % self.projects_t
-		data_com = (name,)
-		bool_, return_data = database().set_db('studio', self, self.projects_t, com, data_com=data_com)
-		return(bool_, return_data)
+		ud = {'status': status}
+		wh = {'name': self.name}
+		bool_, return_data = database().update('studio', self, self.projects_t, self.projects_keys, update_data=ud, where=wh, table_root=self.projects_db)
+		if not bool_:
+			return(bool_, return_data)
 		
-	def edit_status(self, name, status):
-		if not name in self.list_projects:
-			return(False, ('in edit_status -> No such project: \"' + name + '\"'))
-			
-		result = self.get_project(name)
-		if not result[0]:
-			return(False, ('in project.edit_status -> ' + result[1]))
-		
-		# database
-		update_data = {'status': status}
-		where = {'name': name}
-		bool_, return_data = database().update('studio', self, self.projects_t, self.projects_keys, update_data, where)
-		return(bool_, return_data)
+		self.status = status
+		self.get_list_projects()
+		return(True, 'Ok')
 		
 	def make_folders(self, root):
 		for f in self.folders:
