@@ -87,8 +87,9 @@ class MainWindow(QtGui.QMainWindow):
 		self.workrooms = {} # словарь отделов(объекты) по id - заполняется в set_self_workrooms()
 		self.workrooms_by_name = {} # словарь отделов(объекты) по name - заполняется в set_self_workrooms()
 		self.workroom = None # текущий отдел (объект)
-		self.selected_artist = None # выбранный в таблице артист (словарь)
+		self.selected_artist = None # выбранный в таблице артист (объект)
 		#self.current_user = None # авторизированный юзер (объект) - устарело
+		self.selected_project = None # выбранный в таблице проект (объект)
 		
 		#
 		self.look_keys = ['nik_name','specialty','outsource','level']
@@ -1558,6 +1559,7 @@ class MainWindow(QtGui.QMainWindow):
 	# ******************* STUDIO EDITOR /// SET OF TASKS EDITOR ****************************
 	
 	def edit_ui_to_set_of_tasks_editor(self):
+		pass
 		# edit label
 		self.myWidget.studio_editor_label.setText('Set Of Tasks Editor')
 				
@@ -1645,15 +1647,14 @@ class MainWindow(QtGui.QMainWindow):
 		self.fill_set_of_tasks_table(self.myWidget.studio_editor_table)
 		
 	def fill_set_of_tasks_table(self, table):
-		copy = self.db_set_of_tasks
-		
+		pass		
 		# get data list
-		list_sets = copy.get_list()
+		list_sets = self.db_set_of_tasks.get_list()
 		if not list_sets[0]:
 			return
 		
 		data_to_fill = []
-		for key in list_sets[1].keys():
+		for key in sorted(list_sets[1].keys()):
 			data_to_fill.append({'name' : key, 'asset_type': list_sets[1][key]['asset_type']})
 		
 		# get table data
@@ -1669,17 +1670,19 @@ class MainWindow(QtGui.QMainWindow):
     
 		
 		# fill table
-		for i, project in enumerate(data_to_fill):
+		for i, data in enumerate(data_to_fill):
 			for j,key in enumerate(headers):
 				newItem = QtGui.QTableWidgetItem()
-				newItem.setText(project[key])
-				newItem.name = project['name']
+				newItem.setText(data[key])
+				newItem.name = data['name']
 				if key == 'name':
 					color = self.set_of_tasks_color
 					brush = QtGui.QBrush(color)
 					newItem.setBackground(brush)
 	
 				table.setItem(i, j, newItem)
+				
+		table.itemDoubleClicked.connect(partial(self.pre_edit_set_of_tasks_ui, self.myWidget.studio_editor_table))
 					
 		print('fill set of tasks table')
 		
@@ -1688,6 +1691,7 @@ class MainWindow(QtGui.QMainWindow):
 		self.fill_set_of_tasks_table(self.myWidget.studio_editor_table)
 		
 	def new_set_of_tasks_ui(self):
+		pass
 		# widget
 		loader = QtUiTools.QUiLoader()
 		file = QtCore.QFile(self.new_dialog_2_path)
@@ -1713,6 +1717,7 @@ class MainWindow(QtGui.QMainWindow):
 		print('create set of tasks')
 		
 	def new_set_of_tasks_action(self, window):
+		pass
 		# get data
 		name = window.new_dialog_name.text()
 		asset_type = window.new_dialog_combo_box.currentText()
@@ -1753,6 +1758,7 @@ class MainWindow(QtGui.QMainWindow):
 		window.show()
 	
 	def copy_set_of_tasks_action(self, window, old_name):
+		pass
 		
 		# get new_name
 		new_name = window.new_dialog_name.text()
@@ -1769,26 +1775,13 @@ class MainWindow(QtGui.QMainWindow):
 		window.close()
 		
 	def rename_set_of_tasks_ui(self, table):
-		column = table.columnCount()
-		name_column = None
-		for i in range(0, column):
-			head_item = table.horizontalHeaderItem(i)
-			if head_item.text() == 'name':
-				name_column = i
-				break
-		
-		# get selected rows
-		selected = table.selectedItems()
-		lists = []
-		for item in selected:
-			if item.column() == name_column:
-				lists.append(item.text())
-				
-		if lists == []:
+		pass
+		#name = lists[0]
+		if not table.selectedItems():
 			self.message('Not Selected Set', 2)
 			return
 		
-		name = lists[0]
+		name = table.selectedItems()[0].name
 		
 		# widget
 		loader = QtUiTools.QUiLoader()
@@ -1813,6 +1806,7 @@ class MainWindow(QtGui.QMainWindow):
 		print('rename set of tasks ui')
 		
 	def rename_set_of_tasks_action(self, old_name, window):
+		pass
 		# get data
 		new_name = window.new_dialog_name.text()
 		
@@ -1834,32 +1828,18 @@ class MainWindow(QtGui.QMainWindow):
 		print('rename set action')
 		
 	def remove_set_of_tasks_action(self, table):
+		pass
+		#name = lists[0]
+		if not table.selectedItems():
+			self.message('Not Selected Set', 2)
+			return
+		
 		# ask
 		ask = self.message('You Are Soure?', 0)
 		if not ask:
 			return
 		
-		# get name
-		column = table.columnCount()
-		name_column = None
-		for i in range(0, column):
-			head_item = table.horizontalHeaderItem(i)
-			if head_item.text() == 'name':
-				name_column = i
-				break
-		
-		# get selected rows
-		selected = table.selectedItems()
-		lists = []
-		for item in selected:
-			if item.column() == name_column:
-				lists.append(item.text())
-				
-		if lists == []:
-			self.message('Not Selected Set', 2)
-			return
-		
-		name = lists[0]
+		name = table.selectedItems()[0].name
 		
 		# remove
 		#copy = db.set_of_tasks()
@@ -1872,28 +1852,17 @@ class MainWindow(QtGui.QMainWindow):
 		self.reload_set_of_tasks_list()
 		print('remove set of tasks ui')
 		
+	def pre_edit_set_of_tasks_ui(*args):
+		args[0].edit_set_of_tasks_ui(args[1])
+	
 	def edit_set_of_tasks_ui(self, table, geometry = False):
-		# get name
-		column = table.columnCount()
-		name_column = None
-		for i in range(0, column):
-			head_item = table.horizontalHeaderItem(i)
-			if head_item.text() == 'name':
-				name_column = i
-				break
-		
-		# get selected rows
-		selected = table.selectedItems()
-		lists = []
-		for item in selected:
-			if item.column() == name_column:
-				lists.append(item.text())
-				
-		if lists == []:
+		pass
+		#name = lists[0]
+		if not table.selectedItems():
 			self.message('Not Selected Set', 2)
 			return
 		
-		name = lists[0]
+		name = table.selectedItems()[0].name
 		
 		# widget
 		loader = QtUiTools.QUiLoader()
@@ -1915,8 +1884,8 @@ class MainWindow(QtGui.QMainWindow):
 			
 		# -- get table data
 		num_row = 100
-		num_column = len(copy.set_of_tasks_keys)
-		headers = copy.set_of_tasks_keys
+		num_column = len(copy.sets_keys)
+		headers = copy.sets_keys
 		    
 		# -- make table
 		window.select_from_list_data_list_table.setColumnCount(num_column)
@@ -1929,11 +1898,10 @@ class MainWindow(QtGui.QMainWindow):
 		
 		# context menu
 		# -- get workroom list
-		wr = self.db_workroom
-		wr_list = wr.get_list_workrooms()
+		wr_list = self.db_workroom.get_list_workrooms()
 		
 		# -- get wr_list by id
-		result = wr.get_list_workrooms(DICTONARY = 'by_id')
+		result = self.db_workroom.get_list_workrooms(return_type = 'by_id')
 		if not result[0]:
 			self.message(result[1], 3)
 			#return
@@ -1946,7 +1914,7 @@ class MainWindow(QtGui.QMainWindow):
 			addgrup_action = QtGui.QAction( '== workrooms == ', window)
 			window.select_from_list_data_list_table.addAction( addgrup_action )
 			for w_room in wr_list[1]:
-				wr_name = w_room['name']
+				wr_name = w_room.name
 				addgrup_action = QtGui.QAction( wr_name, window)
 				#addgrup_action.setToolTip( 'to WorkRoom column' )
 				addgrup_action.triggered.connect(partial(self.insert_data_in_table, wr_name, window.select_from_list_data_list_table, 'workroom'))
@@ -1990,7 +1958,7 @@ class MainWindow(QtGui.QMainWindow):
 		# fill table
 		for i, set_of_tasks in enumerate(right_data):
 			for j,key in enumerate(headers):
-				if not (key in copy.set_of_tasks_keys):
+				if not (key in copy.sets_keys):
 					continue
 				newItem = QtGui.QTableWidgetItem()
 				try:
@@ -2039,9 +2007,9 @@ class MainWindow(QtGui.QMainWindow):
 		
 
 	def edit_set_of_tasks_action(self, window, table, Name):
+		pass
 		# wr 
-		wr = self.db_workroom
-		result = wr.get_list_workrooms(DICTONARY = 'by_name')
+		result = self.db_workroom.get_list_workrooms(return_type = 'by_name')
 		if not result[0]:
 			self.message(result[1], 3)
 			return
@@ -2224,8 +2192,8 @@ class MainWindow(QtGui.QMainWindow):
 		
 		# -- get table data
 		num_row = len(right_data)
-		num_column = len(self.db_set_of_tasks.set_of_tasks_keys)
-		headers = self.db_set_of_tasks.set_of_tasks_keys
+		num_column = len(self.db_set_of_tasks.sets_keys)
+		headers = self.db_set_of_tasks.sets_keys
 		    
 		# -- make table
 		window.select_from_list_data_list_table.setColumnCount(num_column)
@@ -2235,7 +2203,7 @@ class MainWindow(QtGui.QMainWindow):
 		# fill table
 		for i, set_of_tasks in enumerate(right_data):
 			for j,key in enumerate(headers):
-				if not (key in self.db_set_of_tasks.set_of_tasks_keys):
+				if not (key in self.db_set_of_tasks.sets_keys):
 					continue
 				newItem = QtGui.QTableWidgetItem()
 				try:
@@ -2267,6 +2235,7 @@ class MainWindow(QtGui.QMainWindow):
 		
 	
 	def insert_workroom_in_table(self, workroom, table):
+		pass
 		# get selected rows
 		selected = table.selectedItems()
 		if not selected:
@@ -2299,6 +2268,7 @@ class MainWindow(QtGui.QMainWindow):
 		print('insert workroom in table')
 		
 	def insert_task_type_in_table(self, type_, table):
+		pass
 		# get selected rows
 		selected = table.selectedItems()
 		if not selected:
@@ -2331,6 +2301,7 @@ class MainWindow(QtGui.QMainWindow):
 		print('insert task type in table')
 			
 	def insert_data_in_table(self, insert_text, table, column_head):
+		pass
 		# get selected rows
 		selected = table.selectedItems()
 		if not selected:
@@ -2408,6 +2379,7 @@ class MainWindow(QtGui.QMainWindow):
 		print('edit asset type')
 		
 	def edit_asset_type_action(self, name, window):
+		pass
 		#copy = db.set_of_tasks()
 		self.db_set_of_tasks.edit_asset_type(name, window.combo_dialog_combo_box.currentText())
 		

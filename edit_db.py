@@ -362,6 +362,8 @@ class studio:
 	logs_t = 'logs'
 	# --- chat
 	chats_db = '.chats.db'
+	# --- set_of_tasks
+	set_of_tasks_db = '.set_of_tasks.db'
 	
 	# shot_animation
 	meta_data_file = '.shot_meta_data.json'
@@ -7598,7 +7600,13 @@ class chat(studio):
 	
 class set_of_tasks(studio):
 	def __init__(self):
-		self.set_of_tasks_keys = [
+		self.set_of_tasks_keys = {
+		'name':'text',
+		'asset_type': 'text',
+		'sets':'json',
+		'edit_time': 'timestamp',
+		}
+		self.sets_keys = [
 		'task_name',
 		'input',
 		'activity',
@@ -7609,6 +7617,54 @@ class set_of_tasks(studio):
 		'extension',
 		]
 	
+	def create_old(self, name, asset_type, keys = False):
+		pass
+		# test data
+		if name == '':
+			return(False, 'Not Name!')
+		
+		if not asset_type in self.asset_types:
+			return(False, 'Wrong type of asset: "%s"' % asset_type)
+		
+		# test exists path
+		if not os.path.exists(self.set_of_tasks_path):
+			return(False, (self.set_of_tasks_path + ' Not Found!'))
+		
+		# read data
+		try:
+			with open(self.set_of_tasks_path, 'r') as read:
+				data = json.load(read)
+				read.close()
+		except:
+			return(False, (self.set_of_tasks_path + " can not be read!"))
+			
+		# test exists of set
+		if name in data.keys():
+			return(False, 'This Set Already Exists!')
+			
+		# edit data
+		data[name] = {}
+		data[name]['asset_type'] = asset_type
+		if keys and keys.__class__.__name__ != 'list':
+			return(False, 'Not the correct data type from the "keys": "%s"' % keys.__class__.__name__)
+		elif keys and keys.__class__.__name__ == 'list':
+			data[name]['sets'] = keys
+		else:
+			data[name]['sets'] = {}
+
+		# write data
+		try:
+			with open(self.set_of_tasks_path, 'w') as f:
+				jsn = json.dump(data, f, sort_keys=True, indent=4)
+				#print('data:', data)
+				f.close()
+		except:
+			return(False, (self.set_of_tasks_path + "  can not be write"))
+		
+		return(True, 'ok')
+	
+	# asset_type (str) - тип ассета
+	# keys (list) список словарей по каждой задаче сета
 	def create(self, name, asset_type, keys = False):
 		# test data
 		if name == '':
@@ -7938,6 +7994,10 @@ class set_of_tasks(studio):
 		return(True, 'ok')
 		
 	def copy_set_of_tasks(self, old_name, new_name):
+		if old_name == new_name:
+			return(False, 'Matching names!')
+		if not new_name:
+			return(False, 'Name not specified!')
 		# Read Data
 		## -- test exists path
 		if not os.path.exists(self.set_of_tasks_path):
@@ -7951,8 +8011,8 @@ class set_of_tasks(studio):
 			return(False, (self.set_of_tasks_path + " can not be read!"))
 		
 		# test name
-		if not data.get(name):
-			return(False, 'A set with this name: "%s" does not exist!' % name)
+		if not old_name in data.keys():
+			return(False, 'A set with this name: "%s" does not exist!' % old_name)
 		
 		# Edit Data
 		data[new_name] = data[old_name]
