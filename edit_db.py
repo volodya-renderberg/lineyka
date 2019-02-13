@@ -364,6 +364,7 @@ class studio:
 	chats_db = '.chats.db'
 	# --- set_of_tasks
 	set_of_tasks_db = '.set_of_tasks.db'
+	set_of_tasks_t = 'set_of_tasks'
 	
 	# shot_animation
 	meta_data_file = '.shot_meta_data.json'
@@ -1113,7 +1114,10 @@ class database():
 			print('#'*3, e)
 			return(False, 'Exception in database.__sqlite3_read, please look the terminal!')
 		try:
-			c.execute(com)
+			test_com = "SELECT name FROM sqlite_master WHERE type='table' AND name='%s'" % table_name
+			c.execute(test_com)
+			if c.fetchall():
+				c.execute(com)
 		except Exception as e:
 			conn.close()
 			print('#'*3, 'Exception in database.__sqlite3_read:')
@@ -7616,56 +7620,33 @@ class set_of_tasks(studio):
 		'task_type',
 		'extension',
 		]
+		
+		for key in self.set_of_tasks_keys:
+			setattr(self, key, False)
 	
-	def create_old(self, name, asset_type, keys = False):
-		pass
-		# test data
-		if name == '':
-			return(False, 'Not Name!')
-		
-		if not asset_type in self.asset_types:
-			return(False, 'Wrong type of asset: "%s"' % asset_type)
-		
-		# test exists path
-		if not os.path.exists(self.set_of_tasks_path):
-			return(False, (self.set_of_tasks_path + ' Not Found!'))
-		
-		# read data
-		try:
-			with open(self.set_of_tasks_path, 'r') as read:
-				data = json.load(read)
-				read.close()
-		except:
-			return(False, (self.set_of_tasks_path + " can not be read!"))
-			
-		# test exists of set
-		if name in data.keys():
-			return(False, 'This Set Already Exists!')
-			
-		# edit data
-		data[name] = {}
-		data[name]['asset_type'] = asset_type
-		if keys and keys.__class__.__name__ != 'list':
-			return(False, 'Not the correct data type from the "keys": "%s"' % keys.__class__.__name__)
-		elif keys and keys.__class__.__name__ == 'list':
-			data[name]['sets'] = keys
+	def init_by_keys(self, keys, new=True):
+		if new:
+			r_ob = set_of_tasks()
 		else:
-			data[name]['sets'] = {}
-
-		# write data
-		try:
-			with open(self.set_of_tasks_path, 'w') as f:
-				jsn = json.dump(data, f, sort_keys=True, indent=4)
-				#print('data:', data)
-				f.close()
-		except:
-			return(False, (self.set_of_tasks_path + "  can not be write"))
-		
-		return(True, 'ok')
+			r_ob = self
+			
+		for key in self.set_of_tasks_keys:
+			setattr(r_ob, key, keys.get(key))
+			
+		if new:
+			return r_ob
+		else:
+			return(True, 'Ok!')
 	
 	# asset_type (str) - тип ассета
-	# keys (list) список словарей по каждой задаче сета
+	# keys (list) список словарей по каждой задаче сета (по sets_keys)
 	def create(self, name, asset_type, keys = False):
+		pass
+		# 1 - тесты передаваемых имени и типа ассета
+		# 2 - чтение наборов на определение совпадения имени
+		# 3 - запись
+		
+		# (1)
 		# test data
 		if name == '':
 			return(False, 'Not Name!')
@@ -7673,127 +7654,103 @@ class set_of_tasks(studio):
 		if not asset_type in self.asset_types:
 			return(False, 'Wrong type of asset: "%s"' % asset_type)
 		
-		# test exists path
-		if not os.path.exists(self.set_of_tasks_path):
-			return(False, (self.set_of_tasks_path + ' Not Found!'))
-		
-		# read data
-		try:
-			with open(self.set_of_tasks_path, 'r') as read:
-				data = json.load(read)
-				read.close()
-		except:
-			return(False, (self.set_of_tasks_path + " can not be read!"))
+		# (2)
+		bool_, r_data = database().read('studio', self, self.set_of_tasks_t, self.set_of_tasks_keys, where={'name':name}, table_root=self.set_of_tasks_db)
+		if not bool_:
+			print(r_data)
 			
-		# test exists of set
-		if name in data.keys():
-			return(False, 'This Set Already Exists!')
-			
+		# (3)
 		# edit data
-		data[name] = {}
-		data[name]['asset_type'] = asset_type
-		if keys and keys.__class__.__name__ != 'list':
-			return(False, 'Not the correct data type from the "keys": "%s"' % keys.__class__.__name__)
-		elif keys and keys.__class__.__name__ == 'list':
-			data[name]['sets'] = keys
-		else:
-			data[name]['sets'] = {}
+		data = {}
+		data['name'] = name
+		data['asset_type'] = asset_type
+		data['edit_time'] = datetime.datetime.now()
+		if keys:
+			data['sets'] = keys
 
 		# write data
-		try:
-			with open(self.set_of_tasks_path, 'w') as f:
-				jsn = json.dump(data, f, sort_keys=True, indent=4)
-				#print('data:', data)
-				f.close()
-		except:
-			return(False, (self.set_of_tasks_path + "  can not be write"))
-		
-		return(True, 'ok')
+		bool_, r_data = database().insert('studio', self, self.set_of_tasks_t, self.set_of_tasks_keys, data, table_root=self.set_of_tasks_db)
+		return(bool_, r_data)
 	
-	def get_list(self, path = False):
+	# возврат списка объектов
+	# f (dict) - фильтр ро ключам set_of_tasks_keys / используется только для чтения из базы данных при path=False
+	# path (str) - если True - то чтение из файла json, если - False - то чтение из базы данных.
+	def get_list(self, f = False, path = False):
+		pass
+		# 1 - чтение из базы данных
+		# 2 - чтение из json
+		data = []
+		
+		# (1)
 		if not path:
-			# test exists path
-			if not self.set_of_tasks_path:
-				#self.get_set_of_tasks_path()
-				self.get_studio()
+			if f:
+				wh = f
+			else:
+				wh = False
+			bool_, r_data = database().read('studio', self, self.set_of_tasks_t, self.set_of_tasks_keys, where=wh, table_root=self.set_of_tasks_db)
+			if not bool_:
+				return(False, r_data)
+			
+			## преобразование в словарь
+			#for set_ in r_data:
+				#data[set_['name']] = set_
 				
-			if not os.path.exists(self.set_of_tasks_path):
-				return(False, ('%s Not Found!' % self.set_of_tasks_path))
-				
-			# read data
-			try:
-				with open(self.set_of_tasks_path, 'r') as read:
-					data = json.load(read)
-					read.close()
-			except Exception as e:
-				print('#'*5, e)
-				return(False, ("%s can not be read! Look The terminal!" % self.set_of_tasks_path))
-				
+			for item in r_data:
+				data.append(self.init_by_keys(item))
+		
+		# (2)
 		else:
 			if not os.path.exists(path):
 				return(False, ('No Exists path: %s' % path))
 			# read data
 			try:
 				with open(path, 'r') as read:
-					data = json.load(read)
+					r_data = json.load(read)
 					read.close()
 			except Exception as e:
 				print('#'*5, e)
 				return(False, ("%s can not be read! Look The terminal!" % self.set_of_tasks_path))
 			
+			for key in r_data:
+				item = r_data[key]
+				item['name'] = key
+				data.append(self.init_by_keys(item))
+			
 		return(True, data)
 		
+	# обёртка на get_list(f)
 	def get_list_by_type(self, asset_type):
-		result = self.get_list()
-		if not result[0]:
-			return(False, result[1])
+		if not asset_type in self.asset_types:
+			return(False, 'Wrong type of asset: "%s"' % asset_type)
+		return_list = []
+		return(self.get_list(f = {'asset_type': asset_type}))
 		
-		return_list = {}
-		for key in result[1]:
-			if result[1][key]['asset_type'] == asset_type:
-				return_list[key] = result[1][key]
-				
-		return(True, return_list)
-		
+	# объекты
 	def get_dict_by_all_types(self):
 		result = self.get_list()
 		if not result[0]:
 			return(False, result[1])
 		
 		return_list = {}
-		for key in result[1]:
-			asset_type = result[1][key]['asset_type']
+		for item in result[1]:
+			asset_type = item.asset_type
 			if not asset_type in return_list:
 				return_list[asset_type] = {}
 			
-			return_list[asset_type][key] = result[1][key]
+			return_list[asset_type][item.name] = item
 				
 		return(True, return_list)
 	
+	# возвращает новый объект по имени, обёртка на get_list(f)
+	# name (str) имя сета
 	def get(self, name):
+		pass
 		# test data
 		if not name:
 			return(False, 'Not Name!')
-			
-		# test exists path
-		if not os.path.exists(self.set_of_tasks_path):
-			return(False, (self.set_of_tasks_path + ' Not Found!'))
-			
-		# read data
-		try:
-			with open(self.set_of_tasks_path, 'r') as read:
-				data = json.load(read)
-				read.close()
-		except:
-			return(False, (self.set_of_tasks_path + " can not be read!"))
-			
-		if not name in data:
-			return(False, ('Set with name \"' + name + '\" Not Found!'))
-		
-		return(True, data[name]) # list of dictionaries
-			
+		return(self.get_list(f = {'name': name}))			
 	
-	def remove(self, name):
+	def remove(self, name=False):
 		# test data
 		if name == '':
 			return(False, 'Not Name!')
