@@ -7857,41 +7857,38 @@ class set_of_tasks(studio):
 			
 		return(True, 'ok')
 		
-	def edit_asset_type(self, name, asset_type):
+	# asset_type (str) - новый тип сета
+	# name (str/bool) - имя изменяемого сета, если False - то редактируется текущий объект
+	def edit_asset_type(self, asset_type, name=False):
 		pass
-		# test data
-		if name == '':
-			return(False, 'Not Name!')
+		# 1 - тест имени и типа
+		# 2 - перезапись БД
+		# 3 - перезапись полей текущего объекта
+	
+		# (1)
+		if name:
+			old_name = name
+		else:
+			old_name = self.name
+			if not old_name:
+				return(False, 'This object is not initialized!')
 		
-		# test type
 		if not asset_type in self.asset_types:
-			return(False, 'Wrong type of asset: "%s"' % asset_type)
-			
-		# test exists path
-		if not os.path.exists(self.set_of_tasks_path):
-			return(False, (self.set_of_tasks_path + ' Not Found!'))
-			
-		# read data
-		try:
-			with open(self.set_of_tasks_path, 'r') as read:
-				data = json.load(read)
-				read.close()
-		except:
-			return(False, (self.set_of_tasks_path + " can not be read!"))
-		# test name
-		if not data.get(name):
-			return(False, 'A set with this name: "%s" does not exist!' % name)
-		# edit data
-		data[name]['asset_type'] = asset_type
+			return(False, 'Wrong type of asset: "%s"' % asset_type)	
+				
+		# (2)
+		table_name = self.set_of_tasks_t
+		keys = self.set_of_tasks_keys
+		update_data = {'asset_type': asset_type}
+		where = {'name': old_name}
+		bool_, r_data = database().update('studio', self, table_name, keys, update_data, where, table_root=self.set_of_tasks_db)
+		if not bool_:
+			return(False, r_data)
 		
-		# write data
-		try:
-			with open(self.set_of_tasks_path, 'w') as f:
-				jsn = json.dump(data, f, sort_keys=True, indent=4)
-				f.close()
-		except:
-			return(False, (self.set_of_tasks_path + "  can not be write"))
-		
+		# (3)
+		if not name:
+			self.asset_type = asset_type
+			
 		return(True, 'ok')
 	
 	def edit(self, name, keys):
