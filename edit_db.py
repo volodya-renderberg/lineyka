@@ -1114,10 +1114,14 @@ class database():
 			print('#'*3, e)
 			return(False, 'Exception in database.__sqlite3_read, please look the terminal!')
 		try:
-			test_com = "SELECT name FROM sqlite_master WHERE type='table' AND name='%s'" % table_name
-			c.execute(test_com)
-			if c.fetchall():
+			'''
+			#test_com = "SELECT name FROM sqlite_master WHERE type='table' AND name='%s'" % table_name
+			#c.execute(test_com)
+			c.execute("SELECT rowid FROM components WHERE name = '?'", (table_name,))
+			if c.fetchone():
 				c.execute(com)
+			'''
+			c.execute(com)
 		except Exception as e:
 			conn.close()
 			print('#'*3, 'Exception in database.__sqlite3_read:')
@@ -1764,7 +1768,8 @@ class asset(studio):
 			# get list from set_of_tasks
 			result = set_of_tasks().get(keys.get('set_of_tasks'))
 			if result[0]:
-				set_tasks = result[1]['sets']
+				print('**** by set of tasks: %s' % keys.get('set_of_tasks'))
+				set_tasks = result[1].sets
 				
 				outputs = {}
 				for task_ in set_tasks:
@@ -1851,6 +1856,8 @@ class asset(studio):
 						else:
 							#task_['output'] = json.dumps(outputs['task_name'])
 							task_['output'] = outputs['task_name']
+			else:
+				print('**** without sets')
 			
 			# set input of "final"
 			final_input = []
@@ -1861,6 +1868,8 @@ class asset(studio):
 			
 			# append final to task list
 			this_asset_tasks.append(final)
+			
+			#print(this_asset_tasks)
 			
 			########### create tasks (by task data)
 			#c = json.dumps(this_asset_tasks, sort_keys=True, indent=4)
@@ -7624,7 +7633,7 @@ class set_of_tasks(studio):
 		for key in self.set_of_tasks_keys:
 			setattr(self, key, False)
 	
-	def init_by_keys(self, keys, new=True):
+	def init_by_keys(self, keys, new=True): # v2
 		if new:
 			r_ob = set_of_tasks()
 		else:
@@ -7640,7 +7649,7 @@ class set_of_tasks(studio):
 	
 	# asset_type (str) - тип ассета
 	# keys (list) список словарей по каждой задаче сета (по sets_keys)
-	def create(self, name, asset_type, keys = False):
+	def create(self, name, asset_type, keys = False): # v2
 		pass
 		# 1 - тесты передаваемых имени и типа ассета
 		# 2 - чтение наборов на определение совпадения имени
@@ -7674,8 +7683,8 @@ class set_of_tasks(studio):
 	
 	# возврат списка объектов
 	# f (dict) - фильтр ро ключам set_of_tasks_keys / используется только для чтения из базы данных при path=False
-	# path (str) - если True - то чтение из файла json, если - False - то чтение из базы данных.
-	def get_list(self, f = False, path = False):
+	# path (str) - если указан - то чтение из файла json, если - False - то чтение из базы данных.
+	def get_list(self, f = False, path = False): # v2
 		pass
 		# 1 - чтение из базы данных
 		# 2 - чтение из json
@@ -7719,14 +7728,14 @@ class set_of_tasks(studio):
 		return(True, data)
 		
 	# обёртка на get_list(f)
-	def get_list_by_type(self, asset_type):
+	def get_list_by_type(self, asset_type): # v2
 		if not asset_type in self.asset_types:
 			return(False, 'Wrong type of asset: "%s"' % asset_type)
 		return_list = []
 		return(self.get_list(f = {'asset_type': asset_type}))
 		
 	# объекты
-	def get_dict_by_all_types(self):
+	def get_dict_by_all_types(self): # v2
 		result = self.get_list()
 		if not result[0]:
 			return(False, result[1])
@@ -7743,14 +7752,41 @@ class set_of_tasks(studio):
 	
 	# возвращает новый объект по имени, обёртка на get_list(f)
 	# name (str) имя сета
-	def get(self, name):
+	def get(self, name): # v2
 		pass
 		# test data
 		if not name:
 			return(False, 'Not Name!')
-		return(self.get_list(f = {'name': name}))			
+		bool_, r_data = self.get_list(f = {'name': name})
+		if not bool_:
+			return(False, r_data)
+		
+		if not r_data:
+			return(False, 'A set with that name "%s" was not found' % name)
+		else:
+			return(True, r_data[0])
 	
-	def remove(self, name=False):
+	# удаление из базы данных
+	# name (str) - если False - то удаляется текущий инициализированный объект: удаляется строка из БД - поля объекта переписываются на False.
+	def remove(self, name=False): # v2
+		pass
+		# 1 - удаление записи из БД
+		# 2 - перезапись полей в False - если name=False
+	
+		# (1)
+		if name:
+			where = {'name': name}
+		else:
+			where = {'name': self.name}
+		bool_, r_data = database().delete('studio', self, self.set_of_tasks_t, where, table_root=self.set_of_tasks_db)
+		if not bool_:
+			return(False, r_data)
+		
+		# (2)
+		if not name:
+			for key in self.set_of_tasks_keys:
+				setattr(self, key, False)
+		'''
 		# test data
 		if name == '':
 			return(False, 'Not Name!')
@@ -7781,48 +7817,48 @@ class set_of_tasks(studio):
 				f.close()
 		except:
 			return(False, (self.set_of_tasks_path + "  can not be write"))
-			
+		'''
 		return(True, 'ok')
 	
-	def rename(self, name, new_name):
-		# test data
-		if name == '' or new_name == '':
-			return(False, 'Not Name!')
-			
-		# test exists path
-		if not os.path.exists(self.set_of_tasks_path):
-			return(False, (self.set_of_tasks_path + ' Not Found!'))
-			
-		# read data
-		try:
-			with open(self.set_of_tasks_path, 'r') as read:
-				data = json.load(read)
-				read.close()
-		except:
-			return(False, (self.set_of_tasks_path + " can not be read!"))
-			
-		# test exists of set
-		if not name in data.keys():
-			return(False, ('Set With Name \"' + name + '\" Not Found!'))
-			read.close()
+	# new_name (str) - новое имя сета
+	# name (str) - имя переименоваваемого сета, если False - переименовывается текущий объект.
+	def rename(self, new_name, name=False): # v2
+		pass
+		# 1 - тест на наличие и совпадение имени
+		# 2 - перезапись БД
+		# 3 - перезапись полей текущего объекта
+	
+		# (1)
+		if not new_name:
+			return(False, 'No new name is specified!')
 		
-		# del data
-		keys = data[name]
-		del data[name]
-		data[new_name] = keys
+		if name:
+			old_name = name
+		else:
+			old_name = self.name
+			if not old_name:
+				return(False, 'This object is not initialized!')
+			
+		if old_name == new_name:
+			return(False, 'New name matches existing one!')
 		
-		# write data
-		try:
-			with open(self.set_of_tasks_path, 'w') as f:
-				jsn = json.dump(data, f, sort_keys=True, indent=4)
-				#print('data:', data)
-				f.close()
-		except:
-			return(False, (self.set_of_tasks_path + "  can not be write"))
+		# (2)
+		table_name = self.set_of_tasks_t
+		keys = self.set_of_tasks_keys
+		update_data = {'name': new_name}
+		where = {'name': old_name}
+		bool_, r_data = database().update('studio', self, table_name, keys, update_data, where, table_root=self.set_of_tasks_db)
+		if not bool_:
+			return(False, r_data)
+		
+		# (3)
+		if not name:
+			self.name = new_name
 			
 		return(True, 'ok')
 		
 	def edit_asset_type(self, name, asset_type):
+		pass
 		# test data
 		if name == '':
 			return(False, 'Not Name!')
@@ -7859,6 +7895,7 @@ class set_of_tasks(studio):
 		return(True, 'ok')
 	
 	def edit(self, name, keys):
+		pass
 		# test data
 		if name == '':
 			return(False, 'Not Name!')
@@ -7900,6 +7937,7 @@ class set_of_tasks(studio):
 	### ****************** Library
 	
 	def save_set_of_tasks_to_library(self, path):
+		pass
 		# Read Data
 		## -- test exists path
 		if not os.path.exists(self.set_of_tasks_path):
@@ -7922,7 +7960,8 @@ class set_of_tasks(studio):
 		
 		return(True, 'ok')
 		
-	def load_set_of_tasks_from_library(self, load_data):
+	def load_set_of_tasks_from_library(self, load_data): # возможно больше не нужно
+		pass
 		# Read Data
 		## -- test exists path
 		if not os.path.exists(self.set_of_tasks_path):
