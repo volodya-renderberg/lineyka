@@ -7679,7 +7679,10 @@ class set_of_tasks(studio):
 
 		# write data
 		bool_, r_data = database().insert('studio', self, self.set_of_tasks_t, self.set_of_tasks_keys, data, table_root=self.set_of_tasks_db)
-		return(bool_, r_data)
+		if not bool_:
+			return(bool_, r_data)
+		
+		return(True, self.init_by_keys(data))
 	
 	# возврат списка объектов
 	# f (dict) - фильтр ро ключам set_of_tasks_keys / используется только для чтения из базы данных при path=False
@@ -7896,7 +7899,7 @@ class set_of_tasks(studio):
 	# редактирование именно значения sets
 	# data (list) - список словарей по sets_keys
 	# name (bool/str) - если False - то редактируется текущий инициализированный объект
-	def edit_sets(self, data, name=False):
+	def edit_sets(self, data, name=False): # v2
 		pass
 		# 1 - тест типа данных data
 		# 2 - перезапись БД
@@ -7924,6 +7927,31 @@ class set_of_tasks(studio):
 			self.edit_time = update_data['edit_time']
 				
 		return(True, 'ok')
+	
+	# создание копии сета
+	# new_name (str) - имя создаваемого сета
+	# old_name (bool / str) - имя копируемого сета, если False - то копируется текущий.
+	def copy(self, new_name, old_name=False): # v2
+		pass
+		# 1 - тесты имён
+		# 2 - создание нового сета
+		
+		# (1)
+		if old_name == new_name:
+			return(False, 'Matching names!')
+		if not new_name:
+			return(False, 'Name not specified!')
+		
+		# (2)
+		if old_name:
+			b, source_ob = self.get(old_name)
+			if not b:
+				return(b, source_ob)
+		else:
+			source_ob = self
+			
+		b, r_data = self.create(new_name, source_ob.asset_type, keys = source_ob.sets)
+		return(b, r_data) # если  b=True, то r_data - новый объект.
 		
 	### ****************** Library
 	
@@ -7951,7 +7979,7 @@ class set_of_tasks(studio):
 		
 		return(True, 'ok')
 		
-	def load_set_of_tasks_from_library(self, load_data): # возможно больше не нужно
+	def load_set_of_tasks_from_library(self, load_data): # возможно больше не нужно / это сочетание get_list(path) + create()
 		pass
 		# Read Data
 		## -- test exists path
@@ -7979,40 +8007,6 @@ class set_of_tasks(studio):
 			return(False, (self.set_of_tasks_path + "  can not be write"))
 		
 		return(True, 'ok')
-		
-	def copy_set_of_tasks(self, old_name, new_name):
-		if old_name == new_name:
-			return(False, 'Matching names!')
-		if not new_name:
-			return(False, 'Name not specified!')
-		# Read Data
-		## -- test exists path
-		if not os.path.exists(self.set_of_tasks_path):
-			return(False, (self.set_of_tasks_path + ' Not Found!'))
-		## -- read data
-		try:
-			with open(self.set_of_tasks_path, 'r') as read:
-				data = json.load(read)
-				read.close()
-		except:
-			return(False, (self.set_of_tasks_path + " can not be read!"))
-		
-		# test name
-		if not old_name in data.keys():
-			return(False, 'A set with this name: "%s" does not exist!' % old_name)
-		
-		# Edit Data
-		data[new_name] = data[old_name]
-		
-		# Write Data
-		try:
-			with open(self.set_of_tasks_path, 'w') as f:
-				jsn = json.dump(data, f, sort_keys=True, indent=4)
-				f.close()
-		except:
-			return(False, (self.set_of_tasks_path + "  can not be write"))
-		
-		return(True, 'Ok!')
 		
 class season(studio):
 	def __init__(self, project_ob):
