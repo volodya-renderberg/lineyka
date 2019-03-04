@@ -7845,7 +7845,7 @@ class set_of_tasks(studio):
 		# (2)
 		table_name = self.set_of_tasks_t
 		keys = self.set_of_tasks_keys
-		update_data = {'name': new_name}
+		update_data = {'name': new_name, 'edit_time':datetime.datetime.now()}
 		where = {'name': old_name}
 		bool_, r_data = database().update('studio', self, table_name, keys, update_data, where, table_root=self.set_of_tasks_db)
 		if not bool_:
@@ -7854,6 +7854,7 @@ class set_of_tasks(studio):
 		# (3)
 		if not name:
 			self.name = new_name
+			self.edit_time = update_data['edit_time']
 			
 		return(True, 'ok')
 		
@@ -7879,7 +7880,7 @@ class set_of_tasks(studio):
 		# (2)
 		table_name = self.set_of_tasks_t
 		keys = self.set_of_tasks_keys
-		update_data = {'asset_type': asset_type}
+		update_data = {'asset_type': asset_type, 'edit_time':datetime.datetime.now()}
 		where = {'name': old_name}
 		bool_, r_data = database().update('studio', self, table_name, keys, update_data, where, table_root=self.set_of_tasks_db)
 		if not bool_:
@@ -7888,47 +7889,40 @@ class set_of_tasks(studio):
 		# (3)
 		if not name:
 			self.asset_type = asset_type
+			self.edit_time = update_data['edit_time']
 			
 		return(True, 'ok')
 	
-	def edit(self, name, keys):
+	# редактирование именно значения sets
+	# data (list) - список словарей по sets_keys
+	# name (bool/str) - если False - то редактируется текущий инициализированный объект
+	def edit_sets(self, data, name=False):
 		pass
-		# test data
-		if name == '':
-			return(False, 'Not Name!')
+		# 1 - тест типа данных data
+		# 2 - перезапись БД
+		# 3 - редактирование инициализированного объекта, если name=False
 		
-		if keys.__class__.__name__ != 'list':
-			return(False, 'Not the correct data type from the "keys": "%s"' % keys.__class__.__name__)
+		# (1)
+		if not isinstance(data, list):
+			return(False, 'the "data" must be of type "list" but not "%s"' % data.__class__.__name__)
 		
-		# test exists path
-		if not os.path.exists(self.set_of_tasks_path):
-			return(False, (self.set_of_tasks_path + ' Not Found!'))
+		# (2)
+		table_name = self.set_of_tasks_t
+		keys = self.set_of_tasks_keys
+		update_data = {'sets': data, 'edit_time':datetime.datetime.now()}
+		if name:
+			where = {'name': name}
+		else:
+			where = {'name': self.name}
+		bool_, r_data = database().update('studio', self, table_name, keys, update_data, where, table_root=self.set_of_tasks_db)
+		if not bool_:
+			return(False, r_data)
 		
-		# read data
-		try:
-			with open(self.set_of_tasks_path, 'r') as read:
-				data = json.load(read)
-				read.close()
-								
-		except:
-			return(False, (self.set_of_tasks_path + " can not be read!"))
-		
-		# test exists of set
-		if not name in data.keys():
-			return(False, ('Set With Name \"' + name + '\" Not Found!'))
-			read.close()
-		
-		# edit data
-		data[name]['sets'] = keys
-
-		# write data
-		try:
-			with open(self.set_of_tasks_path, 'w') as f:
-				jsn = json.dump(data, f, sort_keys=True, indent=4)
-				f.close()
-		except:
-			return(False, (self.set_of_tasks_path + "  can not be write"))
-		
+		# (3)
+		if not name:
+			self.sets = data
+			self.edit_time = update_data['edit_time']
+				
 		return(True, 'ok')
 		
 	### ****************** Library
