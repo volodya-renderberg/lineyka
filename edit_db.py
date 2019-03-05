@@ -7649,7 +7649,7 @@ class set_of_tasks(studio):
 	
 	# asset_type (str) - тип ассета
 	# keys (list) список словарей по каждой задаче сета (по sets_keys)
-	def create(self, name, asset_type, keys = False): # v2
+	def create(self, name, asset_type, keys = False, force=False): # v2
 		pass
 		# 1 - тесты передаваемых имени и типа ассета
 		# 2 - чтение наборов на определение совпадения имени
@@ -7657,8 +7657,24 @@ class set_of_tasks(studio):
 		
 		# (1)
 		# test data
-		if name == '':
+		if not name:
 			return(False, 'Not Name!')
+		
+		b, r = self.get_list(f = {'name': name})
+		if not b:
+			return(b, r)
+		elif r and not force:
+			return(False, 'A set with that name "%s" already exists' % name)
+		elif r and force:
+			num = 0
+			while r:
+				num+=1
+				new_name = '%s.%i' % (name, num)
+				b, r = self.get_list(f = {'name': new_name})
+				if not b:
+					return(b, r)
+				print(new_name)
+			name = new_name
 		
 		if not asset_type in self.asset_types:
 			return(False, 'Wrong type of asset: "%s"' % asset_type)
@@ -7955,8 +7971,22 @@ class set_of_tasks(studio):
 		
 	### ****************** Library
 	
-	def save_set_of_tasks_to_library(self, path):
+	# запись в файл json библиотеки наборов задач.
+	# path (str) - путь сохранения
+	# save_objects (list) - список объектов (set_of_tasks) - если False - то сохраняет всю библиотеку.
+	def save_set_of_tasks_to_library(self, path, save_objects=False): # v2 ** start
 		pass
+		# 1 - получение save_objects
+		# 2 - создание словаря save_data по типу json файла
+		# 3 - запись данных
+		
+		# (1)
+		if not save_objects:
+			b, r = self.get_list()
+			if not b:
+				return(b, r)
+			
+		
 		# Read Data
 		## -- test exists path
 		if not os.path.exists(self.set_of_tasks_path):
