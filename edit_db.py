@@ -7649,6 +7649,7 @@ class set_of_tasks(studio):
 	
 	# asset_type (str) - тип ассета
 	# keys (list) список словарей по каждой задаче сета (по sets_keys)
+	# force (bool) - если False - то будет давать ошибку при совпадении имени, если True - то будет принудительно перименовывать подбирая номер
 	def create(self, name, asset_type, keys = False, force=False): # v2
 		pass
 		# 1 - тесты передаваемых имени и типа ассета
@@ -7879,7 +7880,7 @@ class set_of_tasks(studio):
 		
 	# asset_type (str) - новый тип сета
 	# name (str/bool) - имя изменяемого сета, если False - то редактируется текущий объект
-	def edit_asset_type(self, asset_type, name=False):
+	def edit_asset_type(self, asset_type, name=False): # v2
 		pass
 		# 1 - тест имени и типа
 		# 2 - перезапись БД
@@ -7974,7 +7975,7 @@ class set_of_tasks(studio):
 	# запись в файл json библиотеки наборов задач.
 	# path (str) - путь сохранения
 	# save_objects (list) - список объектов (set_of_tasks) - если False - то сохраняет всю библиотеку.
-	def save_set_of_tasks_to_library(self, path, save_objects=False): # v2 ** start
+	def save_to_library(self, path, save_objects=False): # v2
 		pass
 		# 1 - получение save_objects
 		# 2 - создание словаря save_data по типу json файла
@@ -7985,31 +7986,29 @@ class set_of_tasks(studio):
 			b, r = self.get_list()
 			if not b:
 				return(b, r)
+			save_objects = r
 			
+		# (2)
+		save_data = {}
+		for ob in save_objects:
+			save_data[ob.name] = {}
+			for key in self.set_of_tasks_keys:
+				if key=='edit_time':
+					continue
+				save_data[ob.name][key] = getattr(ob, key)
 		
-		# Read Data
-		## -- test exists path
-		if not os.path.exists(self.set_of_tasks_path):
-			return(False, (self.set_of_tasks_path + ' Not Found!'))
-		## -- read data
-		try:
-			with open(self.set_of_tasks_path, 'r') as read:
-				data = json.load(read)
-				read.close()
-		except:
-			return(False, (self.set_of_tasks_path + " can not be read!"))
-			
-		# Write Data
+		# (3)
 		try:
 			with open(path, 'w') as f:
-				jsn = json.dump(data, f, sort_keys=True, indent=4)
+				jsn = json.dump(save_data, f, sort_keys=True, indent=4)
 				f.close()
-		except:
+		except Exception as e:
+			print('***', e)
 			return(False, (path + "  can not be write"))
 		
 		return(True, 'ok')
 		
-	def load_set_of_tasks_from_library(self, load_data): # возможно больше не нужно / это сочетание get_list(path) + create()
+	def load_from_library(self, load_data): # возможно больше не нужно / это сочетание get_list(path) + create()
 		pass
 		# Read Data
 		## -- test exists path
