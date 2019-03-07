@@ -7703,7 +7703,7 @@ class set_of_tasks(studio):
 	
 	# возврат списка объектов
 	# f (dict) - фильтр ро ключам set_of_tasks_keys / используется только для чтения из базы данных при path=False
-	# path (str) - если указан - то чтение из файла json, если - False - то чтение из базы данных.
+	# path (bool / str) - если указан - то чтение из файла json, если - False - то чтение из базы данных.
 	def get_list(self, f = False, path = False): # v2
 		pass
 		# 1 - чтение из базы данных

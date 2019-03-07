@@ -1649,16 +1649,19 @@ class MainWindow(QtGui.QMainWindow):
 	def fill_set_of_tasks_table(self, table):
 		pass		
 		# get data list
-		list_sets = self.db_set_of_tasks.get_list()
-		if not list_sets[0]:
+		b, r = self.db_set_of_tasks.get_dict_by_all_types()
+		if not b:
+			print('***')
+			print(r)
 			return
 		
 		data_to_fill = []
-		for key in sorted(list_sets[1].keys()):
-			data_to_fill.append({'name' : key, 'asset_type': list_sets[1][key]['asset_type']})
+		for key in sorted(r.keys()):
+			for name in sorted(r[key].keys()):
+				data_to_fill.append(r[key][name])
 		
 		# get table data
-		columns = ('name', 'asset_type')
+		columns = ('name', 'asset_type', 'edit_time')
 		num_row = len(data_to_fill)
 		num_column = len(columns)
 		headers = columns
@@ -1673,8 +1676,11 @@ class MainWindow(QtGui.QMainWindow):
 		for i, data in enumerate(data_to_fill):
 			for j,key in enumerate(headers):
 				newItem = QtGui.QTableWidgetItem()
-				newItem.setText(data[key])
-				newItem.name = data['name']
+				if key == 'edit_time':
+					newItem.setText(getattr(data, key).strftime("%d-%m-%Y %H:%M:%S"))
+				else:
+					newItem.setText(str(getattr(data, key)))
+				newItem.set_of_tasks = data
 				if key == 'name':
 					color = self.set_of_tasks_color
 					brush = QtGui.QBrush(color)
@@ -1735,7 +1741,7 @@ class MainWindow(QtGui.QMainWindow):
 		print('create set of tasks action')
 		
 	def copy_set_of_tasks_ui(self):
-		old_name = self.myWidget.studio_editor_table.currentItem().name
+		current_set = self.myWidget.studio_editor_table.currentItem().set_of_tasks
 		
 		# widget
 		loader = QtUiTools.QUiLoader()
@@ -1745,11 +1751,11 @@ class MainWindow(QtGui.QMainWindow):
 		file.close()
 		
 		# edit widget
-		window.setWindowTitle(('Make Copy: ' + old_name))
+		window.setWindowTitle(('Make Copy: %s' % current_set.name))
 		window.new_dialog_label.setText('New Name of Set:')
-		window.new_dialog_name.setText(old_name)
+		window.new_dialog_name.setText(current_set.name)
 		window.new_dialog_cancel.clicked.connect(partial(self.close_window, window))
-		window.new_dialog_ok.clicked.connect(partial(self.copy_set_of_tasks_action, window, old_name))
+		window.new_dialog_ok.clicked.connect(partial(self.copy_set_of_tasks_action, window, current_set))
 		
 		# set modal window
 		window.setWindowModality(QtCore.Qt.WindowModal)
@@ -1757,17 +1763,14 @@ class MainWindow(QtGui.QMainWindow):
 		
 		window.show()
 	
-	def copy_set_of_tasks_action(self, window, old_name):
+	def copy_set_of_tasks_action(self, window, current_set):
 		pass
 		
 		# get new_name
 		new_name = window.new_dialog_name.text()
-		if new_name == old_name:
-			self.message('match names!', 2)
-			return
-			
-		result, data = self.db_set_of_tasks.copy_set_of_tasks(old_name, new_name)
-		if not result:
+					
+		b, data = current_set.copy(new_name)
+		if not b:
 			self.message(data, 3)
 			return
 		
@@ -1781,7 +1784,7 @@ class MainWindow(QtGui.QMainWindow):
 			self.message('Not Selected Set', 2)
 			return
 		
-		name = table.selectedItems()[0].name
+		current_set = table.selectedItems()[0].set_of_tasks
 		
 		# widget
 		loader = QtUiTools.QUiLoader()
@@ -1791,11 +1794,11 @@ class MainWindow(QtGui.QMainWindow):
 		file.close()
 		
 		# edit widget
-		window.setWindowTitle(('Rename: ' + name))
+		window.setWindowTitle(('Rename: %s' % current_set.name))
 		window.new_dialog_label.setText('New Name of Set:')
-		window.new_dialog_name.setText(name)
+		window.new_dialog_name.setText(current_set.name)
 		window.new_dialog_cancel.clicked.connect(partial(self.close_window, window))
-		window.new_dialog_ok.clicked.connect(partial(self.rename_set_of_tasks_action, name, window))
+		window.new_dialog_ok.clicked.connect(partial(self.rename_set_of_tasks_action, current_set, window))
 		
 		# set modal window
 		window.setWindowModality(QtCore.Qt.WindowModal)
@@ -1805,19 +1808,14 @@ class MainWindow(QtGui.QMainWindow):
 		
 		print('rename set of tasks ui')
 		
-	def rename_set_of_tasks_action(self, old_name, window):
+	def rename_set_of_tasks_action(self, current_set, window):
 		pass
 		# get data
 		new_name = window.new_dialog_name.text()
 		
-		# test new name
-		if old_name == new_name:
-			self.message('Name not changed!', 2)
-			return
-		
 		# rename
 		#copy = db.set_of_tasks()
-		result = self.db_set_of_tasks.rename(old_name, new_name)
+		result = current_set.rename(new_name)
 		
 		if not result[0]:
 			self.message(result[1], 2)
@@ -1839,11 +1837,11 @@ class MainWindow(QtGui.QMainWindow):
 		if not ask:
 			return
 		
-		name = table.selectedItems()[0].name
+		current_set = table.selectedItems()[0].set_of_tasks
 		
 		# remove
 		#copy = db.set_of_tasks()
-		result = self.db_set_of_tasks.remove(name)
+		result = current_set.remove()
 		
 		if not result[0]:
 			self.message(result[1], 2)
@@ -1862,7 +1860,7 @@ class MainWindow(QtGui.QMainWindow):
 			self.message('Not Selected Set', 2)
 			return
 		
-		name = table.selectedItems()[0].name
+		current_set = table.selectedItems()[0].set_of_tasks
 		
 		# widget
 		loader = QtUiTools.QUiLoader()
@@ -1872,20 +1870,13 @@ class MainWindow(QtGui.QMainWindow):
 		file.close()
 		
 		# fill table
-		copy = self.db_set_of_tasks
-		data = copy.get(name)
-		
-		if not data[0]:
-			self.message(data[1], 2)
-			return
-		else:
-			right_data = data[1]['sets']
-			asset_type = data[1]['asset_type']
+		right_data = current_set.sets
+		asset_type = current_set.asset_type
 			
 		# -- get table data
 		num_row = 100
-		num_column = len(copy.sets_keys)
-		headers = copy.sets_keys
+		num_column = len(current_set.sets_keys)
+		headers = current_set.sets_keys
 		    
 		# -- make table
 		window.select_from_list_data_list_table.setColumnCount(num_column)
@@ -1934,7 +1925,7 @@ class MainWindow(QtGui.QMainWindow):
 			# task type menu
 			addgrup_action = QtGui.QAction( '== task types == ', window)
 			window.select_from_list_data_list_table.addAction( addgrup_action )
-			for type_ in copy.task_types:
+			for type_ in current_set.task_types:
 				addgrup_action = QtGui.QAction( type_, window)
 				addgrup_action.triggered.connect(partial(self.insert_data_in_table, type_, window.select_from_list_data_list_table, 'task_type'))
 				window.select_from_list_data_list_table.addAction( addgrup_action )
@@ -1942,7 +1933,7 @@ class MainWindow(QtGui.QMainWindow):
 			# extensions menu
 			addgrup_action = QtGui.QAction( '== extensions == ', window)
 			window.select_from_list_data_list_table.addAction( addgrup_action )
-			for ext in copy.extensions:
+			for ext in current_set.extensions:
 				addgrup_action = QtGui.QAction( ext, window)
 				addgrup_action.triggered.connect(partial(self.insert_data_in_table, ext, window.select_from_list_data_list_table, 'extension'))
 				window.select_from_list_data_list_table.addAction( addgrup_action )
@@ -1950,7 +1941,7 @@ class MainWindow(QtGui.QMainWindow):
 			# extensions menu
 			addgrup_action = QtGui.QAction( '== input service task == ', window)
 			window.select_from_list_data_list_table.addAction( addgrup_action )
-			for text in copy.service_tasks:
+			for text in current_set.service_tasks:
 				addgrup_action = QtGui.QAction( text, window)
 				addgrup_action.triggered.connect(partial(self.insert_data_in_table, text, window.select_from_list_data_list_table, 'input'))
 				window.select_from_list_data_list_table.addAction( addgrup_action )
@@ -1958,7 +1949,7 @@ class MainWindow(QtGui.QMainWindow):
 		# fill table
 		for i, set_of_tasks in enumerate(right_data):
 			for j,key in enumerate(headers):
-				if not (key in copy.sets_keys):
+				if not (key in current_set.sets_keys):
 					continue
 				newItem = QtGui.QTableWidgetItem()
 				try:
@@ -1969,16 +1960,6 @@ class MainWindow(QtGui.QMainWindow):
 					color = self.tasks_color
 					brush = QtGui.QBrush(color)
 					newItem.setBackground(brush)
-				elif key == 'workroom':
-					try:
-						if set_of_tasks[key] in wr_by_id_list.keys():
-							wr_name = wr_by_id_list[set_of_tasks[key]]['name']
-							newItem.setText(wr_name)
-						else:
-							newItem.setText('')
-						
-					except:
-						pass
 								
 				window.select_from_list_data_list_table.setItem(i, j, newItem)
 		
@@ -1989,10 +1970,10 @@ class MainWindow(QtGui.QMainWindow):
 				window.select_from_list_data_list_table.setItem(i, j, newItem)
 				
 		# edit widjet
-		window.setWindowTitle(('Edit Set Of Tasks: ' + name))
+		window.setWindowTitle(('Edit Set Of Tasks: %s' % current_set.name))
 		window.select_from_list_cansel_button.clicked.connect(partial(self.close_window, window))
 		window.select_from_list_apply_button.setText('Save Data')
-		window.select_from_list_apply_button.clicked.connect(partial(self.edit_set_of_tasks_action, window, window.select_from_list_data_list_table, name))
+		window.select_from_list_apply_button.clicked.connect(partial(self.edit_set_of_tasks_action, window, window.select_from_list_data_list_table, current_set))
 		
 		# set modal window
 		window.setWindowModality(QtCore.Qt.WindowModal)
@@ -2006,15 +1987,9 @@ class MainWindow(QtGui.QMainWindow):
 		window.show()
 		
 
-	def edit_set_of_tasks_action(self, window, table, Name):
+	def edit_set_of_tasks_action(self, window, table, current_set):
 		pass
-		# wr 
-		result = self.db_workroom.get_list_workrooms(return_type = 'by_name')
-		if not result[0]:
-			self.message(result[1], 3)
-			return
-		wr_list = result[1]
-		
+			
 		# get data
 		num_column = table.columnCount()
 		num_row = table.rowCount()
@@ -2035,10 +2010,6 @@ class MainWindow(QtGui.QMainWindow):
 					task_data[key] = u''
 			
 			if task_data['task_name']:
-				# get wroom id
-				wr_id = ''
-				#if task_data['workroom']:
-					#task_data['workroom'] = wr_list[task_data['workroom']]['id']
 				data.append(task_data)
 				#print(task_data)
 				names.append(task_data['task_name'])
@@ -2057,7 +2028,7 @@ class MainWindow(QtGui.QMainWindow):
 		#return	
 		#copy = db.set_of_tasks()
 		#copy.edit(name, data)
-		result, reply = self.db_set_of_tasks.edit(Name, data)
+		result, reply = current_set.edit_sets(data)
 		if not result:
 			self.message(reply, 3)
 		
