@@ -7653,7 +7653,7 @@ class set_of_tasks(studio):
 	def create(self, name, asset_type, keys = False, force=False): # v2
 		pass
 		# 1 - тесты передаваемых имени и типа ассета
-		# 2 - чтение наборов на определение совпадения имени
+		# 2 - чтение наборов на определение совпадения имени + создание нового имени при force=True
 		# 3 - запись
 		
 		# (1)
@@ -7661,9 +7661,10 @@ class set_of_tasks(studio):
 		if not name:
 			return(False, 'Not Name!')
 		
+		# (2)
 		b, r = self.get_list(f = {'name': name})
 		if not b:
-			return(b, r)
+			print(r)
 		elif r and not force:
 			return(False, 'A set with that name "%s" already exists' % name)
 		elif r and force:
@@ -7680,11 +7681,6 @@ class set_of_tasks(studio):
 		if not asset_type in self.asset_types:
 			return(False, 'Wrong type of asset: "%s"' % asset_type)
 		
-		# (2)
-		bool_, r_data = database().read('studio', self, self.set_of_tasks_t, self.set_of_tasks_keys, where={'name':name}, table_root=self.set_of_tasks_db)
-		if not bool_:
-			print(r_data)
-			
 		# (3)
 		# edit data
 		data = {}

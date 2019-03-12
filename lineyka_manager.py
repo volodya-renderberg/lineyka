@@ -90,6 +90,7 @@ class MainWindow(QtGui.QMainWindow):
 		self.selected_artist = None # выбранный в таблице артист (объект)
 		#self.current_user = None # авторизированный юзер (объект) - устарело
 		self.selected_project = None # выбранный в таблице проект (объект)
+		self.selected_set_of_tasks = None # выбранный в таблице set_of_tasks (объект)
 		
 		#
 		self.look_keys = ['nik_name','specialty','outsource','level']
@@ -1860,8 +1861,8 @@ class MainWindow(QtGui.QMainWindow):
 			self.message('Not Selected Set', 2)
 			return
 		
-		current_set = table.selectedItems()[0].set_of_tasks
-		
+		self.selected_set_of_tasks = current_set = table.selectedItems()[0].set_of_tasks
+				
 		# widget
 		loader = QtUiTools.QUiLoader()
 		file = QtCore.QFile(self.select_from_list_dialog_path)
@@ -1888,29 +1889,15 @@ class MainWindow(QtGui.QMainWindow):
 		window.select_from_list_data_list_table.setDragDropMode(QtGui.QAbstractItemView.InternalMove)
 		
 		# context menu
-		# -- get workroom list
-		wr_list = self.db_workroom.get_list_workrooms()
-		
-		# -- get wr_list by id
-		result = self.db_workroom.get_list_workrooms(return_type = 'by_id')
-		if not result[0]:
-			self.message(result[1], 3)
-			#return
-		wr_by_id_list = result[1]
-		
-		if wr_list[0]:
+		if True:
+			pass
 			# -- add menu  
-			window.select_from_list_data_list_table.setContextMenuPolicy( QtCore.Qt.ActionsContextMenu )
-			# workroom menu
-			addgrup_action = QtGui.QAction( '== workrooms == ', window)
-			window.select_from_list_data_list_table.addAction( addgrup_action )
-			for w_room in wr_list[1]:
-				wr_name = w_room.name
-				addgrup_action = QtGui.QAction( wr_name, window)
-				#addgrup_action.setToolTip( 'to WorkRoom column' )
-				addgrup_action.triggered.connect(partial(self.insert_data_in_table, wr_name, window.select_from_list_data_list_table, 'workroom'))
-				window.select_from_list_data_list_table.addAction( addgrup_action )
+			#window.select_from_list_data_list_table.setContextMenuPolicy( QtCore.Qt.ActionsContextMenu )
+			table = window.select_from_list_data_list_table
+			table.setContextMenuPolicy(QtCore.Qt.CustomContextMenu)
+			table.customContextMenuRequested.connect(self._edit_set_of_tasks_context_menu)
 			
+			'''
 			# activity
 			addgrup_action = QtGui.QAction( '== activity == ', window)
 			window.select_from_list_data_list_table.addAction( addgrup_action )
@@ -1945,6 +1932,7 @@ class MainWindow(QtGui.QMainWindow):
 				addgrup_action = QtGui.QAction( text, window)
 				addgrup_action.triggered.connect(partial(self.insert_data_in_table, text, window.select_from_list_data_list_table, 'input'))
 				window.select_from_list_data_list_table.addAction( addgrup_action )
+			'''
     
 		# fill table
 		for i, set_of_tasks in enumerate(right_data):
@@ -1960,6 +1948,8 @@ class MainWindow(QtGui.QMainWindow):
 					color = self.tasks_color
 					brush = QtGui.QBrush(color)
 					newItem.setBackground(brush)
+					
+				newItem.column_name = key
 								
 				window.select_from_list_data_list_table.setItem(i, j, newItem)
 		
@@ -1967,6 +1957,7 @@ class MainWindow(QtGui.QMainWindow):
 		for i in range(len(right_data), num_row):
 			for j in range(0, num_column):
 				newItem = QtGui.QTableWidgetItem()
+				newItem.column_name = headers[j]
 				window.select_from_list_data_list_table.setItem(i, j, newItem)
 				
 		# edit widjet
@@ -1986,6 +1977,48 @@ class MainWindow(QtGui.QMainWindow):
 			
 		window.show()
 		
+	def _edit_set_of_tasks_context_menu(self, pos):
+		print(pos.__reduce__())
+		item = self.selectWorkroomDialog.select_from_list_data_list_table.selectedItems()[0]
+		print(item.column_name)
+		menu = QtGui.QMenu(self.selectWorkroomDialog.select_from_list_data_list_table)
+		
+		menu_items = []
+		if item.column_name == 'extension':
+			menu_items = self.db_set_of_tasks.extensions
+		elif item.column_name == 'task_type':
+			menu_items = self.db_set_of_tasks.task_types
+		elif item.column_name == 'activity':
+			list_activity = self.db_asset.ACTIVITY_FOLDER[self.selected_set_of_tasks.asset_type].keys()
+			list_activity.sort()
+			menu_items = list_activity
+		elif item.column_name == 'input':
+			menu_items = self.db_set_of_tasks.service_tasks
+			exists_tasks = []
+			for task_data in self.selected_set_of_tasks.sets:
+				exists_tasks.append(task_data.get('task_name'))
+			menu_items = menu_items + exists_tasks
+			
+		menu_items = menu_items + ['Copy','Paste','Delete']
+			
+		for label in menu_items:
+			action = menu.addAction(label)
+			action.triggered.connect(partial(self._insert_text, label, item))
+				
+		menu.exec_(QtGui.QCursor.pos())
+		
+	def _insert_text(self, text, item):
+		if text == 'Delete':
+			item.setText('')
+		elif text == 'Copy':
+			clipboard = QtGui.QApplication.clipboard()
+			clipboard.setText(item.text())
+		elif text=='Paste':
+			clipboard = QtGui.QApplication.clipboard()
+			text = clipboard.text()
+			item.setText(text)
+		else:
+			item.setText(text)
 
 	def edit_set_of_tasks_action(self, window, table, current_set):
 		pass
