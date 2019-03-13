@@ -1690,8 +1690,39 @@ class MainWindow(QtGui.QMainWindow):
 				table.setItem(i, j, newItem)
 				
 		table.itemDoubleClicked.connect(partial(self.pre_edit_set_of_tasks_ui, self.myWidget.studio_editor_table))
+		
+		# context menu
+		table.setContextMenuPolicy(QtCore.Qt.CustomContextMenu)
+		table.customContextMenuRequested.connect(self._set_of_tasks_context_menu)
 					
 		print('fill set of tasks table')
+		
+	def _set_of_tasks_context_menu(self, pos):
+		pass
+		#print(pos.__reduce__())
+		table = self.myWidget.studio_editor_table
+		item = table.selectedItems()[0]
+		#print(item.column_name)
+		menu = QtGui.QMenu(table)
+		menu_items = ['Rename','Edit of Asset Type','Make Copy', 'Edit', 'Remove']
+		for label in menu_items:
+			action = menu.addAction(label)
+			action.triggered.connect(partial(self._set_of_tasks_context_menu_action, label, item))
+		menu.exec_(QtGui.QCursor.pos())
+		
+	def _set_of_tasks_context_menu_action(self, label, item):
+		pass
+		#print(label, item.set_of_tasks.name)
+		if label=='Rename':
+			self.rename_set_of_tasks_ui(False, set_of_tasks=item.set_of_tasks)
+		elif label=='Edit of Asset Type':
+			self.edit_asset_type_ui(False, set_of_tasks=item.set_of_tasks)
+		elif label=='Make Copy':
+			self.copy_set_of_tasks_ui(set_of_tasks=item.set_of_tasks)
+		elif label=='Edit':
+			self.edit_set_of_tasks_ui(False, set_of_tasks=item.set_of_tasks)
+		elif label=='Remove':
+			self.remove_set_of_tasks_action(False, set_of_tasks=item.set_of_tasks)
 		
 	def reload_set_of_tasks_list(self):
 		self.clear_table()
@@ -1741,8 +1772,12 @@ class MainWindow(QtGui.QMainWindow):
 		self.reload_set_of_tasks_list()
 		print('create set of tasks action')
 		
-	def copy_set_of_tasks_ui(self):
-		current_set = self.myWidget.studio_editor_table.currentItem().set_of_tasks
+	# set_of_tasks (set_of_tasks) - если False, то изменяемый объект будет доставаться из table.currentItem().set_of_tasks
+	def copy_set_of_tasks_ui(self, set_of_tasks=False):
+		if not set_of_tasks:
+			current_set = self.myWidget.studio_editor_table.currentItem().set_of_tasks
+		else:
+			current_set=set_of_tasks
 		
 		# widget
 		loader = QtUiTools.QUiLoader()
@@ -1778,14 +1813,18 @@ class MainWindow(QtGui.QMainWindow):
 		self.reload_set_of_tasks_list()
 		window.close()
 		
-	def rename_set_of_tasks_ui(self, table):
+	# table (QtGui.QTable / False) - если передаём set_of_tasks, то вместо table передаём False, он всё равно использоваться не будет
+	# set_of_tasks (set_of_tasks) - если False, то изменяемый объект будет доставаться из table.selectedItems.set_of_tasks
+	def rename_set_of_tasks_ui(self, table, set_of_tasks=False):
 		pass
-		#name = lists[0]
-		if not table.selectedItems():
-			self.message('Not Selected Set', 2)
-			return
-		
-		current_set = table.selectedItems()[0].set_of_tasks
+		if not set_of_tasks:
+			#name = lists[0]
+			if not table.selectedItems():
+				self.message('Not Selected Set', 2)
+				return
+			current_set = table.selectedItems()[0].set_of_tasks
+		else:
+			current_set=set_of_tasks
 		
 		# widget
 		loader = QtUiTools.QUiLoader()
@@ -1826,19 +1865,23 @@ class MainWindow(QtGui.QMainWindow):
 		self.reload_set_of_tasks_list()
 		print('rename set action')
 		
-	def remove_set_of_tasks_action(self, table):
+	# table (QtGui.QTable / False) - если передаём set_of_tasks, то вместо table передаём False, он всё равно использоваться не будет
+	# set_of_tasks (set_of_tasks) - если False, то изменяемый объект будет доставаться из table.selectedItems.set_of_tasks
+	def remove_set_of_tasks_action(self, table, set_of_tasks=False):
 		pass
-		#name = lists[0]
-		if not table.selectedItems():
-			self.message('Not Selected Set', 2)
-			return
+		if not set_of_tasks:
+			#name = lists[0]
+			if not table.selectedItems():
+				self.message('Not Selected Set', 2)
+				return
+			current_set = table.selectedItems()[0].set_of_tasks
+		else:
+			current_set=set_of_tasks
 		
 		# ask
 		ask = self.message('You Are Soure?', 0)
 		if not ask:
 			return
-		
-		current_set = table.selectedItems()[0].set_of_tasks
 		
 		# remove
 		#copy = db.set_of_tasks()
@@ -1854,14 +1897,19 @@ class MainWindow(QtGui.QMainWindow):
 	def pre_edit_set_of_tasks_ui(*args):
 		args[0].edit_set_of_tasks_ui(args[1])
 	
-	def edit_set_of_tasks_ui(self, table, geometry = False):
+	# table (QtGui.QTable / False) - если передаём set_of_tasks, то вместо table передаём False, он всё равно использоваться не будет
+	# geometry (QGeometry) - геометрия окна
+	# set_of_tasks (set_of_tasks) - если False, то изменяемый объект будет доставаться из table.selectedItems()[0].set_of_tasks
+	def edit_set_of_tasks_ui(self, table, geometry = False, set_of_tasks=False):
 		pass
-		#name = lists[0]
-		if not table.selectedItems():
-			self.message('Not Selected Set', 2)
-			return
-		
-		self.selected_set_of_tasks = current_set = table.selectedItems()[0].set_of_tasks
+		if not set_of_tasks:
+			#name = lists[0]
+			if not table.selectedItems():
+				self.message('Not Selected Set', 2)
+				return
+			self.selected_set_of_tasks = current_set = table.selectedItems()[0].set_of_tasks
+		else:
+			self.selected_set_of_tasks = current_set = set_of_tasks
 				
 		# widget
 		loader = QtUiTools.QUiLoader()
@@ -1889,50 +1937,10 @@ class MainWindow(QtGui.QMainWindow):
 		window.select_from_list_data_list_table.setDragDropMode(QtGui.QAbstractItemView.InternalMove)
 		
 		# context menu
-		if True:
-			pass
-			# -- add menu  
-			#window.select_from_list_data_list_table.setContextMenuPolicy( QtCore.Qt.ActionsContextMenu )
-			table = window.select_from_list_data_list_table
-			table.setContextMenuPolicy(QtCore.Qt.CustomContextMenu)
-			table.customContextMenuRequested.connect(self._edit_set_of_tasks_context_menu)
-			
-			'''
-			# activity
-			addgrup_action = QtGui.QAction( '== activity == ', window)
-			window.select_from_list_data_list_table.addAction( addgrup_action )
-			#asset = db.asset() # folders.sort
-			list_activity = self.db_asset.ACTIVITY_FOLDER[asset_type].keys()
-			list_activity.sort()
-			for activity in list_activity:
-				addgrup_action = QtGui.QAction( activity, window)
-				addgrup_action.triggered.connect(partial(self.insert_data_in_table, activity, window.select_from_list_data_list_table, 'activity'))
-				window.select_from_list_data_list_table.addAction( addgrup_action )
-				
-			# task type menu
-			addgrup_action = QtGui.QAction( '== task types == ', window)
-			window.select_from_list_data_list_table.addAction( addgrup_action )
-			for type_ in current_set.task_types:
-				addgrup_action = QtGui.QAction( type_, window)
-				addgrup_action.triggered.connect(partial(self.insert_data_in_table, type_, window.select_from_list_data_list_table, 'task_type'))
-				window.select_from_list_data_list_table.addAction( addgrup_action )
-			
-			# extensions menu
-			addgrup_action = QtGui.QAction( '== extensions == ', window)
-			window.select_from_list_data_list_table.addAction( addgrup_action )
-			for ext in current_set.extensions:
-				addgrup_action = QtGui.QAction( ext, window)
-				addgrup_action.triggered.connect(partial(self.insert_data_in_table, ext, window.select_from_list_data_list_table, 'extension'))
-				window.select_from_list_data_list_table.addAction( addgrup_action )
-			
-			# extensions menu
-			addgrup_action = QtGui.QAction( '== input service task == ', window)
-			window.select_from_list_data_list_table.addAction( addgrup_action )
-			for text in current_set.service_tasks:
-				addgrup_action = QtGui.QAction( text, window)
-				addgrup_action.triggered.connect(partial(self.insert_data_in_table, text, window.select_from_list_data_list_table, 'input'))
-				window.select_from_list_data_list_table.addAction( addgrup_action )
-			'''
+		#window.select_from_list_data_list_table.setContextMenuPolicy( QtCore.Qt.ActionsContextMenu )
+		table = window.select_from_list_data_list_table
+		table.setContextMenuPolicy(QtCore.Qt.CustomContextMenu)
+		table.customContextMenuRequested.connect(self._edit_set_of_tasks_context_menu)
     
 		# fill table
 		for i, set_of_tasks in enumerate(right_data):
@@ -1978,9 +1986,10 @@ class MainWindow(QtGui.QMainWindow):
 		window.show()
 		
 	def _edit_set_of_tasks_context_menu(self, pos):
-		print(pos.__reduce__())
+		pass
+		#print(pos.__reduce__())
 		item = self.selectWorkroomDialog.select_from_list_data_list_table.selectedItems()[0]
-		print(item.column_name)
+		#print(item.column_name)
 		menu = QtGui.QMenu(self.selectWorkroomDialog.select_from_list_data_list_table)
 		
 		menu_items = []
@@ -2003,11 +2012,11 @@ class MainWindow(QtGui.QMainWindow):
 			
 		for label in menu_items:
 			action = menu.addAction(label)
-			action.triggered.connect(partial(self._insert_text, label, item))
+			action.triggered.connect(partial(self._edit_set_of_tasks_context_menu_action, label, item))
 				
 		menu.exec_(QtGui.QCursor.pos())
 		
-	def _insert_text(self, text, item):
+	def _edit_set_of_tasks_context_menu_action(self, text, item):
 		if text == 'Delete':
 			item.setText('')
 		elif text == 'Copy':
@@ -2337,27 +2346,19 @@ class MainWindow(QtGui.QMainWindow):
 				
 		print('insert data in table')
 		
-	def edit_asset_type_ui(self, table):
-		column = table.columnCount()
-		name_column = None
-		for i in range(0, column):
-			head_item = table.horizontalHeaderItem(i)
-			if head_item.text() == 'name':
-				name_column = i
-				break
-		
+	# table (QtGui.QTable / False) - если передаём set_of_tasks, то вместо table передаём False, он всё равно использоваться не будет
+	# set_of_tasks (set_of_tasks) - если False, то изменяемый объект будет доставаться из table.selectedItems.set_of_tasks
+	def edit_asset_type_ui(self, table, set_of_tasks=False):
 		# get selected rows
-		selected = table.selectedItems()
-		lists = []
-		for item in selected:
-			if item.column() == name_column:
-				lists.append(item.text())
-				
-		if lists == []:
-			self.message('Not Selected Set', 2)
-			return
-		
-		name = lists[0]
+		pass
+		if not set_of_tasks:
+			#name = lists[0]
+			if not table.selectedItems():
+				self.message('Not Selected Set', 2)
+				return
+			current_set = table.selectedItems()[0].set_of_tasks
+		else:
+			current_set=set_of_tasks
 		
 		# widget
 		loader = QtUiTools.QUiLoader()
@@ -2368,12 +2369,11 @@ class MainWindow(QtGui.QMainWindow):
 		
 		# edit widget
 		#copy = db.studio()
-		copy = self.db_studio
-		window.setWindowTitle(('Edit Asset Type: ' + name))
+		window.setWindowTitle(('Edit Asset Type: ' + current_set.name))
 		window.combo_dialog_label.setText('New Name of Set:')
-		window.combo_dialog_combo_box.addItems(copy.asset_types)
+		window.combo_dialog_combo_box.addItems(current_set.asset_types)
 		window.combo_dialog_cancel.clicked.connect(partial(self.close_window, window))
-		window.combo_dialog_ok.clicked.connect(partial(self.edit_asset_type_action, name, window))
+		window.combo_dialog_ok.clicked.connect(partial(self.edit_asset_type_action, current_set, window))
 		
 		# set modal window
 		window.setWindowModality(QtCore.Qt.WindowModal)
@@ -2382,10 +2382,10 @@ class MainWindow(QtGui.QMainWindow):
 		window.show()
 		print('edit asset type')
 		
-	def edit_asset_type_action(self, name, window):
+	def edit_asset_type_action(self, ob, window):
 		pass
 		#copy = db.set_of_tasks()
-		self.db_set_of_tasks.edit_asset_type(name, window.combo_dialog_combo_box.currentText())
+		ob.edit_asset_type(window.combo_dialog_combo_box.currentText())
 		
 		self.close_window(window)
 		self.reload_set_of_tasks_list()
