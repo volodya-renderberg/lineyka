@@ -756,8 +756,8 @@ class MainWindow(QtGui.QMainWindow):
     
 		
 		# fill table
-		for i, wr_id in enumerate(self.workrooms):
-			workroom = self.workrooms[wr_id]
+		for i, name in enumerate(sorted(self.workrooms_by_name.keys())):
+			workroom = self.workrooms_by_name[name]
 			for j,key in enumerate(headers):
 				if key == 'date_time':
 					continue
@@ -770,10 +770,11 @@ class MainWindow(QtGui.QMainWindow):
 					else:
 						newItem.setText('')
 				else:
-					exec('data = workroom.%s' % key)
+					data = getattr(workroom, key)
 					newItem.setText(data)
 				#
-				newItem.wr_id = workroom.id
+				#newItem.wr_id = workroom.id
+				newItem.workroom = workroom
 				#
 				if key == 'name':
 					color = self.workroom_color
@@ -785,7 +786,34 @@ class MainWindow(QtGui.QMainWindow):
 		table.resizeRowsToContents()
 		table.resizeColumnsToContents()
 		
+		# context menu
+		table.setContextMenuPolicy(QtCore.Qt.CustomContextMenu)
+		table.customContextMenuRequested.connect(self._workroom_editor_context_menu)
+		
 		print('fill workroom table')
+		
+	def _workroom_editor_context_menu(self, pos):
+		pass
+		#print(pos.__reduce__())
+		table = self.myWidget.studio_editor_table
+		item = table.selectedItems()[0]
+		#print(item.column_name)
+		menu = QtGui.QMenu(table)
+		menu_items = ['Rename','Edit Type', 'Edit Artist List']
+		for label in menu_items:
+			action = menu.addAction(label)
+			action.triggered.connect(partial(self._workroom_editor_context_menu_action, label, item))
+		menu.exec_(QtGui.QCursor.pos())
+		
+	def _workroom_editor_context_menu_action(self, label, item):
+		pass
+		#print(label, item.set_of_tasks.name)
+		if label=='Rename':
+			self.rename_workroom_ui(workroom=item.workroom)
+		elif label=='Edit Type':
+			self.edit_type_workroom_ui(workroom=item.workroom)
+		elif label=='Edit Artist List':
+			self.edit_ui_to_edit_artist_list(workroom=item.workroom)
 				
 	def reload_workroom_list(self):
 		self.clear_table()
@@ -899,14 +927,17 @@ class MainWindow(QtGui.QMainWindow):
 		
 	# -------------------- Edit Type Workroom ---------------------------------------
 	
-	def edit_type_workroom_ui(self):
-		table = self.myWidget.studio_editor_table
-		current_item = table.currentItem()
-		if not current_item:
-			self.message('Not Selected Workroom!', 2)
-			return
+	def edit_type_workroom_ui(self, workroom=False):
+		if not workroom:
+			table = self.myWidget.studio_editor_table
+			current_item = table.currentItem()
+			if not current_item:
+				self.message('Not Selected Workroom!', 2)
+				return
+			else:
+				self.workroom = self.workrooms[current_item.wr_id]
 		else:
-			self.workroom = self.workrooms[current_item.wr_id]
+			self.workroom=workroom
 		
 		# widget
 		loader = QtUiTools.QUiLoader()
@@ -953,14 +984,17 @@ class MainWindow(QtGui.QMainWindow):
 	
 	# -------------------- Rename Workroom ---------------------------------------
 	
-	def rename_workroom_ui(self):
-		table = self.myWidget.studio_editor_table
-		current_item = table.currentItem()
-		if not current_item:
-			self.message('Not Selected Workroom!', 2)
-			return
+	def rename_workroom_ui(self, workroom=False):
+		if not workroom:
+			table = self.myWidget.studio_editor_table
+			current_item = table.currentItem()
+			if not current_item:
+				self.message('Not Selected Workroom!', 2)
+				return
+			else:
+				self.workroom = self.workrooms[current_item.wr_id]
 		else:
-			self.workroom = self.workrooms[current_item.wr_id]
+			self.workroom = workroom
 		
 		loader = QtUiTools.QUiLoader()
 		file = QtCore.QFile(self.new_dialog_path)
@@ -1001,16 +1035,17 @@ class MainWindow(QtGui.QMainWindow):
 			
 	# -------------------- Workroom ADD  Artists Editor ---------------------------------------
 	
-	def edit_ui_to_edit_artist_list(self):
+	def edit_ui_to_edit_artist_list(self, workroom=False):
 		pass
-		# get workroom data
-		wr_data = {}
-		current_item = self.myWidget.studio_editor_table.currentItem()
-		if not current_item:
-			self.message('Not Selected Workroom!', 2)
-			return
+		if not workroom:
+			current_item = self.myWidget.studio_editor_table.currentItem()
+			if not current_item:
+				self.message('Not Selected Workroom!', 2)
+				return
+			else:
+				self.workroom = self.workrooms[current_item.wr_id]
 		else:
-			self.workroom = self.workrooms[current_item.wr_id]
+			self.workroom=workroom
 				
 		# edit label
 		self.myWidget.studio_editor_label.setText(('WorkRoom Editor / "%s" - edit Artist List' % self.workroom.name))
@@ -2349,7 +2384,6 @@ class MainWindow(QtGui.QMainWindow):
 	# table (QtGui.QTable / False) - если передаём set_of_tasks, то вместо table передаём False, он всё равно использоваться не будет
 	# set_of_tasks (set_of_tasks) - если False, то изменяемый объект будет доставаться из table.selectedItems.set_of_tasks
 	def edit_asset_type_ui(self, table, set_of_tasks=False):
-		# get selected rows
 		pass
 		if not set_of_tasks:
 			#name = lists[0]
