@@ -7124,6 +7124,12 @@ class MainWindow(QtGui.QMainWindow):
 		table.clear()
 		table.setColumnCount(0)
 		table.setRowCount(0)
+		
+		# context menu
+		try:
+			table.customContextMenuRequested.disconnect()
+		except Exception as e:
+			print(e)
 				
 	
 	def message(self, m, i):
