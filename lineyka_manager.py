@@ -90,6 +90,7 @@ class MainWindow(QtGui.QMainWindow):
 		self.selected_artist = None # выбранный в таблице артист (объект)
 		#self.current_user = None # авторизированный юзер (объект) - устарело
 		self.selected_project = None # выбранный в таблице проект (объект)
+		self.set_of_tasks_list = None # список наборов (объекты) - заполняется в fill_set_of_tasks_table()
 		self.selected_set_of_tasks = None # выбранный в таблице set_of_tasks (объект)
 		
 		#
@@ -1722,6 +1723,8 @@ class MainWindow(QtGui.QMainWindow):
 		for key in sorted(r.keys()):
 			for name in sorted(r[key].keys()):
 				data_to_fill.append(r[key][name])
+				
+		self.set_of_tasks_list = data_to_fill
 		
 		# get table data
 		columns = ('name', 'asset_type', 'edit_time')
@@ -2150,27 +2153,26 @@ class MainWindow(QtGui.QMainWindow):
 		split = os.path.splitext(path)
 		
 		if not split[1]:
-			path = os.path.normpath(path + '.json')
+			path = db.NormPath(path + '.json')
 		else:
 			if split[1] != '.json':
-				path = os.path.normpath(split[0] + '.json')
+				path = db.NormPath(split[0] + '.json')
 		
-		self.save_set_of_task_to_library_action(path, action)
+		self.save_set_of_task_to_library_action(path, self.set_of_tasks_list)
 		
-	def save_set_of_task_to_library_action(self, path, action):
-		if action == 'all':
-			result = self.db_set_of_tasks.save_set_of_tasks_to_library(path)
-			if not result[0]:
-				self.message(result[1], 3)
+	def save_set_of_task_to_library_action(self, path, save_objects):
+		result = self.db_set_of_tasks.save_to_library(path)
+		if not result[0]:
+			self.message(result[1], 3)
 				
 	def load_set_of_task_from_library_ui(self):
 		home = os.path.expanduser('~')
 		path, f = QtGui.QFileDialog.getOpenFileNames(self, caption = 'Load Set_Of_Tasks Library',  dir = home, filter = u'Json files (*.json)')
 		
 		
-		result, data = self.db_set_of_tasks.get_list(path = path[0])
+		b, data = self.db_set_of_tasks.get_list(path = path[0])
 		
-		if not result:
+		if not b:
 			self.message(data, 3)
 			return
 		
@@ -2192,7 +2194,7 @@ class MainWindow(QtGui.QMainWindow):
 		columns = ['name','asset_type']
 		
 		# -- get table data
-		num_row = len(data.keys())
+		num_row = len(data)
 		num_column = len(columns)
 		headers = columns
 		    
@@ -2203,7 +2205,7 @@ class MainWindow(QtGui.QMainWindow):
 		table.setHorizontalHeaderLabels(headers)
 		
 		# fill table
-		for i, set_name in enumerate(data):
+		for i, set_ob in enumerate(data):
 			for j,key in enumerate(headers):
 				newItem = QtGui.QTableWidgetItem()
 				
@@ -2211,11 +2213,11 @@ class MainWindow(QtGui.QMainWindow):
 					color = self.set_of_tasks_color
 					brush = QtGui.QBrush(color)
 					newItem.setBackground(brush)
-					newItem.setText(set_name)
+					newItem.setText(set_ob.name)
 				elif key == 'asset_type':
-					newItem.setText(data[set_name][key])
+					newItem.setText(set_ob.asset_type)
 					
-				newItem.name = set_name
+				newItem.set_of_tasks = set_ob
 	
 				table.setItem(i, j, newItem)
 				
@@ -2229,34 +2231,31 @@ class MainWindow(QtGui.QMainWindow):
 		# context menu
 		table.setContextMenuPolicy( QtCore.Qt.ActionsContextMenu )
 		addgrup_action = QtGui.QAction( 'Look Set_of_Tasks', self.myWidget)
-		addgrup_action.triggered.connect(partial(self.look_set_of_task_from_library, table, data))
+		addgrup_action.triggered.connect(partial(self.look_set_of_task_from_library, table))
 		table.addAction( addgrup_action )
 		
 		window.show()
 		
 	def load_set_of_task_from_library_action(self, window, data, action):
 		if action == 'selected':
-			selected_data = {}
-			
+			data = []
 			for item in window.select_from_list_data_list_table.selectedItems():
-				selected_data[item.name] = data[item.name]
-				
-			data = selected_data
-			
+				data.append(item.set_of_tasks)
 		elif action == 'all':
 			pass
 		
-		result, data = self.db_set_of_tasks.load_set_of_tasks_from_library(data)
-		if not result:
-			self.message(data, 3)
+		for ob in data:
+			b, r = self.db_set_of_tasks.create(ob.name, ob.asset_type, keys=ob.sets, force=True)
+			if not b:
+				self.message(r, 3)
 		
 		self.reload_set_of_tasks_list()
 		window.close()
 		
-	def look_set_of_task_from_library(self, table, data):
-		name = table.currentItem().name
+	def look_set_of_task_from_library(self, table):
+		set_ob = table.currentItem().set_of_tasks
 		
-		right_data = data[name]['sets']
+		right_data = set_ob.sets
 		
 		# widget
 		loader = QtUiTools.QUiLoader()
@@ -2289,16 +2288,11 @@ class MainWindow(QtGui.QMainWindow):
 					color = self.tasks_color
 					brush = QtGui.QBrush(color)
 					newItem.setBackground(brush)
-				elif key == 'workroom':
-					try:
-						newItem.setText('')
-					except:
-						pass
 								
 				window.select_from_list_data_list_table.setItem(i, j, newItem)
 		
 		# edit widjet
-		window.setWindowTitle(('Set Of Tasks: ' + name))
+		window.setWindowTitle(('Set Of Tasks: ' + set_ob.name))
 		window.select_from_list_cansel_button.clicked.connect(partial(self.close_window, window))
 		window.select_from_list_apply_button.setVisible(False)
 		
@@ -2307,106 +2301,6 @@ class MainWindow(QtGui.QMainWindow):
 		window.setAttribute(QtCore.Qt.WA_DeleteOnClose, True)
 		
 		window.show()
-		
-	
-	def insert_workroom_in_table(self, workroom, table):
-		pass
-		# get selected rows
-		selected = table.selectedItems()
-		if not selected:
-			self.message('Not Selected!', 2)
-			return
-		
-		rows = []
-		for item in selected:
-			if not item.row() in rows:
-				rows.append(item.row())
-				
-		# get num column "workroom"
-		num_column = table.columnCount()
-		column = False
-		for j in range(0, num_column):
-			head_item = table.horizontalHeaderItem(j)
-			if head_item.text() == 'workroom':
-				column = j
-				break
-				
-		if not column:
-			self.message('Column \"workroom\' Not Found!', 2)
-			return
-			
-		# insert workroom
-		for row in rows:
-			item = table.item(row, column)
-			item.setText(workroom)
-				
-		print('insert workroom in table')
-		
-	def insert_task_type_in_table(self, type_, table):
-		pass
-		# get selected rows
-		selected = table.selectedItems()
-		if not selected:
-			self.message('Not Selected!', 2)
-			return
-		
-		rows = []
-		for item in selected:
-			if not item.row() in rows:
-				rows.append(item.row())
-				
-		# get num column "task_type"
-		num_column = table.columnCount()
-		column = False
-		for j in range(0, num_column):
-			head_item = table.horizontalHeaderItem(j)
-			if head_item.text() == 'task_type':
-				column = j
-				break
-				
-		if not column:
-			self.message('Column \"task_type\' Not Found!', 2)
-			return
-			
-		# insert task_type
-		for row in rows:
-			item = table.item(row, column)
-			item.setText(type_)
-				
-		print('insert task type in table')
-			
-	def insert_data_in_table(self, insert_text, table, column_head):
-		pass
-		# get selected rows
-		selected = table.selectedItems()
-		if not selected:
-			self.message('Not Selected!', 2)
-			return
-		
-		rows = []
-		for item in selected:
-			if not item.row() in rows:
-				rows.append(item.row())
-				
-		# get num column "task_type"
-		num_column = table.columnCount()
-		column = False
-		for j in range(0, num_column):
-			head_item = table.horizontalHeaderItem(j)
-			if head_item.text() == column_head:
-				column = j
-				break
-				
-		if not column:
-			self.message(('Column \"' + column_head + '\" Not Found!'), 2)
-			return
-			
-		# insert task_type
-		for row in rows:
-			item = table.item(row, column)
-			item.setText(insert_text)
-				
-		print('insert data in table')
 		
 	# table (QtGui.QTable / False) - если передаём set_of_tasks, то вместо table передаём False, он всё равно использоваться не будет
 	# set_of_tasks (set_of_tasks) - если False, то изменяемый объект будет доставаться из table.selectedItems.set_of_tasks
