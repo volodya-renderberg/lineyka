@@ -300,10 +300,33 @@ class MainWindow(QtGui.QMainWindow):
 					newItem.setText(str(getattr(artist, key)))
 				newItem.artist = artist
 				self.myWidget.studio_editor_table.setItem(i, j, newItem)
+				
+		# context menu
+		table = self.myWidget.studio_editor_table
+		table.setContextMenuPolicy(QtCore.Qt.CustomContextMenu)
+		table.customContextMenuRequested.connect(self._artist_editor_context_menu)
 
 		print('fill artist table')
 		
-			
+	def _artist_editor_context_menu(self, pos):
+		pass
+		#print(pos.__reduce__())
+		table = self.myWidget.studio_editor_table
+		item = table.selectedItems()[0]
+		#print(item.column_name)
+		menu = QtGui.QMenu(table)
+		menu_items = ['Edit Artist Data']
+		for label in menu_items:
+			action = menu.addAction(label)
+			action.triggered.connect(partial(self._artist_editor_context_menu_action, label, item))
+		menu.exec_(QtGui.QCursor.pos())
+	
+	def _artist_editor_context_menu_action(self, label, item):
+		pass
+		#print(label, item.set_of_tasks.name)
+		if label=='Edit Artist Data':
+			self.edit_artist_ui(artist=item.artist)
+	
 	def reload_artist_list(self):
 		pass
 		self.clear_table()
@@ -421,13 +444,17 @@ class MainWindow(QtGui.QMainWindow):
 		self.newArtistDialog.close()
 		
 	# ----------------- Edit Artist --------------------------------------
-	def edit_artist_ui(self):
-		current_item = self.myWidget.studio_editor_table.currentItem()
-		if not current_item:
-			self.message('Not Selected Artists!', 2)
-			return
+	def edit_artist_ui(self, artist=False):
+		if not artist:
+			current_item = self.myWidget.studio_editor_table.currentItem()
+			if not current_item:
+				self.message('Not Selected Artists!', 2)
+				return
+			self.selected_artist = current_item.artist
+		else:
+			self.selected_artist = artist
 		
-		self.selected_artist = current_item.artist
+		
 		level = getattr(self.selected_artist, 'level')
 		
 		if self.artist.level not in self.artist.manager_levels:
