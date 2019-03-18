@@ -2239,8 +2239,11 @@ class MainWindow(QtGui.QMainWindow):
 	def load_set_of_task_from_library_action(self, window, data, action):
 		if action == 'selected':
 			data = []
+			names = []
 			for item in window.select_from_list_data_list_table.selectedItems():
-				data.append(item.set_of_tasks)
+				if not item.set_of_tasks.name in names:
+					data.append(item.set_of_tasks)
+					names.append(item.set_of_tasks.name)
 		elif action == 'all':
 			pass
 		
