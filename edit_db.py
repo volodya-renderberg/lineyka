@@ -8040,48 +8040,86 @@ class season(studio):
 		self.project = project_ob
 		# fill fields
 		for key in self.season_keys:
-			exec('self.%s = False' % key)
+			#exec('self.%s = False' % key)
+			setattr(self, key, False)
+	
+	def init(self, name, new=True):
+		pass
+		# 1 - чтение БД
+		# 2 - инициализация по keys
+		
+		bool_, r_data = database().read('project', self.project, self.season_t, self.season_keys, where={'name': name}, table_root=self.season_db)
+		if not bool_:
+			return(bool_, r_data)
+		if r_data:
+			return self.init_by_keys(r_data[0], new=new)
+		else:
+			if new:
+				return None
+			else:
+				return(False, 'a season with this name "%s" no found!')
+		
 	
 	# заполнение полей по self.season_keys - для передачи экземпляра в уровень ниже.
-	def init(self, keys):
+	# keys (dict) словарь по self.season_keys
+	# new (bool) - если True - вернёт новый объект, если False - инициализирует текущий.
+	def init_by_keys(self, keys, new=True):
+		if new:
+			r_ob = season(self.project)
+		else:
+			r_ob = self
 		for key in self.season_keys:
-			exec('self.%s = keys.get("%s")' % (key, key))
-
+			#exec('self.%s = keys.get("%s")' % (key, key))
+			setattr(r_ob, key, keys.get(key))
+			
+		if new:
+			return r_ob
+		else:
+			return(True, 'Ok!')
+		
+	
 	def create(self, name):
 		keys = {}
 		keys['name'] = name
 		keys['status'] = 'active'
-		keys['id'] = str(random.randint(0, 1000000000))
+		keys['id'] = uuid.uuid4().hex
 		
-		# создание таблицы, если не существует.
+		# создание таблицы, если не существует. - (не нужно)
 		# проверка на существование с даныи именем.
 		# добавление сезона.
 		
-		# -- create table
-		bool_, return_data  = database().create_table('project', self.project, self.season_t, self.season_keys, table_root = self.season_db)
-		if not bool_:
-			return(bool_, return_data)
-		
 		# проверка на совпадение имени
-		bool_, return_data = self.get_by_name(keys['name'])
-		if bool_ and return_data:
+		ob = self.init(name)
+		if ob:
 			return(False, 'Season with this name(%s) already exists!' % keys['name'])
 		
 		# -- write data
 		bool_, return_data = database().insert('project', self.project, self.season_t, self.season_keys, keys, table_root = self.season_db)
 		if not bool_:
 			return(bool_, return_data)
-		return(True, 'ok')
+		return(True, self.init_by_keys(keys))
 	
-	def get_list(self, active = False):
-		if active:
+	# status (str) - значения из ['all', 'active', 'none']
+	def get_list(self, status='all'):
+		if not status in ['all', 'active', 'none']:
+			return(False, 'This status (%s) is not correct.' % status)
+		if status =='active':
 			where = {'status': u'active'}
+		elif status=='none':
+			where = {'status': u'none'}
 		else:
 			where = False
 		# write season to db
-		bool_, return_data = database().read('project', self.project, self.season_t, self.season_keys, where=where, table_root=self.season_db)
-		return(bool_, return_data)
+		bool_, r_data = database().read('project', self.project, self.season_t, self.season_keys, where=where, table_root=self.season_db)
+		if not bool_:
+			return(bool_, r_data)
+		# return
+		seasons = []
+		for item in r_data:
+			seasons.append(self.init_by_keys(item))
+		return(True, seasons)
 
+	'''
 	def get_by_name(self, name):
 		keys = {'name': name}
 		bool_, return_data = database().read('project', self.project, self.season_t, self.season_keys, where = keys, table_root=self.season_db)
@@ -8101,26 +8139,34 @@ class season(studio):
 			return(True, return_data[0])
 		else:
 			return(True, return_data)
+	'''
 	
-	def rename(self, name, new_name):
+	def rename(self, new_name):
 		update_data = {'name': new_name}
-		where = {'name': name}
+		where = {'name': self.name}
 		bool_, return_data = database().update('project', self.project, self.season_t, self.season_keys, update_data, where, table_root=self.season_db)
 		if not bool_:
 			return(bool_, return_data)
+		self.name=new_name
 		return(True, 'ok')
 	
-	def stop(self, name):
-		where = {'name': name}
+	def stop(self):
+		where = {'name': self.name}
 		update_data = {'status': u'none'}
 		bool_, return_data = database().update('project', self.project, self.season_t, self.season_keys, update_data, where, table_root=self.season_db)
-		return(bool_, return_data)
+		if not bool_:
+			return(bool_, return_data)
+		self.status=u'none'
+		return(True, 'ok')
 	
-	def start(self, name):
-		where = {'name': name}
+	def start(self):
+		where = {'name': self.name}
 		update_data = {'status': u'active'}
 		bool_, return_data = database().update('project', self.project, self.season_t, self.season_keys, update_data, where, table_root=self.season_db)
-		return(bool_, return_data)
+		if not bool_:
+			return(bool_, return_data)
+		self.status=u'active'
+		return(True, 'ok')
 	
 class group(studio):
 	def __init__(self, project_ob):
