@@ -8143,7 +8143,7 @@ class season(studio):
 	
 	def rename(self, new_name):
 		update_data = {'name': new_name}
-		where = {'name': self.name}
+		where = {'id': self.id}
 		bool_, return_data = database().update('project', self.project, self.season_t, self.season_keys, update_data, where, table_root=self.season_db)
 		if not bool_:
 			return(bool_, return_data)
@@ -8151,7 +8151,7 @@ class season(studio):
 		return(True, 'ok')
 	
 	def stop(self):
-		where = {'name': self.name}
+		where = {'id': self.id}
 		update_data = {'status': u'none'}
 		bool_, return_data = database().update('project', self.project, self.season_t, self.season_keys, update_data, where, table_root=self.season_db)
 		if not bool_:
@@ -8160,7 +8160,7 @@ class season(studio):
 		return(True, 'ok')
 	
 	def start(self):
-		where = {'name': self.name}
+		where = {'id': self.id}
 		update_data = {'status': u'active'}
 		bool_, return_data = database().update('project', self.project, self.season_t, self.season_keys, update_data, where, table_root=self.season_db)
 		if not bool_:
