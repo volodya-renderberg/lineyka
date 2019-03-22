@@ -32,7 +32,6 @@ class studio:
 	'''
 	@classmethod get_studio()
 	@classmethod make_init_file()
-	@classmethod get_list_projects()
 	'''
 	# 
 	farme_offset = 100
@@ -44,11 +43,6 @@ class studio:
 	init_path = False
 	set_path = False
 	share_dir = False
-	projects_path = False  # path to .projects.db
-	set_of_tasks_path = False  # path to .set_of_tasks.json
-	artists_path = False # path to .artists.db
-	workroom_path = False # path to .workroom_db
-	statistic_path = False # path to .statistic.db
 	list_projects = {} # a list of existing projects
 	list_active_projects = []
 	
@@ -281,15 +275,12 @@ class studio:
 	'''
 	projects_keys = {
 	'name': 'text',
-	'assets_path': 'text',
-	'chat_img_path': 'text',
-	'chat_path': 'text',
-	'list_of_assets_path': 'text',
 	'path': 'text',
-	'preview_img_path': 'text',
 	'status': 'text',
-	'tasks_path': 'text',
-	'project_database': 'json' # формат который конвертируется через json и записывается строкой.
+	'project_database': 'json',
+	'chat_img_path': 'text',
+	'list_of_assets_path': 'text',
+	'preview_img_path': 'text',
 	}
 	
 	group_keys = {
@@ -325,8 +316,7 @@ class studio:
 	init_folder = '.lineyka'
 	init_file = 'lineyka_init.json'
 	set_file = 'user_setting.json'
-	set_of_tasks_file = '.set_of_tasks.json'
-	projects_file = '.projects.json'
+	#projects_file = '.projects.json'
 	location_position_file = 'location_content_position.json'
 	user_registr_file_name = 'user_registr.json'
 	recycle_bin_name = '-Recycle_Bin-'
@@ -443,95 +433,6 @@ class studio:
 
 		self.studio_folder = path
 		
-		# create projects_db
-		projects_path = NormPath(os.path.join(path, self.projects_db))
-		if not os.path.exists(projects_path):
-			conn = sqlite3.connect(projects_path)
-			c = conn.cursor()
-			conn.commit()
-			conn.close()
-		'''
-		projects_path = os.path.join(path, self.projects_file)
-		if not os.path.exists(projects_path):
-			d = {}
-			m_json = json.dumps(d, sort_keys=True, indent=4)
-			# save
-			data_fale = open(projects_path, 'w')
-			data_fale.write(m_json)
-			data_fale.close()
-		'''
-		self.projects_path = projects_path
-		
-		# create .set_of_tasks.json
-		set_of_tasks_path = os.path.join(path, self.set_of_tasks_file)
-		if not os.path.exists(set_of_tasks_path):
-			d = {}
-			m_json = json.dumps(d, sort_keys=True, indent=4)
-			# save
-			data_fale = open(set_of_tasks_path, 'w')
-			data_fale.write(m_json)
-			data_fale.close()
-		self.set_of_tasks_path = set_of_tasks_path
-
-		# create  artists
-		artist_path = NormPath(os.path.join(path, self.artists_db))
-		if not os.path.exists(artist_path):
-			conn = sqlite3.connect(artist_path)
-			c = conn.cursor()
-			'''
-			names = (self.artists_t, )
-			c.execute("CREATE TABLE ?(artist_name TEXT, user_name TEXT, email TEXT, phone TEXT, name TEXT, specialty TEXT)", names)
-			'''
-			'''
-			string2 = "CREATE TABLE " + self.artists_t + " ("
-			for i,key in enumerate(self.artists_keys):
-				if i == 0:
-					string2 = string2 + '\"' + key[0] + '\" ' + key[1]
-				else:
-					string2 = string2 + ', \"' + key[0] + '\" ' + key[1]
-			string2 = string2 + ')'
-			c.execute(string2)
-			'''
-			'''
-			string = "CREATE TABLE " + self.artists_t + "(artist_name TEXT, user_name TEXT, email TEXT, phone TEXT, name TEXT, specialty TEXT)"
-			c.execute(string)
-			'''
-			
-			conn.commit()
-			conn.close()
-		self.artists_path = artist_path
-		
-		# create workroom
-		self.workroom_path = artist_path
-
-		# create  statistic
-		statistic_path = os.path.join(path, self.statistic_db)
-		if not os.path.exists(statistic_path):
-			conn = sqlite3.connect(statistic_path)
-			c = conn.cursor()
-			'''
-			names = (self.statistic_t, )
-			c.execute("CREATE TABLE ?(task TEXT, user_name TEXT, data_start TEXT, data_end TEXT, long_time REAL, price REAL)", names)
-			'''
-			'''
-			string = "CREATE TABLE " + self.statistic_t + "(task TEXT, user_name TEXT, data_start TEXT, data_end TEXT, long_time REAL, price REAL)"
-			c.execute(string)
-			'''
-			
-			conn.commit()
-			conn.close()
-		self.statistic_path = statistic_path
-		'''		
-		# fill self.extensions
-		try:
-			with open(self.set_path, 'r') as read:
-				data = json.load(read)
-				self.extensions = data['extension'].keys()
-				read.close()
-		except:
-			print('in set_studio -> not read user_setting.json!')
-			return(False, 'in set_studio -> not read user_setting.json!')
-		'''	
 		return(True, 'Ok')
 	
 	@classmethod
@@ -666,38 +567,7 @@ class studio:
 		except Exception as e:
 			print(e)
 			
-		# artists_path = False   statistic_path = False
-		if self.studio_folder:
-			if self.projects_path == False:
-				path = NormPath(os.path.join(self.studio_folder, self.projects_db))
-				if os.path.exists(path):
-					self.projects_path = path
-			
-			#self.get_set_of_tasks_path()
-			if not self.set_of_tasks_path:
-				path = NormPath(os.path.join(self.studio_folder, self.set_of_tasks_file))
-				if os.path.exists(path):
-					self.set_of_tasks_path = path
-			
-			if not self.artists_path:
-				path = NormPath(os.path.join(self.studio_folder, self.artists_db))
-				if os.path.exists(path):
-					self.artists_path = path
-			if self.workroom_path == False:
-				path = NormPath(os.path.join(self.studio_folder, self.artists_db))
-				if os.path.exists(path):
-					self.workroom_path = path
-			if self.statistic_path == False:
-				path = NormPath(os.path.join(self.studio_folder, self.statistic_db))
-				if os.path.exists(path):
-					self.statistic_path = path
-					
 		#print('artist path: ', self.artists_path)
-		
-		# get self.list_projects
-		if self.projects_path:
-			self.get_list_projects()
-			pass
 			
 		'''
 		# get list_active_projects
@@ -719,49 +589,8 @@ class studio:
 			return(False, 'in get_studio -> not read user_setting.json!')
 		
 		print('studio.get_studio')
-		return True, [self.studio_folder, self.tmp_folder, self.projects_path, self.artists_path, self.statistic_path, self.list_projects, self.workroom_path]
-		
-	@classmethod
-	def get_list_projects(self):
-		if not self.projects_path:
-			return
-		if not os.path.exists(self.projects_path):
-			return
-		
-		# get list_projects
-		bool_, return_data = database().read('studio', self, self.projects_t, self.projects_keys)
-		
-		if not bool_:
-			print('#'*10, return_data)
-			return(False, return_data)
-		
-		list_projects = {}
-		for row in return_data:
-			data = {}
-			for key in row.keys():
-				#print(key)
-				if key == 'name':
-					continue
-				data[key] = row[key]
-			list_projects[row['name']] = data
-		
-		self.list_projects = list_projects
-
-		# get list_active_projects
-		if self.list_projects:
-			self.list_active_projects = []
-			for key in self.list_projects:
-				if self.list_projects[key]['status'] == 'active':
-					self.list_active_projects.append(key)
-		
-		print('get_list_projects')
+		return True, [self.studio_folder, self.tmp_folder]
 	
-	def get_set_of_tasks_path(self):
-		if not self.set_of_tasks_path:
-			path = NormPath(os.path.join(self.studio_folder, self.set_of_tasks_file))
-			if os.path.exists(path):
-				self.set_of_tasks_path = path
-
 	# ****** SETTING ******
 	# ------- EXTENSION -------------
 	def get_extension_dict(self):
@@ -1270,46 +1099,61 @@ class database():
 		return(True, 'Ok!')
 
 class project(studio):
-	'''
-	self.add_project(project_name, project_path, keys) - 
-
-	self.get_project(project_name) - 
-	
-	'''
 	def __init__(self):
 		pass
 		#base fields
 		for key in self.projects_keys:
 			exec('self.%s = False' % key)
 		
-		# added fields
-		self.assets_list = False # # a list of existing assets
 		# constans
 		self.folders = {'assets':'assets', 'chat_img_folder':'.chat_images', 'preview_images': '.preview_images'}
+		
+	# if new=True - возвращает новый инициализированный объект, если False то инициализирует текущий объект и возвращает (True, 'Ok')
+	def init(self, name, new=True): # v2
+		pass
+		b, r = database().read('studio', self, self.projects_t, self.projects_keys, table_root=self.projects_db)
+		if not b:
+			return(b, r)
+		return(self.init_by_keys(r[0], new=new))
+        
+	def init_by_keys(self, keys, new=True): # v2
+		if new:
+			r_ob = project()
+		else:
+			r_ob = self
+		
+		for key in self.projects_keys:
+			setattr(r_ob, key, keys[key])
+			
+		if new:
+			return r_ob
+		else:
+			return(True, 'Ok!')
+        
 
-	def add_project(self, project_name, project_path): # v2
-		project_path = NormPath(project_path)
+	def add_project(self, name, path): # v2
+		project_path = NormPath(path)
+		# test by name 
+		if name in self.list_projects.keys():
+			return(False, "This project name already exists!")
+		
 		# project_name, get project_path
-		if not project_path and project_name == '':
+		if not project_path and name == '':
 			return(False, 'No options!')
 			
 		elif not project_path:
-			project_path = os.path.join(self.studio_folder, project_name)
+			project_path = os.path.join(self.studio_folder, name)
 			try:
 				os.mkdir(project_path)
 			except:
 				return(False, ('Failed to create folder: ' + project_path))
 			
-		elif project_name == '':
+		elif name == '':
 			if not os.path.exists(project_path):
 				return(False, ('Project Path: \"%s\" Not Found!' % project_path))
-			project_name = os.path.basename(project_path)
+			name = os.path.basename(project_path)
 			
-		# test by name 
-		if project_name in self.list_projects.keys():
-			return(False, "This project name already exists!")
-		self.name = project_name
-		
+		self.name = name
 		path = project_path
 			
 		if not os.path.exists(path):
@@ -1319,13 +1163,10 @@ class project(studio):
 			self.path = path
 		
 		self.project_database = ['sqlite3', False] # новый проект в начале всегда sqlite3, чтобы сработало всё в database
-		self.assets_path = NormPath(os.path.join(self.path, self.assets_db))
-		self.chat_path = NormPath(os.path.join(self.path, self.chats_db))
-		self.tasks_path = NormPath(os.path.join(self.path, self.tasks_db))
 		self.list_of_assets_path = NormPath(os.path.join(self.path, '.list_of_assets_path.json'))
 		
 		# create folders
-		self.make_folders(self.path)
+		self.__make_folders(self.path)
 		# -- get chat_img_folder
 		img_folder_path = os.path.join(self.path, self.folders['chat_img_folder'])
 		if os.path.exists(img_folder_path):
@@ -1343,11 +1184,6 @@ class project(studio):
 		self.status = 'active'
 		
 		# create project
-		# -- create table
-		bool_, return_data  = database().create_table('studio', self, self.projects_t, self.projects_keys)
-		if not bool_:
-			return(bool_, return_data)
-		
 		# -- write data
 		write_data = {}
 		for key in self.projects_keys:
@@ -1358,63 +1194,32 @@ class project(studio):
 			return(bool_, return_data)
 		
 		# create_recycle_bin
-		self.get_list_projects()
-		#result = group().create_recycle_bin(project_name)
+		
 		result = group(self).create_recycle_bin()
 		if not result[0]:
 			return(False, result[1])
-		
+		#
 		return True, 'ok'
 		
-	# if new=True - возвращает новый инициализированный объект, если False то инициализирует текущий объект и возвращает (True, 'Ok')
-	def get_project(self, name, new=False): # v2
-		pass
-		#self.get_list_projects()
-		
-		if not name in self.list_projects.keys():
-			return(False, "This project Not Found!")
-		if not new:
-			self.name = name
-			self.path = self.list_projects[name]['path']
-			self.assets_path = NormPath(os.path.join(self.path, self.assets_db))
-			self.tasks_path = NormPath(os.path.join(self.path, self.tasks_db))
-			self.list_of_assets_path = NormPath(os.path.join(self.list_projects[name]['path'], '.list_of_assets_path.json'))
-			self.chat_path = NormPath(os.path.join(self.path, self.chats_db))
-			self.chat_img_path = NormPath(os.path.join(self.path, self.folders['chat_img_folder']))
-			self.preview_img_path = NormPath(os.path.join(self.path, self.folders['preview_images']))
-			self.status = self.list_projects[name]['status']
-			self.project_database = self.list_projects[name]['project_database']
-			#	
-			self.get_list_of_assets()
-			return(True, 'Ok!')
-		else:
-			ob = project()
-			ob.name = name
-			ob.path = self.list_projects[name]['path']
-			ob.assets_path = NormPath(os.path.join(ob.path, self.assets_db))
-			ob.tasks_path = NormPath(os.path.join(ob.path, self.tasks_db))
-			ob.list_of_assets_path = NormPath(os.path.join(self.list_projects[name]['path'], '.list_of_assets_path.json'))
-			ob.chat_path = NormPath(os.path.join(ob.path, self.chats_db))
-			ob.chat_img_path = NormPath(os.path.join(ob.path, self.folders['chat_img_folder']))
-			ob.preview_img_path = NormPath(os.path.join(ob.path, self.folders['preview_images']))
-			ob.status = self.list_projects[name]['status']
-			ob.project_database = self.list_projects[name]['project_database']
-			return ob
-		
-	def get_list_of_assets(self): # какая-то чушь!
-		pass
-		# self.assets_list - list of dictonary by self.asset_keys
-		self.assets_list = []
-		return(True, 'Ok')
-	
-	# возвращает список проектов - объекты.
+	# заполняет поля данного экземпляра list_active_projects, list_projects, dict_projects.
 	def get_list_of_projects(self): # v2
 		pass
-		list_projects = []
-		for pname in self.list_projects:
-			prj = self.get_project(pname, new=True)
-			list_projects.append(prj)
-		return(list_projects)
+		b, r = database().read('studio', self, self.projects_t, self.projects_keys)
+		if not b:
+			return(b,r)
+		
+		self.list_active_projects = [] # имена активных проектов
+		self.list_projects = [] # все проекты (объекты)
+		self.dict_projects = {} # все проекты (объекты) по именам.
+		
+		for item in r:
+			ob = self.init_by_keys(item)
+			self.list_projects.append(ob)
+			self.dict_projects[ob.name] = ob
+			if ob.status == 'active':
+				self.list_active_projects.append(ob)
+		#
+		return(True, 'Ok!')
 	
 	# переименование проекта, перезагружает studio.list_projects
 	# объект должен быть инициализирован
@@ -1429,8 +1234,7 @@ class project(studio):
 			return(bool_, rdata)
 		
 		self.name = new_name
-		self.get_list_projects()
-		
+		#		
 		return(True, 'Ok!')
 		
 	# удаляет проект из БД, перезагружает studio.list_projects, приводит объектк empty.
@@ -1442,7 +1246,6 @@ class project(studio):
 		bool_, return_data = database().delete('studio', self, self.projects_t, where=wh, table_root=self.projects_db)
 		
 		# to empty
-		self.get_list_projects()
 		for key in self.projects_keys:
 			setattr(self, key, False)
 		#
@@ -1450,7 +1253,7 @@ class project(studio):
 		
 	# меняет статус проекта
 	# объект должен быть инициализирован
-	def edit_status(self, status):
+	def edit_status(self, status): # v2
 		pass
 		# database
 		ud = {'status': status}
@@ -1460,10 +1263,10 @@ class project(studio):
 			return(bool_, return_data)
 		
 		self.status = status
-		self.get_list_projects()
+		#
 		return(True, 'Ok')
 		
-	def make_folders(self, root):
+	def __make_folders(self, root): # v2
 		for f in self.folders:
 			path = os.path.join(root, self.folders[f])
 			if not os.path.exists(path):
@@ -7734,7 +7537,7 @@ class set_of_tasks(studio):
 					read.close()
 			except Exception as e:
 				print('#'*5, e)
-				return(False, ("%s can not be read! Look The terminal!" % self.set_of_tasks_path))
+				return(False, ("%s can not be read! Look The terminal!" % path))
 			
 			for key in r_data:
 				item = r_data[key]
@@ -7802,38 +7605,7 @@ class set_of_tasks(studio):
 		if not name:
 			for key in self.set_of_tasks_keys:
 				setattr(self, key, False)
-		'''
-		# test data
-		if name == '':
-			return(False, 'Not Name!')
-			
-		# test exists path
-		if not os.path.exists(self.set_of_tasks_path):
-			return(False, (self.set_of_tasks_path + ' Not Found!'))
-			
-		# read data
-		try:
-			with open(self.set_of_tasks_path, 'r') as read:
-				data = json.load(read)
-				read.close()
-		except:
-			return(False, (self.set_of_tasks_path + " can not be read!"))
-			
-		if not name in data:
-			return(False, ('Set with name \"' + name + '\" Not Found!'))
 		
-		# del data
-		del data[name]
-		
-		# write data
-		try:
-			with open(self.set_of_tasks_path, 'w') as f:
-				jsn = json.dump(data, f, sort_keys=True, indent=4)
-				#print('data:', data)
-				f.close()
-		except:
-			return(False, (self.set_of_tasks_path + "  can not be write"))
-		'''
 		return(True, 'ok')
 	
 	# new_name (str) - новое имя сета
@@ -8001,35 +7773,6 @@ class set_of_tasks(studio):
 		except Exception as e:
 			print('***', e)
 			return(False, (path + "  can not be write"))
-		
-		return(True, 'ok')
-		
-	def load_from_library(self, load_data): # возможно больше не нужно / это сочетание get_list(path) + create()
-		pass
-		# Read Data
-		## -- test exists path
-		if not os.path.exists(self.set_of_tasks_path):
-			return(False, (self.set_of_tasks_path + ' Not Found!'))
-		## -- read data
-		try:
-			with open(self.set_of_tasks_path, 'r') as read:
-				data = json.load(read)
-				read.close()
-		except:
-			return(False, (self.set_of_tasks_path + " can not be read!"))
-		
-		# Edit Data
-		for key in load_data:
-			data[key] = load_data[key]
-		
-		
-		# Write Data
-		try:
-			with open(self.set_of_tasks_path, 'w') as f:
-				jsn = json.dump(data, f, sort_keys=True, indent=4)
-				f.close()
-		except:
-			return(False, (self.set_of_tasks_path + "  can not be write"))
 		
 		return(True, 'ok')
 		
