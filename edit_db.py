@@ -1133,8 +1133,9 @@ class project(studio):
 
 	def add_project(self, name, path): # v2
 		project_path = NormPath(path)
-		# test by name 
-		if name in self.list_projects.keys():
+		# test by name
+		self.get_list_of_projects()
+		if name in self.dict_projects.keys():
 			return(False, "This project name already exists!")
 		
 		# project_name, get project_path
