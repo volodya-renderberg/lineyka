@@ -1099,6 +1099,10 @@ class database():
 		return(True, 'Ok!')
 
 class project(studio):
+	list_active_projects = []
+	list_projects = []
+	dict_projects = {}
+	
 	def __init__(self):
 		pass
 		#base fields
@@ -1202,7 +1206,8 @@ class project(studio):
 		#
 		return True, 'ok'
 		
-	# заполняет поля данного экземпляра list_active_projects, list_projects, dict_projects.
+	# заполняет поля класса list_active_projects, list_projects, dict_projects.
+	@classmethod
 	def get_list_of_projects(self): # v2
 		pass
 		b, r = database().read('studio', self, self.projects_t, self.projects_keys)
@@ -1214,11 +1219,11 @@ class project(studio):
 		self.dict_projects = {} # все проекты (объекты) по именам.
 		
 		for item in r:
-			ob = self.init_by_keys(item)
+			ob = self().init_by_keys(item)
 			self.list_projects.append(ob)
 			self.dict_projects[ob.name] = ob
 			if ob.status == 'active':
-				self.list_active_projects.append(ob)
+				self.list_active_projects.append(ob.name)
 		#
 		return(True, 'Ok!')
 	
