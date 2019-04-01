@@ -93,9 +93,12 @@ class MainWindow(QtGui.QMainWindow):
 		self.selected_project = None # выбранный в таблице проект (объект)
 		self.set_of_tasks_list = None # список наборов (объекты) - заполняется в fill_set_of_tasks_table()
 		self.selected_set_of_tasks = None # выбранный в таблице set_of_tasks (объект)
+		self.selected_season = None # выбранный в таблице сезон season (объект)
 		
-		#
+		# CONSTANTS
+		self.SEASON_COLUMNS = ['name', 'status']
 		self.look_keys = ['nik_name','specialty','outsource','level']
+		
 		#self.current_project = False # удаляем.
 		self.current_group = False
 		self.type_editor = False
@@ -1447,9 +1450,6 @@ class MainWindow(QtGui.QMainWindow):
 		pass
 		self.project.get_list_of_projects() # ?
 		
-		if not self.project.list_projects:
-			return
-		
 		# get table data
 		columns = ('name', 'status', 'path')
 		num_row = len(self.project.list_projects)
@@ -1784,6 +1784,9 @@ class MainWindow(QtGui.QMainWindow):
 					newItem.setBackground(brush)
 	
 				table.setItem(i, j, newItem)
+				
+		table.resizeRowsToContents()
+		table.resizeColumnsToContents()
 				
 		table.itemDoubleClicked.connect(partial(self.pre_edit_set_of_tasks_ui, self.myWidget.studio_editor_table))
 		
@@ -2386,9 +2389,7 @@ class MainWindow(QtGui.QMainWindow):
 	def edit_ui_to_season_editor(self):
 		window = self.myWidget
 		table = window.studio_editor_table
-		self.season_columns = ('name', 'status')		
-
-		
+			
 		button01 = window.studio_butt_1
 		button02 = window.studio_butt_2
 		button03 = window.studio_butt_3
@@ -2424,7 +2425,7 @@ class MainWindow(QtGui.QMainWindow):
 			button03.clicked.disconnect()
 		except:
 			pass
-		button03.clicked.connect(partial(self.rename_season_ui, table))
+		button03.clicked.connect(self.rename_season_ui)
 		button04.setVisible(False)
 		button05.setVisible(False)
 		button06.setVisible(False)
@@ -2434,17 +2435,17 @@ class MainWindow(QtGui.QMainWindow):
 		button10.setVisible(False)
 		
 		# edit combobox
-		projects = ['-- select project --'] + self.list_active_projects
+		projects = ['-- select project --'] + self.project.list_active_projects
 		window.set_comboBox_01.setVisible(True)
 		window.set_comboBox_01.clear()
 		window.set_comboBox_01.addItems(projects)
-		if self.current_project:
-			window.set_comboBox_01.setCurrentIndex(projects.index(self.current_project))
+		if self.selected_project and self.selected_project.name:
+			window.set_comboBox_01.setCurrentIndex(projects.index(self.selected_project.name))
 		try:
 			window.set_comboBox_01.activated[str].disconnect()
 		except:
 			pass
-		window.set_comboBox_01.activated[str].connect(partial(self.fill_season_table, table))
+		window.set_comboBox_01.activated[str].connect(self.fill_season_table)
 		window.set_comboBox_02.setVisible(False)
 		window.set_comboBox_03.setVisible(False)
 		
@@ -2456,12 +2457,12 @@ class MainWindow(QtGui.QMainWindow):
 		table.setSelectionBehavior(QtGui.QAbstractItemView.SelectRows)
 		table.setSelectionMode(QtGui.QAbstractItemView.SingleSelection)
 		
-		self.clear_table()
 		self.reload_season_list(table)
 		
 	def default_state_season_table(self, table):
+		pass
 		# get table data
-		columns = self.season_columns
+		columns = self.SEASON_COLUMNS
 		num_row = 0
 		num_column = len(columns)
 		headers = columns
@@ -2477,43 +2478,44 @@ class MainWindow(QtGui.QMainWindow):
 		print('season table to default state')
 		
 	def reload_season_list(self, table):
-		# get project
-		if not self.current_project:
-			project = self.myWidget.set_comboBox_01.currentText()
-		else:
-			project = self.current_project
-		
+		pass
 		self.clear_table()
 		
-		if project == '-- select project --':
-			self.current_project = False
+		# get project
+		project_name = self.myWidget.set_comboBox_01.currentText()
+		print('*** reload_season_list()')
+				
+		if project_name == '-- select project --':
 			self.default_state_season_table(table)
 		else:
-			self.fill_season_table(table, project)
+			pass
+			self.fill_season_table(project_name)
 		
 	def fill_season_table(self, *args):
-		table = args[0]
-		project = args[1]
+		table = self.myWidget.studio_editor_table
+		project_name = args[0]
 		
-		if project == '-- select project --':
-			self.current_project = False
+		if project_name == '-- select project --':
+			self.selected_project = None
 			self.default_state_season_table(table)
 			return
 			
 		else:
-			self.current_project = project
-			self.project.get_project(project)
+			self.selected_project = self.project.dict_projects[project_name]
 			
 		# get table data
-		season = []
-		#copy = db.season()
-		#result = copy.get_list(project)
-		result = self.db_season.get_list(project)
+		seasons = None
+		self.db_season.project = self.selected_project
+		result = self.db_season.get_list()
 		if result[0]:
-			season = result[1]
+			seasons = result[1]
+			
+		if not seasons:
+			self.default_state_season_table(table)
+			return
 		
-		columns = self.season_columns
-		num_row = len(season)
+		columns = self.SEASON_COLUMNS
+		num_row = len(seasons)
 		num_column = len(columns)
 		headers = columns
 		
@@ -2523,30 +2525,52 @@ class MainWindow(QtGui.QMainWindow):
 		table.setHorizontalHeaderLabels(headers)
     
 		# fill table
-		for i, data in enumerate(season):
+		for i, data in enumerate(seasons):
 			for j,key in enumerate(headers):
 				newItem = QtGui.QTableWidgetItem()
-				newItem.setText(data[key])
+				newItem.setText(getattr(data, key))
 				if key == 'name':
 					color = self.season_color
 					brush = QtGui.QBrush(color)
 					newItem.setBackground(brush)
 	
+				newItem.season = data
 				table.setItem(i, j, newItem)
 				
 		#  edit label
-		self.myWidget.studio_editor_label.setText(('Season Editor / \"' + project + '\"'))
+		self.myWidget.studio_editor_label.setText(('Season Editor / "%s"' % project_name))
+		
+		table.setContextMenuPolicy(QtCore.Qt.CustomContextMenu)
+		table.customContextMenuRequested.connect(self._season_editor_context_menu)
 		
 		table.resizeRowsToContents()
 		table.resizeColumnsToContents()
 		
-		print('fill season table', result)
+		print('fill season table')
+		
+	def _season_editor_context_menu(self, pos):
+		pass
+		table = self.myWidget.studio_editor_table
+		item = table.currentItem()
+		#print(item.column_name)
+		menu = QtGui.QMenu(table)
+		menu_items = ['Rename']
+		for label in menu_items:
+			action = menu.addAction(label)
+			action.triggered.connect(partial(self._season_editor_context_menu_action, label, item))
+		menu.exec_(QtGui.QCursor.pos())
+		
+	def _season_editor_context_menu_action(self, label, item):
+		pass
+		if label=='Rename':
+			self.rename_season_ui(season=item.season)
 		
 	def new_season_ui(self):
+		pass
 		# get project
-		project = self.myWidget.set_comboBox_01.currentText()
-		if project == '-- select project --':
-			self.message('Not Project!', 3)
+		#project = self.myWidget.set_comboBox_01.currentText()
+		if not self.selected_project: #project == '-- select project --':
+			self.message('Project Not Specified!', 2)
 			return
 		
 		# widget
@@ -2557,10 +2581,10 @@ class MainWindow(QtGui.QMainWindow):
 		file.close()
 		
 		# edit widget
-		window.setWindowTitle(('Create Season to \"' + project + '\"'))
+		window.setWindowTitle(('Create Season to "%s"' % self.selected_project.name))
 		window.new_dialog_label.setText('Name of Season:')
 		window.new_dialog_cancel.clicked.connect(partial(self.close_window, window))
-		window.new_dialog_ok.clicked.connect(partial(self.new_season_action, window, project))
+		window.new_dialog_ok.clicked.connect(partial(self.new_season_action, window))
 				
 		# set modal window
 		window.setWindowModality(QtCore.Qt.WindowModal)
@@ -2570,9 +2594,11 @@ class MainWindow(QtGui.QMainWindow):
 		
 		print('new season ui')
 		
-	def new_season_action(self, window, project):
+	def new_season_action(self, window):
+		pass
 		#copy = db.season()
 		#result = copy.create(project, window.new_dialog_name.text())
+		self.db_season.project = self.selected_project
 		result = self.db_season.create(window.new_dialog_name.text())
 		
 		if not result[0]:
@@ -2583,34 +2609,23 @@ class MainWindow(QtGui.QMainWindow):
 		self.close_window(window)
 		print('new season action')
 		
-	def rename_season_ui(self, table):
+	def rename_season_ui(self, season=False):
+		pass
 		# get project
+		table = self.myWidget.studio_editor_table
 		project = self.myWidget.set_comboBox_01.currentText()
 		if project == '-- select project --':
-			self.message('Not Project!', 3)
-			return
-			
-		# get old season
-		column = table.columnCount()
-		name_column = None
-		for i in range(0, column):
-			head_item = table.horizontalHeaderItem(i)
-			if head_item.text() == 'name':
-				name_column = i
-				break
-		
-		# get selected rows
-		selected = table.selectedItems()
-		lists = []
-		for item in selected:
-			if item.column() == name_column:
-				lists.append(item.text())
-				
-		if lists == []:
-			self.message('Not Selected Season', 2)
+			self.message('Project not specified!', 3)
 			return
 		
-		name = lists[0]
+		if not season:
+			item = table.currentItem()
+			if not item:
+				self.message('No season selected!', 2)
+				return
+			self.selected_season = item.season
+		else:
+			self.selected_season=season
 		
 		
 		# widget
@@ -2621,11 +2636,11 @@ class MainWindow(QtGui.QMainWindow):
 		file.close()
 		
 		# edit widget
-		window.setWindowTitle(('Rename Season: \"' + name + '\"'))
-		window.new_dialog_label.setText('New Name of Season:')
-		window.new_dialog_name.setText(name)
+		window.setWindowTitle(('Rename Season: "%s"' % self.selected_season.name))
+		window.new_dialog_label.setText('New name of season:')
+		window.new_dialog_name.setText(self.selected_season.name)
 		window.new_dialog_cancel.clicked.connect(partial(self.close_window, window))
-		window.new_dialog_ok.clicked.connect(partial(self.rename_season_action, window, name))
+		window.new_dialog_ok.clicked.connect(partial(self.rename_season_action, window))
 				
 		# set modal window
 		window.setWindowModality(QtCore.Qt.WindowModal)
@@ -2634,24 +2649,25 @@ class MainWindow(QtGui.QMainWindow):
 		window.show()
 		print('rename season ui')
 	
-	def rename_season_action(self, window, name):
+	def rename_season_action(self, window):
+		pass
 		# get project
 		project = self.myWidget.set_comboBox_01.currentText()
 		if project == '-- select project --':
-			self.message('Not Project!', 2)
+			self.message('Project not specified!', 2)
 			return
 		
 		#new name
 		new_name = window.new_dialog_name.text()
 		if not new_name:
-			self.message('Not name!', 2)
+			self.message('"New name" not npecified!', 2)
 			return
-		elif name == new_name:
-			self.message('Name not changed!', 2)
+		elif self.selected_season.name == new_name:
+			self.message('"New name" matches existing one!', 2)
 			return
 				
 		# rename
-		result = self.db_season.rename(name, new_name)
+		result = self.selected_season.rename(new_name)
 		
 		if not result[0]:
 			self.message(result[1])

@@ -7839,7 +7839,7 @@ class season(studio):
 		
 		# проверка на совпадение имени
 		ob = self.init(name)
-		if ob:
+		if isinstance(ob, season):
 			return(False, 'Season with this name(%s) already exists!' % keys['name'])
 		
 		# -- write data
