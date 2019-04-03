@@ -7940,18 +7940,14 @@ class group(studio):
 	def init(self, group_name, new = True):
 		pass
 		# get keys
-		bool_, keys = self.get_by_name(group_name)
+		bool_, ob = self.get_by_name(group_name)
 		if not bool_:
-			return(bool_, keys)
+			return(bool_, ob)
 		
 		if new:
-			new_group = group(self.project)
-			for key in self.group_keys:
-				exec('new_group.%s = keys.get("%s")' % (key, key))
-			return new_group
+			return(ob)
 		else:
-			for key in self.group_keys:
-				exec('self.%s = keys.get("%s")' % (key, key))
+			self = ob
 			return(True, 'Ok!')
 		
 	# инициализация по словарю
