@@ -1109,10 +1109,6 @@ class project(studio):
 		for key in self.projects_keys:
 			exec('self.%s = False' % key)
 			
-		self.list_active_projects = [] # имена активных проектов
-		self.list_projects = [] # все проекты (объекты)
-		self.dict_projects = {} # все проекты (объекты) по именам.
-		
 		# constans
 		self.folders = {'assets':'assets', 'chat_img_folder':'.chat_images', 'preview_images': '.preview_images'}
 		
@@ -1142,7 +1138,7 @@ class project(studio):
 	def add_project(self, name, path): # v2
 		project_path = NormPath(path)
 		# test by name
-		self.get_list_of_projects()
+		self.get_list()
 		if name in self.dict_projects.keys():
 			return(False, "This project name already exists!")
 		
@@ -1211,25 +1207,31 @@ class project(studio):
 		return True, 'ok'
 		
 	# заполняет поля класса list_active_projects, list_projects, dict_projects.
-	@classmethod
-	def get_list_of_projects(self): # v2
+	def get_list(self): # v2
 		pass
 		b, r = database().read('studio', self, self.projects_t, self.projects_keys)
 		if not b:
 			return(b,r)
 		
-		self.list_active_projects = [] # имена активных проектов
-		self.list_projects = [] # все проекты (объекты)
-		self.dict_projects = {} # все проекты (объекты) по именам.
+		list_active_projects = [] # имена активных проектов
+		list_projects = [] # все проекты (объекты)
+		dict_projects = {} # все проекты (объекты) по именам.
 		
 		for item in r:
-			ob = self().init_by_keys(item)
-			self.list_projects.append(ob)
-			self.dict_projects[ob.name] = ob
+			ob = self.init_by_keys(item)
+			list_projects.append(ob)
+			dict_projects[ob.name] = ob
 			if ob.status == 'active':
-				self.list_active_projects.append(ob.name)
-		#
-		return(True, 'Ok!')
+				list_active_projects.append(ob.name)
+		
+		self.__fill_class_fields(list_active_projects, list_projects, dict_projects)
+		return(True, list_projects)
+	
+	@classmethod
+	def __fill_class_fields(self, list_active_projects, list_projects, dict_projects):
+		self.list_active_projects = list_active_projects
+		self.list_projects = list_projects
+		self.dict_projects = dict_projects
 	
 	# переименование проекта, перезагружает studio.list_projects
 	# объект должен быть инициализирован
