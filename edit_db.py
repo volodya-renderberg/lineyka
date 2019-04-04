@@ -1118,7 +1118,14 @@ class project(studio):
 		b, r = database().read('studio', self, self.projects_t, self.projects_keys, table_root=self.projects_db)
 		if not b:
 			return(b, r)
-		return(self.init_by_keys(r[0], new=new))
+		
+		for data in r:
+			if data['name'] == name:
+				return(self.init_by_keys(data, new=new))
+		if new:
+			return(None)
+		else:
+			return(False, 'Project with the same name "%s" does not exist!' % name)
         
 	def init_by_keys(self, keys, new=True): # v2
 		if new:
@@ -7790,6 +7797,10 @@ class set_of_tasks(studio):
 		
 class season(studio):
 	def __init__(self, project_ob):
+		seasons_list = []
+		dict_by_name = {}
+		dict_by_id = {}
+		
 		if not isinstance(project_ob, project):
 			raise Exception('in season.__init__() - Object is not the right type "%s", must be "project"' % project_ob.__class__.__name__)
 		self.project = project_ob
@@ -7856,23 +7867,50 @@ class season(studio):
 	
 	# status (str) - значения из ['all', 'active', 'none']
 	def get_list(self, status='all'):
+		pass
+	
+		#
 		if not status in ['all', 'active', 'none']:
 			return(False, 'This status (%s) is not correct.' % status)
-		if status =='active':
-			where = {'status': u'active'}
-		elif status=='none':
-			where = {'status': u'none'}
-		else:
-			where = False
+		
+		#
+		seasons_list = []
+		dict_by_name = {}
+		dict_by_id = {}
+		
+		where = False
 		# write season to db
-		bool_, r_data = database().read('project', self.project, self.season_t, self.season_keys, where=where, table_root=self.season_db)
-		if not bool_:
-			return(bool_, r_data)
-		# return
+		b, r = database().read('project', self.project, self.season_t, self.season_keys, where=where, table_root=self.season_db)
+		if not b:
+			return(b, r)
+		
+		#
+		for item in r:
+			ob = self.init_by_keys(item)
+			seasons_list.append.ob
+			dict_by_name[ob.name] = ob
+			dict_by_id[ob.id] = ob
+		
+		#
+		self.__fill_season_class_fields(seasons_list, dict_by_name, dict_by_id)
+		
 		seasons = []
-		for item in r_data:
-			seasons.append(self.init_by_keys(item))
+		for ob in seasons_list:
+			if status =='active' and ob.status == 'active':
+				seasons.append(ob)
+			elif status=='none' and ob.status == 'none':
+				seasons.append(ob)
+			elif status=='all':
+				seasons.append(ob)
+			else:
+				continue
 		return(True, seasons)
+	
+	@classmethod
+	def __fill_season_class_fields(self, seasons_list, dict_by_name, dict_by_id):
+		self.seasons_list = seasons_list
+		self.dict_by_name = dict_by_name
+		self.dict_by_id = dict_by_id
 
 	'''
 	def get_by_name(self, name):
