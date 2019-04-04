@@ -7887,7 +7887,7 @@ class season(studio):
 		#
 		for item in r:
 			ob = self.init_by_keys(item)
-			seasons_list.append.ob
+			seasons_list.append(ob)
 			dict_by_name[ob.name] = ob
 			dict_by_id[ob.id] = ob
 		
