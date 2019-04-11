@@ -71,7 +71,7 @@ class MainWindow(QtGui.QMainWindow):
 		self.db_workroom = db.workroom()
 		self.db_set_of_tasks = db.set_of_tasks()
 		self.project = db.project() # он же текущий проект
-		self.project.get_list_of_projects() # заполнение полей списков проектов.
+		self.project.get_list() # заполнение полей списков проектов.
 		# project level
 		self.db_season = db.season(self.project)
 		self.db_asset = db.asset(self.project)
@@ -94,9 +94,11 @@ class MainWindow(QtGui.QMainWindow):
 		self.set_of_tasks_list = None # список наборов (объекты) - заполняется в fill_set_of_tasks_table()
 		self.selected_set_of_tasks = None # выбранный в таблице set_of_tasks (объект)
 		self.selected_season = None # выбранный в таблице сезон season (объект)
+		self.selected_group = None # выбранная в таблице группа (объект)
 		
 		# CONSTANTS
 		self.SEASON_COLUMNS = ['name', 'status']
+		self.GROUP_COLUMNS = ['name', 'type', 'comment', 'season']
 		self.look_keys = ['nik_name','specialty','outsource','level']
 		
 		#self.current_project = False # удаляем.
@@ -530,7 +532,7 @@ class MainWindow(QtGui.QMainWindow):
 		
 		bool_, r_data = self.db_workroom.name_list_to_id_list(wr_name_list)
 		if not bool_:
-			self.message(rdata, 2)
+			self.message(r_data, 2)
 			return
 		wr_id_list=r_data
 		
@@ -1448,7 +1450,7 @@ class MainWindow(QtGui.QMainWindow):
 		
 	def fill_project_table(self, table):
 		pass
-		self.project.get_list_of_projects() # ?
+		self.project.get_list() # ?
 		
 		# get table data
 		columns = ('name', 'status', 'path')
@@ -2682,8 +2684,6 @@ class MainWindow(QtGui.QMainWindow):
 		window = self.myWidget
 		table = window.studio_editor_table
 		
-		self.group_columns = ('name', 'type', 'comment', 'season')
-		
 		button01 = window.studio_butt_1
 		button02 = window.studio_butt_2
 		button03 = window.studio_butt_3
@@ -2705,7 +2705,7 @@ class MainWindow(QtGui.QMainWindow):
 			button01.clicked.disconnect()
 		except:
 			pass
-		button01.clicked.connect(partial(self.reload_group_list, table))
+		button01.clicked.connect(self.fill_group_table)
 		button02.setVisible(True)
 		button02.setText('Create')
 		try:
@@ -2742,17 +2742,17 @@ class MainWindow(QtGui.QMainWindow):
 		
 		# edit combobox
 		# -- get project list
-		projects = ['-- select project --'] + self.list_active_projects
+		projects = ['-- select project --'] + self.project.list_active_projects
 		window.set_comboBox_01.setVisible(True)
 		window.set_comboBox_01.clear()
 		window.set_comboBox_01.addItems(projects)
-		if self.current_project:
-			window.set_comboBox_01.setCurrentIndex(projects.index(self.current_project))
+		if self.selected_project and self.selected_project.name:
+			window.set_comboBox_01.setCurrentIndex(projects.index(self.selected_project.name))
 		try:
 			window.set_comboBox_01.activated[str].disconnect()
 		except:
 			pass
-		window.set_comboBox_01.activated[str].connect(partial(self.fill_group_table, table))
+		window.set_comboBox_01.activated[str].connect(self.fill_group_table)
 		# -- get type of asset list
 		window.set_comboBox_02.setVisible(True)
 		window.set_comboBox_02.clear()
@@ -2761,7 +2761,7 @@ class MainWindow(QtGui.QMainWindow):
 			window.set_comboBox_02.activated[str].disconnect()
 		except:
 			pass
-		window.set_comboBox_02.activated[str].connect(partial(self.fill_group_table, table, 'get_project'))
+		window.set_comboBox_02.activated[str].connect(self.fill_group_table)
 		window.set_comboBox_03.setVisible(False)
 		self.myWidget.group_search_qline.setVisible(False)
 		
@@ -2773,15 +2773,16 @@ class MainWindow(QtGui.QMainWindow):
 		table.setSelectionBehavior(QtGui.QAbstractItemView.SelectRows)
 		table.setSelectionMode(QtGui.QAbstractItemView.SingleSelection)
 		
-		self.clear_table()
-		if not self.current_project:
+		if not self.selected_project:
 			self.default_state_group_table(table)
 		else:
-			self.fill_group_table(table, self.current_project)
+			self.fill_group_table()
 		
 	def default_state_group_table(self, table):
+		pass
+		self.clear_table()
 		# get table data
-		columns = self.group_columns
+		columns = self.GROUP_COLUMNS
 		num_row = 0
 		num_column = len(columns)
 		headers = columns
@@ -2797,42 +2798,38 @@ class MainWindow(QtGui.QMainWindow):
 		print('default state group table')
 		
 	def fill_group_table(self, *args):
+		pass
+		table = self.myWidget.studio_editor_table
+		self.clear_table()
+		
 		# ge filter    window.set_comboBox_02.addItems((['-all types-']
 		f = self.myWidget.set_comboBox_02.currentText()
 		if f == '-all types-':
 			f = False
 		
-		table = args[0]
-		project = args[1]
-		
-		# get project
-		if project == 'get_project':
-			if not self.current_project:
-				self.message('Not Current project!', 2)
-				return
-			else:
-				project = self.current_project
-		elif project == '-- select project --':
-			self.current_project = False
+		if self.myWidget.set_comboBox_01.currentText() == '-- select project --':
+			self.selected_project = None
 			self.default_state_group_table(table)
 			return
 		else:
-			self.current_project = project
-			self.project.get_project(self.current_project)
-			
+			self.selected_project = self.project.dict_projects[self.myWidget.set_comboBox_01.currentText()]
+			self.db_season.project = self.selected_project
+			self.db_season.get_list()
+		
 		# get table data
+		self.db_group.project = self.selected_project
 		groups = []
-		result = self.db_group.get_list()
+		b, r = self.db_group.get_list()
+		if not b:
+			self.message(r, 2)
+			return
 		
-		if result[0]:
-			if f:
-				for group in result[1]:
-					if group['type'] == f:
-						groups.append(group)
-			else:
-				groups = result[1]
+		if f:
+			groups = self.db_group.dict_by_type[f]
+		else:
+			groups = self.db_group.list_group
 		
-		columns = self.group_columns
+		columns = self.GROUP_COLUMNS
 		num_row = len(groups)
 		num_column = len(columns)
 		headers = columns
@@ -2843,23 +2840,21 @@ class MainWindow(QtGui.QMainWindow):
 		table.setHorizontalHeaderLabels(headers)
     
 		# fill table
-		for i, data in enumerate(groups):
+		for i, ob in enumerate(groups):
 			for j,key in enumerate(headers):
 				newItem = QtGui.QTableWidgetItem()
-				newItem.setText(data[key])
+				newItem.setText(getattr(ob, key))
 				if key == 'name':
 					color = self.group_color
 					brush = QtGui.QBrush(color)
 					newItem.setBackground(brush)
 				elif key == 'season':
-					#copy = db.season()
-					#data_ = copy.get_by_id(project, data[key])
-					data_ = self.db_season.get_by_id(data[key])
-					if data_[0] and data_[1]: # может вернуть пустой список
-						newItem.setText(data_[1]['name'])
+					if ob.season:
+						newItem.setText(self.db_season.dict_by_id[ob.season].name)
 					else:
-						print(data_[1])
-				newItem.group = data
+						#print(r)
+						pass
+				newItem.group = ob
 				table.setItem(i, j, newItem)
 				
 		# disconnect table
@@ -2868,31 +2863,22 @@ class MainWindow(QtGui.QMainWindow):
 		except:
 			pass
 		# connect table
-		#self.myWidget.studio_editor_table.itemClicked.connect(self.set_context_group)
 		self.myWidget.studio_editor_table.itemDoubleClicked.connect(self.edit_ui_to_group_content_editor)
 				
 		#  edit label
-		self.myWidget.studio_editor_label.setText(('Group Editor / \"' + project + '\"'))
+		self.myWidget.studio_editor_label.setText(('Group Editor / "%s"' % self.db_group.project.name))
 		
 		table.resizeRowsToContents()
 		table.resizeColumnsToContents()
 		
 		print('fill group table')
 		
-	def set_context_group(self, item):
-		self.current_group = item.group
-		
-	def reload_group_list(self, table):
-		self.clear_table()
-		project = self.myWidget.set_comboBox_01.currentText()
-		self.fill_group_table(table, project)
-		#print('reload group list')
-		
 	def new_group_ui(self):
-		# get project
-		project = self.myWidget.set_comboBox_01.currentText()
-		if project == '-- select project --':
-			self.message('Not Project!', 3)
+		pass
+	
+		#
+		if self.myWidget.set_comboBox_01.currentText() == '-- select project --':
+			self.message('No project selected!', 2)
 			return
 		
 		# widget
@@ -2903,7 +2889,7 @@ class MainWindow(QtGui.QMainWindow):
 		file.close()
 		
 		# edit widget
-		window.setWindowTitle(('Create Group to \"' + project + '\"'))
+		window.setWindowTitle(('Create Group to "%s"' % self.selected_project.name))
 		window.new_dialog_label.setText('Name of Group:')
 		window.new_dialog_comment_label.setText('Comment:')
 		window.new_dialog_label_2.setText('Type:')
@@ -2913,11 +2899,9 @@ class MainWindow(QtGui.QMainWindow):
 		window.new_dialog_ok.clicked.connect(partial(self.new_group_action, window))
 		
 		# edit comobox
-		#copy = db.studio()
-		copy = self.db_studio
-		types = ['-- select type --'] + copy.asset_types
+		types = ['-- select type --'] +  self.db_studio.asset_types
 		window.new_dialog_combo_box_2.addItems(types)
-		window.new_dialog_combo_box_2.activated[str].connect(partial(self.new_group_ui_season_activation, window, project))
+		window.new_dialog_combo_box_2.activated[str].connect(partial(self.new_group_ui_season_activation, window))
 		
 		# set modal window
 		window.setWindowModality(QtCore.Qt.WindowModal)
@@ -2928,12 +2912,9 @@ class MainWindow(QtGui.QMainWindow):
 		
 	def new_group_ui_season_activation(self, *args):
 		window = args[0]
-		project = args[1]
-		type_ = args[2]
+		type_ = args[1]
 		
-		self.season_current_data = {}
-		
-		#copy = db.season()
+		self.db_season.project = self.selected_project
 		
 		#if type_ in copy.asset_types_with_season:
 		if type_ in self.db_season.asset_types_with_season:
@@ -2941,14 +2922,12 @@ class MainWindow(QtGui.QMainWindow):
 			
 			season = ['-- select season --']
 			#result = copy.get_list(project)
-			result = self.db_season.get_list(project)
-			if result[0]:
-				for data in result[1]:
-					season.append(data['name'])
-					self.season_current_data[data['name']] = data['id']
-				print(self.season_current_data)
+			b , r = self.db_season.get_list()
+			if b:
+				for ob in r:
+					season.append(ob.name)
 			else:
-				print(result)
+				print(r)
 			window.new_dialog_combo_box_3.clear()
 			window.new_dialog_combo_box_3.addItems(season)
 			
@@ -2957,13 +2936,14 @@ class MainWindow(QtGui.QMainWindow):
 		
 		print('season activation')
 		
-	def new_group_action(self, window): #project
+	def new_group_action(self, window):
+		pass
 		# get name, comment
 		name = 	window.new_dialog_name.text()
 		comment = window.new_dialog_comment.text()
 		
-		if name == '':
-			self.message('Not Name!', 3)
+		if not name:
+			self.message('Group name not specified!', 2)
 			return
 			
 		# get type
@@ -2977,14 +2957,14 @@ class MainWindow(QtGui.QMainWindow):
 		if type_ in self.db_group.asset_types_with_season:
 			season_name = window.new_dialog_combo_box_3.currentText()
 			if season_name == '-- select season --':
-				self.message('Not Season', 3)
+				self.message('Season not specified', 2)
 				return
 					
 		# create group
 		# -- get season id
 		season_id = ''
 		try:
-			season_id = self.season_current_data[season_name]
+			season_id = self.db_season.dict_by_name[season_name].id
 		except:
 			pass
 		
@@ -2998,23 +2978,28 @@ class MainWindow(QtGui.QMainWindow):
 		#result = copy.create(project, keys)
 		result = self.db_group.create(keys)
 		if not result[0]:
-			self.message(result[1], 2)
+			self.message(result[1], 3)
 			return
 		
-		self.fill_group_table(self.myWidget.studio_editor_table, self.current_project)
+		self.fill_group_table()
 		self.close_window(window)
 		print('new group action')
 		
 	def rename_group_ui(self, table):
+		pass
 		# get project
-		project = self.myWidget.set_comboBox_01.currentText()
-		if project == '-- select project --':
-			self.message('Not Project!', 3)
+		project_name = self.myWidget.set_comboBox_01.currentText()
+		#
+		if project_name == '-- select project --':
+			self.message('No project selected!', 2)
 			return
 		
-		name = table.selectedItems()[0].group['name']
-		group_id = table.selectedItems()[0].group['id']
+		if not table.selectedItems():
+			self.message('No group selected!', 2)
+			return
 		
+		self.selected_group = table.selectedItems()[0].group
+		name = self.selected_group.name
 		# widget
 		loader = QtUiTools.QUiLoader()
 		file = QtCore.QFile(self.new_dialog_path)
@@ -3023,11 +3008,11 @@ class MainWindow(QtGui.QMainWindow):
 		file.close()
 		
 		# edit widget
-		window.setWindowTitle(('Rename Group: \"' + name + '\"'))
+		window.setWindowTitle(('Rename Group: "%s"' % name))
 		window.new_dialog_label.setText('New Name of Group:')
 		window.new_dialog_name.setText(name)
 		window.new_dialog_cancel.clicked.connect(partial(self.close_window, window))
-		window.new_dialog_ok.clicked.connect(partial(self.rename_group_action, window, group_id, project))
+		window.new_dialog_ok.clicked.connect(partial(self.rename_group_action, window))
 				
 		# set modal window
 		window.setWindowModality(QtCore.Qt.WindowModal)
@@ -3037,7 +3022,7 @@ class MainWindow(QtGui.QMainWindow):
 		
 		print('rename group ui')
 		
-	def rename_group_action(self, window, group_id, project):
+	def rename_group_action(self, window):
 		# get name
 		new_name = window.new_dialog_name.text()
 				
@@ -5001,7 +4986,7 @@ class MainWindow(QtGui.QMainWindow):
 	def tm_fill_project_list(self):
 		pass	
 		
-		self.project.get_list_of_projects() # ??????
+		self.project.get_list() # ??????
 				
 		if not self.artist.nik_name:
 			self.message('Not User!', 2)
