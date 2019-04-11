@@ -2987,10 +2987,8 @@ class MainWindow(QtGui.QMainWindow):
 		
 	def rename_group_ui(self, table):
 		pass
-		# get project
-		project_name = self.myWidget.set_comboBox_01.currentText()
 		#
-		if project_name == '-- select project --':
+		if self.myWidget.set_comboBox_01.currentText() == '-- select project --':
 			self.message('No project selected!', 2)
 			return
 		
@@ -3023,54 +3021,40 @@ class MainWindow(QtGui.QMainWindow):
 		print('rename group ui')
 		
 	def rename_group_action(self, window):
+		pass
 		# get name
 		new_name = window.new_dialog_name.text()
 				
 		if new_name == '':
-			self.message('Not Name!', 3)
+			self.message('New name not specified!', 2)
+			return
+		elif new_name in self.selected_group.dict_by_name.keys():
+			self.message('A group with that name "%s" already exists!' % new_name, 2)
 			return
 			
-		result = self.db_group.rename(group_id, new_name)
+		result = self.selected_group.rename(new_name)
 		if not result[0]:
-			self.message('Could not rename the group, see details in the console', 2)
+			self.message('Could not rename the group, see details in the console', 3)
 			print('*'*25, result[1])
 			return
 		
+		self.fill_group_table()
 		self.close_window(window)
-		self.fill_group_table(self.myWidget.studio_editor_table, project)
 		print('rename group action')
 		
 	def edit_comment_group_ui(self, table):
-		# get project
-		project = self.myWidget.set_comboBox_01.currentText()
-		if project == '-- select project --':
-			self.message('Not Project!', 3)
+		pass
+		#
+		if self.myWidget.set_comboBox_01.currentText() == '-- select project --':
+			self.message('No project selected!', 2)
 			return
-			
-		# get old season
-		column = table.columnCount()
-		columns = {}
-		for i in range(0, column):
-			head_item = table.horizontalHeaderItem(i)
-			if head_item.text() == 'comment':
-				columns['comment_column'] = i
-			elif head_item.text() == 'name':
-				columns['name_column'] = i
-				
 		
-		# -- name and comment
-		selected = table.selectedItems()
-		name = None
-		comment = None
-		for item in selected:
-			if item.column() == columns['name_column']:
-				name = item.text()
-			elif item.column() == columns['comment_column']:
-				comment = item.text()
-				
-		if not name:
-			self.message('Not Selected Season', 2)
+		if not table.selectedItems():
+			self.message('No group selected!', 2)
 			return
+				
+		self.selected_group = table.selectedItems()[0].group
+		comment = self.selected_group.comment
 		
 		# widget
 		loader = QtUiTools.QUiLoader()
@@ -3080,12 +3064,12 @@ class MainWindow(QtGui.QMainWindow):
 		file.close()
 		
 		# edit widget
-		window.setWindowTitle(('Edit Comment Group: \"' + name + '\"'))
+		window.setWindowTitle(('Edit Comment Group: "%s"' % self.selected_group.name))
 		window.new_dialog_label.setText('New Comment:')
 		if comment:
 			window.new_dialog_name.setText(comment)
 		window.new_dialog_cancel.clicked.connect(partial(self.close_window, window))
-		window.new_dialog_ok.clicked.connect(partial(self.edit_comment_group_action, window, name, project))
+		window.new_dialog_ok.clicked.connect(partial(self.edit_comment_group_action, window))
 				
 		# set modal window
 		window.setWindowModality(QtCore.Qt.WindowModal)
@@ -3095,20 +3079,21 @@ class MainWindow(QtGui.QMainWindow):
 		
 		print('edit comment group ui')
 		
-	def edit_comment_group_action(self, window, name, project):
+	def edit_comment_group_action(self, window):
+		pass
 		# get comment
 		comment = window.new_dialog_name.text()
 		
 		# edit comment
 		#copy = db.group()
 		#result = copy.edit_comment_by_name(project, name, comment)
-		result = self.db_group.edit_comment_by_name(name, comment)
+		result = self.selected_group.edit_comment(comment)
 		if not result[0]:
 			self.message(result[1], 2)
 			return
 		
+		self.fill_group_table()
 		self.close_window(window)
-		self.fill_group_table(self.myWidget.studio_editor_table, project)
 		print('edit comment group action')
 		
 	# ******************* ASSET EDITOR
