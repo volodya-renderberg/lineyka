@@ -98,7 +98,7 @@ class MainWindow(QtGui.QMainWindow):
 		
 		# CONSTANTS
 		self.SEASON_COLUMNS = ['name', 'status']
-		self.GROUP_COLUMNS = ['name', 'type', 'comment', 'season']
+		self.GROUP_COLUMNS = ['name', 'type', 'description', 'season']
 		self.look_keys = ['nik_name','specialty','outsource','level']
 		
 		#self.current_project = False # удаляем.
@@ -2719,14 +2719,14 @@ class MainWindow(QtGui.QMainWindow):
 			button03.clicked.disconnect()
 		except:
 			pass
-		button03.clicked.connect(partial(self.rename_group_ui, table))
+		button03.clicked.connect(self.rename_group_ui)
 		button04.setVisible(True)
-		button04.setText('Edit Comment')
+		button04.setText('Edit Description')
 		try:
 			button04.clicked.disconnect()
 		except:
 			pass
-		button04.clicked.connect(partial(self.edit_comment_group_ui, table))
+		button04.clicked.connect(self.edit_description_group_ui)
 		button05.setVisible(True)
 		button05.setText('Asset List')
 		try:
@@ -2871,7 +2871,31 @@ class MainWindow(QtGui.QMainWindow):
 		table.resizeRowsToContents()
 		table.resizeColumnsToContents()
 		
+		table.setContextMenuPolicy(QtCore.Qt.CustomContextMenu)
+		table.customContextMenuRequested.connect(self._group_editor_context_menu)
+		
 		print('fill group table')
+		
+	def _group_editor_context_menu(self, pos):
+		pass
+		#print(pos.__reduce__())
+		table = self.myWidget.studio_editor_table
+		#print(item.column_name)
+		menu = QtGui.QMenu(table)
+		menu_items = ['Rename', 'Edit Description', 'Asset List']
+		for label in menu_items:
+			action = menu.addAction(label)
+			action.triggered.connect(partial(self._group_editor_context_menu_action, label))
+		menu.exec_(QtGui.QCursor.pos())
+		
+	def _group_editor_context_menu_action(self, label):
+		pass
+		if label=='Rename':
+			self.rename_group_ui()
+		elif label=='Edit Description':
+			self.edit_description_group_ui()
+		elif label=='Asset List':
+			self.pre_edit_ui_to_group_content_editor()
 		
 	def new_group_ui(self):
 		pass
@@ -2891,7 +2915,7 @@ class MainWindow(QtGui.QMainWindow):
 		# edit widget
 		window.setWindowTitle(('Create Group to "%s"' % self.selected_project.name))
 		window.new_dialog_label.setText('Name of Group:')
-		window.new_dialog_comment_label.setText('Comment:')
+		window.new_dialog_comment_label.setText('description:')
 		window.new_dialog_label_2.setText('Type:')
 		window.new_dialog_label_3.setText('Season:')
 		window.new_dialog_frame_3.setVisible(False)
@@ -2938,12 +2962,15 @@ class MainWindow(QtGui.QMainWindow):
 		
 	def new_group_action(self, window):
 		pass
-		# get name, comment
+		# get name, description
 		name = 	window.new_dialog_name.text()
-		comment = window.new_dialog_comment.text()
+		description = window.new_dialog_comment.text()
 		
 		if not name:
 			self.message('Group name not specified!', 2)
+			return
+		elif name in self.db_group.dict_by_name.keys():
+			self.message('A group with that name "%s" already exists!' % name, 2)
 			return
 			
 		# get type
@@ -2971,7 +2998,7 @@ class MainWindow(QtGui.QMainWindow):
 		keys = {
 		'name': name,
 		'type': type_,
-		'comment': comment,
+		'description': description,
 		'season': season_id,
 		}
 		
@@ -2985,8 +3012,9 @@ class MainWindow(QtGui.QMainWindow):
 		self.close_window(window)
 		print('new group action')
 		
-	def rename_group_ui(self, table):
+	def rename_group_ui(self, group=False):
 		pass
+		table = self.myWidget.studio_editor_table
 		#
 		if self.myWidget.set_comboBox_01.currentText() == '-- select project --':
 			self.message('No project selected!', 2)
@@ -2996,7 +3024,10 @@ class MainWindow(QtGui.QMainWindow):
 			self.message('No group selected!', 2)
 			return
 		
-		self.selected_group = table.selectedItems()[0].group
+		if not group:
+			self.selected_group = table.selectedItems()[0].group
+		else:
+			self.selected_group = group
 		name = self.selected_group.name
 		# widget
 		loader = QtUiTools.QUiLoader()
@@ -3025,7 +3056,7 @@ class MainWindow(QtGui.QMainWindow):
 		# get name
 		new_name = window.new_dialog_name.text()
 				
-		if new_name == '':
+		if not new_name:
 			self.message('New name not specified!', 2)
 			return
 		elif new_name in self.selected_group.dict_by_name.keys():
@@ -3042,8 +3073,9 @@ class MainWindow(QtGui.QMainWindow):
 		self.close_window(window)
 		print('rename group action')
 		
-	def edit_comment_group_ui(self, table):
+	def edit_description_group_ui(self, group=False):
 		pass
+		table = self.myWidget.studio_editor_table
 		#
 		if self.myWidget.set_comboBox_01.currentText() == '-- select project --':
 			self.message('No project selected!', 2)
@@ -3053,8 +3085,11 @@ class MainWindow(QtGui.QMainWindow):
 			self.message('No group selected!', 2)
 			return
 				
-		self.selected_group = table.selectedItems()[0].group
-		comment = self.selected_group.comment
+		if not group:
+			self.selected_group = table.selectedItems()[0].group
+		else:
+			self.selected_group = group
+		description = self.selected_group.description
 		
 		# widget
 		loader = QtUiTools.QUiLoader()
@@ -3064,12 +3099,12 @@ class MainWindow(QtGui.QMainWindow):
 		file.close()
 		
 		# edit widget
-		window.setWindowTitle(('Edit Comment Group: "%s"' % self.selected_group.name))
-		window.new_dialog_label.setText('New Comment:')
-		if comment:
-			window.new_dialog_name.setText(comment)
+		window.setWindowTitle(('Edit Description Group: "%s"' % self.selected_group.name))
+		window.new_dialog_label.setText('New Description:')
+		if description:
+			window.new_dialog_name.setText(description)
 		window.new_dialog_cancel.clicked.connect(partial(self.close_window, window))
-		window.new_dialog_ok.clicked.connect(partial(self.edit_comment_group_action, window))
+		window.new_dialog_ok.clicked.connect(partial(self.edit_description_group_action, window))
 				
 		# set modal window
 		window.setWindowModality(QtCore.Qt.WindowModal)
@@ -3077,24 +3112,24 @@ class MainWindow(QtGui.QMainWindow):
 		
 		window.show()		
 		
-		print('edit comment group ui')
+		print('edit description group ui')
 		
-	def edit_comment_group_action(self, window):
+	def edit_description_group_action(self, window):
 		pass
-		# get comment
-		comment = window.new_dialog_name.text()
+		# get description
+		description = window.new_dialog_name.text()
 		
-		# edit comment
+		# edit description
 		#copy = db.group()
-		#result = copy.edit_comment_by_name(project, name, comment)
-		result = self.selected_group.edit_comment(comment)
+		#result = copy.edit_description_by_name(project, name, description)
+		result = self.selected_group.edit_description(description)
 		if not result[0]:
 			self.message(result[1], 2)
 			return
 		
 		self.fill_group_table()
 		self.close_window(window)
-		print('edit comment group action')
+		print('edit description group action')
 		
 	# ******************* ASSET EDITOR
 	
@@ -3114,7 +3149,7 @@ class MainWindow(QtGui.QMainWindow):
 		# get project
 		self.current_project = window.set_comboBox_01.currentText()
 		self.project.get_project(self.current_project)
-		self.asset_columns = ('icon', 'name', 'comment', 'priority', 'type')
+		self.asset_columns = ('icon', 'name', 'description', 'priority', 'type')
 		
 		button01 = window.studio_butt_1
 		button02 = window.studio_butt_2
@@ -3886,7 +3921,7 @@ class MainWindow(QtGui.QMainWindow):
 			self.load_asset_types = ['camera', 'light', 'shot_animation']
 		
 		self.type_editor = type_editor
-		self.location_columns = ('name', 'type', 'comment', 'season')
+		self.location_columns = ('name', 'type', 'description', 'season')
 		
 		button01 = window.studio_butt_1
 		button02 = window.studio_butt_2

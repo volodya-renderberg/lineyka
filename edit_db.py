@@ -146,7 +146,7 @@ class studio:
 	'type': 'text',
 	'season': 'text',
 	'priority': 'integer',
-	'comment': 'text',
+	'description': 'text',
 	'content': 'text',
 	'id': 'text',
 	'status': 'text',
@@ -196,14 +196,14 @@ class studio:
 	'type': 'json'
 	}
 	
-	# activity, task_name, action, date_time, comment, version, artist
+	# activity, task_name, action, date_time, description, version, artist
 	'''
 	logs_keys = [
 	('activity', 'text'),
 	('task_name', 'text'),
 	('action', 'text'),
 	('date_time', 'timestamp'),
-	('comment', 'text'),
+	('description', 'text'),
 	('version', 'text'),
 	('artist', 'text')
 	]
@@ -287,7 +287,7 @@ class studio:
 	'name': 'text',
 	'type': 'text',
 	'season': 'text',
-	'comment': 'text',
+	'description': 'text',
 	'id': 'text',
 	}
 	
@@ -310,7 +310,7 @@ class studio:
 	'task_name': 'text',
 	'action': 'text',
 	'artist': 'text',
-	'comment': 'text',
+	'description': 'text',
 	}
 	
 	init_folder = '.lineyka'
@@ -2514,7 +2514,7 @@ class task(studio):
 	
 	self.read_task(project_name, task_name, [keys]) - return data (True/False, {key: data, ...}/error) ;; error: (not_project, not_task_name) 
 	
-	self.edit_status_to_output(project_name, task_name) - (run from edit_task() on status change for 'ready') ;; changes the status of the all outgoing tasks from 'null' to 'ready';; return (True/False, 'ok'/'ather comment')
+	self.edit_status_to_output(project_name, task_name) - (run from edit_task() on status change for 'ready') ;; changes the status of the all outgoing tasks from 'null' to 'ready';; return (True/False, 'ok'/'ather description')
 		
 	'''
 	
@@ -5576,8 +5576,8 @@ class task(studio):
 				
 		# (1)
 		if task_data['task_type'] != 'service':
-			comment = 'In task.service_add_list_to_input() - incorrect type!\nThe type of task to be changed must be "service".\nThis type: "%s"' % task_data['task_type']
-			return(False, comment)
+			description = 'In task.service_add_list_to_input() - incorrect type!\nThe type of task to be changed must be "service".\nThis type: "%s"' % task_data['task_type']
+			return(False, description)
 		
 		# (2)
 		# add input list
@@ -5712,8 +5712,8 @@ class task(studio):
 				
 		# (2)
 		if task_data['task_type'] != 'service':
-			comment = 'In task.service_add_list_to_input_from_asset_list() - incorrect type!\nThe type of task to be changed must be "service".\nThis type: "%s"' % task_data['task_type']
-			return(False, comment)
+			description = 'In task.service_add_list_to_input_from_asset_list() - incorrect type!\nThe type of task to be changed must be "service".\nThis type: "%s"' % task_data['task_type']
+			return(False, description)
 		
 		# (3)
 		final_tasks_list = []
@@ -5833,8 +5833,8 @@ class task(studio):
 		
 		# (1)
 		if task_data['task_type'] != 'service':
-			comment = 'In task.service_remove_task_from_input() - incorrect type!\nThe type of task being cleared, must be "service".\nThis type: "%s"' % task_data['task_type']
-			return(False, comment)
+			description = 'In task.service_remove_task_from_input() - incorrect type!\nThe type of task being cleared, must be "service".\nThis type: "%s"' % task_data['task_type']
+			return(False, description)
 		
 		# (2)
 		# get input_list
@@ -6143,7 +6143,7 @@ class log(studio):
 	'''
 	write_log(project_name, task_name, {key: data, ...}) 
 	
-	read_log(project_name, asset_name, {key: key_name, ...});; example: self.read_log(project, asset, {'activity':'rig_face', 'action':'push'});; return: (True, ({key: data, ...}, {key: data, ...}, ...))  or (False, comment)
+	read_log(project_name, asset_name, {key: key_name, ...});; example: self.read_log(project, asset, {'activity':'rig_face', 'action':'push'});; return: (True, ({key: data, ...}, {key: data, ...}, ...))  or (False, description)
 	
 	'''
 	
@@ -6162,17 +6162,17 @@ class log(studio):
 	
 	# запись лога для задачи
 	# self.task - должен быть инициализирован
-	# logs_keys (dict) - словарь по studio.logs_keys - обязательные ключи: comment, version, action
+	# logs_keys (dict) - словарь по studio.logs_keys - обязательные ключи: description, version, action
 	# artist (bool/artist) - если False - значит создаётся новый объект artist и определяется текущий пользователь.
 	def write_log(self, logs_keys, artist_ob=False): # v2 - процедура бывшая notes_log 
 		pass
-		# 1 - тест обязательных полей: comment, version, action
+		# 1 - тест обязательных полей: description, version, action
 		# 2 - чтение artist
 		# 3 - заполнение полей task_name, date_time, artist
 		# 4 - запись БД
 		
 		# (1)
-		for item in ["comment", "version", "action"]:
+		for item in ["description", "version", "action"]:
 			if not logs_keys.get(item):
 				return(False, 'in log.write_log() - no "%s" submitted!' % item)
 		
@@ -6347,14 +6347,14 @@ class log(studio):
 	
 	# *** CAMERA LOGS ***
 	# artist_ob - (artist) - объект artist, его никнейм записывается в лог.
-	# comment (str) - комментарий
+	# description (str) - комментарий
 	# version (str/int) - номер версии <= 9999
 	# task_data (bool/dict) - если False - значит читается self.task, если передаётся, то только задача данного ассета.
-	def camera_write_log(self, artist_ob, comment, version, task_data=False): # v2 - возможно нужна поверка существования версии ?
+	def camera_write_log(self, artist_ob, description, version, task_data=False): # v2 - возможно нужна поверка существования версии ?
 		pass
 		# 0 - проверка user
 		# 1 - заполнение task_data
-		# 2 - тест обязательных полей: comment, version
+		# 2 - тест обязательных полей: description, version
 		# 3 - заполнение logs_keys
 		# 4 - запись json
 		
@@ -6374,7 +6374,7 @@ class log(studio):
 				return(False, 'in log.camera_write_log() - transferred "task_data" is not from the correct asset: transferred: "%s", required: "%s"' % (taks_data['asset_name'], self.task.asset.name))
 				
 		# (2)
-		for item in [comment, version]:
+		for item in [description, version]:
 			if not item:
 				return(False, '"%s" parameter not passed!' % item)
 		
@@ -6385,7 +6385,7 @@ class log(studio):
 				logs_keys[key] = task_data[key]
 		
 		str_version = '%04d' % int(version)
-		logs_keys['comment'] = comment
+		logs_keys['description'] = description
 		logs_keys['action'] = 'push_camera'
 		logs_keys['date_time'] = datetime.datetime.now().strftime("%d-%m-%Y %H:%M:%S")
 		logs_keys['version'] = str_version
@@ -6459,14 +6459,14 @@ class log(studio):
 		
 	# *** PLAYBLAST LOGS ***
 	# artist_ob - (artist) - объект artist, его никнейм записывается в лог.
-	# comment (str) - комментарий
+	# description (str) - комментарий
 	# version (str/int) - номер версии <= 9999
 	# task_data (bool/dict) - если False - значит читается self.task, если передаётся, то только задача данного ассета.
-	def playblast_write_log(self, artist_ob, comment, version, task_data=False): # v2
+	def playblast_write_log(self, artist_ob, description, version, task_data=False): # v2
 		pass
 		# 0 - проверка user
 		# 1 - заполнение task_data
-		# 2 - тест обязательных полей: comment, version
+		# 2 - тест обязательных полей: description, version
 		# 3 - заполнение logs_keys
 		# 4 - запись json
 		
@@ -6486,7 +6486,7 @@ class log(studio):
 				return(False, 'in log.playblast_write_log() - transferred "task_data" is not from the correct asset: transferred: "%s", required: "%s"' % (taks_data['asset_name'], self.task.asset.name))
 				
 		# (2)
-		for item in [comment, version]:
+		for item in [description, version]:
 			if not item:
 				return(False, '"%s" parameter not passed!' % item)
 		
@@ -6497,7 +6497,7 @@ class log(studio):
 				logs_keys[key] = task_data[key]
 		
 		str_version = '%04d' % int(version)
-		logs_keys['comment'] = comment
+		logs_keys['description'] = description
 		logs_keys['action'] = 'playblast'
 		logs_keys['date_time'] = datetime.datetime.now().strftime("%d-%m-%Y %H:%M:%S")
 		logs_keys['version'] = str_version
@@ -6572,11 +6572,11 @@ class log(studio):
 		
 class artist(studio):
 	'''
-	self.add_artist({key:data, ...}) - "nik_name", "user_name" - Required, add new artist in 'artists.db';; return - (True, 'ok') or (Fasle, comment) comments: 'overlap', 'not nik_name', 
+	self.add_artist({key:data, ...}) - "nik_name", "user_name" - Required, add new artist in 'artists.db';; return - (True, 'ok') or (Fasle, description) descriptions: 'overlap', 'not nik_name', 
 	
 	self.login_user(nik_name, password) - 
 	
-	self.read_artist({key:data, ...}) - "nik_name", - Required, returns full information, relevant over the keys ;; example: self.read_artist({'specialty':'rigger'});; return: (True, [{Data}, ...])  or (False, comment)
+	self.read_artist({key:data, ...}) - "nik_name", - Required, returns full information, relevant over the keys ;; example: self.read_artist({'specialty':'rigger'});; return: (True, [{Data}, ...])  or (False, description)
 	
 	self.edit_artist({key:data, ...}) - "nik_name", - Required, does not change the setting ;;
 	
@@ -6584,7 +6584,7 @@ class artist(studio):
 	
 	self.add_stat(user_name, {key:data, ...}) - "project_name, task_name, data_start" - Required ;;
 	
-	self.read_stat(user_name, {key:data, ...}) - returns full information, relevant over the keys: (True, [{Data}, ...]) or (False, comment);; 
+	self.read_stat(user_name, {key:data, ...}) - returns full information, relevant over the keys: (True, [{Data}, ...]) or (False, description);; 
 	
 	self.edit_stat(user_name, project_name, task_name, {key:data, ...}) - 
 	'''
@@ -8089,7 +8089,7 @@ class group(studio):
 			keys = {
 			'name':self.recycle_bin_name,
 			'type': 'all',
-			'comment':'removed assets'
+			'description':'removed assets'
 			}
 			# -- get id
 			keys['id'] = hex(random.randint(0, 1000000000)).replace('0x','')
@@ -8274,15 +8274,15 @@ class group(studio):
 		return(True, 'ok')
 		
 	# изменение комента текущего объекта
-	# comment (str)
-	def edit_comment(self, comment):
-		update_data = {'comment': comment}
+	# description (str)
+	def edit_description(self, description):
+		update_data = {'description': description}
 		where = {'id': self.id}
 		bool_, return_data = database().update('project', self.project, self.group_t, self.group_keys, update_data, where, table_root=self.group_db)
 		if not bool_:
 			return(bool_, return_data)
 		
-		self.comment = comment
+		self.description = description
 		return(True, 'ok')
 		
 class list_of_assets(studio):
