@@ -2277,10 +2277,11 @@ class asset(studio):
 		
 		return(True, 'Ok!')
 	
-	# group_id - если не False - то возвращает список ассетов данной группы
-	def get_list_by_type(self, asset_type, group_id = False): # v2
-		if group_id:
-			where = {'group': group_id}
+	# group (group/bool) - объект группы - если не False - то возвращает список ассетов данной группы
+	# return - (True, [objects]) или (False, comment)
+	def get_list_by_type(self, asset_type, group = False): # v2
+		if group:
+			where = {'group': group.id}
 		else:
 			where = False
 		bool_, return_data = database().read('project', self.project, asset_type, self.asset_keys, where = where, table_root=self.assets_db)
@@ -2288,17 +2289,21 @@ class asset(studio):
 			print('#'*5, return_data)
 			return(True, [])
 		else:
+			r_data = []
 			for asset in return_data:
-				asset['path'] = NormPath(os.path.join(self.project.path, self.project.folders['assets'],asset['type'], asset['name']))
-			return(True, return_data)
+				#asset['path'] = NormPath(os.path.join(self.project.path, self.project.folders['assets'],asset['type'], asset['name']))
+				r_data.append(self.init_by_keys(asset))
+			return(True, r_data)
 	
-	# group_id - если не False - то возвращает список ассетов данной группы
-	def get_list_by_all_types(self, group_id = False): # v2
-		if group_id:
-			where = {'group': group_id}
+	# group (group/bool) - объект группы - если не False - то возвращает список ассетов данной группы
+	# return - (True, [objects]) или (False, comment)
+	def get_list_by_all_types(self, group = False): # v2
+		if group:
+			where = {'group': group.id}
 		else:
 			where = False
 		assets_list = []
+		r_data = []
 		for asset_type in self.asset_types:
 			bool_, return_data = database().read('project', self.project, asset_type, self.asset_keys, where = where, table_root=self.assets_db)
 			if not bool_:
@@ -2307,34 +2312,22 @@ class asset(studio):
 			else:
 				assets_list = assets_list + return_data
 		for asset in assets_list:
-			asset['path'] = NormPath(os.path.join(self.project.path, self.project.folders['assets'],asset['type'], asset['name']))
-		return(True, assets_list)
-		
-	def get_list_by_group(self, group_id): # v2
+			#asset['path'] = NormPath(os.path.join(self.project.path, self.project.folders['assets'],asset['type'], asset['name']))
+			r_data.append(self.init_by_keys(asset))
+		return(True, r_data)
+	
+	# обёртка на get_list_by_type()
+	# group (group) - объект группы
+	# return - (True, [objects]) или (False, comment)
+	def get_list_by_group(self, group): # v2
 		pass
-		# get group_type
-		group_data = group(self.project).get_by_id(group_id)
-		if group_data[0]:
-			group_type = group_data[1]['type']
-		else:
-			return(False, group_data[1])
+				
+		# get asset list by type
+		list_by_type = self.get_list_by_type(group.type, group = group)
+		if not list_by_type[0]:
+			return(False, list_by_type[1])
+		all_list = list_by_type[1]
 		
-		all_list = []
-		if group_type == 'all':
-			list_by_type = self.get_list_by_all_types(group_id = group_id)
-			if not list_by_type[0]:
-				return(False, list_by_type[1])
-			all_list = list_by_type[1]
-		
-		else:
-			# get asset list by type
-			list_by_type = self.get_list_by_type(group_type, group_id = group_id)
-			if not list_by_type[0]:
-				return(False, list_by_type[1])
-			all_list = list_by_type[1]
-		
-		for asset in all_list:
-			asset['path'] = NormPath(os.path.join(self.project.path, self.project.folders['assets'],asset['type'], asset['name']))
 		return(True, all_list)
 	'''
 	def get_name_list_by_type(self, project_name, asset_type):
