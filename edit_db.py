@@ -1296,20 +1296,7 @@ class project(studio):
 	
 class asset(studio):
 	'''
-	studio.project.asset()
-	
-	self.ACTIVITY_FOLDER  - {activity_name : ACTIVITY_FOLDER, ... }
-	
-	add_asset(asset_name) - create folder: assets/asset_name; create activity folders assets/asset_name/...folders; write {asset_name:folder_full_path} in .assets.json; 
-	
-	get_asset(asset_name) - return ful path to asset_folder or False, fill self.task_list
-	
-	get_activity_path(asset_name, activity) - return full path of activity folder, or create activity folder, or return False
-	
-	get_final_file_path(passet_name, activity) - return full path to file of final version activity, or False
-	
-	get_new_file_path(asset_name, activity) - return 	new_dir_path, new_file_path, or False
-	
+	https://sites.google.com/site/lineykadoc/home/doc/edit-database/class-studio-project-asset
 	'''
 	
 	def __init__(self, project_ob):
@@ -1402,21 +1389,31 @@ class asset(studio):
 	# new (bool) - если True - то возвращается новый инициализированный объект класса asset, если False - то инициализируется текущий объект
 	def init(self, asset_name, new = True):
 		pass
-		# get keys
-		bool_, keys = self.get_by_name(asset_name)
-		if not bool_:
-			return(bool_, keys)
-		
+		# 1 - чтение БД
+		where = {'name': asset_name}
+		asset_data = False
+		for asset_type in self.asset_types:
+			b, r = database().read('project', self.project, asset_type, self.asset_keys, where=where, table_root=self.assets_db)
+			if not b:
+				print(r)
+				continue
+			if r:
+				asset_data = r[0]
+		if not asset_data:
+			return(False, 'An asset with that name(%s) was not found!' % asset_name)
+				
 		if new:
 			new_asset = asset(self.project)
 			for key in self.asset_keys:
-				exec('new_asset.%s = keys.get("%s")' % (key, key))
+				#exec('new_asset.%s = keys.get("%s")' % (key, key))
+				setattr(new_asset, key, asset_data.get(key))
 			# path
 			new_asset.path = NormPath(os.path.join(self.project.path, self.project.folders['assets'],keys['type'], keys['name']))
 			return new_asset
 		else:
 			for key in self.asset_keys:
-				exec('self.%s = keys.get("%s")' % (key, key))
+				#exec('self.%s = keys.get("%s")' % (key, key))
+				setattr(self, key, asset_data.get(key))
 			# path
 			self.path = NormPath(os.path.join(self.project.path, self.project.folders['assets'],keys['type'], keys['name']))
 			return(True, 'Ok!')
@@ -1439,8 +1436,6 @@ class asset(studio):
 			self.path = NormPath(os.path.join(self.project.path, self.project.folders['assets'],keys['type'], keys['name']))
 			return(True, 'Ok!')
 		
-	# **************** ASSET NEW  METODS ******************
-	
 	# list_keys (list) - список словарей по ключам asset_keys
 	# -- обязательные параметры в keys (list_keys): name, group(id).
 	# asset_type (str) - тип для всех ассетов
@@ -1473,8 +1468,8 @@ class asset(studio):
 		result = self.get_list_by_all_types()
 		if result[0]:
 			for row in result[1]:
-				assets.append(row['name'])
-				ids.append(row['id'])
+				assets.append(row.name)
+				ids.append(row.id)
 		else:
 			print('#'*5)
 			print(result[1])
@@ -2277,58 +2272,66 @@ class asset(studio):
 		
 		return(True, 'Ok!')
 	
-	# group (group/bool) - объект группы - если не False - то возвращает список ассетов данной группы
+	# возвращает список ассетов по типам
+	# asset_type (str) - тип ассета, если False, то возвращает список ассетов по всем типам.
 	# return - (True, [objects]) или (False, comment)
-	def get_list_by_type(self, asset_type, group = False): # v2
-		if group:
-			where = {'group': group.id}
-		else:
-			where = False
-		bool_, return_data = database().read('project', self.project, asset_type, self.asset_keys, where = where, table_root=self.assets_db)
-		if not bool_:
-			print('#'*5, return_data)
-			return(True, [])
-		else:
-			r_data = []
-			for asset in return_data:
-				#asset['path'] = NormPath(os.path.join(self.project.path, self.project.folders['assets'],asset['type'], asset['name']))
-				r_data.append(self.init_by_keys(asset))
-			return(True, r_data)
-	
-	# group (group/bool) - объект группы - если не False - то возвращает список ассетов данной группы
-	# return - (True, [objects]) или (False, comment)
-	def get_list_by_all_types(self, group = False): # v2
-		if group:
-			where = {'group': group.id}
-		else:
-			where = False
+	def get_list_by_type(self, asset_type=False): # v2
+		pass
+		#
+		
+		where = False
 		assets_list = []
 		r_data = []
-		for asset_type in self.asset_types:
-			bool_, return_data = database().read('project', self.project, asset_type, self.asset_keys, where = where, table_root=self.assets_db)
-			if not bool_:
-				print('#'*5, return_data)
-				continue
+		if not asset_type:
+			for asset_type in self.asset_types:
+				b, r = database().read('project', self.project, asset_type, self.asset_keys, where = where, table_root=self.assets_db)
+				if not b:
+					print('#'*5, r)
+					continue
+				else:
+					assets_list = assets_list + r
+		else:
+			b, r = database().read('project', self.project, asset_type, self.asset_keys, where = where, table_root=self.assets_db)
+			if not b:
+				print('#'*5, r)
+				return(True, [])
 			else:
-				assets_list = assets_list + return_data
+				assets_list = r
+				
 		for asset in assets_list:
-			#asset['path'] = NormPath(os.path.join(self.project.path, self.project.folders['assets'],asset['type'], asset['name']))
 			r_data.append(self.init_by_keys(asset))
 		return(True, r_data)
 	
 	# обёртка на get_list_by_type()
+	# return - (True, [objects]) или (False, comment)
+	def get_list_by_all_types(self): # v2
+		b, r = self.get_list_by_type()
+		return(b, r)
+	
 	# group (group) - объект группы
 	# return - (True, [objects]) или (False, comment)
-	def get_list_by_group(self, group): # v2
+	def get_list_by_group(self, group_ob): # v2
 		pass
-				
-		# get asset list by type
-		list_by_type = self.get_list_by_type(group.type, group = group)
-		if not list_by_type[0]:
-			return(False, list_by_type[1])
-		all_list = list_by_type[1]
+		# 1 - тест типа переменной group
+		# 2 - чтение БД
 		
-		return(True, all_list)
+		# (1)
+		if not isinstance(group_ob, group):
+			return(False, 'asset.get_list_by_group(): the data type of the variable passed to this procedure must be a "group", passed type: "%s"' % group_ob.__class__.__name__)
+		
+		# (2)
+		where = {'group': group_ob.id}
+		bool_, return_data = database().read('project', self.project, group_ob.type, self.asset_keys, where = where, table_root=self.assets_db)
+		if not bool_:
+			print('#'*5, return_data)
+			return(True, [])
+		
+		r_data = []
+		for asset in return_data:
+			#asset['path'] = NormPath(os.path.join(self.project.path, self.project.folders['assets'],asset['type'], asset['name']))
+			r_data.append(self.init_by_keys(asset))
+		return(True, r_data)
+
 	'''
 	def get_name_list_by_type(self, project_name, asset_type):
 		result = self.get_project(project_name)
@@ -2381,21 +2384,6 @@ class asset(studio):
 			assets_dict[asset['name']] = asset
 		return(True, assets_dict)
 			
-	def get_by_name(self, asset_name): # v2
-		where = {'name': asset_name}
-		asset_data = False
-		for asset_type in self.asset_types:
-			bool_, return_data = database().read('project', self.project, asset_type, self.asset_keys, where=where, table_root=self.assets_db)
-			if not bool_:
-				print(return_data)
-				continue
-			if return_data:
-				asset_data = return_data[0]
-				asset_data['path'] = NormPath(os.path.join(self.project.path, self.project.folders['assets'],asset_data['type'], asset_data['name']))
-				return(True, asset_data)
-		if not asset_data:
-			return(False, 'No Asset With This Name(%s)!' % asset_name)
-	
 	def get_by_id(self, asset_id): # v2
 		where = {'id': asset_id}
 		asset_data = False
