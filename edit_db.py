@@ -1408,14 +1408,14 @@ class asset(studio):
 				#exec('new_asset.%s = keys.get("%s")' % (key, key))
 				setattr(new_asset, key, asset_data.get(key))
 			# path
-			new_asset.path = NormPath(os.path.join(self.project.path, self.project.folders['assets'],keys['type'], keys['name']))
+			new_asset.path = NormPath(os.path.join(self.project.path, self.project.folders['assets'],asset_data['type'], asset_data['name']))
 			return new_asset
 		else:
 			for key in self.asset_keys:
 				#exec('self.%s = keys.get("%s")' % (key, key))
 				setattr(self, key, asset_data.get(key))
 			# path
-			self.path = NormPath(os.path.join(self.project.path, self.project.folders['assets'],keys['type'], keys['name']))
+			self.path = NormPath(os.path.join(self.project.path, self.project.folders['assets'],asset_data['type'], asset_data['name']))
 			return(True, 'Ok!')
 		
 	# инициализация по словарю ассета
@@ -2321,7 +2321,7 @@ class asset(studio):
 		
 		# (2)
 		where = {'group': group_ob.id}
-		bool_, return_data = database().read('project', self.project, group_ob.type, self.asset_keys, where = where, table_root=self.assets_db)
+		bool_, return_data = database().read('project', group_ob.project, group_ob.type, self.asset_keys, where = where, table_root=self.assets_db)
 		if not bool_:
 			print('#'*5, return_data)
 			return(True, [])
