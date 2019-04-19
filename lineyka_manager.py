@@ -2857,11 +2857,6 @@ class MainWindow(QtGui.QMainWindow):
 				newItem.group = ob
 				table.setItem(i, j, newItem)
 				
-		# disconnect table
-		try:
-			self.myWidget.studio_editor_table.itemDoubleClicked.disconnect()
-		except:
-			pass
 		# connect table
 		self.myWidget.studio_editor_table.itemDoubleClicked.connect(self.edit_ui_to_group_content_editor)
 				
@@ -3141,6 +3136,7 @@ class MainWindow(QtGui.QMainWindow):
 		self.edit_ui_to_group_content_editor()
 		
 	def edit_ui_to_group_content_editor(self, *args):
+		pass
 		#self.current_group = args[0].group
 		self.selected_group = self.myWidget.studio_editor_table.currentItem().group
 		
@@ -3172,7 +3168,7 @@ class MainWindow(QtGui.QMainWindow):
 			button01.clicked.disconnect()
 		except:
 			pass
-		button01.clicked.connect(partial(self.reload_asset_list, table))
+		button01.clicked.connect(partial(self.reload_asset_list))
 		button02.setVisible(False)
 		
 		button03.setVisible(True)
@@ -3181,7 +3177,7 @@ class MainWindow(QtGui.QMainWindow):
 			button03.clicked.disconnect()
 		except:
 			pass
-		button03.clicked.connect(partial(self.change_asset_group_ui, table))
+		button03.clicked.connect(partial(self.change_asset_group_ui))
 		button04.setVisible(True)
 		button04.setText('Edit Priority')
 		try:
@@ -3261,6 +3257,9 @@ class MainWindow(QtGui.QMainWindow):
 		print('edit ui to group content editor')
 		
 	def reload_group_content_list(self):
+		self.fill_group_content_list(self.selected_group.name)
+		
+	def reload_asset_list(self):
 		self.fill_group_content_list(self.selected_group.name)
 		
 	def fill_group_content_list(self, *args):
@@ -3352,10 +3351,6 @@ class MainWindow(QtGui.QMainWindow):
 		table.resizeColumnsToContents()
 			
 		print('fill group content list', self.selected_group.name)
-		
-	def reload_asset_list(self, table):
-		# reload assets list
-		self.fill_group_content_list(self.myWidget, table, self.current_group['name'])
 		
 	def asset_to_task_manager(self, action):
 		print(action)
@@ -3467,18 +3462,12 @@ class MainWindow(QtGui.QMainWindow):
 					
 				self.tm_reload_task_list_by_global_search_action(None, group_dict, item)
 				
-	def change_asset_group_ui(self, table):
-		column = table.columnCount()
-		name_column = None
-		for i in range(0, column):
-			head_item = table.horizontalHeaderItem(i)
-			if head_item.text() == 'name':
-				name_column = i
-				break
-		
-		# get asset data
-		asset_data = table.currentItem().asset
-		asset_name = asset_data['name']
+	def change_asset_group_ui(self):
+		pass
+		table = self.myWidget.studio_editor_table
+		if not table.selectedItems():
+			self.message('No asset selected!', 2)
+		self.selected_asset = table.selectedItems()[0].asset
 		
 		# widget
 		loader = QtUiTools.QUiLoader()
@@ -3488,25 +3477,16 @@ class MainWindow(QtGui.QMainWindow):
 		file.close()
 		
 		# edit widget
-		#copy = db.group()
 		group_list = ['-- new groups --']
-		#result = copy.get_by_type_list(self.current_project, [self.current_group['type']])
-		#result = copy.get_by_type_list(self.current_project, [asset_data['type']])
-		result = self.db_group.get_by_type_list([asset_data['type']])
-		if result[0]:
-			for row in result[1]:
-				if row['name'] != self.current_group['name']:
-					group_list.append(row['name'])
-					
-			window.groups = result[1]
-		else:
-			print(result[1])
+		for grp in self.db_group.dict_by_type[self.selected_asset.type]:
+			if grp.name != self.selected_group.name:
+				group_list.append(grp.name)
 		
-		window.setWindowTitle(('Change Group Asset: \"' + asset_name + '\"'))
+		window.setWindowTitle(('Change Group Asset: %s' % self.selected_asset.name))
 		window.combo_dialog_label.setText('Select New Group:')
 		window.combo_dialog_combo_box.addItems(group_list)
 		window.combo_dialog_cancel.clicked.connect(partial(self.close_window, window))
-		window.combo_dialog_ok.clicked.connect(partial(self.change_asset_group_action, asset_data, window))
+		window.combo_dialog_ok.clicked.connect(partial(self.change_asset_group_action, window))
 		
 		# set modal window
 		window.setWindowModality(QtCore.Qt.WindowModal)
@@ -3516,7 +3496,7 @@ class MainWindow(QtGui.QMainWindow):
 		
 		print('change asset group')
 		
-	def change_asset_group_action(self, asset_data, window):
+	def change_asset_group_action(self, window):
 		# get new group name asset_name
 		group_name = window.combo_dialog_combo_box.currentText()
 		group_id = None
