@@ -3138,17 +3138,16 @@ class MainWindow(QtGui.QMainWindow):
 		if not item:
 			self.message('Group not selected!', 2)
 			return
-		self.edit_ui_to_group_content_editor(item)
+		self.edit_ui_to_group_content_editor()
 		
 	def edit_ui_to_group_content_editor(self, *args):
-		self.current_group = args[0].group
+		#self.current_group = args[0].group
+		self.selected_group = self.myWidget.studio_editor_table.currentItem().group
 		
 		window = self.myWidget
 		table = window.studio_editor_table
 		
 		# get project
-		self.current_project = window.set_comboBox_01.currentText()
-		self.project.get_project(self.current_project)
 		self.asset_columns = ('icon', 'name', 'description', 'priority', 'type')
 		
 		button01 = window.studio_butt_1
@@ -3163,7 +3162,7 @@ class MainWindow(QtGui.QMainWindow):
 		button10 = window.studio_butt_10
 		
 		# edit label
-		label_trext = '\"%s\" / \"%s\" / Assets' % (self.current_project, self.current_group['name'])
+		label_trext = '\"%s\" / \"%s\" / Assets' % (self.selected_project.name, self.selected_group.name)
 		window.studio_editor_label.setText(label_trext)
 				
 		# edit button
@@ -3229,19 +3228,11 @@ class MainWindow(QtGui.QMainWindow):
 		button09.clicked.connect(partial(self.asset_to_task_manager, 'from_asset_editor'))
 		button10.setVisible(False)
 		
-		# -- get group list
-		groups = []
-		rows = self.db_group.get_list()
-		if rows[0]:
-			for row in rows[1]:
-				groups.append(row['name'])
-		else:
-			print(rows[1])
-		
 		# edit combobox
-		#groups = ['-- select group --'] + groups
-		index = groups.index(self.current_group['name'])
-		print('index: ', index)
+		#groups = ['-- select group --'] + self.db_group.dict_by_name.keys()
+		groups = self.db_group.dict_by_name.keys()
+		index = groups.index(self.selected_group.name)
+		#print('index: ', index)
 		window.set_comboBox_01.setVisible(True)
 		window.set_comboBox_01.clear()
 		window.set_comboBox_01.addItems(groups)
@@ -3250,7 +3241,7 @@ class MainWindow(QtGui.QMainWindow):
 			window.set_comboBox_01.activated[str].disconnect()
 		except:
 			pass
-		window.set_comboBox_01.activated[str].connect(partial(self.fill_group_content_list, window, table))
+		window.set_comboBox_01.activated[str].connect(partial(self.fill_group_content_list))
 		window.set_comboBox_02.setVisible(False)
 		window.set_comboBox_03.setVisible(False)
 		# unhide search lineEdit 
@@ -3265,27 +3256,23 @@ class MainWindow(QtGui.QMainWindow):
 		table.setSelectionMode(QtGui.QAbstractItemView.SingleSelection)
 		
 		self.clear_table()
-		self.fill_group_content_list(window, table, self.current_group['name'])
+		self.fill_group_content_list(self.selected_group.name)
 		
 		print('edit ui to group content editor')
 		
 	def reload_group_content_list(self):
-		self.fill_group_content_list(self.myWidget, self.myWidget.studio_editor_table, self.current_group['name'])
+		self.fill_group_content_list(self.selected_group.name)
 		
 	def fill_group_content_list(self, *args):
-		window = args[0]
-		table = args[1]
-		group = args[2]
+		window = self.myWidget
+		table = window.studio_editor_table
+		group_name = args[0]
 		
-		# get self.current_group 
-		result = self.db_group.get_by_name(group)
-		if not result[0]:
-			self.message(result[1], 3)
-			return
-		else:
-			self.current_group = result[1]
-			
-		if self.current_group['type'] == 'all':
+		# get self.current_group
+		self.selected_group = self.db_group.dict_by_name[group_name]
+		self.db_asset.project = self.selected_project
+				
+		if self.selected_group.type == 'all':
 			self.myWidget.studio_butt_4.setVisible(False)
 			self.myWidget.studio_butt_6.setVisible(False)
 			self.myWidget.studio_butt_7.setVisible(False)
@@ -3299,21 +3286,21 @@ class MainWindow(QtGui.QMainWindow):
 			self.myWidget.studio_butt_9.setVisible(True)
 		
 		# edit label
-		window.studio_editor_label.setText(('\"' + self.current_project + '\" / \"' + group + '\" / Assets'))
+		window.studio_editor_label.setText(('\"' + self.selected_project.name + '\" / \"' + group_name + '\" / Assets'))
 		
 		# get table data
 		f = self.myWidget.group_search_qline.text()
 		#copy = self.db_asset
-		assets_list = self.db_asset.get_list_by_group(self.current_group['id'])
-		if assets_list[0]:
+		b, r = self.db_asset.get_list_by_group(self.selected_group)
+		if b:
 			if f:
 				assets_list_filter = []
-				for asset in assets_list[1]:
-					if f.lower() in asset['name'].lower():
+				for asset in r:
+					if f.lower() in asset.name.lower():
 						assets_list_filter.append(asset)
 				assets_list = assets_list_filter
 			else:
-				assets_list = assets_list[1]
+				assets_list = r
 				
 		headers = self.asset_columns
 		num_row = len(assets_list)
@@ -3329,18 +3316,17 @@ class MainWindow(QtGui.QMainWindow):
 			#self.db_asset.init(row)
 			for j,key in enumerate(headers):
 				newItem = QtGui.QTableWidgetItem()
-				if key in row.keys():
-					newItem.setText(str(row[key]))
+				#newItem.setText(str(getattr(row, key)))
 				if key == 'name':
 					color = self.asset_color
 					brush = QtGui.QBrush(color)
 					newItem.setBackground(brush)
 				elif key == 'priority':
 					#newItem.setText(self.db_asset.priority[int(row[key])])
-					newItem.setText(str(row[key]))
+					newItem.setText(str(getattr(row, key)))
 				elif key == 'icon':
 					# get img path
-					icon_path = os.path.join(self.db_asset.project.preview_img_path, (row['name'] + '_icon.png'))
+					icon_path = os.path.join(self.db_asset.project.preview_img_path, (row.name + '_icon.png'))
 					# label
 					label = QtGui.QLabel()
 					
@@ -3354,17 +3340,18 @@ class MainWindow(QtGui.QMainWindow):
 					else:
 						label.setText('no image')
 					
-					label.asset = dict(row)
+					label.asset = row
 					table.setCellWidget(i, j, label)
 				
 				if key != 'icon':
-					newItem.asset = dict(row)
+					newItem.setText(str(getattr(row, key)))
+					newItem.asset = row
 					table.setItem(i, j, newItem)
 					
 		table.resizeRowsToContents()
 		table.resizeColumnsToContents()
 			
-		print('fill group content list', self.current_group)
+		print('fill group content list', self.selected_group.name)
 		
 	def reload_asset_list(self, table):
 		# reload assets list
@@ -7122,6 +7109,19 @@ class MainWindow(QtGui.QMainWindow):
 		if not table:
 			table = self.myWidget.studio_editor_table
 		
+		# disconnects
+		# -- context menu
+		try:
+			table.customContextMenuRequested.disconnect()
+		except Exception as e:
+			print(e)
+			
+		# -- context menu
+		try:
+			table.itemDoubleClicked.disconnect()
+		except Exception as e:
+			print(e)
+		
 		# -- clear table
 		num_row = table.rowCount()
 		num_column = table.columnCount()
@@ -7130,12 +7130,6 @@ class MainWindow(QtGui.QMainWindow):
 		table.clear()
 		table.setColumnCount(0)
 		table.setRowCount(0)
-		
-		# context menu
-		try:
-			table.customContextMenuRequested.disconnect()
-		except Exception as e:
-			print(e)
 				
 	
 	def message(self, m, i):
