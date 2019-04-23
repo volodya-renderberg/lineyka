@@ -2450,18 +2450,33 @@ class asset(studio):
 		
 		return(True, 'Ok!')
 		
-	def change_group_of_asset(self, asset_type, asset_name, new_group_id): # v2
-		keys = {
-		'name': asset_name,
-		'type': asset_type,
-		'group': new_group_id,
-		}
+	# ассет должен быть инициализирован
+	# group_id (str) - id группы
+	def change_group(self, group_id): # v2
+		where = {'name': self.name}
+		keys={'group': group_id}
 		
+		# update
+		table_name = self.type
+		b, r = database().update('project', self.project, table_name, self.asset_keys, keys, where, table_root=self.assets_db)
+		if not b:
+			return(b, r)
+		
+		self.group = group_id
+		return(True, 'Ok!')
+		
+		''' old
+		keys = {
+		'name': self.name,
+		'type': self.type,
+		'group': group_id,
+		}
 		result = self.edit_asset_data_by_name(keys)
 		if not result[0]:
 			return(False, result[1])
 		else:
 			return(True, 'Ok!')
+		'''
 			
 	def rename_asset(self, asset_type, old_name, new_name): # v2 ???????? ассет нельзя переименовывать!!!!!!!!!!!!!!!!!
 		pass

@@ -3497,28 +3497,29 @@ class MainWindow(QtGui.QMainWindow):
 		print('change asset group')
 		
 	def change_asset_group_action(self, window):
+		pass
 		# get new group name asset_name
 		group_name = window.combo_dialog_combo_box.currentText()
-		group_id = None
 		if group_name == '-- new groups --':
 			self.message('The Group is not Selected!', 2)
 			return
 		else:
-			for row in window.groups:
-				if row['name'] == group_name:
-					group_id = row['id']
+			new_group = self.selected_group.dict_by_name.get(group_name)
+		
+		if not new_group:
+			print('not found group "%s"' % group_name)
+			return
 		
 		# change group
 		#print(window.groups, group_name, group_id)
 		
-		copy = self.db_asset
-		result = copy.change_group_of_asset(self.current_project, asset_data['type'], asset_data['name'], group_id)
+		result = self.selected_asset.change_group(new_group.id)
 		if not result[0]:
 			self.message(result[1], 2)
 			return
 		
 		# reload assets list
-		self.fill_group_content_list(self.myWidget, self.myWidget.studio_editor_table, self.current_group['name'])
+		self.fill_group_content_list(self.selected_group.name)
 		
 		self.close_window(window)
 		#print('change asset group action', result[1])
