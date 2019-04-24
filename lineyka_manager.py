@@ -3162,6 +3162,7 @@ class MainWindow(QtGui.QMainWindow):
 		window.studio_editor_label.setText(label_trext)
 				
 		# edit button
+		# 1
 		button01.setVisible(True)
 		button01.setText('Reload')
 		try:
@@ -3169,8 +3170,15 @@ class MainWindow(QtGui.QMainWindow):
 		except:
 			pass
 		button01.clicked.connect(partial(self.reload_asset_list))
-		button02.setVisible(False)
-		
+		# 2
+		button02.setVisible(True)
+		button02.setText('<< Back')
+		try:
+			button02.clicked.disconnect()
+		except:
+			pass
+		button02.clicked.connect(partial(self.edit_ui_to_group_editor))
+		# 3
 		button03.setVisible(True)
 		button03.setText('Change Group')
 		try:
@@ -3178,20 +3186,23 @@ class MainWindow(QtGui.QMainWindow):
 		except:
 			pass
 		button03.clicked.connect(partial(self.change_asset_group_ui))
+		# 4
 		button04.setVisible(True)
 		button04.setText('Change Priority')
 		try:
 			button04.clicked.disconnect()
 		except:
 			pass
-		button04.clicked.connect(partial(self.change_asset_priority_ui, table))
+		button04.clicked.connect(partial(self.change_asset_priority_ui))
+		# 5
 		button05.setVisible(True)
-		button05.setText('Back')
+		button05.setText('Change Description')
 		try:
 			button05.clicked.disconnect()
 		except:
 			pass
-		button05.clicked.connect(partial(self.edit_ui_to_group_editor))
+		button05.clicked.connect(partial(self.change_asset_description_ui))
+		# 6
 		button06.setVisible(True)
 		button06.setText('Add Assets')
 		try:
@@ -3199,6 +3210,7 @@ class MainWindow(QtGui.QMainWindow):
 		except:
 			pass
 		button06.clicked.connect(partial(self.add_assets_to_group_ui))
+		# 7
 		button07.setVisible(True)
 		button07.setText('Copy Asset')
 		try:
@@ -3320,9 +3332,14 @@ class MainWindow(QtGui.QMainWindow):
 					color = self.asset_color
 					brush = QtGui.QBrush(color)
 					newItem.setBackground(brush)
+					#
+					newItem.setText(getattr(row, key))
+					newItem.asset = row
+					table.setItem(i, j, newItem)
 				elif key == 'priority':
-					#newItem.setText(self.db_asset.priority[int(row[key])])
 					newItem.setText(str(getattr(row, key)))
+					newItem.asset = row
+					table.setItem(i, j, newItem)
 				elif key == 'icon':
 					# get img path
 					icon_path = os.path.join(self.db_asset.project.preview_img_path, (row.name + '_icon.png'))
@@ -3342,8 +3359,8 @@ class MainWindow(QtGui.QMainWindow):
 					label.asset = row
 					table.setCellWidget(i, j, label)
 				
-				if key != 'icon':
-					newItem.setText(str(getattr(row, key)))
+				else:
+					newItem.setText(getattr(row, key))
 					newItem.asset = row
 					table.setItem(i, j, newItem)
 					
@@ -3482,7 +3499,7 @@ class MainWindow(QtGui.QMainWindow):
 			if grp.name != self.selected_group.name:
 				group_list.append(grp.name)
 		
-		window.setWindowTitle(('Change Group Asset: %s' % self.selected_asset.name))
+		window.setWindowTitle(('Change group of asset: %s' % self.selected_asset.name))
 		window.combo_dialog_label.setText('Select New Group:')
 		window.combo_dialog_combo_box.addItems(group_list)
 		window.combo_dialog_cancel.clicked.connect(partial(self.close_window, window))
@@ -3537,7 +3554,7 @@ class MainWindow(QtGui.QMainWindow):
 		# reload assets list
 		self.fill_group_content_list(self.myWidget, self.myWidget.studio_editor_table, self.current_group['name'])
 		
-	def change_asset_priority_ui(self, table):
+	def change_asset_priority_ui(self):
 		pass
 		table = self.myWidget.studio_editor_table
 		if not table.selectedItems():
@@ -3590,6 +3607,53 @@ class MainWindow(QtGui.QMainWindow):
 		#
 		self.close_window(window)
 		print('change asset priority action %s' % priority_str)
+		
+	def change_asset_description_ui(self):
+		pass
+		table = self.myWidget.studio_editor_table
+		if not table.selectedItems():
+			self.message('No asset selected!', 2)
+		self.selected_asset = table.selectedItems()[0].asset
+		
+		# widget
+		loader = QtUiTools.QUiLoader()
+		file = QtCore.QFile(self.new_dialog_path)
+		#file.open(QtCore.QFile.ReadOnly)
+		window = self.createSeasonDialog = loader.load(file, self)
+		file.close()
+		
+		# edit widget
+		window.setWindowTitle(('Change description of asset: "%s"' % self.selected_asset.name))
+		window.new_dialog_label.setText('Description:')
+		description = self.selected_asset.description
+		if description:
+			window.new_dialog_name.setText(description)
+		window.new_dialog_cancel.clicked.connect(partial(self.close_window, window))
+		window.new_dialog_ok.clicked.connect(partial(self.change_asset_description_action, window))
+				
+		# set modal window
+		window.setWindowModality(QtCore.Qt.WindowModal)
+		window.setAttribute(QtCore.Qt.WA_DeleteOnClose, True)
+		
+		window.show()
+	
+		print('change asset description ui')
+		
+	def change_asset_description_action(self, window):
+		pass
+	
+		description = window.new_dialog_name.text()
+				
+		b,r = self.selected_asset.change_description(description)
+		if not b:
+			self.message(r, 2)
+			return
+		
+		# reload assets list
+		self.fill_group_content_list(self.selected_group.name)
+		#
+		self.close_window(window)
+		print ('change asset description action')
 		
 	def add_assets_to_group_ui(self):
 		pass

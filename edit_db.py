@@ -2480,6 +2480,22 @@ class asset(studio):
 		
 		self.priority = priority
 		return(True, 'Ok!')
+	
+	# ассет должен быть инициализирован
+	# description (str) - новое описание
+	def change_description(self, description):
+		pass
+		where = {'name': self.name}
+		keys={'description': description}
+		
+		# update
+		table_name = self.type
+		b, r = database().update('project', self.project, table_name, self.asset_keys, keys, where, table_root=self.assets_db)
+		if not b:
+			return(b, r)
+		
+		self.description = description
+		return(True, 'Ok!')
 			
 	def rename_asset(self, asset_type, old_name, new_name): # v2 ???????? ассет нельзя переименовывать!!!!!!!!!!!!!!!!!
 		pass
