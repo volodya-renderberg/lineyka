@@ -3179,12 +3179,12 @@ class MainWindow(QtGui.QMainWindow):
 			pass
 		button03.clicked.connect(partial(self.change_asset_group_ui))
 		button04.setVisible(True)
-		button04.setText('Edit Priority')
+		button04.setText('Change Priority')
 		try:
 			button04.clicked.disconnect()
 		except:
 			pass
-		button04.clicked.connect(partial(self.edit_asset_priority_ui, table))
+		button04.clicked.connect(partial(self.change_asset_priority_ui, table))
 		button05.setVisible(True)
 		button05.setText('Back')
 		try:
@@ -3537,10 +3537,62 @@ class MainWindow(QtGui.QMainWindow):
 		# reload assets list
 		self.fill_group_content_list(self.myWidget, self.myWidget.studio_editor_table, self.current_group['name'])
 		
-	def edit_asset_priority_ui(self, table):
-		print('edit asset priority')
+	def change_asset_priority_ui(self, table):
+		pass
+		table = self.myWidget.studio_editor_table
+		if not table.selectedItems():
+			self.message('No asset selected!', 2)
+		self.selected_asset = table.selectedItems()[0].asset
+		
+		# widget
+		loader = QtUiTools.QUiLoader()
+		file = QtCore.QFile(self.new_dialog_path)
+		#file.open(QtCore.QFile.ReadOnly)
+		window = self.createSeasonDialog = loader.load(file, self)
+		file.close()
+		
+		# edit widget
+		window.setWindowTitle(('Change priority of asset: "%s"' % self.selected_asset.name))
+		window.new_dialog_label.setText('New Priority:')
+		priority_str = str(self.selected_asset.priority)
+		if priority_str:
+			window.new_dialog_name.setText(priority_str)
+		window.new_dialog_cancel.clicked.connect(partial(self.close_window, window))
+		window.new_dialog_ok.clicked.connect(partial(self.change_asset_priority_action, window))
+				
+		# set modal window
+		window.setWindowModality(QtCore.Qt.WindowModal)
+		window.setAttribute(QtCore.Qt.WA_DeleteOnClose, True)
+		
+		window.show()
+				
+		print('change asset priority ui')
+		
+	def change_asset_priority_action(self, window):
+		pass
+	
+		priority_str = window.new_dialog_name.text()
+		try:
+			new_priority = int(priority_str)
+		except:
+			new_priority=None
+		if not new_priority:
+			self.message('priority must be an integer!', 2)
+			return
+		
+		b,r = self.selected_asset.change_priority(new_priority)
+		if not b:
+			self.message(r, 2)
+			return
+		
+		# reload assets list
+		self.fill_group_content_list(self.selected_group.name)
+		#
+		self.close_window(window)
+		print('change asset priority action %s' % priority_str)
 		
 	def add_assets_to_group_ui(self):
+		pass
 		# widget
 		loader = QtUiTools.QUiLoader()
 		file = QtCore.QFile(self.select_from_list_dialog_3button_path)

@@ -2464,19 +2464,22 @@ class asset(studio):
 		
 		self.group = group_id
 		return(True, 'Ok!')
+
+	# ассет должен быть инициализирован
+	# priority (int) - новый приоритет
+	def change_priority(self, priority):
+		pass
+		where = {'name': self.name}
+		keys={'priority': priority}
 		
-		''' old
-		keys = {
-		'name': self.name,
-		'type': self.type,
-		'group': group_id,
-		}
-		result = self.edit_asset_data_by_name(keys)
-		if not result[0]:
-			return(False, result[1])
-		else:
-			return(True, 'Ok!')
-		'''
+		# update
+		table_name = self.type
+		b, r = database().update('project', self.project, table_name, self.asset_keys, keys, where, table_root=self.assets_db)
+		if not b:
+			return(b, r)
+		
+		self.priority = priority
+		return(True, 'Ok!')
 			
 	def rename_asset(self, asset_type, old_name, new_name): # v2 ???????? ассет нельзя переименовывать!!!!!!!!!!!!!!!!!
 		pass
