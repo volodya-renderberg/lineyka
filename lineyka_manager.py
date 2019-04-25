@@ -3743,45 +3743,28 @@ class MainWindow(QtGui.QMainWindow):
 		print('add asset to group ui')
 		
 	def copy_asset_ui(self):
-		try:
-			asset_data = self.myWidget.studio_editor_table.currentItem().asset
-		except:
-			self.message('Asset is not selected!', 2)
-			return
-		if not asset_data['type'] in self.db_chat.COPIED_ASSET:
-			self.message('This type can not be copied!', 2)
-			return
-			
-		# -- GROUP LIST
-		# -- get All Group Dict
-		result = self.db_group.get_dict_by_all_types(self.current_project)
-		if not result[0]:
-			self.message(result[1], 2)
-			return
-		group_dict_by_all_types = result[1]
+		pass
+		table = self.myWidget.studio_editor_table
+		if not table.selectedItems():
+			self.message('No asset selected!', 2)
+		self.selected_asset = table.selectedItems()[0].asset
 		
-		if not asset_data['type'] in group_dict_by_all_types:
-			self.message('No Found Group with This Type!', 2)
+		if not self.selected_asset.type in self.db_asset.COPIED_ASSET:
+			self.message('This assets type can not be copied!', 2)
 			return
 		
 		group_list = []
 		group_id_list = []
-		for group in group_dict_by_all_types[asset_data['type']]:
-			group_list.append(group['name'])
-			group_id_list.append(group['id'])
+		for type_ in self.db_asset.COPIED_ASSET[self.selected_asset.type]:
+			for group in self.db_group.dict_by_type[type_]:
+				group_list.append('%s (%s)' % (group.name, group.type))
+				group_id_list.append(group.id)
 		
-		# -- SET OF TASKS LIST
-		set_of_tasks_list = {}
-		#set_of_tasks_list = []
-		#set_of_tasks_data = {}
-		
-		result = self.db_set_of_tasks.get_dict_by_all_types()
-		if not result[0]:
-			self.message(result[1], 2)
+		b,r = self.db_set_of_tasks.get_dict_by_all_types()
+		if not b:
+			self.message(r, 2)
 			return
-		
-		for asset_type in result[1]:
-			set_of_tasks_list[asset_type] = result[1][asset_type].keys()
+		self.set_of_tasks_dict_by_type = r
 		
 		# window  self.new_dialog_3_path
 		loader = QtUiTools.QUiLoader()
@@ -3792,32 +3775,24 @@ class MainWindow(QtGui.QMainWindow):
 		file.close()
 		
 		# edit window
-		window.setWindowTitle(('Copy of Asset: /// ' + asset_data['name']))
+		window.setWindowTitle(('Copy of asset: /// %s' % self.selected_asset.name))
 		window.new_dialog_label.setText('New Name of Asset:')
 		window.new_dialog_label_0.setText('New Type:')
 		window.new_dialog_label_2.setText('Group:')
 		window.new_dialog_label_3.setText('Set Of Task:')
-		if not asset_data['type'] in self.db_chat.COPIED_WITH_TASK:
+		if not self.selected_asset.type in self.db_asset.COPIED_WITH_TASK:
 			window.new_dialog_frame_3.setVisible(False)
 		
 		# -- type list
-		if asset_data['type'] in self.db_chat.COPIED_ASSET:
-			window.new_dialog_combo_box_0.addItems(self.db_chat.COPIED_ASSET[asset_data['type']])
-		else:
-			window.new_dialog_combo_box_0.addItems([asset_data['type']])
+		window.new_dialog_combo_box_0.addItems(self.db_asset.COPIED_ASSET[self.selected_asset.type])
 		# -- group list
 		window.new_dialog_combo_box_2.addItems(group_list)
-		window.new_dialog_combo_box_2.setCurrentIndex(group_id_list.index(asset_data['group']))
+		window.new_dialog_combo_box_2.setCurrentIndex(group_id_list.index(self.selected_asset.group))
 		# -- set_of_task list
-		if asset_data['type'] in self.db_chat.COPIED_WITH_TASK:
-			window.new_dialog_combo_box_3.addItems(set_of_tasks_list[asset_data['type']])
+		if self.selected_asset.type in self.db_asset.COPIED_WITH_TASK:
+			window.new_dialog_combo_box_3.addItems(self.set_of_tasks_dict_by_type[self.selected_asset.type].keys())
 		else:
 			window.new_dialog_combo_box_3.addItems([''])
-		
-		# -- meta data
-		window.asset = asset_data
-		window.groups = group_dict_by_all_types
-		window.set_of_tasks_list = set_of_tasks_list
 		
 		# -- connect button
 		window.new_dialog_combo_box_0.activated[str].connect(partial(self.edit_copy_asset_ui, window))
@@ -3827,25 +3802,25 @@ class MainWindow(QtGui.QMainWindow):
 		window.show()
 		
 	def edit_copy_asset_ui(self, window, asset_type):
-		asset_data = window.asset
-		
+		pass
+	
 		# edit group list
 		group_list = []
 		group_id_list = []
-		for group in window.groups[asset_type]:
-			group_list.append(group['name'])
-			group_id_list.append(group['id'])
+		for type_ in self.db_asset.COPIED_ASSET[asset_type]:
+			for group in self.db_group.dict_by_type[type_]:
+				group_list.append('%s (%s)' % (group.name, group.type))
+				group_id_list.append(group.id)
 		
 		window.new_dialog_combo_box_2.clear()
 		window.new_dialog_combo_box_2.addItems(group_list)
-		if asset_data['group'] in group_id_list:
-			window.new_dialog_combo_box_2.setCurrentIndex(group_id_list.index(asset_data['group']))
+		if self.selected_asset.group in group_id_list:
+			window.new_dialog_combo_box_2.setCurrentIndex(group_id_list.index(self.selected_asset.group))
 		
 		# edit set_of_tasks list
-		print(window.set_of_tasks_list)
 		window.new_dialog_combo_box_3.clear()
-		if asset_type in self.db_chat.COPIED_WITH_TASK:
-			window.new_dialog_combo_box_3.addItems(window.set_of_tasks_list[asset_type])
+		if asset_type in self.db_asset.COPIED_WITH_TASK:
+			window.new_dialog_combo_box_3.addItems(self.set_of_tasks_dict_by_type[asset_type].keys())
 		else:
 			window.new_dialog_combo_box_3.addItems([''])
 		
@@ -3875,6 +3850,7 @@ class MainWindow(QtGui.QMainWindow):
 		self.close_window(window)
 		
 	def insert_asset_list_in_table(self, key, table):
+		pass
 		# get selected rows
 		selected = table.selectedItems()
 		if not selected:
