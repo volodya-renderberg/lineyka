@@ -3827,13 +3827,16 @@ class MainWindow(QtGui.QMainWindow):
 		
 	def copy_asset_action(self, window):
 		new_asset_name = window.new_dialog_name.text()
-		new_group_name = window.new_dialog_combo_box_2.currentText()
+		new_group_name = window.new_dialog_combo_box_2.currentText().split()[0]
 		set_of_tasks = window.new_dialog_combo_box_3.currentText()
 		new_asset_type = window.new_dialog_combo_box_0.currentText()
 		
-		result = self.db_chat.copy_of_asset(self.current_project, new_group_name, new_asset_name, new_asset_type, set_of_tasks, window.asset)
-		if not result[0]:
-			self.message(result[1], 3)
+		#self.message('name: %s,\ngroup: %s,\nset_of_tasks: %s,\ntype: %s' % (new_asset_name, new_group_name, set_of_tasks, new_asset_type), 1)
+		#return
+		
+		b, r = self.selected_asset.copy_of_asset(new_group_name, new_asset_name, new_asset_type, set_of_tasks)
+		if not b:
+			self.message(r, 3)
 			return
 			
 		# reload assets list
@@ -3845,7 +3848,7 @@ class MainWindow(QtGui.QMainWindow):
 				#self.tm_reload_task_list()
 				break
 		
-		self.fill_group_content_list(self.myWidget, self.myWidget.studio_editor_table, new_group_name)
+		self.fill_group_content_list(new_group_name)
 		
 		self.close_window(window)
 		

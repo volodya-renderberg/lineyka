@@ -2143,6 +2143,16 @@ class asset(studio):
 		# 6 копирование директорий
         
 		# (1) edit name
+		if not new_asset_name:
+			return(False, 'New asset name is not specified!')
+		elif not new_group_name:
+			return(False, 'New group name is not specified!')
+		elif not new_asset_type:
+			return(False, 'New type of asset is not specified!')
+		elif not set_of_tasks:
+			return(False, '"Set of tasks" is not specified!')
+		
+		#
 		if new_asset_type in ['shot_animation']:
 			new_asset_name = new_asset_name.replace(' ', '_')
 		else:
@@ -2152,15 +2162,20 @@ class asset(studio):
 		result = group(self.project).get_by_name(new_group_name)
 		if not result[0]:
 			return(False, result[1])
-		new_group_id = result[1]['id']
+		new_group_id = result[1].id
 		
 		# (3)
 		if not data_of_source_asset:
-			for key in self.asset_types:
+			data_of_source_asset={}
+			asset_list_keys = list(self.asset_keys.keys()) + ['path']
+			for key in asset_list_keys:
 				if key in dir(self):
-					data_of_source_asset[key] = self.key
+					data_of_source_asset[key] = getattr(self, key)
 				else:
 					data_of_source_asset[key] = None
+					
+		print(data_of_source_asset)
+		#return
 		
 		# (4) get list_keys
 		old_path = data_of_source_asset['path']
