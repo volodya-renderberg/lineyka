@@ -3684,10 +3684,10 @@ class MainWindow(QtGui.QMainWindow):
 		# -- Fill table
 		data = []
 		#copy = db.list_of_assets()
-		#get_ = copy.get(self.current_project, self.current_group['name'])
-		get_ = self.db_list_of_assets.get(self.current_project, self.current_group['name'])
-		if get_[0]:
-			data = get_[1]
+		self.db_list_of_assets.group = self.selected_group
+		b,r = self.db_list_of_assets.get(self.selected_group.name)
+		if b:
+			data = r
 		
 		for i in range(0, num_row):
 			for j in range(0, num_column):
@@ -3707,14 +3707,13 @@ class MainWindow(QtGui.QMainWindow):
 		# -- add context menu
 		# -- add menu
 		#copy = db.set_of_tasks()
-		set_of_tasks_list = self.db_set_of_tasks.get_list()
+		set_of_tasks_list = self.db_set_of_tasks.get_list(f = {'asset_type': self.selected_group.type})
 		#print(set_of_tasks_list)
 		
 		if set_of_tasks_list[0]:
 			set_list = []
-			for key_ in set_of_tasks_list[1]:
-				if set_of_tasks_list[1][key_]['asset_type'] == self.current_group['type']:
-					set_list.append(key_)
+			for ob in set_of_tasks_list[1]:
+				set_list.append(ob.name)
 			table.setContextMenuPolicy( QtCore.Qt.ActionsContextMenu )
 			# workroom menu
 			addgrup_action = QtGui.QAction( '-- sets of tasks -- ', window)
@@ -3727,7 +3726,7 @@ class MainWindow(QtGui.QMainWindow):
 		
 		
 		# edit widget
-		window.setWindowTitle(('add New Assets to: ' + self.current_group['name']))
+		window.setWindowTitle(('Add new assets to: %s' % self.selected_group.name))
 		window.select_from_list_cansel_button.clicked.connect(partial(self.close_window, window))
 		window.pushButton_01.setText('Save List')
 		window.pushButton_01.clicked.connect(partial(self.save_aseets_list, table, window))
@@ -3739,7 +3738,6 @@ class MainWindow(QtGui.QMainWindow):
 		window.setAttribute(QtCore.Qt.WA_DeleteOnClose, True)
 		
 		window.show()
-		
 		print('add asset to group ui')
 		
 	def copy_asset_ui(self):
