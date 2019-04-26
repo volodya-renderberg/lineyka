@@ -3895,7 +3895,7 @@ class MainWindow(QtGui.QMainWindow):
 					row['asset_name'] = table.item(i, j).text()
 				elif table.horizontalHeaderItem(j).text() == 'set_of_tasks':
 					row['set_of_tasks'] = table.item(i, j).text()
-				row['asset_type'] = self.current_group['type']
+				row['asset_type'] = self.selected_group.type
 				
 			if row['asset_name'] and not row['asset_name'] in names:
 				rows.append(row)
@@ -3904,7 +3904,7 @@ class MainWindow(QtGui.QMainWindow):
 				self.message(('match names - lines: ' + str(names[row['asset_name']] + 1) + ', ' + str(i + 1)), 2)
 				return
 				
-		result = self.db_list_of_assets.save_list(self.current_project, self.current_group['name'], rows)
+		result = self.db_list_of_assets.save_list(rows)
 		if not result[0]:
 			self.message(result[1], 2)
 			return
