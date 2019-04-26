@@ -3927,10 +3927,10 @@ class MainWindow(QtGui.QMainWindow):
 				elif table.horizontalHeaderItem(j).text() == 'set_of_tasks':
 					row['set_of_tasks'] = table.item(i, j).text()
 					
-				row['asset_type'] = self.current_group['type']
+				row['asset_type'] = self.selected_group.type
 				row['path'] = ''
-				row['group'] = self.current_group['id']
-				row['season'] = self.current_group['season']
+				row['group'] = self.selected_group.id
+				row['season'] = self.selected_group.season
 				row['priority'] = '0'
 				
 			if row['name'] and not row['set_of_tasks']:
@@ -3945,20 +3945,19 @@ class MainWindow(QtGui.QMainWindow):
 				return
 		
 		# create assets
-		#copy = self.db_asset
-		create_result = self.db_asset.create(self.current_project, self.current_group['type'], rows)
+		self.db_asset.project = self.selected_project
+		create_result = self.db_asset.create(self.selected_group.type, rows)
 		if not create_result[0]:
 			self.message(create_result[1], 2) 
 			return
 		
 		# remove asset list
-		#copy = self.db_list_of_assets
-		result = self.db_list_of_assets.remove(self.current_project, self.current_group['name'])
+		result = self.db_list_of_assets.remove()
 		if not result[0]:
 			print(result[1])
 		
 		self.close_window(window)
-		self.reload_asset_list(self.myWidget.studio_editor_table)
+		self.reload_asset_list()
 		print('create assets from list')
 		
 	# ******************* STUDIO EDITOR /// LOCATION EDITOR ****************************
