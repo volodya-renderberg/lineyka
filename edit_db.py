@@ -1703,309 +1703,10 @@ class asset(studio):
 			make_assets[keys['name']] = keys
 		
 		return(True, make_assets)
-		'''
-		######################################################################## OLD
-		tasks_of_assets = {}
-		
-		# -- CONNECT  .db
-		try:
-			# write group to db
-			conn = sqlite3.connect(self.assets_path, detect_types=sqlite3.PARSE_DECLTYPES|sqlite3.PARSE_COLNAMES)
-			conn.row_factory = sqlite3.Row
-			c = conn.cursor()
-		except:
-			return(False, 'Not .db connect!')
-			
-		# -- EXISTS TABLE
-		table = asset_type
-		try:
-			str_ = 'select * from ' + table
-			c.execute(str_)
-									
-		except:
-			string2 = "CREATE TABLE " + table + " ("
-			for i,key in enumerate(self.asset_keys):
-				if i == 0:
-					string2 = string2 + '\"' + key[0] + '\" ' + key[1]
-				else:
-					string2 = string2 + ', \"' + key[0] + '\" ' + key[1]
-			string2 = string2 + ')'
-			c.execute(string2)	
-			
-			
-		# -- CREATE ASSETS
-		make_assets = {}
-		for keys in list_keys:
-			# test name
-			if (not 'name' in keys) or (keys['name'] == ''):
-				conn.close()
-				return(False,('not name!'))
-				
-			elif (not 'group' in keys) or (keys['group'] == ''):
-				conn.close()
-				return(False, ('\"' + keys['name'] + '\" not group'))
-				
-			# edit name
-			if asset_type in ['shot_animation']:
-				keys['name'] = keys['name'].replace(' ', '_')
-			else:
-				keys['name'] = keys['name'].replace(' ', '_').replace('.', '_')
-				
-			#while keys['name'] in assets:
-			if keys['name'] in assets:
-				#keys['name'] = keys['name'] + '01'
-				conn.close()
-				return(False, ('Name ' + '\"' + keys['name'] + '\" already exists!'))
-		
-			keys['name'] = keys['name'].replace(' ','_')
-			keys['type'] = asset_type
-			keys['status'] = 'active'
-			
-			if asset_type in self.asset_types_with_season and not keys['season']:
-				conn.close()
-				return(False, ('\"' + keys['name'] + '\" not season'))
-		
-			# get id
-			keys['id'] = hex(random.randint(0, 1000000000)).replace('0x','')
-			while keys['id'] in ids:
-				keys['id'] = hex(random.randint(0, 1000000000)).replace('0x','')
-				
-			# get priority
-			if (not 'priority' in keys) or (keys['priority'] == ''):
-				keys['priority'] = '0'
-			
-			# -- make folders
-			asset_path = ''
-			if not 'path' in keys.keys():
-				keys['path'] = ''
-			if keys['path'] == '':
-				asset_path = os.path.join(self.path, self.folders['assets'],asset_type, keys['name'])
-				# create group folder
-				group_dir = os.path.join(self.path, self.folders['assets'],asset_type)
-				if not os.path.exists(group_dir):
-					try:
-						os.mkdir(group_dir)
-					except:
-						conn.close()
-						return(False, '**** studio/project/asset.create -> you can not create a folder \'assets/asset_type\'')
-				# create root folder
-				if not os.path.exists(asset_path):
-					try:
-						os.mkdir(asset_path)
-					except:
-						conn.close()
-						return(False, '**** studio/project/asset.create -> you can not create a folder \'assets/asset_type/asset\'')
-				#keys['path'] = asset_path
-				
-			else:
-				if os.path.exists(keys['path']):
-					asset_path = keys['path']
-				else:
-					conn.close()
-					return(False, '**** studio/project/asset.create -> asset_path not found!')
-			
-			keys['path'] = asset_path
-			
-			# -- create activity folders
-			for activity in self.ACTIVITY_FOLDER[asset_type]:
-				folder_path = os.path.join(asset_path, self.ACTIVITY_FOLDER[asset_type][activity])
-				if not os.path.exists(folder_path):
-					os.mkdir(folder_path)
-					
-			# -- create additional folders  self.ADDITIONAL_FOLDERS
-			for activity in self.ADDITIONAL_FOLDERS:
-				folder_path = os.path.join(asset_path, self.ADDITIONAL_FOLDERS[activity])
-				if not os.path.exists(folder_path):
-					os.mkdir(folder_path)
-		
-			# create string
-			string = "insert into " + table + " values"
-			values = '('
-			data = []
-			for i, key in enumerate(self.asset_keys):
-				if i< (len(self.asset_keys) - 1):
-					values = values + '?, '
-				else:
-					values = values + '?'
-				if key[0] in keys:
-					data.append(keys[key[0]])
-				else:
-					if key[1] == 'real':
-						data.append(0.0)
-					elif key[1] == 'timestamp':
-						data.append(datetime.datetime.now())
-					else:
-						data.append('')
-						
-			values = values + ')'
-			data = tuple(data)
-			string = string + values
-			
-			# add asset
-			#print('\n', string, data)
-			c.execute(string, data)
-			
-			# -------------------------- Make Tasks Data------------------------------ set_of_tasks
-			
-			# add service tasks ("final")
-			final = {
-				'asset':keys['name'],
-				'asset_id': keys['id'],
-				'asset_type': asset_type,
-				'task_name': (keys['name'] + ':final'),
-				'season': keys['season'],
-				'status':'null',
-				'task_type':'service',
-			}
-			
-			this_asset_tasks = []
-			# create service tasks ("all_input")
-			all_input = {
-				'asset':keys['name'],
-				'asset_id': keys['id'],
-				'asset_type': asset_type,
-				'task_name': (keys['name'] + ':all_input'),
-				'season': keys['season'],
-				'status':'done',
-				'task_type':'service',
-				'input':'',
-				#'output': json.dumps([final['task_name']])
-				'output': '',
-			}
-			this_asset_tasks.append(all_input)
-		
-			# get list from set_of_tasks
-			result = set_of_tasks().get(keys['set_of_tasks'])
-			if result[0]:
-				set_tasks = result[1]['sets']
-				
-				outputs = {}
-				for task_ in set_tasks:
-					# name
-					name = task_['task_name']
-					task_['task_name'] = keys['name'] + ':' + name
-					
-					# output
-					task_['output'] = json.dumps([final['task_name']])
-					
-					# input
-					input_ = task_['input']
-					if  input_ == 'all':
-						task_['input'] = all_input['task_name']
-						# status
-						task_['status'] = 'ready'
-						# add to output all_input
-						all_outputs = json.loads(all_input['output'])
-						all_outputs.append(task_['task_name'])
-						all_input['output'] = json.dumps(all_outputs)
-						
-					elif input_ == 'pre':
-						task_['input'] = keys['name'] + ':pre_input:' + name
-						# status
-						task_['status'] = 'ready'
-						# add service tasks ("pre_input" )
-						pre_input = {
-							'asset':keys['name'],
-							'asset_id': keys['id'],
-							'asset_type': asset_type,
-							'task_name': task_['input'],
-							'season': keys['season'],
-							'status':'done',
-							'task_type':'service',
-							'input':'',
-							#'output': json.dumps([final['task_name'], task_['task_name']])
-							'output': json.dumps([task_['task_name']])
-						}
-						this_asset_tasks.append(pre_input)
-					elif input_:
-						task_['input'] = keys['name'] + ':' + input_
-						# status
-						task_['status'] = 'null'
-						
-						# outputs
-						if task_['input'] in outputs.keys():
-							outputs[task_['input']].append(task_['task_name'])
-						else:
-							outputs[task_['input']] = [task_['task_name'],]
-						
-						
-						# outputs
-						#try:
-						#	outputs[task_['input']].append(task_['task_name'])
-						#except:
-						#	outputs[task_['input']] = task_['task_name']
-						
-						
-					else:
-						# status
-						task_['status'] = 'ready'
-						
-					# price
-					task_['price'] = task_['cost']
-						
-					# asset
-					task_['asset'] = keys['name']
-					task_['asset_id'] = keys['id']
-					task_['asset_type'] = asset_type
-					
-					# season
-					task_['season'] = keys['season']
-					
-					# readers
-					task_['readers'] = "{}"
-					
-					# append task
-					this_asset_tasks.append(task_)
-					
-				for task_ in this_asset_tasks:
-					if task_['task_name'] in outputs:
-						if task_['output']:
-							task_outputs = json.loads(task_['output'])
-							#task_outputs.append(outputs[task_['task_name']])
-							task_outputs = task_outputs + outputs[task_['task_name']]
-							task_['output'] = json.dumps(task_outputs)
-						else:
-							task_['output'] = json.dumps(outputs['task_name'])
-			
-			# set input of "final"
-			final_input = []
-			for task_ in this_asset_tasks:
-				final_input.append(task_['task_name'])
-			final['input'] = json.dumps(final_input)
-			
-			# append final to task list
-			this_asset_tasks.append(final)
-		
-			############################## make tasks to asset
-			copy = task()
-			#result = copy.create_tasks_from_list(project_name, keys['name'], keys['id'], this_asset_tasks)
-			result = copy.create_tasks_from_list(project_name, keys, this_asset_tasks)
-			if not result[0]:
-				conn.close()
-				return(False, result[1])
-			
-			# append to tasks_of_assets {asset: tasks_list, ... }
-			tasks_of_assets[keys['name']] = this_asset_tasks
-			
-			# make return data
-			make_assets[keys['name']] = keys
-		
-		# CLOSE .db
-		conn.commit()
-		conn.close()
-		'''
-		'''
-		# send to tasks create  # tasks_of_assets /home/renderberg/create_tasks.json
-		with open('/home/renderberg/create_tasks.json', 'w') as f:
-		#with open('C:/Users/vladimir/Documents/blender_area/create_tasks.json', 'w') as f:
-			jsn = json.dump(tasks_of_assets, f, sort_keys=True, indent=4)
-			f.close()
-		'''
-		
-		return(True, make_assets)
 	
+	# удаление текущего ассета
 	# asset_data (dict) - словарь по asset_keys
-	def remove_asset(self, asset_data): # v2
+	def remove(self): # v2
 		pass
 		# 1 - получение id recycle_bin
 		# 2 - замена группы ассета на recycle_bin, обнуление priority, status.
@@ -2017,112 +1718,61 @@ class asset(studio):
 		# -- get recycle bin  data
 		result = group(self.project).get_by_keys({'type': 'all'})
 		if not result[0]:
-			return(False, ('in asset().remove_asset' + result[1]))
-		recycle_bin_data = result[1][0]
+			return(False, ('in asset().remove' + result[1]))
+		recycle_bin = result[1][0]
 		
 		# (2)
-		update_data = {'group': recycle_bin_data['id'], 'priority': 0, 'status':'none'}
-		where = {'id': asset_data['id']}
-		bool_, return_data = database().update('project', self.project, asset_data['type'], self.asset_keys, update_data, where, table_root=self.assets_db)
+		update_data = {'group': recycle_bin.id, 'priority': 0, 'status':'none'}
+		where = {'id': self.id}
+		bool_, return_data = database().update('project', self.project, self.type, self.asset_keys, update_data, where, table_root=self.assets_db)
 		if not bool_:
 			return(bool_, return_data)
-		'''
-		# -- edit  .db
-		try:
-			conn = sqlite3.connect(self.assets_path, detect_types=sqlite3.PARSE_DECLTYPES|sqlite3.PARSE_COLNAMES)
-			conn.row_factory = sqlite3.Row
-			c = conn.cursor()
-		except:
-			return(False, 'in asset()remove_asset - Not .db connect!')
-		
-		table = asset_data['type']
-		string = 'UPDATE ' +  table + ' SET \"group\" = ?, priority = ? WHERE id = ?'
-		data = (recycle_bin_data['id'], '0', asset_data['id'])
-		c.execute(string, data)
-		conn.commit()
-		conn.close()
-		'''
-		
+				
 		# (3)
-		bool_, task_list = task(self).get_list(asset_id = asset_data['id'])
+		bool_, task_list = task(self).get_list()
 		if not bool_:
 			return(bool_, task_list)
 		
 		output_tasks = []
 		output_tasks_name_list = []
-		table = '"%s:%s"' % (asset_data['id'], self.tasks_t)
+		table = '"%s:%s"' % (self.id, self.tasks_t)
 		# (4)
 		for row in task_list:
-			if row['task_type'] == 'service':
+			if row.task_type == 'service':
 				continue
-			if row.get('output'):
-				for task_name in row['output']:
-					if task_name.split(':')[0] != row['asset_name']:
+			if row.output:
+				for task_name in row.output:
+					if task_name.split(':')[0] != row.asset_name:
 						output_tasks.append((row, task_name))
 						output_tasks_name_list.append(task_name)
 			# -- -- get status
 			new_status = 'null'
-			if not row['input']:
+			if not row.input:
 				new_status = 'ready'
 			
 			update_data = {'artist':'', 'status': new_status, 'readers': [], 'priority':0}
-			where = {'task_name': row['task_name']}
+			where = {'task_name': row.task_name}
 			bool_, r_data = database().update('project', self.project, table, self.tasks_keys, update_data, where, table_root=self.tasks_db)
 			if not bool_:
 				bool_, r_data
-		'''
-		# ******** DISCONNECT ARTISTS, READERS
-		output_tasks = []
-		output_tasks_name_list = []
-		# Connect to db
-		try:
-			conn = sqlite3.connect(self.tasks_path, detect_types=sqlite3.PARSE_DECLTYPES|sqlite3.PARSE_COLNAMES)
-			conn.row_factory = sqlite3.Row
-			c = conn.cursor()
-		except:
-			return(False, 'in asset()remove_asset - Not .db connect!')
-		# get tasks rows
-		table = '\"' + asset_data['id'] + ':' + self.tasks_t + '\"'
-		string = 'select * from ' + table
-		c.execute(string)
-		for row in c.fetchall():
-			if not row['output']:
-				print('*'*250, row['task_name'])
-				continue
-			for task_name in json.loads(row['output']):
-				if task_name.split(':')[0] != row['asset']:
-					output_tasks.append((row, task_name))
-					output_tasks_name_list.append(task_name)
-			if row['task_type'] == 'service':
-				continue
-			# -- -- get status
-			new_status = 'null'
-			if not row['input']:
-				new_status = 'ready'
-			# -- -- update .db
-			string = 'UPDATE ' +  table + ' SET artist = ?, readers = ?, status = ? WHERE task_name = ?'
-			data = ('', json.dumps([]),new_status, row['task_name'])
-			c.execute(string, data)
-			
-		conn.commit()
-		conn.close()
-		'''
 		
 		# (5)
 		# ******** DISCONNECT OUTPUTS
 		# -- get output tasks dict
-		result = task(self).get_tasks_data_by_name_list(output_tasks_name_list)
+		result = task(self).get_tasks_by_name_list(output_tasks_name_list)
 		if not result[0]:
-			return(False, ('in asset().remove_asset -' + result[1]))
+			return(False, ('in asset().remove - %s' % result[1]))
 		output_tasks_data_dict = result[1]
 		
 		for key in output_tasks:
 			if not key[1]:
 				continue
-			if output_tasks_data_dict[key[1]]['task_type'] == 'service':
-				result = task(self).service_remove_task_from_input(output_tasks_data_dict[key[1]], [key[0]])
+			if output_tasks_data_dict[key[1]].task_type == 'service':
+				b,r = output_tasks_data_dict[key[1]].service_remove_task_from_input([key[0]])
+				if not b:
+					return(b,r)
 			else:
-				print((output_tasks_data_dict[key[1]]['task_name'] + ' not service!'))
+				print((output_tasks_data_dict[key[1]].task_name + ' not service!'))
 				continue
 		
 		return(True, 'Ok!')
@@ -2384,7 +2034,7 @@ class asset(studio):
 		return(True, asset_id_name_dict)
 		
 			
-	def get_name_data_dict_by_all_types(self): # v2
+	def get_dict_by_name_by_all_types(self): # v2
 		asset_list = []
 		for asset_type in self.asset_types:
 			bool_, return_data = database().read('project', self.project, asset_type, self.asset_keys, table_root=self.assets_db)
@@ -2396,7 +2046,7 @@ class asset(studio):
 		assets_dict = {}
 		for asset in asset_list:
 			asset['path'] = NormPath(os.path.join(self.project.path, self.project.folders['assets'],asset['type'], asset['name']))
-			assets_dict[asset['name']] = asset
+			assets_dict[asset['name']] = self.init_by_keys(asset)
 		return(True, assets_dict)
 			
 	def get_by_id(self, asset_id): # v2
@@ -2534,18 +2184,7 @@ class asset(studio):
 
 class task(studio):
 	'''
-	studio.project.asset.task()
 	
-	KEYS (season text, task_name text, asset text, activity text, input text, status text, artist text, planned_time text, time text, start text, end text, supervisor text, approved_date text, price real, tz text, chat text)
-	
-	self.add_task(project_name, asset_name, {key:data, ...}) - add task in .tasks.db;; return: 'ok' - all right; False - ather errors; 'overlap' - the task has not been created, this task name already exists; 'not_project' - not project;  'not_asset' - ... ; 'required' - lacking data (first three values)
-	
-	self.edit_task(project_name, asset_name, {key:data, ...}) - edit data in .tasks.db;; return: 'ok' - all right, False - ather errors; 'not_project' - not project;  'not_asset' - ...
-	
-	self.read_task(project_name, task_name, [keys]) - return data (True/False, {key: data, ...}/error) ;; error: (not_project, not_task_name) 
-	
-	self.edit_status_to_output(project_name, task_name) - (run from edit_task() on status change for 'ready') ;; changes the status of the all outgoing tasks from 'null' to 'ready';; return (True/False, 'ok'/'ather description')
-		
 	'''
 	
 	def __init__(self, asset_ob):
@@ -2619,7 +2258,7 @@ class task(studio):
 	
 	# изменение статуса сервис задачи, по проверке статусов входящих задачь.
 	# task_data (dict) - текущая задача.
-	# assets (dict) - словарь всех ассетов по всем типам (ключи - имена, данные - ассеты (словари)) - результат функции asset.get_name_data_dict_by_all_types()
+	# assets (dict) - словарь всех ассетов по всем типам (ключи - имена, данные - ассеты (словари)) - результат функции asset.get_dict_by_name_by_all_types()
 	def service_input_to_end(self, task_data, assets): # v2 *** не тестилось.
 		new_status = False
 		
@@ -2712,7 +2351,7 @@ class task(studio):
 		
 	# замена статусов исходящих задачь при изменении статуса текущей задачи с done или с close.
 	# task_data (dict) - текущая задача.
-	# assets (dict) - словарь всех ассетов по всем типам (ключи - имена, данные - ассеты (словари)) - результат функции asset.get_name_data_dict_by_all_types()
+	# assets (dict) - словарь всех ассетов по всем типам (ключи - имена, данные - ассеты (словари)) - результат функции asset.get_dict_by_name_by_all_types()
 	def this_change_from_end(self, task_data, assets = False): # v2 *** no test
 		pass
 		# 1 - список исходящих задачь
@@ -2736,7 +2375,7 @@ class task(studio):
 		# (2)
 		if not assets:
 			# get assets dict
-			result = self.asset.get_name_data_dict_by_all_types()
+			result = self.asset.get_dict_by_name_by_all_types()
 			if not result[0]:
 				return(False, result[1])
 			assets = result[1]
@@ -2749,7 +2388,7 @@ class task(studio):
 		# (3) ****** change status
 		for task_name in output_list:
             # (4) asse id
-			asset_id = assets[task_name.split(':')[0]].get('id')
+			asset_id = assets[task_name.split(':')[0]].id
 			if not asset_id:
 				print('in this_change_from_end incorrect key "id" in  "%s"' % task_name.split(':')[0])
 				continue
@@ -2822,7 +2461,7 @@ class task(studio):
 		
 	# замена статусов исходящих задачь при изменении статуса текущей задачи на done или close.
 	# task_data (dict) - текущая задача.
-	# assets (dict) - словарь всех ассетов по всем типам (ключи - имена, данные - ассеты (словари)) - результат функции asset.get_name_data_dict_by_all_types()
+	# assets (dict) - словарь всех ассетов по всем типам (ключи - имена, данные - ассеты (словари)) - результат функции asset.get_dict_by_name_by_all_types()
 	def this_change_to_end(self, task_data, assets = False): # v2 *** no test
 		pass
 		# 1 - список исходящих задачь
@@ -2841,7 +2480,7 @@ class task(studio):
 		# (2)
 		if not assets:
 			# get assets dict
-			result = self.asset.get_name_data_dict_by_all_types()
+			result = self.asset.get_dict_by_name_by_all_types()
 			if not result[0]:
 				return(False, result[1])
 			assets = result[1]
@@ -2855,7 +2494,7 @@ class task(studio):
 		# ****** change status
 		for task_name in output_list:
 			# (4) asse id
-			asset_id = assets[task_name.split(':')[0]].get('id')
+			asset_id = assets[task_name.split(':')[0]].id
 			if not asset_id:
 				print('in this_change_to_end incorrect key "id" in  "%s"' % task_name.split(':')[0])
 				continue
@@ -2924,7 +2563,7 @@ class task(studio):
 			return(True, 'done')
 			
 		# get assets dict
-		result = self.get_name_data_dict_by_all_types(project_name)
+		result = self.get_dict_by_name_by_all_types(project_name)
 		if not result[0]:
 			return(False, result[1])
 		assets = result[1]
@@ -4067,50 +3706,24 @@ class task(studio):
 		if not bool_:
 			return(bool_, return_data)
 		
+		tasks_ob = []
 		for td in return_data:
 			td['asset_path'] = self.asset.path
-		'''
-		task_list = []
+			tasks_ob.append(self.init_by_keys(td))
 		
-		# Other errors test
-		result = self.get_project(project_name)
-		if not result[0]:
-			return(False, result[1])
-			
-		# Connect to db
-		conn = sqlite3.connect(self.tasks_path, detect_types=sqlite3.PARSE_DECLTYPES|sqlite3.PARSE_COLNAMES)
-		conn.row_factory = sqlite3.Row
-		c = conn.cursor()
-		
-		# Exists table
-		table = '\"' + asset_id + ':' + self.tasks_t + '\"'
-		try:
-			if not task_status:
-				str_ = 'select * from ' + table
-			else:
-				str_ = 'select * from  %s where status=\"%s\"' % (table, task_status.lower())
-			c.execute(str_)
-			task_list = c.fetchall()
-		except Exception as e:
-			conn.close()
-			#return(False, 'Not Table!')
-			return(False, e)
-		
-		conn.close()
-		'''
-		return(True, return_data)
+		return(True, tasks_ob)
 		
 	# возвращает задачи (словари) по списку имён задачь, из различных ассетов.
 	# self.asset.project - инициализирован
-	# assets_data (dict) - dict{asset_name: {asset_data},...}
+	# assets_data (dict) - dict{asset_name: {asset_data},...} словарь всех ассетов (всех типов) по именам
 	# task_name_list (list) - список имён задач.
-	def get_tasks_data_by_name_list(self, task_name_list, assets_data = False): # v2
+	def get_tasks_by_name_list(self, task_name_list, assets_data = False): # v2
 		pass
 		# (1) получение assets_data
 		if not assets_data:
-			result = self.asset.get_name_data_dict_by_all_types()
+			result = self.asset.get_dict_by_name_by_all_types()
 			if not result[0]:
-				return(False, 'in task.get_tasks_data_by_name_list():\n%s' % result[1])
+				return(False, 'in task.get_tasks_by_name_list():\n%s' % result[1])
 			else:
 				assets_data = result[1]
 		# (2) чтение БД
@@ -4122,7 +3735,7 @@ class task(studio):
 		#
 		for task_name in task_name_list:
 			#
-			asset_id = assets_data[task_name.split(':')[0]]['id']
+			asset_id = assets_data[task_name.split(':')[0]].id
 			table_name = '"%s:%s"' % (asset_id, self.tasks_t)
 			where = {'task_name': task_name}
 			#
@@ -4130,36 +3743,10 @@ class task(studio):
 			if not bool_:
 				return(bool_, return_data)
 			if return_data:
-				return_data[0]['asset_path'] = assets_data[task_name.split(':')[0]]['path']
-				task_data_dict[task_name] = return_data[0]
-		'''
-		try:
-			# Connect to db
-			conn = sqlite3.connect(self.tasks_path, detect_types=sqlite3.PARSE_DECLTYPES|sqlite3.PARSE_COLNAMES)
-			conn.row_factory = sqlite3.Row
-			c = conn.cursor()
-		except:
-			conn.close()
-			return(False, 'in task().get_tasks_data_by_name_list not connect to db')
+				return_data[0]['asset_path'] = assets_data[task_name.split(':')[0]].path
+				r_task = task(assets_data[task_name.split(':')[0]])
+				task_data_dict[task_name] = r_task.init_by_keys(return_data[0])
 		
-		task_data_dict = {}
-		for task_name in task_name_list:
-			# read task
-			if not task_name:
-				continue
-			
-			table = '\"' + assets_data[task_name.split(':')[0]]['id'] + ':' + self.tasks_t + '\"'
-			
-			try:
-				string = 'SELECT * FROM ' + table + ' WHERE task_name = ?'
-				c.execute(string, (task_name,))
-				task_data_dict[task_name] = dict(c.fetchone())
-			except:
-				conn.close()
-				return(False, ('in task().get_tasks_data_by_name_list - Not Table! task - ' + task_name))
-				
-		conn.close()
-		'''
 		return(True, task_data_dict)
 	
 	# self.asset.project - должен быть инициализирован
@@ -5410,7 +4997,7 @@ class task(studio):
 		# 4 - возвращаемое значение (True, task_input_task_list, asset_list)
 		
 		# (1)
-		result = self.asset.get_name_data_dict_by_all_types()
+		result = self.asset.get_dict_by_name_by_all_types()
 		if not result[0]:
 			return(False, result[1])
 		asset_list = result[1]
@@ -5420,7 +5007,7 @@ class task(studio):
 		task_input_task_list = {}
 		for asset_name in asset_list:
 			if asset_list[asset_name]['status']== 'active':
-				asset_id = asset_list[asset_name]['id']
+				asset_id = asset_list[asset_name].id
 				bool_, return_data = self.get_list(asset_id=asset_id, artist = nik_name)
 				if not bool_:
 					return(bool_, return_data)
@@ -5429,7 +5016,7 @@ class task(studio):
 		for task in task_list:
 			task_input_task_list[task['task_name']] = {'task' : task}
 			if task['input']:
-				input_asset_id = asset_list[task['input'].split(':')[0]]['id']
+				input_asset_id = asset_list[task['input'].split(':')[0]].id
 				bool_, return_data = self.read_task(task['input'], asset_id=input_asset_id)
 				if not bool_:
 					return(bool_, return_data)
@@ -5496,7 +5083,7 @@ class task(studio):
 		# 3 - заполняем chek_list
 		
 		# (1)
-		result = self.asset.get_name_data_dict_by_all_types()
+		result = self.asset.get_dict_by_name_by_all_types()
 		if not result[0]:
 			return(False, result[1])
 		asset_list = result[1]
@@ -5504,8 +5091,8 @@ class task(studio):
 		# (2)
 		task_list = []
 		for asset_name in asset_list:
-			if asset_list[asset_name]['status']== 'active':
-				asset_id = asset_list[asset_name]['id']
+			if asset_list[asset_name].status== 'active':
+				asset_id = asset_list[asset_name].id
 				bool_, return_data = self.get_list(asset_id=asset_id, task_status='checking')
 				if not bool_:
 					return(bool_, return_data)
@@ -5885,7 +5472,7 @@ class task(studio):
 			new_status = 'done'
 		else:
 			# get assets dict
-			result = self.asset.get_name_data_dict_by_all_types()
+			result = self.asset.get_dict_by_name_by_all_types()
 			if not result[0]:
 				return(False, result[1])
 			assets = result[1]
@@ -5893,10 +5480,10 @@ class task(studio):
 			bool_statuses = []
 			
 			for task_name in input_list:
-				bool_, r_data = self.get_tasks_data_by_name_list([task_name], assets_data = assets.get(task_name.split(':')[0]))
+				bool_, r_data = self.get_tasks_by_name_list([task_name], assets_data = assets.get(task_name.split(':')[0]))
 				if not bool_:
 					print('#'*5)
-					print('in task.get_tasks_data_by_name_list()')
+					print('in task.get_tasks_by_name_list()')
 					print('task_name - %s' % task_name)
 					print('asset_data - ', assets_data)
 					continue
@@ -5926,7 +5513,7 @@ class task(studio):
 			new_status = 'done'
 		else:
 			# get assets dict
-			result = self.get_name_data_dict_by_all_types(project_name)
+			result = self.get_dict_by_name_by_all_types(project_name)
 			if not result[0]:
 				return(False, result[1])
 			assets = result[1]
