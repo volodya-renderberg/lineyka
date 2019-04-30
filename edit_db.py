@@ -180,7 +180,7 @@ class studio:
 	'priority':'integer',
 	'asset_id': 'text',
 	'asset_type': 'text',
-	'asset_path': 'text', # каждый раз определяется при считывании данных.
+	#'asset_path': 'text', # каждый раз определяется при считывании данных. ## больше не нужен это task.asset.path
 	'extension': 'text',
 	}
 	'''
@@ -2184,7 +2184,6 @@ class asset(studio):
 
 class task(studio):
 	'''
-	
 	'''
 	
 	def __init__(self, asset_ob):
@@ -2193,7 +2192,7 @@ class task(studio):
 		self.asset = asset_ob
 		
 		for key in self.tasks_keys:
-			exec('self.%s = False' % key)
+			setattr(self, key, False)
 		
 		self.VARIABLE_STATUSES = ('ready', 'ready_to_send', 'work', 'work_to_outsorce')
 		
@@ -2212,7 +2211,7 @@ class task(studio):
 	def init(self, task_name, new = True):
 		pass
 		# get keys
-		bool_, keys = self.read_task(task_name)
+		bool_, keys = self.__read_task(task_name)
 		if not bool_:
 			return(bool_, keys)
 				
@@ -2220,12 +2219,11 @@ class task(studio):
 		if new:
 			new_task = task(self.asset)
 			for key in self.tasks_keys:
-				exec('new_task.%s = keys.get("%s")' % (key, key))
+				setattr(new_task, key, keys.get(key))
 			return new_task
 		else:
 			for key in self.tasks_keys:
-				exec('self.%s = keys.get("%s")' % (key, key))
-			#self.asset_path = keys.get('asset_path')
+				setattr(self, key, keys.get(key))
 			return(True, 'Ok')
 		
 	# инициализация по словарю
@@ -2234,22 +2232,21 @@ class task(studio):
 		if new:
 			new_task = task(self.asset)
 			for key in self.tasks_keys:
-				exec('new_task.%s = keys.get("%s")' % (key, key))
+				setattr(new_task, key, keys.get(key))
 			return new_task
 		else:
 			for key in self.tasks_keys:
-				exec('self.%s = keys.get("%s")' % (key, key))
-			#self.asset_path = keys.get('asset_path')
+				setattr(self, key, keys.get(key))
 			return(True, 'Ok')
 		
 	# ************************ CHANGE STATUS ******************************** start
 	
 	@staticmethod
-	def _input_to_end(task_data): # v2
-		if task_data['status'] == 'close':
+	def _input_to_end(task_ob): # v2
+		if task_ob.status == 'close':
 			return(False)
 		
-		autsource = bool(task_data['outsource'])
+		autsource = bool(task_ob.outsource)
 				
 		if autsource:
 			return('ready_to_send')
@@ -2257,55 +2254,31 @@ class task(studio):
 			return('ready')
 	
 	# изменение статуса сервис задачи, по проверке статусов входящих задачь.
-	# task_data (dict) - текущая задача.
-	# assets (dict) - словарь всех ассетов по всем типам (ключи - имена, данные - ассеты (словари)) - результат функции asset.get_dict_by_name_by_all_types()
-	def service_input_to_end(self, task_data, assets): # v2 *** не тестилось.
+	# задача должна быть инициализирована
+	# assets (dict) - словарь всех ассетов по всем типам (ключи - имена, данные - ассеты (объекты)) - результат функции asset.get_dict_by_name_by_all_types()
+	def service_input_to_end(self, assets): # v2 *** не тестилось.
 		new_status = False
 		
 		# (1) get input_list
-		input_list = task_data['input']
+		input_list = self.input
 		if not input_list:
 			return(True, new_status)
 		
 		# get status
 		bool_statuses = []
 		# --------------- fill end_statuses -------------
-		'''
-		# ****** connect to db
-		conn = sqlite3.connect(self.tasks_path, detect_types=sqlite3.PARSE_DECLTYPES|sqlite3.PARSE_COLNAMES)
-		conn.row_factory = sqlite3.Row
-		c = conn.cursor()
-		'''
 		for task_name in input_list:
 			# (2) asse id
-			asset_id = assets[task_name.split(':')[0]].get('id')
-			if not asset_id:
-				print('in task.service_input_to_end() incorrect key "id" in  "%s"' % task_name.split(':')[0])
+			asset_name = task_name.split(':')[0]
+			asset_ob = assets.get(asset_name)
+			if not asset_ob:
+				print('in task.service_input_to_end() incorrect asset_name  "%s"' % asset_name)
 				continue
-			'''
-			table = '\"' + asset_id + ':' + self.tasks_t + '\"'
-			
-			string = 'select * from ' + table + ' WHERE task_name = \"' + task_name + '\"'
-			try:
-				c.execute(string)
-				task_data = c.fetchone()
-			except:
-				conn.close()
-				return(False, ('in from_service_remove_input_tasks can not read ', string))
-			'''
 			# (3) get task data
-			table_name = '"%s:%s"' % (asset_id, self.tasks_t)
-			read_ob = self.asset.project
-			where = {'task_name': task_name}
-			bool_, return_data = database().read('project', read_ob, table_name, self.tasks_keys, where=where, table_root=self.tasks_db)
-			if not bool_:
-				return(bool_, return_data)
-			elif return_data:
-				task_data = return_data[0]
-			else:
-				return(False, 'Task Data Not Found! Task_name - "%s"' % task_name)
+			task_ob = task(asset_ob).init(task_name)
+			
 			# (4) make status
-			if task_data['status'] in self.end_statuses:
+			if task_ob.status in self.end_statuses:
 				bool_statuses.append(True)
 			else:
 				bool_statuses.append(False)
@@ -2320,29 +2293,31 @@ class task(studio):
 			
 		return(True, new_status)
 	
-	# возвращает новый статус задачи, на основе входящей задачи.
-	# input_task_data (dict / False) входящая задача.
-	# task_data (dict) - текущая задача.
-	def from_input_status(self, task_data, input_task_data):  # v2
+	# возвращает новый статус текущей задачи (если this_task=False), на основе входящей задачи.
+	# input_task (task / False) входящая задача.
+	# this_task (task / False) - если False - то предполагается текущая задача.
+	def from_input_status(self, input_task, this_task=False):  # v2 no test
 		pass
+		if not this_task:
+			this_task=self
 		# get task_outsource
-		task_outsource = bool(task_data['outsource'])
+		task_outsource = bool(this_task.outsource)
 		
 		new_status = None
 		# change status
-		if input_task_data:
-			if input_task_data['status'] in self.end_statuses:
+		if input_task:
+			if input_task.status in self.end_statuses:
 				if not task_outsource:
-					if task_data['status'] == 'null':
+					if this_task.status == 'null':
 						new_status = 'ready'
 				else:
-					if task_data['status'] == 'null':
+					if this_task.status == 'null':
 						new_status = 'ready_to_send'
 			else:
-				if task_data['status'] != 'close':
+				if this_task.status != 'close':
 					new_status = 'null'
 		else:
-			if not task_data['status'] in self.end_statuses:
+			if not this_task.status in self.end_statuses:
 				if task_outsource:
 					new_status = 'ready_to_send'
 				else:
@@ -2350,26 +2325,31 @@ class task(studio):
 		return(new_status)
 		
 	# замена статусов исходящих задачь при изменении статуса текущей задачи с done или с close.
-	# task_data (dict) - текущая задача.
-	# assets (dict) - словарь всех ассетов по всем типам (ключи - имена, данные - ассеты (словари)) - результат функции asset.get_dict_by_name_by_all_types()
-	def this_change_from_end(self, task_data, assets = False): # v2 *** no test
+	# this_task (task / False) - если False то текущая задача.
+	# assets (dict) - словарь всех ассетов по всем типам (ключи - имена, данные - ассеты (объекты)) - результат функции asset.get_dict_by_name_by_all_types()
+	def this_change_from_end(self, this_task=False, assets = False): # v2 *** no test
 		pass
+		# 0 - задаём объект текущей задачи
 		# 1 - список исходящих задачь
 		# 2 - получение списка всех ассетов
 		# 3 - цикл по списку исходящих задачь (output_list)
-		# - 4 - получение id ассета
-		# - 5 - чтение таск даты
+		# - 4 - получение ассета
+		# - 5 - чтение таска
 		# - 6 - определение нового статуса
 		# - 7 - изменения в readers
 		# - 8 - запись таск
 		# 9 - отправка далее в себя же - this_change_from_end() - по списку from_end_list
 		
+		# (0)
+		if not this_task:
+			this_task=self
+		
 		#
 		from_end_list = []
-		this_asset_type = task_data['asset_type']
+		this_asset_type = this_task.asset_type
 		
 		# (1)
-		output_list = task_data.get('output')
+		output_list = this_task.output
 		if not output_list:
 			return(True, 'Ok!')
 		# (2)
@@ -2379,55 +2359,31 @@ class task(studio):
 			if not result[0]:
 				return(False, result[1])
 			assets = result[1]
-		'''
-		# ****** connect to db
-		conn = sqlite3.connect(self.tasks_path, detect_types=sqlite3.PARSE_DECLTYPES|sqlite3.PARSE_COLNAMES)
-		conn.row_factory = sqlite3.Row
-		c = conn.cursor()
-		'''
+		
 		# (3) ****** change status
 		for task_name in output_list:
-            # (4) asse id
-			asset_id = assets[task_name.split(':')[0]].id
-			if not asset_id:
-				print('in this_change_from_end incorrect key "id" in  "%s"' % task_name.split(':')[0])
+			# (4)
+			asset_name = task_name.split(':')[0]
+			asset_ob = assets.get(asset_name)
+			if not asset_ob:
+				print('in task.this_change_from_end() incorrect asset_name  "%s"' % asset_name)
 				continue
-			'''
-			#table = '\"' + asset_id + ':' + self.tasks_t + '\"'
-			
-			string = 'select * from ' + table + ' WHERE task_name = \"' + task_name + '\"'
-			try:
-				c.execute(string)
-				task_data = c.fetchone()
-			except:
-				conn.close()
-				return(False, ('in this_change_from_end can not read ', string))
-				#return(False, string)
-			'''
 			# (5) get task data
-			table_name = '"%s:%s"' % (asset_id, self.tasks_t)
-			read_ob = self.asset.project
-			where = {'task_name': task_name}
-			bool_, return_data = database().read('project', read_ob, table_name, self.tasks_keys, where=where, table_root=self.tasks_db)
-			if not bool_:
-				return(bool_, return_data)
-			elif return_data:
-				task_data = return_data[0]
-			else:
-				return(False, 'Task Data Not Found! Task_name - "%s"' % task_name)
-			# (6) make new status char и obj не отключают локацию и аним шот, а локация отключает аним шот.
-			if task_data['status'] == 'close':
+			task_ob = task(asset_ob).init(task_name)
+			
+			# (6) make new status char и obj не отключают локацию и аним шот, а локация отключает аним шот. ??????
+			if task_ob.status == 'close':
 				continue
-			elif task_data['asset_type'] in ['location', 'shot_animation'] and this_asset_type not in ['location', 'shot_animation']:
+			elif task_ob.asset_type in ['location', 'shot_animation'] and this_asset_type not in ['location', 'shot_animation']:
 				continue
-			elif task_data['status'] == 'done':
-				from_end_list.append(task_data)
+			elif task_ob.status == 'done':
+				from_end_list.append(task_ob)
 				
 			new_status = 'null'
 			# (7) edit readers
 			readers = {}
 			try:
-				readers = task_data['readers']
+				readers = task_ob.readers
 			except:
 				pass
 			if readers:
@@ -2443,7 +2399,7 @@ class task(studio):
 			# (8)
 			#c.execute(string, data)
 			where = {'task_name': task_name}
-			bool_, return_data = database().update('project', read_ob, table_name, self.tasks_keys, update_data, where, table_root=self.tasks_db)
+			bool_, return_data = database().update('project', task_ob.asset.project, table_name, self.tasks_keys, update_data, where, table_root=self.tasks_db)
 			if not bool_:
 				return(bool_, return_data)
 		'''
@@ -2453,8 +2409,8 @@ class task(studio):
 		
 		# (9) ****** edit from_end_list
 		if from_end_list:
-			for t_d in from_end_list:
-				self.this_change_from_end(t_d, assets = assets)
+			for t_ob in from_end_list:
+				t_ob.this_change_from_end(assets = assets)
 		
 		
 		return(True, 'Ok!')
@@ -3008,7 +2964,7 @@ class task(studio):
 					task_key_data['status'] = "ready"
 				######
 			else:
-				input_task_data = self.read_task(project_name, task_key_data['input'], ('status',))
+				input_task_data = self.__read_task(project_name, task_key_data['input'], ('status',))
 				if input_task_data[0]:
 					if input_task_data[1]['status'] == 'done':
 						######
@@ -3143,7 +3099,7 @@ class task(studio):
 			input_task_name = task_key_data['input']
 		except:
 			input_task_name = current_task_data['input']
-		input_task_data = self.read_task(project_name, input_task_name, ['status'])
+		input_task_data = self.__read_task(project_name, input_task_name, ['status'])
 		if input_task_data[0]:
 			input_status = input_task_data[1]['status']
 		elif not input_task_data[0] and input_task_data[1] == 'not_task_name':
@@ -3205,7 +3161,7 @@ class task(studio):
 				elif key == 'input':
 					######
 					continue
-					data_from_input_task = self.read_task(project_name, task_key_data['input'], ('status',))
+					data_from_input_task = self.__read_task(project_name, task_key_data['input'], ('status',))
 					string = string + ' ' + key + ' = \"' + task_key_data[key] + '\",'
 				
 				else:
@@ -3275,7 +3231,7 @@ class task(studio):
 		
 		return True, 'ok'
 	'''
-	def read_task(self, project_name, task_name, keys):
+	def __read_task(self, project_name, task_name, keys):
 		if keys == 'all':
 			new_keys = []
 			for key in self.tasks_keys:
@@ -3559,7 +3515,7 @@ class task(studio):
 		
 		# (5)
 		if output_task_name:
-			bool_, output_task_data = self.read_task(output_task_name)
+			bool_, output_task_data = self.__read_task(output_task_name)
 			if not bool_:
 				return(bool_, return_data)
 			# --
@@ -4337,7 +4293,7 @@ class task(studio):
 		# get old inputs tasks data
 		old_input_task_data = None
 		if task_data['input']:
-			result = self.read_task(task_data['input'], task_data['asset_id'])
+			result = self.__read_task(task_data['input'], task_data['asset_id'])
 			if not result[0]:
 				return(False, result[1])
 			old_input_task_data = result[1]
@@ -4345,7 +4301,7 @@ class task(studio):
 		# get new inputs task data
 		new_input_task_data = None
 		if new_input:
-			result = self.read_task(new_input, task_data['asset_id'])
+			result = self.__read_task(new_input, task_data['asset_id'])
 			if not result[0]:
 				return(False, result[1])
 			new_input_task_data = result[1]
@@ -4800,7 +4756,7 @@ class task(studio):
 		input_task_name = task_data['input']
 		input_task_data = False
 		if input_task_name:
-			result = self.read_task(input_task_name, task_data['asset_id'])
+			result = self.__read_task(input_task_name, task_data['asset_id'])
 			if not result[0]:
 				return(False, result[1])
 			input_task_data = result[1]
@@ -4913,8 +4869,8 @@ class task(studio):
 	
 	# task_name (str) - имя задачи
 	# asset_id (str) - если объект asset, передаваемый в task не инициализирован, либо если предполагается задача другого ассета (не инициализированного), то надо указать asset_id.
-	# возврат словаря задачи по имени задачи.
-	def read_task(self, task_name, asset_id=False): # v2
+	# возврат словаря задачи по имени задачи. если нужен объект используем task.init(name)
+	def __read_task(self, task_name, asset_id=False): # v2
 		pass
 		
 		# (1)
@@ -5017,7 +4973,7 @@ class task(studio):
 			task_input_task_list[task['task_name']] = {'task' : task}
 			if task['input']:
 				input_asset_id = asset_list[task['input'].split(':')[0]].id
-				bool_, return_data = self.read_task(task['input'], asset_id=input_asset_id)
+				bool_, return_data = self.__read_task(task['input'], asset_id=input_asset_id)
 				if not bool_:
 					return(bool_, return_data)
 				task_input_task_list[task['task_name']]['input'] = return_data
@@ -5360,7 +5316,7 @@ class task(studio):
 								final_tasks_list.append(td)
 			else:
 				task_name = (ast_ob.name + ':final')
-				bool_, td = tsk_ob.read_task(task_name)
+				bool_, td = tsk_ob.__read_task(task_name)
 				if not bool_:
 					return(bool_, td)
 				final_tasks_list.append(td)
