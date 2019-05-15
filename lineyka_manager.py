@@ -7166,18 +7166,22 @@ class MainWindow(QtGui.QMainWindow):
 		if not os.path.exists(self.db_studio.studio_folder):
 			self.message('Path to the studio directory is not specified or not correct!', 2)
 			self.set_studio_ui()
+			return
 			
 		if not self.artist.nik_name:
 			print('launcher - not nik_name "%s"' % self.artist.nik_name)
 			self.login_or_registration_ui()
+			return
 			
 		if not self.artist.level:
 			print('launcher - not level "%s"' % self.artist.level)
 			self.login_or_registration_ui()
+			return
 			
 		if not self.artist.level in self.db_studio.manager_levels:
 			self.message('Minimum required level - manager! "%s"' % self.artist.level, 2)
 			self.login_or_registration_ui()
+			
 			
 	def login_or_registration_ui(self):
 		pass
