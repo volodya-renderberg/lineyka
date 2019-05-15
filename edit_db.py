@@ -1716,7 +1716,7 @@ class asset(studio):
 		
 		# (1)
 		# -- get recycle bin  data
-		result = group(self.project).get_by_keys({'type': 'all'})
+		result = group(self.project).get_by_keys({'type': 'recycle_bin'})
 		if not result[0]:
 			return(False, ('in asset().remove' + result[1]))
 		recycle_bin = result[1][0]
@@ -1985,14 +1985,24 @@ class asset(studio):
 			return(False, 'asset.get_list_by_group(): the data type of the variable passed to this procedure must be a "group", passed type: "%s"' % group_ob.__class__.__name__)
 		
 		# (2)
+		assets = []
 		where = {'group': group_ob.id}
-		bool_, return_data = database().read('project', group_ob.project, group_ob.type, self.asset_keys, where = where, table_root=self.assets_db)
-		if not bool_:
-			print('#'*5, return_data)
-			return(True, [])
+		if group_ob.type == 'recycle_bin':
+			for asset_type in self.asset_types:
+				b, r = database().read('project', group_ob.project, asset_type, self.asset_keys, where = where, table_root=self.assets_db)
+				if not b:
+					print('#'*5, r)
+					continue
+				else:
+					assets = assets + r
+		else:
+			bool_, assets = database().read('project', group_ob.project, group_ob.type, self.asset_keys, where = where, table_root=self.assets_db)
+			if not bool_:
+				print('#'*5, assets)
+				return(True, [])
 		
 		r_data = []
-		for asset in return_data:
+		for asset in assets:
 			#asset['path'] = NormPath(os.path.join(self.project.path, self.project.folders['assets'],asset['type'], asset['name']))
 			r_data.append(self.init_by_keys(asset))
 		return(True, r_data)
@@ -6349,8 +6359,9 @@ class artist(studio):
 		else:
 			# fill fields
 			for key in self.artists_keys:
-				com = 'self.%s = rows[0].get("%s")' % (key, key)
-				exec(com)
+				setattr(self, key, rows[0].get(key))
+				#com = 'self.%s = rows[0].get("%s")' % (key, key)
+				#exec(com)
 			if not outsource:
 				return True, (rows[0]['nik_name'], rows[0]['user_name'], None, rows[0])
 			else:
@@ -7640,7 +7651,7 @@ class group(studio):
 				id_s.append(group.id)
 				if group.name == self.recycle_bin_name:
 					recycle_bin = group
-				if group.type == 'all':
+				if group.type == 'recycle_bin':
 					all_group = group
 				
 		if not all_group:
@@ -7661,7 +7672,7 @@ class group(studio):
 			# -- keys
 			keys = {
 			'name':self.recycle_bin_name,
-			'type': 'all',
+			'type': 'recycle_bin',
 			'description':'removed assets'
 			}
 			# -- get id
@@ -7714,7 +7725,7 @@ class group(studio):
 					output_list.append(self.init_by_keys(grp_d))
 					
 		# (4)
-		for t in self.asset_types + ['all']:
+		for t in self.asset_types + ['recycle_bin']:
 			dict_by_type[t] = []
 			
 		for d in return_data:

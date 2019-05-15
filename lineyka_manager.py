@@ -95,6 +95,7 @@ class MainWindow(QtGui.QMainWindow):
 		self.selected_set_of_tasks = None # выбранный в таблице set_of_tasks (объект)
 		self.selected_season = None # выбранный в таблице сезон season (объект)
 		self.selected_group = None # выбранная в таблице группа (объект)
+		self.selected_asset = None # выбранный в таблице ассет (объект)
 		
 		# CONSTANTS
 		self.SEASON_COLUMNS = ['name', 'status']
@@ -173,6 +174,8 @@ class MainWindow(QtGui.QMainWindow):
 		
 		# ---- self.WORKROOM ----------------------------
 		self.set_self_workrooms()
+		
+		self.launcher()
 		
 		# ---- TASKS MANAGER ----------------------------
 		#self.preparation_to_task_manager()
@@ -3105,7 +3108,7 @@ class MainWindow(QtGui.QMainWindow):
 		window.setWindowModality(QtCore.Qt.WindowModal)
 		window.setAttribute(QtCore.Qt.WA_DeleteOnClose, True)
 		
-		window.show()		
+		window.show()	
 		
 		print('edit description group ui')
 		
@@ -3225,7 +3228,7 @@ class MainWindow(QtGui.QMainWindow):
 			button08.clicked.disconnect()
 		except:
 			pass
-		button08.clicked.connect(partial(self.remove_asset_action, table))
+		button08.clicked.connect(partial(self.remove_asset_action))
 		# 9
 		button09.setVisible(True)
 		button09.setText('To Task Manager >>>')
@@ -3283,7 +3286,7 @@ class MainWindow(QtGui.QMainWindow):
 		self.selected_group = self.db_group.dict_by_name[group_name]
 		self.db_asset.project = self.selected_project
 				
-		if self.selected_group.type == 'all':
+		if self.selected_group.type == 'recycle_bin':
 			self.myWidget.studio_butt_4.setVisible(False)
 			self.myWidget.studio_butt_6.setVisible(False)
 			self.myWidget.studio_butt_7.setVisible(False)
@@ -3541,24 +3544,29 @@ class MainWindow(QtGui.QMainWindow):
 		self.close_window(window)
 		#print('change asset group action', result[1])
 		
-	def remove_asset_action(self, table):
-		asset_data = table.currentItem().asset
-		ask = self.message(('Are you sure you want to delete Asset \"' + asset_data['name'] + '\"?'), 0)
+	def remove_asset_action(self):
+		table = self.myWidget.studio_editor_table
+		if not table.currentItem():
+			self.message('No asset selected!', 2)
+			return
+		asset = table.currentItem().asset
+		ask = self.message(('Are you sure you want to delete Asset \"%s\"?' % asset.name), 0)
 		if not ask:
 			return
 		
-		result = self.db_chat.remove_asset(self.current_project, asset_data)
-		if not result[0]:
-			self.message(str(result[1]), 2)
+		b,r = asset.remove()
+		if not b:
+			self.message(str(r), 2)
 		
 		# reload assets list
-		self.fill_group_content_list(self.myWidget, self.myWidget.studio_editor_table, self.current_group['name'])
+		self.fill_group_content_list(self.selected_group.name)
 		
 	def change_asset_priority_ui(self):
 		pass
 		table = self.myWidget.studio_editor_table
 		if not table.selectedItems():
 			self.message('No asset selected!', 2)
+			return
 		self.selected_asset = table.selectedItems()[0].asset
 		
 		# widget
@@ -6992,6 +7000,7 @@ class MainWindow(QtGui.QMainWindow):
           
 		# finish
 		print('set studio folder')
+		self.launcher()
     
 	def set_tmp_path_action(self):
 		# get path
@@ -7058,6 +7067,8 @@ class MainWindow(QtGui.QMainWindow):
 			self.message((key + ' changed!'), 1)
     
 	def user_login_ui(self):
+		pass
+		#
 		loader = QtUiTools.QUiLoader()
 		file = QtCore.QFile(self.login_window_path)
 		#file.open(QtCore.QFile.ReadOnly)
@@ -7070,13 +7081,15 @@ class MainWindow(QtGui.QMainWindow):
 		
 		self.loginWindow.show()
 
-		# edit button
+		# connect
+		self.loginWindow.rejected.connect(self.launcher)
 		self.loginWindow.login_button.clicked.connect(self.user_login_action)
 
 		# finish
 		print('login ui')
     
 	def user_login_action(self):
+		pass
 		#copy = db.artist()
 
 		nik_name = self.loginWindow.login_nik_name_field.text()
@@ -7085,24 +7098,26 @@ class MainWindow(QtGui.QMainWindow):
 		login = self.artist.login_user(nik_name, password)
     
 		if login[0]:
-			self.loginWindow.close()
+			self.loginWindow.accept()
 		else:
 			self.message(login[1], 2)
 			return
 			
 		# ---- get artist data
-		self.get_artist_data(read=False)
-		    
+		self.get_artist_data(read=True)
+				    
 		# finish
 		self.tm_fill_project_list()
 		print('login action')
+		
+		self.launcher()
     
 	def user_registration_ui(self):
 		loader = QtUiTools.QUiLoader()
-		file = QtCore.QFile(self.user_registr_window_path)
+		f = QtCore.QFile(self.user_registr_window_path)
 		#file.open(QtCore.QFile.ReadOnly)
-		self.myWidget.registrWindow = loader.load(file, self)
-		file.close()
+		self.myWidget.registrWindow = loader.load(f, self)
+		f.close()
 		
 		# set modal window
 		self.myWidget.registrWindow.setWindowModality(QtCore.Qt.WindowModal)
@@ -7110,14 +7125,15 @@ class MainWindow(QtGui.QMainWindow):
 		
 		self.myWidget.registrWindow.show()
 
-		# edit Button
+		# connect
+		self.myWidget.registrWindow.rejected.connect(self.launcher)
 		self.myWidget.registrWindow.user_registration_button.clicked.connect(self.user_registration_action)
 
 		# finish
 		print('registration ui')
     
 	def user_registration_action(self):
-		
+		pass
 		# get Data
 		data = {
 		'nik_name' : self.myWidget.registrWindow.nik_name_field.text(),
@@ -7131,19 +7147,77 @@ class MainWindow(QtGui.QMainWindow):
 		# add artist
 		result = self.artist.add_artist(data)
 		if result[0]:
-			self.myWidget.registrWindow.close()
+			self.myWidget.registrWindow.accept()
 		else:
 			self.message(result[1], 2)
 			return
 		
-		self.get_artist_data(read = False)
-		
+		self.get_artist_data(read = True)
+				
 		# finish
 		self.reload_artist_list()
 		self.tm_fill_project_list()
 		print('user registration action')
+		
+		self.launcher()
     
-	#*********************** UTILITS ******************************************* 
+	#*********************** UTILITS *******************************************
+	def launcher(self):
+		if not os.path.exists(self.db_studio.studio_folder):
+			self.message('Path to the studio directory is not specified or not correct!', 2)
+			self.set_studio_ui()
+			
+		if not self.artist.nik_name:
+			print('launcher - not nik_name "%s"' % self.artist.nik_name)
+			self.login_or_registration_ui()
+			
+		if not self.artist.level:
+			print('launcher - not level "%s"' % self.artist.level)
+			self.login_or_registration_ui()
+			
+		if not self.artist.level in self.db_studio.manager_levels:
+			self.message('Minimum required level - manager! "%s"' % self.artist.level, 2)
+			self.login_or_registration_ui()
+			
+	def login_or_registration_ui(self):
+		pass
+		dialog = QtGui.QDialog(self)
+		dialog.setWindowTitle('Login or register')
+		dialog.setModal(True)
+		dialog.resize(200, 100)
+		
+		#
+		v_layout = QtGui.QVBoxLayout()
+		button_frame = QtGui.QFrame(parent = dialog)
+		
+		# login_button
+		login_button = QtGui.QPushButton()
+		login_button.setMaximumWidth(100)
+		login_button.setText('Login')
+		login_button.clicked.connect(partial(self.login_or_registration_to_login, dialog))
+		# reg_button
+		reg_button = QtGui.QPushButton()
+		reg_button.setMaximumWidth(100)
+		reg_button.setText('Registration')
+		reg_button.clicked.connect(partial(self.login_or_registration_to_registration, dialog))
+		
+		v_layout.addWidget(login_button)
+		v_layout.addWidget(reg_button)
+		
+		#v_layout.addWidget(button_frame)
+		dialog.setLayout(v_layout)
+		
+		dialog.rejected.connect(partial(self.close_window, self))
+		dialog.show()
+		
+	def login_or_registration_to_login(self, dialog):
+		dialog.accept()
+		self.user_login_ui()
+		
+	def login_or_registration_to_registration(self, dialog):
+		dialog.accept()
+		self.user_registration_ui()
+	
 	def set_self_workrooms(self, workrooms = False):
 		self.workrooms = []
 		if not workrooms:
