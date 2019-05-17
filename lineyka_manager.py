@@ -6981,6 +6981,8 @@ class MainWindow(QtGui.QMainWindow):
 		self.setWindow.set_studio_button.clicked.connect(self.set_studio_action)
 		self.setWindow.set_tmp_button.clicked.connect(self.set_tmp_path_action)
 		self.setWindow.set_convert_button.clicked.connect(self.set_convert_path_action)
+		
+		self.setWindow.rejected.connect(self.launcher)
 
 		print('set studio ui')
     
@@ -7163,9 +7165,12 @@ class MainWindow(QtGui.QMainWindow):
     
 	#*********************** UTILITS *******************************************
 	def launcher(self):
-		if not os.path.exists(self.db_studio.studio_folder):
+		if not self.db_studio.studio_folder:
 			self.message('Path to the studio directory is not specified or not correct!', 2)
-			self.set_studio_ui()			
+			self.set_studio_ui()
+		elif not os.path.exists(self.db_studio.studio_folder):
+			self.message('Path to the studio directory is not specified or not correct!', 2)
+			self.set_studio_ui()
 		elif not self.artist.nik_name:
 			print('launcher - not nik_name "%s"' % self.artist.nik_name)
 			self.login_or_registration_ui()

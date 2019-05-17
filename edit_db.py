@@ -27,6 +27,12 @@ def NormPath(input_path):
 		# linux etc...
 		path = os.path.normpath(input_path)
 	return(path)
+
+def print_args(fn):
+	def inner_fn(*args):
+		print(args)
+		return fn(*args)
+	return(inner_fn)
 	
 class studio:
 	'''
@@ -764,8 +770,8 @@ class database():
 		#return(db_name, db_data)
 		
 		if db_name == 'sqlite3':
-			return_data = self.__sqlite3_read(level, read_ob, table_name, keys, columns, where, table_root)
-			return(return_data)
+			b, r = self.__sqlite3_read(level, read_ob, table_name, keys, columns, where, table_root)
+			return(b, r)
 	
 	# update_data - словарь по ключам из keys
 	# where - словарь по ключам, так как значения маскируются под "?" не может быть None или False
@@ -799,9 +805,12 @@ class database():
 	
 	### SQLITE3
 	# table_root - может быть как именем таблицы - например: assets, так и именем файла - .assets.db
+	@print_args
 	def __get_db_path(self, level, read_ob, table_name, table_root):
 		attr = self.sqlite3_db_folder_attr.get(level)
-		db_folder = eval('read_ob.%s' % attr)
+		db_folder = getattr(read_ob, attr)
+		if not db_folder:
+			return(None)
 		if table_root:
 			if table_root.endswith('.db'):
 				db_path = os.path.join(db_folder, table_root)
@@ -846,6 +855,8 @@ class database():
 		# connect
 		# -- db_path
 		db_path = self.__get_db_path(level, read_ob, table_name, table_root)
+		if not db_path:
+			return(False, 'No path to database!')
 		# -- connect
 		conn = sqlite3.connect(db_path, detect_types=sqlite3.PARSE_DECLTYPES|sqlite3.PARSE_COLNAMES)
 		conn.row_factory = sqlite3.Row
@@ -885,6 +896,8 @@ class database():
 		# connect
 		# -- db_path
 		db_path = self.__get_db_path(level, read_ob, table_name, table_root)
+		if not db_path:
+			return(False, 'No path to database!')
 		# -- connect
 		conn = sqlite3.connect(db_path, detect_types=sqlite3.PARSE_DECLTYPES|sqlite3.PARSE_COLNAMES)
 		conn.row_factory = sqlite3.Row
@@ -905,6 +918,7 @@ class database():
 	
 	# where - 1) строка условия, 2) словарь по keys, 3) False - значит выделяется всё.
 	# columns - False - означает все столбцы если не False - то список столбцов.
+	@print_args
 	def __sqlite3_read(self, level, read_ob, table_name, keys, columns, where, table_root):
 		# columns
 		col = ''
@@ -932,6 +946,8 @@ class database():
 		# connect
 		# -- db_path
 		db_path = self.__get_db_path(level, read_ob, table_name, table_root)
+		if not db_path:
+			return(False, 'No path to database!')
 		# -- connect
 		try:
 			conn = sqlite3.connect(db_path, detect_types=sqlite3.PARSE_DECLTYPES|sqlite3.PARSE_COLNAMES)
@@ -1008,6 +1024,8 @@ class database():
 		# connect
 		# -- db_path
 		db_path = self.__get_db_path(level, read_ob, table_name, table_root)
+		if not db_path:
+			return(False, 'No path to database!')
 		# -- connect
 		conn = sqlite3.connect(db_path, detect_types=sqlite3.PARSE_DECLTYPES|sqlite3.PARSE_COLNAMES)
 		conn.row_factory = sqlite3.Row
@@ -1044,6 +1062,8 @@ class database():
 	def __sqlite3_get(self, level, read_ob, table_name, com, table_root):
 		#db_path
 		db_path = self.__get_db_path(level, read_ob, table_name, table_root)
+		if not db_path:
+			return(False, 'No path to database!')
 		#print('__sqlite3_get()', db_path, os.path.exists(db_path))
 		
 		try:
@@ -1071,6 +1091,8 @@ class database():
 	def __sqlite3_set(self, level, read_ob, table_name, com, data_com, table_root):
 		#db_path
 		db_path = self.__get_db_path(level, read_ob, table_name, table_root)
+		if not db_path:
+			return(False, 'No path to database!')
 		#print('__sqlite3_get()', db_path, os.path.exists(db_path))
 		
 		try:
