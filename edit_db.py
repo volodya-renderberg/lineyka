@@ -807,7 +807,7 @@ class database():
 	
 	### SQLITE3
 	# table_root - может быть как именем таблицы - например: assets, так и именем файла - .assets.db
-	@print_args
+	#@print_args
 	def __get_db_path(self, level, read_ob, table_name, table_root):
 		attr = self.sqlite3_db_folder_attr.get(level)
 		db_folder = getattr(read_ob, attr)
@@ -920,7 +920,7 @@ class database():
 	
 	# where - 1) строка условия, 2) словарь по keys, 3) False - значит выделяется всё.
 	# columns - False - означает все столбцы если не False - то список столбцов.
-	@print_args
+	#@print_args
 	def __sqlite3_read(self, level, read_ob, table_name, keys, columns, where, table_root):
 		# columns
 		col = ''

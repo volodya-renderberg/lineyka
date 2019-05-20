@@ -3369,8 +3369,41 @@ class MainWindow(QtGui.QMainWindow):
 					
 		table.resizeRowsToContents()
 		table.resizeColumnsToContents()
+
+		table.setContextMenuPolicy(QtCore.Qt.CustomContextMenu)
+		table.customContextMenuRequested.connect(self._asset_editor_context_menu)
 			
 		print('fill group content list', self.selected_group.name)
+		
+	def _asset_editor_context_menu(self, pos):
+		pass
+		#print(pos.__reduce__())
+		table = self.myWidget.studio_editor_table
+		#print(item.column_name)
+		menu = QtGui.QMenu(table)
+		if self.selected_group.type=='recycle_bin':
+				menu_items = ['Gange Group', 'Gange Description']
+		else:
+			menu_items = ['Gange Group', 'Gange Priority', 'Gange Description', 'Copy Asset', 'Remove Asset', 'To Task Manager']
+		for label in menu_items:
+			action = menu.addAction(label)
+			action.triggered.connect(partial(self._asset_editor_context_menu_action, label))
+		menu.exec_(QtGui.QCursor.pos())
+		
+	def _asset_editor_context_menu_action(self, label):
+		pass
+		if label=='Gange Group':
+			self.change_asset_group_ui()
+		elif label=='Gange Priority':
+			self.change_asset_priority_ui()
+		elif label=='Gange Description':
+			self.change_asset_description_ui()
+		elif label=='Copy Asset':
+			self.copy_asset_ui()
+		elif label=='Remove Asset':
+			self.remove_asset_action()
+		elif label=='To Task Manager':
+			self.asset_to_task_manager('from_asset_editor')
 		
 	def asset_to_task_manager(self, action):
 		print(action)
