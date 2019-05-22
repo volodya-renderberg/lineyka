@@ -6631,6 +6631,10 @@ class artist(studio):
 		return True, 'ok'
 		
 class workroom(studio):
+	list_workroom = None
+	dict_by_name = None
+	dict_by_id = None
+	
 	def __init__(self):
 		pass
 		for key in self.workroom_keys:
@@ -6697,7 +6701,7 @@ class workroom(studio):
 		else:
 			return(self.init_by_keys(keys, True))
 		
-	def get_list_workrooms(self, return_type = False, objects=True):
+	def get_list(self, return_type = False, objects=True):
 		pass
 		bool_, return_data = database().read('studio', self, self.workroom_t, self.workroom_keys, table_root=self.workroom_db)
 		if not bool_:
@@ -6719,6 +6723,10 @@ class workroom(studio):
 			return_data_1.append(wr_data)
 			return_data_2[row['id']] = wr_data
 		
+		# fill fields
+		self._fill_fields_of_workroom_class(return_data_1, return_data_0, return_data_2)
+		
+		# return
 		if not return_type:
 			return(True, return_data_1)
 		elif return_type == 'by_name':
@@ -6729,6 +6737,13 @@ class workroom(studio):
 			return(True, return_data_2, return_data_0)
 		else:
 			return(False, ('Incorrect "return_type": %s' % return_type))
+		
+	@classmethod
+	def _fill_fields_of_workroom_class(self, list_workroom, dict_by_name, dict_by_id):
+		pass
+		self.list_workroom = list_workroom
+		self.dict_by_name = dict_by_name
+		self.dict_by_id = dict_by_id
 	
 	
 	def get_name_by_id(self, id_):
@@ -6759,7 +6774,7 @@ class workroom(studio):
 	
 	# возможно лучше не использовать
 	def name_list_to_id_list(self, name_list):
-		bool_, data = self.get_list_workrooms('by_name', False)
+		bool_, data = self.get_list('by_name', False)
 		if not bool_:
 			return(bool_, data)
 		if data:
@@ -6775,7 +6790,7 @@ class workroom(studio):
 	
 	# возможно лучше не использовать
 	def id_list_to_name_list(self, id_list):
-		bool_, data = self.get_list_workrooms('by_id', False)
+		bool_, data = self.get_list('by_id', False)
 		if not bool_:
 			return(bool_, data)
 		if data:
@@ -6801,7 +6816,7 @@ class workroom(studio):
 		# (1)
 		if self.name == new_name:
 			return(False, 'Match names!')
-		bool_, return_data = self.get_list_workrooms('by_name', False)
+		bool_, return_data = self.get_list('by_name', False)
 		if not bool_:
 			return(bool_, return_data)
 		if new_name in return_data:
