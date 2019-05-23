@@ -77,16 +77,16 @@ class MainWindow(QtGui.QMainWindow):
 		self.db_asset = db.asset(self.project)
 		self.db_group = db.group(self.project)
 		self.db_list_of_assets = db.list_of_assets(self.db_group)
-		#self.db_task = db.task()
+		self.db_task = db.task(self.db_asset)
 		#self.db_chat = db.chat()
 		#self.db_log = db.log()
 		
 		# other moduls
 		#self.publish = lineyka_publish.publish()
 		
-		# VARS
-		self.workrooms = {} # словарь отделов(объекты) по id - заполняется в set_self_workrooms()
-		self.workrooms_by_name = {} # словарь отделов(объекты) по name - заполняется в set_self_workrooms()
+		# VARIABLES
+		#self.workrooms = {} # словарь отделов(объекты) по id - заполняется в set_self_workrooms()
+		#self.workrooms_by_name = {} # словарь отделов(объекты) по name - заполняется в set_self_workrooms()
 		self.workroom = None # текущий отдел (объект)
 		self.selected_artist = None # выбранный в таблице артист (объект)
 		#self.current_user = None # авторизированный юзер (объект) - устарело
@@ -96,6 +96,7 @@ class MainWindow(QtGui.QMainWindow):
 		self.selected_season = None # выбранный в таблице сезон season (объект)
 		self.selected_group = None # выбранная в таблице группа (объект)
 		self.selected_asset = None # выбранный в таблице ассет (объект)
+		self.selected_task = None # выбранный так в таблице в task editor
 		
 		# CONSTANTS
 		self.SEASON_COLUMNS = ['name', 'status']
@@ -149,7 +150,7 @@ class MainWindow(QtGui.QMainWindow):
 		self.myWidget.studio_butt_9.setVisible(False)
 		self.myWidget.studio_butt_10.setVisible(False)
 		self.myWidget.group_search_qline.setVisible(False)
-		self.myWidget.group_search_qline.returnPressed.connect(self.reload_group_content_list)
+		self.myWidget.group_search_qline.returnPressed.connect(self.reload_asset_list)
 		
 		# edit combobox 
 		self.myWidget.set_comboBox_01.setVisible(False)
@@ -173,12 +174,12 @@ class MainWindow(QtGui.QMainWindow):
 		self.list_active_projects = self.db_studio.list_active_projects
 		
 		# ---- self.WORKROOM ----------------------------
-		self.set_self_workrooms()
+		self.db_workroom.get_list()
 		
 		self.launcher()
 		
 		# ---- TASKS MANAGER ----------------------------
-		#self.preparation_to_task_manager()
+		self.preparation_to_task_manager()
 		
 								
 	# ******************* STUDIO EDITOR ************************************************
@@ -253,14 +254,14 @@ class MainWindow(QtGui.QMainWindow):
 		#wr_name_dict = {}
 		
 		'''
-		result = self.db_workroom.get_list_workrooms('by_id', True)
+		result = self.db_workroom.get_list('by_id', True)
 		if not result[0]:
 			self.message(result[1], 3)
 			#return
 		else:
 			self.workrooms = result[1]
 		'''
-		self.set_self_workrooms()
+		self.db_workroom.get_list()
 		   
 		# get table data
 		look_keys = [
@@ -299,7 +300,7 @@ class MainWindow(QtGui.QMainWindow):
 					if getattr(artist, key):
 						wr_list = []
 						for wr_id in getattr(artist, key):
-							wr_list.append(self.workrooms[wr_id].name)
+							wr_list.append(self.db_workroom.dict_by_id[wr_id].name)
 						newItem.setText(','.join(wr_list))
 				elif key == 'nik_name':
 					color = self.artist_color
@@ -489,7 +490,7 @@ class MainWindow(QtGui.QMainWindow):
 		wr_name_list = []
 		if self.selected_artist.workroom:
 			for wr_id in  self.selected_artist.workroom:
-				wr_name_list.append(self.workrooms[wr_id].name)
+				wr_name_list.append(self.db_workroom.dict_by_id[wr_id].name)
 		
 		# edit widget
 		window.setWindowTitle('Edit Artist Data')
@@ -581,7 +582,7 @@ class MainWindow(QtGui.QMainWindow):
 	def artist_edit_workroom2_ui(self, current_widget): # используется при редактировании артиста (с чек боксами).
 		pass
 		# get all workrooms
-		bool_, workrooms = self.db_workroom.get_list_workrooms()
+		bool_, workrooms = self.db_workroom.get_list()
 		
 		if not bool_:
 			self.message(workrooms, 3)
@@ -683,7 +684,7 @@ class MainWindow(QtGui.QMainWindow):
 				
 		data = []
 		for item in items:
-			data.append(self.workrooms[item.wr_id].name)
+			data.append(self.db_workroom.dict_by_id[item.wr_id].name)
 			
 		data = set(data)
 		data = list(data)
@@ -773,13 +774,13 @@ class MainWindow(QtGui.QMainWindow):
 		self.fill_workroom_table(self.myWidget.studio_editor_table)
 				
 	def fill_workroom_table(self, table):
-		self.set_self_workrooms()
+		self.db_workroom.get_list()
 		
 		# look_keys
 		look_keys = ['name', 'type']
 		
 		# get table data
-		num_row = len(self.workrooms)
+		num_row = len(self.db_workroom.dict_by_id)
 		num_column = len(look_keys)
 		headers = []
 		
@@ -793,8 +794,8 @@ class MainWindow(QtGui.QMainWindow):
     
 		
 		# fill table
-		for i, name in enumerate(sorted(self.workrooms_by_name.keys())):
-			workroom = self.workrooms_by_name[name]
+		for i, name in enumerate(sorted(self.db_workroom.dict_by_name.keys())):
+			workroom = self.db_workroom.dict_by_name[name]
 			for j,key in enumerate(headers):
 				if key == 'date_time':
 					continue
@@ -972,7 +973,7 @@ class MainWindow(QtGui.QMainWindow):
 				self.message('Not Selected Workroom!', 2)
 				return
 			else:
-				self.workroom = self.workrooms[current_item.wr_id]
+				self.workroom = self.db_workroom.dict_by_id[current_item.wr_id]
 		else:
 			self.workroom=workroom
 		
@@ -1029,7 +1030,7 @@ class MainWindow(QtGui.QMainWindow):
 				self.message('Not Selected Workroom!', 2)
 				return
 			else:
-				self.workroom = self.workrooms[current_item.wr_id]
+				self.workroom = self.db_workroom.dict_by_id[current_item.wr_id]
 		else:
 			self.workroom = workroom
 		
@@ -1080,7 +1081,7 @@ class MainWindow(QtGui.QMainWindow):
 				self.message('Not Selected Workroom!', 2)
 				return
 			else:
-				self.workroom = self.workrooms[current_item.wr_id]
+				self.workroom = self.db_workroom.dict_by_id[current_item.wr_id]
 		else:
 			self.workroom=workroom
 				
@@ -1156,8 +1157,8 @@ class MainWindow(QtGui.QMainWindow):
 		
 		# get wr_name_list
 		wr_name_list = []
-		for id in self.workrooms:
-			wr_name_list.append(self.workrooms[id].name)
+		for id in self.db_workroom.dict_by_id:
+			wr_name_list.append(self.db_workroom.dict_by_id[id].name)
 		wr_name_list = ['-- all --'] + sorted(wr_name_list)
 		
 		# edit widget
@@ -1242,7 +1243,7 @@ class MainWindow(QtGui.QMainWindow):
 		active_artists = []
 		#
 		if wr_name and wr_name != '-- all --':
-			wr_id = self.workrooms_by_name[wr_name].id
+			wr_id = self.db_workroom.dict_by_name[wr_name].id
 			self.clear_table(window.select_from_list_data_list_table)
 			for artist in artists[1]:
 				if artist.status == 'active' and wr_id in artist.workroom:
@@ -3271,9 +3272,6 @@ class MainWindow(QtGui.QMainWindow):
 		
 		print('edit ui to group content editor')
 		
-	def reload_group_content_list(self):
-		self.fill_group_content_list(self.selected_group.name)
-		
 	def reload_asset_list(self):
 		self.fill_group_content_list(self.selected_group.name)
 		
@@ -3414,14 +3412,14 @@ class MainWindow(QtGui.QMainWindow):
 			except:
 				self.message('Asset is not selected!', 2)
 				return
-				
+			'''
 			# -- group dict
 			result = self.db_group.get_groups_dict_by_id()
 			if not result[0]:
 				self.message(result[1], 3)
 				return
 			group_dict = result[1]
-				
+			'''
 			# load task manager
 			# -- open tab
 			self.myWidget.main_tabWidget.setCurrentIndex(1)
@@ -3432,10 +3430,10 @@ class MainWindow(QtGui.QMainWindow):
 					#self.tm_reload_task_list()
 					break
 			
-			#self.myWidget.global_search_qline.setText(asset_data['name'])
-			#self.tm_fill_season_groups(self.current_project)
+			#self.myWidget.global_search_qline.setText(asset_data['name']) #old
+			#self.tm_fill_season_groups(self.current_project) # old
 			
-			self.tm_reload_task_list_by_global_search_action(None, group_dict, self.myWidget.studio_editor_table.currentItem())
+			#self.tm_reload_task_list_by_global_search_action(None, group_dict, self.myWidget.studio_editor_table.currentItem())
 		
 		elif action == 'from_content_editor':
 			print(self.action_to_tm)
@@ -5001,7 +4999,7 @@ class MainWindow(QtGui.QMainWindow):
 		# ----------- POPUP MENU --------------------------
 		# LOCAL SEARCH
 		self.myWidget.local_search_qline.setContextMenuPolicy( QtCore.Qt.ActionsContextMenu )
-		for status in self.db_chat.task_status:
+		for status in self.db_studio.task_status:
 			addgrup_action = QtGui.QAction( status, self.myWidget)
 			addgrup_action.triggered.connect(partial(self.tm_reload_task_list_by_status, status))
 			self.myWidget.local_search_qline.addAction( addgrup_action )
@@ -5107,23 +5105,10 @@ class MainWindow(QtGui.QMainWindow):
 	def tm_fill_project_list(self):
 		pass	
 		
-		self.project.get_list() # ??????
+		self.project.get_list() # ?????? скорее всего надо
 				
-		if not self.artist.nik_name:
-			self.message('Not User!', 2)
-			self.boxes_default_state()
-			self.myWidget.task_manager_comboBox_1.clear()
-			self.myWidget.task_manager_comboBox_4.clear()
-			return
-		elif self.artist.user_levels.index(self.artist.level) < self.artist.user_levels.index('manager'):
-			self.message('No Access!', 2)
-			self.boxes_default_state()
-			self.myWidget.task_manager_comboBox_1.clear()
-			self.myWidget.task_manager_comboBox_4.clear()
-			return
-		
 		# fill project list
-		items = ['-- select project --'] + self.list_active_projects
+		items = ['-- select project --'] + self.project.list_active_projects
 		self.myWidget.task_manager_comboBox_1.clear()
 		self.myWidget.task_manager_comboBox_1.addItems(items)
 		self.myWidget.task_manager_comboBox_1.activated[str].connect(partial(self.tm_fill_season_groups))
@@ -5132,77 +5117,74 @@ class MainWindow(QtGui.QMainWindow):
 		self.tm_fill_workroom_list()
 		
 	def tm_fill_workroom_list(self):
-		copy = self.db_workroom
-		result = copy.get_list_workrooms()
-		if copy.user_levels.index(self.artist.level) >= copy.user_levels.index('root'):
-			#result = copy.get_list_workrooms()
-			if result[0]:
+		b, r_data = self.db_workroom.get_list()
+		if self.db_workroom.user_levels.index(self.artist.level) >= self.db_workroom.user_levels.index('root'): # root и выше!!!! куда выше не известно, может super_root
+			if b:
 				wr_list = []
-				for wr in result[1]:
+				wr_type_list = []
+				for wr in r_data:
 					wr_list.append(wr.name)
+					if wr.type:
+						wr_type_list = wr_type_list + wr.type
 				items = ['all workrooms'] + sorted(wr_list)
 				self.myWidget.task_manager_comboBox_4.setVisible(True)
 				self.myWidget.task_manager_comboBox_4.clear()
 				self.myWidget.task_manager_comboBox_4.addItems(items)
-				self.myWidget.task_manager_comboBox_4.wr_list = wr_list
+				self.myWidget.task_manager_comboBox_4.wr_type_list = list(set(wr_type_list))
 		else:
-			user_wr_list = json.loads(self.artist.workroom)
-			if result[0]:
+			if b:
 				wr_list = []
-				for wr in result[1]:
-					if wr.id in user_wr_list:
+				wr_type_list = []
+				for wr in r_data:
+					if wr.id in self.artist.workroom:
 						wr_list.append(wr.name)
-									
+						if wr.type:
+							wr_type_list = wr_type_list + wr.type
 				items = ['all workrooms'] + sorted(wr_list)
 				self.myWidget.task_manager_comboBox_4.setVisible(True)
 				self.myWidget.task_manager_comboBox_4.clear()
 				self.myWidget.task_manager_comboBox_4.addItems(items)
-				self.myWidget.task_manager_comboBox_4.wr_list = wr_list
+				self.myWidget.task_manager_comboBox_4.wr_type_list = list(set(wr_type_list))
 		
 		self.myWidget.task_manager_comboBox_4.activated[str].connect(self.tm_reload_task_list)
 			
 		
 	def tm_fill_season_groups(self, project_name):
-		copy = self.db_group
-		filter_of_type = self.myWidget.task_manager_comboBox_5.currentText()
-		if filter_of_type == '-all types-':
-			f = copy.asset_types
-		else:
-			f = filter_of_type
-		
-		result = copy.get_list(f = f)
-		
-		copy_s = self.db_season
-		result_s = copy_s.get_list(project_name)
-		
+		pass
 		if project_name == '-- select project --':
 			self.boxes_default_state()
 			return
 		else:
-			self.current_project = project_name
-			self.project.get_project(self.current_project)
+			self.selected_project = self.project.dict_projects.get(project_name)
 			self.myWidget.global_search_qline.setVisible(True)
+		
+		filter_of_type = self.myWidget.task_manager_comboBox_5.currentText()
+		if filter_of_type == '-all types-':
+			f = self.db_studio.asset_types
+		else:
+			f = filter_of_type
+		
+		self.db_group.project = self.selected_project
+		result = self.db_group.get_list(f = f)
+		
+		self.db_season.project = self.selected_project
+		result_s = self.db_season.get_list()
 		
 		if result[0]:
 			# fil season list
 			if result_s[0]:
-				season_list = []
-				for row in result_s[1]:
-					season_list.append(row['name'])
+				season_list = list(self.db_season.dict_by_name.keys())
 				items_ = ['-- all season --'] + season_list
 				self.myWidget.task_manager_comboBox_2.setVisible(True)
 				self.myWidget.task_manager_comboBox_2.clear()
 				self.myWidget.task_manager_comboBox_2.addItems(items_)
 				self.myWidget.task_manager_comboBox_2.activated[str].connect(self.tm_reload_group_list)
+			else:
+				print('***\n%s\n***\n' % str(result_s[1]))
 			
 			# fill group list
-			group_list = []
-			group_id_list = []
-			for row in result[1]:
-				group_list.append(row['name'])
-				group_id_list.append(row['id'])
-			items = ['-- select group --'] + group_list
-			G.id_group_items = [''] + group_id_list
+			items = ['-- select group --'] + list(self.db_group.dict_by_name.keys())
+			G.id_group_items = [''] + list(self.db_group.dict_by_id.keys())
 			
 			self.myWidget.task_manager_comboBox_3.setVisible(True)
 			self.myWidget.task_manager_comboBox_3.clear()
@@ -5231,39 +5213,41 @@ class MainWindow(QtGui.QMainWindow):
 		else:
 			self.tm_reload_group_list(season)
 			
-	def tm_reload_group_list(self, season, filter_of_type = False):
+	def tm_reload_group_list(self, season_name, filter_of_type = False):
 		if not filter_of_type:
 			filter_of_type = self.db_studio.asset_types
 		# get group list
-		result = self.db_group.get_list(f = filter_of_type)
-		
-		# get season id
-		season_id = ''
-		if season != '-- all season --':
-			copy_s = self.db_season
-			res = copy_s.get_by_name(self.current_project, season)
-			if not res[0]:
-				self.message(res[1], 2)
-				self.myWidget.task_manager_comboBox_2.setCurrentIndex(0)
-				return
-			else:
-				season_id = res[1]['id']
+		self.db_group.project = self.selected_project
+		b, r = self.db_group.get_list(f = filter_of_type)
+		if not b:
+			self.message(r, 3)
+			self.myWidget.task_manager_comboBox_2.setCurrentIndex(0)
+			return
 		
 		# fill combobox
-		if result[0]:
-			group_list = []
-			group_id_list = []
-			for row in result[1]:
-				if row['season'] == season_id or season == '-- all season --':
-					group_list.append(row['name'])
-					group_id_list.append(row['id'])
+		group_list = []
+		group_id_list = []
+		if season_name != '-- all season --':
+			self.db_season.project = self.selected_project
+			season_ob = self.db_season.init(season_name)
+			if not season_ob:
+				self.message('Failed to get object "Season"', 2) # ? может только принт
+				self.myWidget.task_manager_comboBox_2.setCurrentIndex(0)
+				return
+			for group_ob in self.db_group.list_group:
+				if group_ob.season == season_ob.id:
+					group_list.append(group_ob.name)
+					group_id_list.append(group_ob.id)
+		else: # -- all season --
+			group_list = list(self.db_group.dict_by_name.keys())
+			group_id_list = list(self.db_group.dict_by_id.keys())
 									
-			items = ['-- select group --'] + group_list
-			G.id_group_items = [''] + group_id_list
-			
-			self.myWidget.task_manager_comboBox_3.setVisible(True)
-			self.myWidget.task_manager_comboBox_3.clear()
-			self.myWidget.task_manager_comboBox_3.addItems(items)
+		items = ['-- select group --'] + group_list
+		G.id_group_items = [''] + group_id_list
+		
+		self.myWidget.task_manager_comboBox_3.setVisible(True)
+		self.myWidget.task_manager_comboBox_3.clear()
+		self.myWidget.task_manager_comboBox_3.addItems(items)
 	
 	# ---------- RELOAD TASK_ LIST ----------------------------------------------
 	
@@ -5390,112 +5374,85 @@ class MainWindow(QtGui.QMainWindow):
 	def tm_reload_task_list(self, *args):
 		#if search:
 		group_name = self.myWidget.task_manager_comboBox_3.currentText()
-		index = self.myWidget.task_manager_comboBox_3.currentIndex()
+		#index = self.myWidget.task_manager_comboBox_3.currentIndex()
 		search = self.myWidget.local_search_qline.text().lower().replace(' ', '_')
 		self.myWidget.button_area.setVisible(False)
 		
 		SEARCH_IDENTIFIERS = ('#','@')
 		
-		group_id = G.id_group_items[index]
+		#
+		group_ob = self.db_group.dict_by_name.get(group_name)
 				
-		#if group_name == '-- select group --':
-		if not group_id:
+		#
+		if not group_ob:
 			self.myWidget.button_area.setVisible(False)
 			self.clear_table(table = self.myWidget.task_manager_table)
 			return
 		else:
 			self.myWidget.local_search_qline.setVisible(True)
-			
-		# get self.current_group 
-		#copy = db.group()
-		result = self.db_group.get_by_id(group_id)
-		if not result[0]:
-			self.message(result[1], 3)
-			return
-		else:
-			self.current_group = result[1]
-			
+			self.selected_group = group_ob			
 		
 		# ==================== METADATA ==================== self.tasks_rows, num_column, num_row
-		# get current workroom
+		# get current workroom id list
 		wr_name = self.myWidget.task_manager_comboBox_4.currentText()
-		copy_wr = self.db_workroom
-		current_wr_id = []
+		current_wr_type_list = [] # список id читаемых отделов.
 		if wr_name != 'all workrooms':
-			result = copy_wr.get_id_by_name(wr_name)
-			if not result[0]:
-				self.message(result[1], 2)
-				return
-			else:
-				current_wr_id.append(result[1])
+			current_wr_type_list = self.db_workroom.dict_by_name.get(wr_name).type
 		else:
-			current_wr_name = self.myWidget.task_manager_comboBox_4.wr_list
-			result = copy_wr.name_list_to_id_list(current_wr_name)
-			if not result[0]:
-				self.message(result[1], 2)
-				return
-			else:
-				current_wr_id = result[1]
+			current_wr_type_list = self.myWidget.task_manager_comboBox_4.wr_type_list
 		
-		# get workroom list
-		result = copy_wr.get_list_workrooms(DICTONARY = 'by_id')
-		if not result[0]:
-			self.message(result[1], 2)
-			return
-		else:
-			self.myWidget.task_manager_table.workrooms = result[1]
-						
 		# get asset list
-		#copy = self.db_task
-		result = self.db_chat.get_list_by_group(self.current_project, self.current_group['id'])
+		self.db_asset.project = self.selected_project
+		b, r_data = self.db_asset.get_list_by_group(self.selected_group)
 		asset_list = []
-		if result[0]:
-			if not search or search in self.db_chat.task_status: # пустая строка поиска либо в строке поиска статус задачи
-				asset_list = result[1]
+		if b:
+			if not search or search in self.db_studio.task_status: # пустая строка поиска либо в строке поиска статус задачи
+				asset_list = r_data
 			else:
-				for row in result[1]:
-					if search in row['name'].lower():
-						asset_list.append(row)
+				for asset_ob in r_data:
+					if search in asset_ob.name.lower():
+						asset_list.append(asset_ob)
 		else:
-			self.message(result[1], 2)
+			self.message(r_data, 2)
 			return
 		
 		# create tasks rows
 		num_column = []
 		self.tasks_rows = {}
 		fin_asset_list = []
-		for asset_ in asset_list:
+		for asset_ob in asset_list:
 			#self.tasks_rows[asset_['name']] = []
 			# -- get task list
 			task_list = []
-			if search and search in self.db_chat.task_status:
-				result = self.db_chat.get_list(self.current_project, asset_['id'], search)
+			self.db_task.asset = asset_ob
+			if search and search in self.db_studio.task_status:
+				result = self.db_task.get_list(task_status=search)
 			
 			else:
-				result = self.db_chat.get_list(self.current_project, asset_['id'])
+				result = self.db_task.get_list()
 			if result[0]:
 				if not result[1]: # в смысле вернулся пустой список
 					continue
 				else:
 					task_list = result[1]
-					fin_asset_list.append(asset_)
+					fin_asset_list.append(asset_ob)
 			else:
 				continue
-			self.tasks_rows[asset_['name']] = []
+			self.tasks_rows[asset_ob.name] = []
 			# -- -- tasks labels
 			len_ = len(task_list)
-			for task_ in task_list:
-				if task_['task_type'] == 'service':
+			for task_ob in task_list:
+				if task_ob.task_type == 'service':
 					len_ = len_ - 1
 					continue
-					#self.tasks_rows[asset_['name']].append(task_)
+					#self.tasks_rows[asset_ob['name']].append(task_ob)
 				#!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 				elif wr_name != 'all workrooms':
-					if not task_['workroom'] in current_wr_id:
+					if not task_ob.task_type in current_wr_type_list:
 						len_ = len_ - 1
 						continue
 				else:
-					self.tasks_rows[asset_['name']].append(task_)
+					self.tasks_rows[asset_ob.name].append(task_ob)
 			num_column.append(len_)
 		if num_column:
 			num_column = max(num_column) + 1
@@ -5524,10 +5481,10 @@ class MainWindow(QtGui.QMainWindow):
 		  
 				
 		# fill table
-		for i, asset in enumerate(self.tasks_rows):
+		for i, asset_name in enumerate(self.tasks_rows):
 			
 			# get img path
-			icon_path = os.path.join(self.db_chat.preview_img_path, (asset + '_icon.png'))
+			icon_path = os.path.join(self.selected_project.preview_img_path, '%s_icon.png' % asset_name) 
 			# label
 			label = QtGui.QLabel()
 			
@@ -5543,14 +5500,14 @@ class MainWindow(QtGui.QMainWindow):
 			
 			self.myWidget.task_manager_table.setCellWidget(i, 0, label)
 			
-			for j,task_ in enumerate(self.tasks_rows[asset]):
+			for j,task_ob in enumerate(self.tasks_rows[asset_name]):
 				j = j+1
 				
 				newItem = QtGui.QTableWidgetItem()
-				newItem.setText(task_['task_name'].replace((task_['asset'] + ':'), ''))
-				newItem.task = task_
+				newItem.setText(task_ob.task_name.replace('%s:' % task_ob.asset.name, ''))
+				newItem.task = task_ob
 				
-				rgb = self.db_chat.color_status[task_['status']]
+				rgb = self.db_studio.color_status[task_ob.status]
 				r = (rgb[0]*255)
 				g = (rgb[1]*255)
 				b = (rgb[2]*255)
@@ -5560,13 +5517,13 @@ class MainWindow(QtGui.QMainWindow):
 				
 				self.myWidget.task_manager_table.setItem(i, j, newItem)
 			# add empty item	
-			if not self.tasks_rows[asset]:
-				#print(asset)
+			if not self.tasks_rows[asset_name]:
+				#print(asset_name)
 				for jj in range(0, num_column):
 					newItem = QtGui.QTableWidgetItem()
 					newItem.task = None
 					self.myWidget.task_manager_table.setItem(i, jj, newItem)
-			elif len(self.tasks_rows[asset])<num_column:
+			elif len(self.tasks_rows[asset_name])<num_column:
 				for jj in range((j+1), num_column):
 					newItem = QtGui.QTableWidgetItem()
 					newItem.task = None
@@ -5582,77 +5539,74 @@ class MainWindow(QtGui.QMainWindow):
 		self.myWidget.task_manager_table.itemClicked.connect(self.tm_load_buttons_of_tasks)
 		
 	def tm_load_buttons_of_tasks(self, *args):
+		pass
+		print(args[0].task.task_name)
+		#
+		if self.selected_task:
+			old_asset_name = self.selected_task.asset.name
+		else:
+			old_asset_name = None
+		#
+		self.selected_task = args[0].task
 		
-		print(json.dumps(dict(args[0].task), sort_keys = True, indent = 4))
-		
-		try:
-			old_asset = self.current_task['asset']
-		except:
-			old_asset = None
-		
-		task_data = None
-		try:
-			task_data = args[0].task
+		if self.selected_task:
 			# visible button frame
 			self.myWidget.button_area.setVisible(True)
 			
 			# -- ACCEPT button
-			if task_data['status'] in self.db_chat.working_statuses or task_data['status'] == 'checking':
+			if self.selected_task.status in self.db_studio.working_statuses or self.selected_task.status == 'checking':
 				self.myWidget.assept_button.setVisible(True)
 			else:
 				self.myWidget.assept_button.setVisible(False)
 			# -- SEND TO AUTSOURCE button
-			if task_data['status'] == 'ready_to_send':
+			if self.selected_task.status == 'ready_to_send':
 				self.myWidget.send_to_outsource_button.setVisible(True)
 			else:
 				self.myWidget.send_to_outsource_button.setVisible(False)
 			
 			# -- TO REWORK button
-			if task_data['status'] == 'checking':
+			if self.selected_task.status == 'checking':
 				self.myWidget.to_rework_button.setVisible(True)
 			else:
 				self.myWidget.to_rework_button.setVisible(False)
 				
 			# -- CLOSE button
-			if not task_data['status'] in self.db_chat.end_statuses:
+			if not self.selected_task.status in self.db_studio.end_statuses:
 				self.myWidget.close_task_button.setVisible(True)
 			else:
 				self.myWidget.close_task_button.setVisible(False)
 			
 			# -- RETURN A JOB button
-			if task_data['status'] in self.db_chat.end_statuses:
+			if self.selected_task.status in self.db_studio.end_statuses:
 				self.myWidget.return_a_job_button.setVisible(True)
 			else:
 				self.myWidget.return_a_job_button.setVisible(False)
 			
-		except:
-			self.myWidget.button_area.setVisible(False)
-			return
-		if not task_data:
+		else:
 			self.myWidget.button_area.setVisible(False)
 			return
 		
 		# ------------ Fill Task Labels -------------------
 		
 		# get labels
-		task_label = task_data['task_name'].replace(':', ' : ')
-		input_label = task_data['input'].replace(':', ' : ')
+		task_label = self.selected_task.task_name.replace(':', ' : ')
+		input_label = self.selected_task.input.replace(':', ' : ')
 		
 		# -- set labels
 		self.myWidget.tm_task_name_label.setText(task_label)
-		self.myWidget.tm_data_label_1.setText(task_data['artist'])
-		self.myWidget.tm_data_label_2.setText(task_data['activity'])
-		self.myWidget.tm_data_label_3.setText(self.myWidget.task_manager_table.workrooms[task_data['workroom']]['name'])
+		self.myWidget.tm_data_label_1.setText(self.selected_task.artist)
+		self.myWidget.tm_data_label_2.setText(self.selected_task.activity)
+		#self.myWidget.tm_data_label_3.setText(self.db_workroom.dict_by_id[self.selected_task.workroom].name)
 		self.myWidget.tm_data_label_4.setText(input_label)
-		self.myWidget.tm_data_label_5.setText(str(task_data['price']))
-		self.myWidget.tm_data_label_6.setText(task_data['task_type'])
-		self.myWidget.tm_data_label_7.setText(task_data['extension'])
-		self.myWidget.tm_data_label_8.setText(task_data['tz'])
+		self.myWidget.tm_data_label_5.setText(str(self.selected_task.price))
+		self.myWidget.tm_data_label_6.setText(self.selected_task.task_type)
+		self.myWidget.tm_data_label_7.setText(self.selected_task.extension)
+		self.myWidget.tm_data_label_8.setText(self.selected_task.tz)
 		
 		# -- load to preview img
-		if old_asset != task_data['asset']:
+		if old_asset_name != self.selected_task.asset.name:
 			#print('change image')
-			preview_path = os.path.join(self.db_chat.preview_img_path, (task_data['asset'] + '.png'))
+			preview_path = os.path.join(self.selected_project.preview_img_path, '%s.png' % self.selected_task.asset.name)
 			if os.path.exists(preview_path):
 				image = QtGui.QImage(preview_path)
 				self.myWidget.image_label.setPixmap(QtGui.QPixmap.fromImage(image))
@@ -5663,31 +5617,21 @@ class MainWindow(QtGui.QMainWindow):
 		else:
 			pass
 			#print('old image')
-			
-		# -- READERS visibility, content
-		# get CURRENT readers list
-		self.current_readers_list = {}
-		try:
-			self.current_readers_list = json.loads(task_data['readers'])
-		except:
-			pass
 		
+		# -- READERS visibility, content
 		# get CLEANED readers list
 		self.cleaned_readers_list = {}
-		for key in self.current_readers_list:
+		for key in self.selected_task.readers:
 			if key == 'first_reader':
 				continue
-			self.cleaned_readers_list[key] = self.current_readers_list[key]
+			self.cleaned_readers_list[key] = self.selected_task.readers[key]
 		
 		# set visible
-		if not self.current_readers_list:
+		if not self.selected_task.readers:
 			self.myWidget.readers_list.setVisible(False)
 			self.myWidget.edit_readers_button.setVisible(True)
 		else:
 			self.tm_load_readers_list()
-		
-		# fill field for chat
-		self.current_task = task_data
 		
 	# ---- readers editor ----------------
 		
@@ -5817,7 +5761,7 @@ class MainWindow(QtGui.QMainWindow):
 		table.setSelectionMode(QtGui.QAbstractItemView.ExtendedSelection)
 		
 		# -- load workroom_list
-		result = self.db_workroom.get_list_workrooms(DICTONARY = 'by_name')
+		result = self.db_workroom.get_list(DICTONARY = 'by_name')
 		if not result[0]:
 			self.message(result[1], 2)
 		workroom_dict = result[1]
@@ -6261,7 +6205,7 @@ class MainWindow(QtGui.QMainWindow):
 				
 		# get list of activity
 		copy = self.db_workroom
-		result = copy.get_list_workrooms(DICTONARY = 'by_name')
+		result = copy.get_list(DICTONARY = 'by_name')
 		if not result[0]:
 			self.message(result[1], 2)
 			return
@@ -6836,7 +6780,7 @@ class MainWindow(QtGui.QMainWindow):
 				elif head == 'extension':
 					textes = self.db_chat.extensions
 				elif head == 'workroom':
-					textes = self.workrooms
+					textes = self.db_workroom.dict_by_id
 				elif head == 'task_type':
 					textes = self.db_chat.task_types
 				elif head == 'input':
@@ -7252,23 +7196,6 @@ class MainWindow(QtGui.QMainWindow):
 	def login_or_registration_to_registration(self, dialog):
 		dialog.accept()
 		self.user_registration_ui()
-	
-	def set_self_workrooms(self, workrooms = False):
-		self.workrooms = []
-		if not workrooms:
-			workrooms = self.db_workroom.get_list_workrooms('by_id_by_name', True)
-			
-			if not workrooms[0]:
-				return
-			else:
-				self.workrooms = workrooms[1]
-				self.workrooms_by_name = workrooms[2]
-		
-		#for row in workrooms[1]:
-			#self.workrooms.append(row['name'])
-		#self.workrooms=workrooms
-		#print(self.workrooms)
-			
 	
 	def get_artist_data(self, read = True):
 		# ---- get artist data
