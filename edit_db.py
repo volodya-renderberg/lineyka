@@ -7760,7 +7760,7 @@ class group(studio):
 				output_list.append(self.init_by_keys(grp_d))
 		else:
 			for grp_d in return_data:
-				if grp_ob.type in f:
+				if grp_d['type'] in f:
 					output_list.append(self.init_by_keys(grp_d))
 					
 		# (4)
