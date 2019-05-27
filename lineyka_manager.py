@@ -5011,10 +5011,12 @@ class MainWindow(QtGui.QMainWindow):
 		self.myWidget.tm_data_label_2.addAction( addgrup_action )
 		
 		# WORKROOM
-		self.myWidget.tm_data_label_3.setContextMenuPolicy( QtCore.Qt.ActionsContextMenu )
-		addgrup_action = QtGui.QAction( 'change Workroom', self.myWidget)
-		addgrup_action.triggered.connect(partial(self.tm_change_task_workroom_ui))
-		self.myWidget.tm_data_label_3.addAction( addgrup_action )
+		self.myWidget.tm_data_label_3.hide()
+		self.myWidget.label_6.hide()
+		#self.myWidget.tm_data_label_3.setContextMenuPolicy( QtCore.Qt.ActionsContextMenu )
+		#addgrup_action = QtGui.QAction( 'change Workroom', self.myWidget)
+		#addgrup_action.triggered.connect(partial(self.tm_change_task_workroom_ui))
+		#self.myWidget.tm_data_label_3.addAction( addgrup_action )
 		
 		# PRICE
 		self.myWidget.tm_data_label_5.setContextMenuPolicy( QtCore.Qt.ActionsContextMenu )
@@ -5031,7 +5033,7 @@ class MainWindow(QtGui.QMainWindow):
 		# INPUT
 		self.myWidget.tm_data_label_4.setContextMenuPolicy( QtCore.Qt.ActionsContextMenu )
 		addgrup_action = QtGui.QAction( 'change Input Task', self.myWidget)
-		addgrup_action.triggered.connect(partial(self.tm_change_task_input_ui))
+		addgrup_action.triggered.connect(partial(self.tm_change_input_ui))
 		self.myWidget.tm_data_label_4.addAction( addgrup_action )
 		
 		# TASK_ TYPE
@@ -5046,7 +5048,7 @@ class MainWindow(QtGui.QMainWindow):
 		addgrup_action.triggered.connect(partial(self.tm_change_task_extension_ui))
 		self.myWidget.tm_data_label_7.addAction( addgrup_action )
 		
-		# EXTENSION
+		# LINK
 		self.myWidget.tm_data_label_8.setContextMenuPolicy( QtCore.Qt.ActionsContextMenu )
 		addgrup_action = QtGui.QAction( 'change Link', self.myWidget)
 		addgrup_action.triggered.connect(partial(self.tm_change_tz_link_ui))
@@ -5118,6 +5120,8 @@ class MainWindow(QtGui.QMainWindow):
 		
 	def tm_fill_workroom_list(self):
 		b, r_data = self.db_workroom.get_list()
+		if not self.artist.user_name:
+			return
 		if self.db_workroom.user_levels.index(self.artist.level) >= self.db_workroom.user_levels.index('root'): # root и выше!!!! куда выше не известно, может super_root
 			if b:
 				wr_list = []
@@ -5504,7 +5508,11 @@ class MainWindow(QtGui.QMainWindow):
 				j = j+1
 				
 				newItem = QtGui.QTableWidgetItem()
-				newItem.setText(task_ob.task_name.replace('%s:' % task_ob.asset.name, ''))
+				item_text = '%s\n---' % task_ob.task_name.replace('%s:' % task_ob.asset.name, '')
+				for attr in self.db_studio.setting_data['task__visible_fields']:
+					item_text = '%s\n%s: %s' % (item_text, attr, getattr(task_ob, attr))
+				newItem.setText(item_text)
+				#newItem.setText('%s\ntype:%s\nartist: %s' % (task_ob.task_name.replace('%s:' % task_ob.asset.name, ''), task_ob.task_type, task_ob.artist))
 				newItem.task = task_ob
 				
 				rgb = self.db_studio.color_status[task_ob.status]
@@ -6150,12 +6158,10 @@ class MainWindow(QtGui.QMainWindow):
 	# ---- change activity ----------
 			
 	def tm_change_task_activity_ui(self, *args):
-		# get item
-		item = self.myWidget.task_manager_table.currentItem()
-				
+		pass
 		# get list of activity
 		#copy = db.asset()
-		activity_list = self.db_asset.ACTIVITY_FOLDER[self.current_group['type']].keys()
+		activity_list = self.db_asset.ACTIVITY_FOLDER[self.selected_group.type].keys()
 		activity_list.sort()
 		
 		# create window
@@ -6166,11 +6172,11 @@ class MainWindow(QtGui.QMainWindow):
 		file.close()
 		
 		# edit window
-		window.setWindowTitle(('Change Activity of Task: \'' + item.task['task_name'] + '\"'))
+		window.setWindowTitle(('Change Activity of Task: %s' % self.selected_task.task_name))
 		window.combo_dialog_label.setText('Select Activity:')
 		window.combo_dialog_combo_box.addItems(activity_list)
 		window.combo_dialog_cancel.clicked.connect(partial(self.close_window, window))
-		window.combo_dialog_ok.clicked.connect(partial(self.tm_change_task_activity_action, window, item))
+		window.combo_dialog_ok.clicked.connect(partial(self.tm_change_task_activity_action, window))
 		
 		# set modal window
 		window.setWindowModality(QtCore.Qt.WindowModal)
@@ -6178,21 +6184,17 @@ class MainWindow(QtGui.QMainWindow):
 		
 		window.show()
 		
-	def tm_change_task_activity_action(self, window, item_):
+	def tm_change_task_activity_action(self, window):
+		pass
 		# get new activity
 		new_activity = window.combo_dialog_combo_box.currentText()
 				
-		# change activity
-		task_data = dict(item_.task)
-		#copy = self.db_chat
-		result = self.db_chat.change_activity(self.current_project, task_data, new_activity)
-		if not result[0]:
-			self.message(result[1], 2)
+		b, r_data = self.selected_task.change_activity(new_activity)
+		if not b:
+			self.message(r_data, 2)
 			return
 		
 		# change table
-		task_data['activity'] = new_activity
-		item_.task = task_data
 		self.myWidget.tm_data_label_2.setText(new_activity)
 		
 		self.close_window(window)
@@ -6267,11 +6269,11 @@ class MainWindow(QtGui.QMainWindow):
 		file.close()
 		
 		# edit window
-		window.setWindowTitle(('Change Price of Task: \'' + item.task['task_name'] + '\"'))
+		window.setWindowTitle(('Change Price of Task: %s' % self.selected_task.task_name))
 		window.new_dialog_label.setText('Select WorkRoom:')
-		window.new_dialog_name.setText(str(item.task['price']))
+		window.new_dialog_name.setText(str(self.selected_task.price))
 		window.new_dialog_cancel.clicked.connect(partial(self.close_window, window))
-		window.new_dialog_ok.clicked.connect(partial(self.tm_change_task_price_action, window, item))
+		window.new_dialog_ok.clicked.connect(partial(self.tm_change_task_price_action, window))
 		
 		# set modal window
 		window.setWindowModality(QtCore.Qt.WindowModal)
@@ -6279,21 +6281,17 @@ class MainWindow(QtGui.QMainWindow):
 		
 		window.show()
 		
-	def tm_change_task_price_action(self, window, item_):
+	def tm_change_task_price_action(self, window):
 		# get new workroom
 		new_price = float(window.new_dialog_name.text())
 				
 		# change workroom
-		task_data = dict(item_.task)
-		copy = self.db_chat # db_task
-		result = copy.change_price(self.current_project, task_data, new_price)
-		if not result[0]:
-			self.message(result[1], 2)
+		b, r_data = self.selected_task.change_price(new_price)
+		if not b:
+			self.message(r_data, 2)
 			return
 			
 		# change table
-		task_data['price'] = new_price
-		item_.task = task_data
 		self.myWidget.tm_data_label_5.setText(str(new_price))
 		
 		self.close_window(window)
@@ -6381,23 +6379,21 @@ class MainWindow(QtGui.QMainWindow):
 		
 	# ------ change input --------------
 	
-	def tm_change_task_input_ui(self, *args):
-		# get item
-		item = self.myWidget.task_manager_table.currentItem()
-				
+	def tm_change_input_ui(self, *args):
+		pass		
 		# get task list
 		task_list = []
-		result = self.db_chat.get_list(self.current_project, item.task['asset_id'])
+		result = self.selected_task.get_list()
 		if result[0]:
 			task_list = result[1]
 			
 		task_name_list = ['None']
 		for task in task_list:
-			if task['task_name'].replace((task['asset'] + ':'),'') == 'final':
+			if task.task_name.replace(('%s:' % task.asset.name),'') == 'final':
 				continue
-			elif task['task_name'] == item.task['task_name']:
+			elif task.task_name == self.selected_task.task_name:
 				continue
-			task_name_list.append(task['task_name'])
+			task_name_list.append(task.task_name)
 		
 		print(task_name_list)
 		
@@ -6414,22 +6410,22 @@ class MainWindow(QtGui.QMainWindow):
 		window.setAttribute(QtCore.Qt.WA_DeleteOnClose, True)
 		
 		# edit window
-		window.setWindowTitle(('Change Input Task: \'' + item.task['task_name'] + '\"'))
+		window.setWindowTitle(('Change Input Task: %s' % self.selected_task.task_name))
 		window.combo_dialog_label.setText('Select Task:')
 		window.combo_dialog_combo_box.addItems(task_name_list)
 		window.combo_dialog_cancel.clicked.connect(partial(self.close_window, window))
-		window.combo_dialog_ok.clicked.connect(partial(self.tm_change_task_input_action, window, item))
+		window.combo_dialog_ok.clicked.connect(partial(self.tm_change_input_action, window))
 		
 		window.show()
 		
-	def tm_change_task_input_action(self, window, item_):
+	def tm_change_input_action(self, window):
 		# get input task
 		input_task = window.combo_dialog_combo_box.currentText()
 		if input_task == 'None':
 			input_task = False
 					
 		# change input
-		result = self.db_chat.change_input(self.current_project, item_.task, input_task)
+		result = self.selected_task.change_input(input_task)
 		if not result[0]:
 			self.message(result[1], 2)
 			return
@@ -6439,25 +6435,19 @@ class MainWindow(QtGui.QMainWindow):
 		new_input_task_data = result[1][2]
 		
 		# edit table
-		task_data = dict(item_.task)
 		if new_status:
-			task_data['status'] = new_status
+			item = self.myWidget.task_manager_table.currentItem()
 			# change table color
-			rgb = self.db_chat.color_status[new_status]
+			rgb = self.db_studio.color_status[new_status]
 			r = (rgb[0]*255)
 			g = (rgb[1]*255)
 			b = (rgb[2]*255)
 			color = QtGui.QColor(r, g, b)
 			brush = QtGui.QBrush(color)
-			item_.setBackground(brush)
-		if new_input_task_data:
-			task_data['input'] = new_input_task_data['task_name']
-		else:
-			task_data['input'] = ''
-		item_.task = task_data
-		
+			item.setBackground(brush)
+				
 		# edit label
-		self.myWidget.tm_data_label_4.setText(task_data['input'])
+		self.myWidget.tm_data_label_4.setText(self.selected_task.input)
 		
 		
 		self.close_window(window)
@@ -6478,11 +6468,11 @@ class MainWindow(QtGui.QMainWindow):
 		# edit window
 		content_list = self.db_studio.task_types
 		content_list.sort()
-		window.setWindowTitle(('Change Task Type: \'' + self.current_task['task_name'] + '\"'))
+		window.setWindowTitle(('Change Task Type: %s' % self.selected_task.task_name))
 		window.combo_dialog_label.setText('Select Task Type:')
 		window.combo_dialog_combo_box.addItems(content_list)
 		try:
-			window.combo_dialog_combo_box.setCurrentIndex(content_list.index(self.current_task['task_type']))
+			window.combo_dialog_combo_box.setCurrentIndex(content_list.index(self.selected_task.task_type))
 		except:
 			pass
 		window.combo_dialog_cancel.clicked.connect(partial(self.close_window, window))
@@ -6493,18 +6483,13 @@ class MainWindow(QtGui.QMainWindow):
 	def tm_change_task_type_action(self, window):
 		task_type = window.combo_dialog_combo_box.currentText()
 		
-		result = self.db_chat.changes_without_a_change_of_status('task_type', self.current_project, self.current_task, task_type)
-		if not result[0]:
-			self.message(result[1], 2)
+		b, r_data = self.selected_task.changes_without_a_change_of_status('task_type', task_type)
+		if not b:
+			self.message(r_data, 2)
 			return
 		
 		# edit label
 		self.myWidget.tm_data_label_6.setText(task_type)
-		
-		# get item
-		item = self.myWidget.task_manager_table.currentItem()
-		item.task = dict(item.task)
-		item.task['task_type'] = task_type
 		
 		self.close_window(window)
 		
@@ -6524,11 +6509,11 @@ class MainWindow(QtGui.QMainWindow):
 		# edit window
 		content_list = self.db_studio.extensions
 		content_list.sort()
-		window.setWindowTitle(('Change Extension: \'' + self.current_task['task_name'] + '\"'))
+		window.setWindowTitle(('Change Extension: %s' % self.selected_task.task_name))
 		window.combo_dialog_label.setText('Select Extension:')
 		window.combo_dialog_combo_box.addItems(content_list)
 		try:
-			window.combo_dialog_combo_box.setCurrentIndex(content_list.index(self.current_task['extension']))
+			window.combo_dialog_combo_box.setCurrentIndex(content_list.index(self.selected_task.extension))
 		except:
 			pass
 		window.combo_dialog_cancel.clicked.connect(partial(self.close_window, window))
@@ -6539,18 +6524,13 @@ class MainWindow(QtGui.QMainWindow):
 	def tm_change_task_extension_action(self, window):
 		extension = window.combo_dialog_combo_box.currentText()
 		
-		result = self.db_chat.changes_without_a_change_of_status('extension', self.current_project, self.current_task, extension)
+		result = self.selected_task.changes_without_a_change_of_status('extension', extension)
 		if not result[0]:
 			self.message(result[1], 2)
 			return
 		
 		# edit label
 		self.myWidget.tm_data_label_7.setText(extension)
-		
-		# get item
-		item = self.myWidget.task_manager_table.currentItem()
-		item.task = dict(item.task)
-		item.task['extension'] = extension
 		
 		self.close_window(window)
 		
@@ -6568,9 +6548,9 @@ class MainWindow(QtGui.QMainWindow):
 		window.setAttribute(QtCore.Qt.WA_DeleteOnClose, True)
 		
 		# edit window
-		window.setWindowTitle(('Change Tz Link: \'' + self.current_task['task_name'] + '\"'))
+		window.setWindowTitle(('Change Tz Link: %s' % self.selected_task.task_name))
 		window.new_dialog_label.setText('Link:')
-		window.new_dialog_name.setText(self.current_task['tz'])
+		window.new_dialog_name.setText(self.selected_task.tz)
 		window.new_dialog_cancel.clicked.connect(partial(self.close_window, window))
 		window.new_dialog_ok.clicked.connect(partial(self.tm_change_tz_link_action, window))
 		
@@ -6579,20 +6559,13 @@ class MainWindow(QtGui.QMainWindow):
 	def tm_change_tz_link_action(self, window):
 		link = window.new_dialog_name.text()
 		
-		result = self.db_chat.changes_without_a_change_of_status('tz', self.current_project, self.current_task, link)
+		result = self.selected_task.changes_without_a_change_of_status('tz', link)
 		if not result[0]:
 			self.message(result[1], 2)
 			return
 		
 		# edit label
 		self.myWidget.tm_data_label_8.setText(link)
-		
-		# get item
-		item = self.myWidget.task_manager_table.currentItem()
-		item.task = dict(item.task)
-		item.task['tz'] = link
-		self.current_task = dict(self.current_task)
-		self.current_task['tz'] = link
 		
 		self.close_window(window)
 		
