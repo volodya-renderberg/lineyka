@@ -61,7 +61,14 @@ class studio:
 		'.ntp': 'natron',
 		'.ma': 'maya',
 		'.ods':'libreoffice',
-		}
+		},
+	'task__visible_fields':[
+		'activity',
+		'task_type',
+		'artist',
+		'priority',
+		'extension',
+		]
 	}
 	
 	publish_folder_name = 'publish'
@@ -2245,19 +2252,17 @@ class task(studio):
 	def init(self, task_name, new = True):
 		pass
 		# get keys
-		bool_, keys = self.__read_task(task_name)
+		bool_, task_ob = self.__read_task(task_name)
 		if not bool_:
-			return(bool_, keys)
+			return(bool_, task_ob)
 				
 		# fill fields
 		if new:
-			new_task = task(self.asset)
-			for key in self.tasks_keys:
-				setattr(new_task, key, keys.get(key))
-			return new_task
+			return task_ob
 		else:
 			for key in self.tasks_keys:
-				setattr(self, key, keys.get(key))
+				setattr(self, key, getattr(task_ob, key))
+			self.asset=task_ob.asset
 			return(True, 'Ok')
 		
 	# инициализация по словарю
@@ -3878,10 +3883,32 @@ class task(studio):
 			return(bool_, r_data)
 		# запись новых данных в поле объекта, если он инициализирован
 		if not task_data:
+			setattr(self, key, new_data)
+			'''
 			if isinstance(new_data, str):
 				exec('self.%s = "%s"' % (key, new_data))
 			else:
 				exec('self.%s = %s' % (key, new_data))
+			'''
+		return(True, 'Ok!')
+	
+	# принудительная перезапись какого либо поля в таблице базы данных текущей задачи, без каких либо изменений во взаимосвязях.
+	# key (str) - изменяемое поле в таблице из studio.tasks_keys (имя колонки)
+	# new_data (в зависимости от типа данных данной колонки) - новое значение.
+	def __change_data(self, key, new_data): # v2
+		pass
+		#
+		read_ob = self.asset.project
+		table_name = '"%s:%s"' % (self.asset_id, self.tasks_t)
+		update_data = {key: new_data}
+		where = {'task_name': self.task_name}
+		bool_, r_data = database().update('project', read_ob, table_name, self.tasks_keys, update_data, where, table_root=self.tasks_db)
+		if not bool_:
+			return(bool_, r_data)
+		
+		# запись новых данных в поле объекта.
+		setattr(self, key, new_data)
+		
 		return(True, 'Ok!')
 		
 	# add_readers_list (list) - список никнеймов проверяющих (читателей)
@@ -4302,172 +4329,87 @@ class task(studio):
 		
 		return(True, (new_status, int(artist_outsource)))
 		
-	# new_input (str) - имя новой входящей задачи
-	# task_data (dict) - изменяемая задача, если False - значит предполагается, что task инициализирован.
-	def change_input(self, new_input, task_data=False): # v2 *** тестилось без смены статуса.
+	# new_input (bool/str) - имя новой входящей задачи или False
+	# предполагается, что task инициализирован и меняем инпут данной задачи.
+	def change_input(self, new_input): # v2 *** тестилось без смены статуса.
 		pass
-		# 1 - получение task_data, task_outsource, old_input_task_data, new_input_task_data, new_status, list_output_old, list_output_new
+		# 1 - получение task_data, task_outsource, old_input_task, new_input_task, new_status, list_output_old, list_output_new
 		# 2 - перезапись БД
-		# 3 - если task инициализирована - внеси в неё изменения.
-		# 4 - подготовка return_data
+		# 3 - подготовка return_data
 		
 		# (1)
-		if not task_data:
-			task_data={}
-			for key in self.tasks_keys:
-				exec('task_data["%s"] = self.%s' % (key, key))
-		
-		#
-		new_status = False
-		# get task_outsource
-		task_outsource = False
-		if task_data['outsource']:
-			task_outsource = bool(task_data['outsource'])
-		
-		# get old inputs tasks data
-		old_input_task_data = None
-		if task_data['input']:
-			result = self.__read_task(task_data['input'], task_data['asset_id'])
-			if not result[0]:
-				return(False, result[1])
-			old_input_task_data = result[1]
-		
-		# get new inputs task data
-		new_input_task_data = None
 		if new_input:
-			result = self.__read_task(new_input, task_data['asset_id'])
+			if self.output and new_input in self.output:
+				return(False, 'Outgoing task cannot be added to input!')
+		
+		# get old inputs tasks data (task instance)
+		old_input_task = None
+		if self.input:
+			result = self.__read_task(self.input)
 			if not result[0]:
 				return(False, result[1])
-			new_input_task_data = result[1]
-			new_input_status = new_input_task_data['status']
+			old_input_task = result[1]
+		
+		# get new inputs task data (task instance)
+		new_input_task = None
+		if new_input:
+			result = self.__read_task(new_input)
+			if not result[0]:
+				return(False, result[1])
+			new_input_task = result[1]
 		
 		# ???
 		# change status
-		new_status = self.from_input_status(task_data, new_input_task_data)
-		if task_data['status'] in self.end_statuses and not new_status in self.end_statuses:
-			self.this_change_from_end(task_data)
+		new_status = self.from_input_status(new_input_task)
+		if self.status in self.end_statuses and not new_status in self.end_statuses:
+			self.this_change_from_end()
 				
 		# change outputs
 		# -- in old input
-		list_output_old = None
-		if old_input_task_data:
-			list_output_old = old_input_task_data['output']
-			if task_data['task_name'] in list_output_old:
-				list_output_old.remove(task_data['task_name'])
+		list_output_old = None # output бывшей входящей задачи
+		if old_input_task:
+			list_output_old = old_input_task.output
+			if self.task_name in list_output_old:
+				list_output_old.remove(self.task_name)
 			
 		# -- in new input
 		list_output_new = None
-		if new_input_task_data:
-			if not new_input_task_data['output']:
+		if new_input_task:
+			if not new_input_task.output:
 				list_output_new = []
 			else:
-				list_output_new = new_input_task_data['output']
-			list_output_new.append(task_data['task_name'])
+				list_output_new = new_input_task.output
+			list_output_new.append(self.task_name)
+			
+		# prints
+		#if new_input_task:
+			#print('new input: %s' % new_input_task.task_name)
+		#else:
+			#print('new input: %s' % new_input_task)
+		#if old_input_task:
+			#print('old input: %s' % old_input_task.task_name)
+		#print('new status: %s' % new_status)
+		#print('list_output_old:' , list_output_old)
+		#print('list_output_new:' , list_output_new)
+		#return(True, 'Be!')
 		
 		# (2)
-		read_ob = self.asset.project
-		table_name = '"%s:%s"' % (task_data['asset_id'], self.tasks_t)
-		keys = self.tasks_keys
-		# edit old_output
-		if list_output_old:
-			where = {'task_name': old_input_task_data['task_name']}
-			update_data = {'output': list_output_old}
-			bool_, r_data = database().update('project', read_ob, table_name, keys, update_data, where, table_root=self.tasks_db)
-			if not bool_:
-				return(bool_, r_data)
-		if list_output_new:
-			# edit new_output
-			where = {'task_name': new_input_task_data['task_name']}
-			update_data = {'output': list_output_new}
-			bool_, r_data = database().update('project', read_ob, table_name, keys, update_data, where, table_root=self.tasks_db)
-			if not bool_:
-				return(bool_, r_data)
-			# edit new_input
-			where = {'task_name': task_data['task_name']}
-			update_data = {'input': new_input_task_data['task_name']}
-			bool_, r_data = database().update('project', read_ob, table_name, keys, update_data, where, table_root=self.tasks_db)
-			if not bool_:
-				return(bool_, r_data)
+		# change data
+		if new_input_task:
+			if list_output_new:
+				new_input_task.__change_data('output', list_output_new)
+			self.__change_data('input', new_input_task.task_name)
 		else:
-			where = {'task_name': task_data['task_name']}
-			update_data = {'input': ''}
-			bool_, r_data = database().update('project', read_ob, table_name, keys, update_data, where, table_root=self.tasks_db)
-			if not bool_:
-				return(bool_, r_data)
-		# edit status
+			self.__change_data('input', '')
+		#
+		if old_input_task and list_output_old:
+			old_input_task.__change_data('output', list_output_old)
+		#
 		if new_status:
-			where = {'task_name': task_data['task_name']}
-			update_data = {'status': new_status}
-			bool_, r_data = database().update('project', read_ob, table_name, keys, update_data, where, table_root=self.tasks_db)
-			if not bool_:
-				return(bool_, r_data)
-		
-		'''
-		# edit db
-		# -- Connect to db
-		conn = sqlite3.connect(self.tasks_path, detect_types=sqlite3.PARSE_DECLTYPES|sqlite3.PARSE_COLNAMES)
-		conn.row_factory = sqlite3.Row
-		c = conn.cursor()
-		
-		# Exists table
-		table = '\"' + task_data['asset_id'] + ':' + self.tasks_t + '\"'
-		try:
-			str_ = 'select * from ' + table
-			c.execute(str_)
-		except:
-			conn.close()
-			return(False, 'Not Table!')
-			
-		# edit old_output
-		string_old, data_old = None,None
-		if list_output_old:
-			string_old = 'UPDATE ' +  table + ' SET  \"output\"  = ? WHERE \"task_name\" = \"' + old_input_task_data['task_name'] + '\"'
-			data_old = (list_output_old,)
-			c.execute(string_old, data_old)
-		
-		# edit new_output
-		string_new, data_new = None,None
-		if list_output_new:
-			# output
-			string_new = 'UPDATE ' +  table + ' SET  \"output\"  = ? WHERE \"task_name\" = \"' + new_input_task_data['task_name'] + '\"'
-			data_new = (list_output_new,)
-			c.execute(string_new, data_new)
-			# input
-			string = 'UPDATE ' +  table + ' SET  \"input\"  = ? WHERE \"task_name\" = \"' + task_data['task_name'] + '\"'
-			data = (new_input_task_data['task_name'],)
-			c.execute(string, data)
-		else:
-			string = 'UPDATE ' +  table + ' SET  \"input\"  = ? WHERE \"task_name\" = \"' + task_data['task_name'] + '\"'
-			data = ('',)
-			c.execute(string, data)
-			
-		
-		# edit status
-		if new_status:
-			string = 'UPDATE ' +  table + ' SET  \"status\"  = ? WHERE \"task_name\" = \"' + task_data['task_name'] + '\"'
-			data = (new_status,)
-			c.execute(string, data)
-		
-		conn.commit()
-		conn.close()
-		'''
+			self.__change_data('status', new_status)
 		
 		# (3)
-		if self.task_name == task_data['task_name']:
-			if list_output_new:
-				self.input = new_input_task_data['task_name']
-			else:
-				self.input = ''
-			if new_status:
-				self.status = new_status
-		
-		# (4)
-		if list_output_old:
-			old_input_task_data['output'] = list_output_old
-		if list_output_new:
-			new_input_task_data['output'] = list_output_new
-		
-		return(True, (new_status, old_input_task_data, new_input_task_data))
+		return(True, (new_status, old_input_task, new_input_task))
 		
 	# task_data (dict) - изменяемая задача, если False - значит предполагается, что task инициализирован.
 	def accept_task(self, task_data=False): # v2
@@ -4790,14 +4732,14 @@ class task(studio):
 		input_task_name = task_data['input']
 		input_task_data = False
 		if input_task_name:
-			result = self.__read_task(input_task_name, task_data['asset_id'])
+			result = self.__read_task(input_task_name)
 			if not result[0]:
 				return(False, result[1])
 			input_task_data = result[1]
 		
 		# (3)
 		task_data['status'] = 'null'
-		new_status = self.from_input_status(task_data, input_task_data)
+		new_status = self.from_input_status(input_task_data)
 		
 		# (4)
 		read_ob = self.asset.project
@@ -4902,23 +4844,22 @@ class task(studio):
 		'''
 	
 	# task_name (str) - имя задачи
-	# asset_id (str) - если объект asset, передаваемый в task не инициализирован, либо если предполагается задача другого ассета (не инициализированного), то надо указать asset_id.
 	# возврат словаря задачи по имени задачи. если нужен объект используем task.init(name)
-	def __read_task(self, task_name, asset_id=False): # v2
+	def __read_task(self, task_name): # v2
 		pass
 		
 		# (1)
+		other_asset=False
 		asset_path = False
-		if not asset_id:
+		if self.asset.name == task_name.split(':')[0]: # задача из данного ассета
 			asset_path = self.asset.path
 			asset_id = self.asset.id
 		# asset_path
-		else:
-			bool_, r_data = self.asset.get_by_name(task_name.split(':')[0])
-			if not bool_:
-				return(bool_, r_data)
-			asset_path = r_data['path']
-			asset_id = r_data['id']
+		else: # задача из другого ассета
+			other_asset=True
+			read_asset = self.asset.init(task_name.split(':')[0])
+			asset_path = read_asset.path
+			asset_id = read_asset.id
 		# read task
 		table_name = '"%s:%s"' % (asset_id, self.tasks_t)
 		where={'task_name': task_name}
@@ -4932,7 +4873,12 @@ class task(studio):
 		task_data = return_data[0]
 		task_data['asset_path'] = asset_path
 		
-		return(True, task_data)
+		if not other_asset:	
+			return(True, self.init_by_keys(task_data))
+		else:
+			task_ob = task(read_asset)
+			task_ob.init_by_keys(task_data, new=False)
+			return(True, task_ob)
 	
 		'''
 		if keys == 'all':
@@ -5007,7 +4953,7 @@ class task(studio):
 			task_input_task_list[task['task_name']] = {'task' : task}
 			if task['input']:
 				input_asset_id = asset_list[task['input'].split(':')[0]].id
-				bool_, return_data = self.__read_task(task['input'], asset_id=input_asset_id)
+				bool_, return_data = self.__read_task(task['input'])
 				if not bool_:
 					return(bool_, return_data)
 				task_input_task_list[task['task_name']]['input'] = return_data
