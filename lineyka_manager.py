@@ -6687,10 +6687,10 @@ class MainWindow(QtGui.QMainWindow):
 		
 	# ------ show tz ------------
 	def tm_tz(self):
-		if self.current_task['tz']:
-			webbrowser.open_new_tab(self.current_task['tz'])
+		if self.selected_task.tz:
+			webbrowser.open_new_tab(self.selected_task.tz)
 		else:
-			self.message('Not Link!', 2)
+			self.message('Link not specified!', 1)
 		
 	# ------ add task --------------
 	def tm_add_task_ui(self):
@@ -7226,16 +7226,16 @@ class MainWindow(QtGui.QMainWindow):
     
 		if i==1:
 			mBox.setIcon(QtGui.QMessageBox.Information)
-			mBox.setWindowTitle('information')
+			mBox.setWindowTitle('Info')
 		elif i == 2:
 			mBox.setIcon(QtGui.QMessageBox.Warning)
-			mBox.setWindowTitle('Oh my God!')
+			mBox.setWindowTitle('Warning!')
 		elif i == 3:
 			mBox.setIcon(QtGui.QMessageBox.Critical)
-			mBox.setWindowTitle('Saint Mary!')
+			mBox.setWindowTitle('Error!')
 		elif i == 0:
 			mBox.setIcon(QtGui.QMessageBox.Question)
-			mBox.setWindowTitle('tel me!')
+			mBox.setWindowTitle('Tel me!')
     
 		com = mBox.exec_()
     
