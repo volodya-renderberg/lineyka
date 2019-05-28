@@ -11,6 +11,7 @@ from functools import partial
 import json
 import random
 import subprocess
+import uuid
 
 # from lineyka 
 import ui
@@ -6574,7 +6575,7 @@ class MainWindow(QtGui.QMainWindow):
 		self.makePreviewDialog = QtGui.QDialog(self)
 		self.makePreviewDialog.setModal(True)
 		#self.makePreviewDialog.resize(300, 300)
-		self.makePreviewDialog.setWindowTitle(('Make Preview: /// ' + self.current_task['asset']))
+		self.makePreviewDialog.setWindowTitle(('Make Preview: /// %s' %  self.selected_task.asset.name))
 		
 		# add widgets
 		v_layout = QtGui.QVBoxLayout()
@@ -6603,7 +6604,7 @@ class MainWindow(QtGui.QMainWindow):
 		save_button.clicked.connect(partial(self.tm_save_preview_image_action, self.makePreviewDialog))
 		
 		# -- load img to label
-		img_path = os.path.join(self.db_chat.preview_img_path, (self.current_task['asset'] + '.png'))
+		img_path = os.path.join(self.selected_project.preview_img_path, ('%s.png' % self.selected_task.asset.name))
 		if not os.path.exists(img_path):
 			self.makePreviewDialog.imageLabel.setText('No Image')
 		else:
@@ -6613,16 +6614,16 @@ class MainWindow(QtGui.QMainWindow):
 		self.makePreviewDialog.show()
 	
 	def tm_paste_image_from_clipboard(self, img_label):
-		rand  = hex(random.randint(0, 1000000000)).replace('0x', '')
-		img_path = os.path.normpath(os.path.join(self.db_chat.tmp_folder, ('tmp_image_' + rand + '.png')))
+		rand  = uuid.uuid4().hex
+		img_path = os.path.normpath(os.path.join(self.db_studio.tmp_folder, ('tmp_image_%s.png' % rand)))
 		
 		clipboard = QtGui.QApplication.clipboard()
 		img = clipboard.image()
 		if img:
 			img.save(img_path)
-			cmd = '%s %s -resize 300 %s' % (os.path.normpath(self.db_chat.convert_exe), img_path, img_path)
-			cmd2 = '%s %s -resize 300x300 %s' % (os.path.normpath(self.db_chat.convert_exe), img_path, img_path)
-			cmd3 = '\"%s\" \"%s\" -resize 300 \"%s\"' % (os.path.normpath(self.db_chat.convert_exe), img_path, img_path)
+			cmd = '%s %s -resize 300 %s' % (os.path.normpath(self.db_studio.convert_exe), img_path, img_path)
+			cmd2 = '%s %s -resize 300x300 %s' % (os.path.normpath(self.db_studio.convert_exe), img_path, img_path)
+			cmd3 = '\"%s\" \"%s\" -resize 300 \"%s\"' % (os.path.normpath(self.db_studio.convert_exe), img_path, img_path)
 			print(cmd)
 			print(cmd2)
 			print(cmd3)
@@ -6647,23 +6648,23 @@ class MainWindow(QtGui.QMainWindow):
 		
 	def tm_save_preview_image_action(self, window):
 		# self.preview_img_path
-		if not os.path.exists(self.db_chat.preview_img_path):
+		if not os.path.exists(self.selected_project.preview_img_path):
 			try:
-				os.mkdir(self.db_chat.preview_img_path)
+				os.mkdir(self.selected_project.preview_img_path)
 			except:
-				print(self.db_chat.preview_img_path)
+				print(self.selected_project.preview_img_path)
 				
 		# copyfile
-		save_path = os.path.join(self.db_chat.preview_img_path, (self.current_task['asset'] + '.png'))
-		icon_path = os.path.join(self.db_chat.preview_img_path, (self.current_task['asset'] + '_icon.png'))
+		save_path = os.path.join(self.selected_project.preview_img_path, ('%s.png' % self.selected_task.asset.name))
+		icon_path = os.path.join(self.selected_project.preview_img_path, ('%s_icon.png' % self.selected_task.asset.name))
 		tmp_icon_path = window.img_path.replace('.png','_icon.png')
 		# -- copy
 		shutil.copyfile(window.img_path, save_path)
 		
 		# -- resize
-		cmd = '%s %s -resize 100 %s' % (os.path.normpath(self.db_chat.convert_exe), window.img_path, tmp_icon_path)
-		cmd2 = '%s %s -resize 100x100 %s' % (os.path.normpath(self.db_chat.convert_exe), window.img_path, tmp_icon_path)
-		cmd3 = '\"%s\" \"%s\" -resize 100 \"%s\"' % (os.path.normpath(self.db_chat.convert_exe), window.img_path, tmp_icon_path)
+		cmd = '%s %s -resize 100 %s' % (os.path.normpath(self.db_studio.convert_exe), window.img_path, tmp_icon_path)
+		cmd2 = '%s %s -resize 100x100 %s' % (os.path.normpath(self.db_studio.convert_exe), window.img_path, tmp_icon_path)
+		cmd3 = '\"%s\" \"%s\" -resize 100 \"%s\"' % (os.path.normpath(self.db_studio.convert_exe), window.img_path, tmp_icon_path)
 		try:
 			os.system(cmd)
 		except:
