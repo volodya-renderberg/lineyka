@@ -685,7 +685,7 @@ class MainWindow(QtGui.QMainWindow):
 				
 		data = []
 		for item in items:
-			data.append(self.db_workroom.dict_by_id[item.wr_id].name)
+			data.append(self.db_workroom.dict_by_id[item.id].name)
 			
 		data = set(data)
 		data = list(data)
@@ -812,7 +812,7 @@ class MainWindow(QtGui.QMainWindow):
 					data = getattr(workroom, key)
 					newItem.setText(data)
 				#
-				#newItem.wr_id = workroom.id
+				#newItem.id = workroom.id
 				newItem.workroom = workroom
 				#
 				if key == 'name':
@@ -974,7 +974,7 @@ class MainWindow(QtGui.QMainWindow):
 				self.message('Not Selected Workroom!', 2)
 				return
 			else:
-				self.workroom = self.db_workroom.dict_by_id[current_item.wr_id]
+				self.workroom = current_item.workroom
 		else:
 			self.workroom=workroom
 		
@@ -1031,7 +1031,7 @@ class MainWindow(QtGui.QMainWindow):
 				self.message('Not Selected Workroom!', 2)
 				return
 			else:
-				self.workroom = self.db_workroom.dict_by_id[current_item.wr_id]
+				self.workroom = current_item.workroom
 		else:
 			self.workroom = workroom
 		
@@ -1082,7 +1082,7 @@ class MainWindow(QtGui.QMainWindow):
 				self.message('Not Selected Workroom!', 2)
 				return
 			else:
-				self.workroom = self.db_workroom.dict_by_id[current_item.wr_id]
+				self.workroom = current_item.workroom
 		else:
 			self.workroom=workroom
 				
