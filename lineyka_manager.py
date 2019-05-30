@@ -6088,27 +6088,21 @@ class MainWindow(QtGui.QMainWindow):
 		
 	# ---- accept task --------------
 	def tm_accept_task_action(self):
-		# get item
-		item = self.myWidget.task_manager_table.currentItem()
-		
+		pass		
 		# change task
-		ask = self.message(('Do you want to accept the task: %s ?') % item.task['task_name'], 0)
+		ask = self.message(('Do you want to accept the task: "%s" ?') % self.selected_task.task_name, 0)
 		if not ask:
 			return
 		
 		# get readers
-		readers = {}
-		try:
-			readers = json.loads(item.task['readers'])
-		except:
-			pass
+		readers = self.selected_task.readers
 		
 		# accept task
 		result = None
 		if self.artist.nik_name in readers:
-			result = self.db_chat.readers_accept_task(self.current_project, item.task, self.artist.nik_name)
+			result = self.selected_task.readers_accept_task(self.artist)
 		else:
-			result = self.db_chat.accept_task(self.current_project, item.task)
+			result = self.selected_task.accept_task()
 		
 		if not result[0]:
 			self.message(result[1], 2)
