@@ -4207,7 +4207,7 @@ class task(studio):
 		
 		return(True, readers_dict, change_status)
 		
-	# new_artist (str) - nik_name
+	# new_artist (str/artist) - nik_name или artist - объект
 	# task_data (dict) - изменяемая задача, если False - значит предполагается, что task инициализирован.
 	def change_artist(self, new_artist, task_data=False): # v2  !!!!! возможно надо рассмотреть варианты когда меняется артист в завершённых статусах задачь.
 		pass
@@ -4218,28 +4218,33 @@ class task(studio):
 		# 5 - внесение изменений в БД
 		# 6 - если task инициализирована - внеси в неё изменения.
 		
+		#print('*** new artist: ', new_artist)
+		
 		# (1)
 		if not task_data:
 			task_data = {}
 			for key in self.tasks_keys:
 				exec('task_data["%s"] = self.%s' % (key, key))
         
-		print('### task_data["outsource"].type = %s, value = %s' % (task_data["outsource"].__class__.__name__, str(task_data["outsource"])))
+		#print('### task_data["outsource"].type = %s, value = %s' % (task_data["outsource"].__class__.__name__, str(task_data["outsource"])))
 		
 		# --------------- edit Status ------------
 		new_status = None
 				
 		# (2) get artist outsource
 		artist_outsource = False
-		if new_artist:
+		if new_artist and (isinstance(new_artist, str) or isinstance(new_artist, unicode)):
 			result = artist().read_artist({'nik_name':new_artist})
 			if not result[0]:
 				return(False, result[1])
-			if result[1][0].get('outsource'):
-				artist_outsource = bool(result[1][0]['outsource'])
+			if result[1][0].outsource:
+				artist_outsource = bool(result[1][0].outsource)
+		elif new_artist and isinstance(new_artist, artist):
+			artist_outsource = new_artist.outsource
+			new_artist = new_artist.nik_name
 		else:
 			new_artist = ''
-		print('*** artist_outsource: %s' % str(artist_outsource))
+		#print('*** artist_outsource: %s' % str(artist_outsource))
 			
 		# (3) get task_outsource
 		task_outsource = task_data['outsource']
@@ -4248,11 +4253,11 @@ class task(studio):
 		if task_data['outsource']:
 			task_outsource = bool(task_data['outsource'])
 		'''
-		print('*** task_outsource: %s' % str(task_outsource))
+		#print('*** task_outsource: %s' % str(task_outsource))
 		
 		# (4) get new status
 		if task_data['status'] in self.VARIABLE_STATUSES:
-			print('****** in variable')
+			#print('****** in variable')
 			if not new_artist :
 				new_status = 'ready'
 			elif (not task_data['artist']) or (not task_outsource):
@@ -4275,7 +4280,7 @@ class task(studio):
 		else:
 			pass
 			#print('****** not in variable')
-		print('*** new_status: %s' % str(new_status))
+		#print('*** new_status: %s' % str(new_status))
 			
 		# (5)
 		read_ob = self.asset.project
@@ -4287,6 +4292,9 @@ class task(studio):
 		else:
 			update_data = {'artist': new_artist, 'outsource': int(artist_outsource)}
 		bool_, r_data = database().update('project', read_ob, table_name, keys, update_data, where, table_root=self.tasks_db)
+		
+		#print('*'*25, update_data, bool_)
+		
 		if not bool_:
 			return(bool_, r_data)
 		
