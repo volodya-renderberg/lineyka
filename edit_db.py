@@ -6154,19 +6154,17 @@ class artist(studio):
 	def init(self, nik_name, new = True):
 		pass
 		# get keys
-		bool_, keys = self.read_artist({'nik_name': nik_name})
+		bool_, artists = self.read_artist({'nik_name': nik_name})
 		if not bool_:
-			return(bool_, keys)
+			return(bool_, artists)
 				
 		# fill fields
 		if new:
-			new_artist = artist()
-			for key in self.artists_keys:
-				exec('new_artist.%s = keys[0].get("%s")' % (key, key))
-			return new_artist
+			return artists[0]
 		else:
 			for key in self.artists_keys:
-				exec('self.%s = keys[0].get("%s")' % (key, key))
+				#exec('self.%s = keys[0].get("%s")' % (key, key))
+				setattr(self, key, getattr(artists[0], key))
 			#self.asset_path = keys.get('asset_path')
 			return(True, 'Ok')
 		
