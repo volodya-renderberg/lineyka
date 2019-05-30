@@ -2455,7 +2455,7 @@ class task(studio):
 		return(True, 'Ok!')
 		
 	# замена статусов исходящих задачь при изменении статуса текущей задачи на done или close.
-	# task_data (dict) - текущая задача.
+	# task_data (dict/task) - текущая задача.
 	# assets (dict) - словарь всех ассетов по всем типам (ключи - имена, данные - ассеты (словари)) - результат функции asset.get_dict_by_name_by_all_types()
 	def this_change_to_end(self, task_data, assets = False): # v2 *** no test
 		pass
@@ -2469,7 +2469,10 @@ class task(studio):
 		# 8 - отправка далее в себя же - this_change_to_end() - по списку service_to_done
         
 		# (1)
-		output_list = task_data.get('output')
+		if isinstance(task_data, dict):
+			output_list = task_data.get('output')
+		elif isinstance(task_data, task):
+			output_list = task_data.output
 		if not output_list:
 			return(True, 'Ok!')
 		# (2)
@@ -2511,13 +2514,14 @@ class task(studio):
 			if not bool_:
 				return(bool_, return_data)
 			elif return_data:
-				task_data_ = return_data[0]
+				task_data_ = self.init_by_keys(return_data[0])
 			else:
 				return(False, 'Task Data Not Found! Task_name - "%s"' % task_name)
             
 			# (6) make new status
-			if task_data_['task_type'] == 'service':
-				result = self.service_input_to_end(task_data_, assets)
+			if task_data_.task_type == 'service':
+				#result = self.service_input_to_end(task_data_, assets)
+				result = task_data_.service_input_to_end(assets)
 				if not result[0]:
 					return(False, result[1])
 				new_status = result[1]
@@ -4758,42 +4762,6 @@ class task(studio):
 		bool_, r_data = database().update('project', read_ob, table_name, keys, update_data, where, table_root=self.tasks_db)
 		if not bool_:
 			return(bool_, r_data)
-		
-		'''
-		# -- Connect to db
-		conn = sqlite3.connect(self.tasks_path, detect_types=sqlite3.PARSE_DECLTYPES|sqlite3.PARSE_COLNAMES)
-		conn.row_factory = sqlite3.Row
-		c = conn.cursor()
-		
-		# Exists table
-		table = '\"' + task_data['asset_id'] + ':' + self.tasks_t + '\"'
-		
-		try:
-			string = 'SELECT * FROM ' + table + 'WHERE task_name = ?'
-			data = (task_data['task_name'],)
-			c.execute(string, data)
-			row = dict(c.fetchone())
-			readers = {}
-			try:
-				readers = json.loads(row['readers'])
-			except:
-				pass
-			for key in readers:
-				if key == 'first_reader':
-					continue
-				readers[key] = 0
-			row['readers'] = json.dumps(readers)
-			
-			string = 'UPDATE ' +  table + ' SET  readers = ?, status  = ? WHERE task_name = ?'
-			data = (row['readers'], new_status, task_data['task_name'])
-			c.execute(string, data)
-			conn.commit()
-			conn.close()
-						
-		except:
-			conn.close()
-			return(False, 'in return_a_job_task - Not Edit Table!')
-		'''
 		
 		# (5)
 		if self.task_name == task_data['task_name']:
