@@ -98,6 +98,7 @@ class MainWindow(QtGui.QMainWindow):
 		self.selected_group = None # выбранная в таблице группа (объект)
 		self.selected_asset = None # выбранный в таблице ассет (объект)
 		self.selected_task = None # выбранный так в таблице в task editor
+		self.current_artists_dict = None # словарь артистов по именам, полученный парсером по отделам.
 		
 		# CONSTANTS
 		self.SEASON_COLUMNS = ['name', 'status']
@@ -776,6 +777,8 @@ class MainWindow(QtGui.QMainWindow):
 				
 	def fill_workroom_table(self, table):
 		self.db_workroom.get_list()
+		if not self.db_workroom.dict_by_id:
+                    return
 		
 		# look_keys
 		look_keys = ['name', 'type']
@@ -5509,9 +5512,10 @@ class MainWindow(QtGui.QMainWindow):
 				j = j+1
 				
 				newItem = QtGui.QTableWidgetItem()
-				item_text = '%s\n---' % task_ob.task_name.replace('%s:' % task_ob.asset.name, '')
-				for attr in self.db_studio.setting_data['task__visible_fields']:
-					item_text = '%s\n%s: %s' % (item_text, attr, getattr(task_ob, attr))
+				#item_text = '%s\n---' % task_ob.task_name.replace('%s:' % task_ob.asset.name, '')
+				#for attr in self.db_studio.setting_data['task__visible_fields']:
+					#item_text = '%s\n%s: %s' % (item_text, attr, getattr(task_ob, attr))
+				item_text = self.tm_get_item_text(task_ob)
 				newItem.setText(item_text)
 				#newItem.setText('%s\ntype:%s\nartist: %s' % (task_ob.task_name.replace('%s:' % task_ob.asset.name, ''), task_ob.task_type, task_ob.artist))
 				newItem.task = task_ob
@@ -5546,6 +5550,12 @@ class MainWindow(QtGui.QMainWindow):
 		except:
 			pass
 		self.myWidget.task_manager_table.itemClicked.connect(self.tm_load_buttons_of_tasks)
+		
+	def tm_get_item_text(self, task_ob):
+		item_text = '%s\n---' % task_ob.task_name.replace('%s:' % task_ob.asset.name, '')
+		for attr in self.db_studio.setting_data['task__visible_fields']:
+			item_text = '%s\n%s: %s' % (item_text, attr, getattr(task_ob, attr))
+		return(item_text)
 		
 	def tm_load_buttons_of_tasks(self, *args):
 		pass
@@ -6300,26 +6310,22 @@ class MainWindow(QtGui.QMainWindow):
 	# ------ change artist --------------
 	
 	def tm_change_task_artist_ui(self, *args):
-		# get item
-		item = self.myWidget.task_manager_table.currentItem()
-		
-		# task workroom
-		task_workroom = item.task['workroom']
-				
-		# get list of active artists
-		result = self.db_workroom.read_artist({'status':'active'})
-		if not result[0]:
-			self.message(result[1], 2)
-			return
+		pass
 		active_artists_list = []
-		for row in result[1]:
-			if row['workroom']:
-				artist_workrooms = json.loads(row['workroom'])
-				if task_workroom in artist_workrooms:
-					active_artists_list.append(row['nik_name'])
-			else:
-				continue
-		
+		for wr in self.db_workroom.list_workroom:
+			if self.selected_task.task_type in wr.type:
+				b, r_data = self.artist.read_artist_of_workroom(wr.id)
+				if not b:
+					print('*** problem in workroom.read_artist_of_workroom() by "%s"' % wr.name)
+					print(r_data)
+					continue
+				else:
+					self.current_artists_dict = r_data
+					for artist_name in r_data:
+						if r_data[artist_name].status=='active':
+							active_artists_list.append(artist_name)
+		active_artists_list = list(set(active_artists_list))
+	
 		active_artists_list.sort()
 		active_artists_list.insert(0, '-None-')
 		
@@ -6335,46 +6341,49 @@ class MainWindow(QtGui.QMainWindow):
 		window.setAttribute(QtCore.Qt.WA_DeleteOnClose, True)
 		
 		# edit window
-		window.setWindowTitle(('Change Artist of Task: \'' + item.task['task_name'] + '\"'))
+		window.setWindowTitle(('Change Artist of Task: "%s"' % self.selected_task.task_name))
 		window.combo_dialog_label.setText('Select Artist:')
 		window.combo_dialog_combo_box.addItems(active_artists_list)
 		window.combo_dialog_cancel.clicked.connect(partial(self.close_window, window))
-		window.combo_dialog_ok.clicked.connect(partial(self.tm_change_task_artist_action, window, item))
+		window.combo_dialog_ok.clicked.connect(partial(self.tm_change_task_artist_action, window))
 		
 		window.show()
 		
-	def tm_change_task_artist_action(self, window, item_):
+	def tm_change_task_artist_action(self, window):
 		# get new artist
 		new_artist = window.combo_dialog_combo_box.currentText()
 		if new_artist in ['None', '-None-']:
 			new_artist = ''
 		
 		# change artist
-		task_data = dict(item_.task)
-		result = self.db_chat.change_artist(self.current_project, task_data, new_artist)
+		result = self.selected_task.change_artist(self.current_artists_dict.get(new_artist))
 		if not result[0]:
 			self.message(result[1], 2)
 			return
 		new_status = result[1][0]
 		outsource = result[1][1]
-		#print(new_status)
+		print(new_status, outsource)
 		
 		# edit labels
-		self.myWidget.tm_data_label_1.setText(new_artist)
-		task_data['artist'] = new_artist
-		if new_status:
-			task_data['status'] = new_status
-		task_data['outsource'] = outsource
-		item_.task = task_data
+		self.myWidget.tm_data_label_1.setText(self.selected_task.artist)
+		#task_data['artist'] = new_artist
+		#if new_status:
+			#task_data['status'] = new_status
+		#task_data['outsource'] = outsource
+		#item_.task = task_data
 		
 		# change table color
-		rgb = self.db_chat.color_status[task_data['status']]
+		rgb = self.db_task.color_status[self.selected_task.status]
 		r = (rgb[0]*255)
 		g = (rgb[1]*255)
 		b = (rgb[2]*255)
 		color = QtGui.QColor(r, g, b)
 		brush = QtGui.QBrush(color)
-		item_.setBackground(brush)
+		#
+		item_text = self.tm_get_item_text(self.selected_task)
+		item = self.myWidget.task_manager_table.currentItem()
+		item.setBackground(brush)
+		item.setText(item_text)
 		
 		self.close_window(window)
 		
