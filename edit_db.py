@@ -2437,6 +2437,7 @@ class task(studio):
 				update_data = {'status': new_status}
 			# (8)
 			#c.execute(string, data)
+			table_name = '"%s:%s"' % (task_ob.asset.id, self.tasks_t)
 			where = {'task_name': task_name}
 			bool_, return_data = database().update('project', task_ob.asset.project, table_name, self.tasks_keys, update_data, where, table_root=self.tasks_db)
 			if not bool_:
@@ -4768,7 +4769,7 @@ class task(studio):
 			self.status = new_status
 		
 		# (6) change output statuses
-		result = self.this_change_from_end(task_data)
+		result = self.this_change_from_end(self.init_by_keys(task_data))
 		if not result[0]:
 			return(False, result[1])
 		else:

@@ -6113,13 +6113,12 @@ class MainWindow(QtGui.QMainWindow):
 		
 	# ---- close task --------------
 	def tm_close_task_action(self):
-		# get item
-		item = self.myWidget.task_manager_table.currentItem()
+		pass
 		
 		# change task
-		ask = self.message(('Do you want to close the task: ' + item.task['task_name'] + ' ?'), 0)
+		ask = self.message(('Do you want to close the task: "%s"?' % self.selected_task.task_name), 0)
 		if ask:
-			result = self.db_chat.close_task(self.current_project, item.task)
+			result = self.selected_task.close_task()
 			if not result[0]:
 				self.message(result[1], 2)
 				return
@@ -6147,13 +6146,12 @@ class MainWindow(QtGui.QMainWindow):
 		
 	# ---- return a job -------------
 	def tm_return_a_job_action(self):
-		# get item
-		item = self.myWidget.task_manager_table.currentItem()
+		pass
 		
 		# change task
-		ask = self.message(('Do you want to return a job the task: ' + item.task['task_name'] + ' ?'), 0)
+		ask = self.message(('Do you want to return a job the task: "%s"?' % self.selected_task.task_name), 0)
 		if ask:
-			result = self.db_chat.return_a_job_task(self.current_project, item.task)
+			result = self.selected_task.return_a_job_task()
 			if not result[0]:
 				self.message(result[1], 2)
 				return
