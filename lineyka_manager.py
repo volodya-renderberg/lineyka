@@ -4981,7 +4981,7 @@ class MainWindow(QtGui.QMainWindow):
 		# reload table_2
 		self.loc_load_content_of_asset_table(table_2.task, update = True)
 	
-	# *********************** TASKS MANAGER *********************************************
+	# ******************* TASKS MANAGER *********************************************
 	
 	def preparation_to_task_manager(self):
 		self.myWidget.task_manager_reload_button.setText('reload')
@@ -5260,6 +5260,7 @@ class MainWindow(QtGui.QMainWindow):
 	# ---------- RELOAD TASK_ LIST ----------------------------------------------
 	
 	def tm_reload_task_list_by_global_search_ui(self):
+		pass
 		# Get Data
 		# -- get search
 		search = self.myWidget.global_search_qline.text()
@@ -5380,6 +5381,7 @@ class MainWindow(QtGui.QMainWindow):
 		self.tm_reload_task_list()
 		
 	def tm_reload_task_list(self, *args):
+		pass
 		#if search:
 		group_name = self.myWidget.task_manager_comboBox_3.currentText()
 		#index = self.myWidget.task_manager_comboBox_3.currentIndex()
@@ -5683,6 +5685,7 @@ class MainWindow(QtGui.QMainWindow):
 		self.myWidget.readers_list.setVisible(True)
 		
 	def tm_edit_readers_ui(self):
+		pass
 		# create window
 		loader = QtUiTools.QUiLoader()
 		file = QtCore.QFile(self.select_from_list_dialog_3button_path)
@@ -5757,6 +5760,7 @@ class MainWindow(QtGui.QMainWindow):
 					table.setItem(i, j, newItem)
 		
 	def tm_add_readers_ui(self):
+		pass
 		# create window
 		loader = QtUiTools.QUiLoader()
 		file = QtCore.QFile(self.select_from_list_dialog_combobox_path)
@@ -5926,7 +5930,7 @@ class MainWindow(QtGui.QMainWindow):
 		self.tm_edit_readers_ui_reload_table()
 		
 	def tm_make_first_reader(self, table):
-		
+		pass
 		name = table.currentItem().reader_name
 		
 		result, data = self.db_chat.make_first_reader(self.current_project, self.current_task, name)
@@ -5948,6 +5952,7 @@ class MainWindow(QtGui.QMainWindow):
 		
 	# ---- look file ----------------
 	def tm_look_file_action(self):
+		pass
 		# get item
 		item = self.myWidget.task_manager_table.currentItem()
 		task_data = item.task
@@ -6127,6 +6132,7 @@ class MainWindow(QtGui.QMainWindow):
 	
 	# ----- to rework task --------------
 	def tm_rework_action(self):
+		pass
 		# get item
 		item = self.myWidget.task_manager_table.currentItem()
 		
@@ -6205,6 +6211,7 @@ class MainWindow(QtGui.QMainWindow):
 	# ------ change workroom --------------
 	
 	def tm_change_task_workroom_ui(self, *args):
+		pass
 		# get item
 		item = self.myWidget.task_manager_table.currentItem()
 				
@@ -6238,6 +6245,7 @@ class MainWindow(QtGui.QMainWindow):
 		window.show()
 		
 	def tm_change_task_workroom_action(self, window, item_):
+		pass
 		# get new workroom
 		new_workroom = window.combo_dialog_combo_box.currentText()
 				
@@ -6261,6 +6269,7 @@ class MainWindow(QtGui.QMainWindow):
 	# ------ change price --------------
 	
 	def tm_change_task_price_ui(self, *args):
+		pass
 		# get item
 		item = self.myWidget.task_manager_table.currentItem()
 				
@@ -6285,6 +6294,7 @@ class MainWindow(QtGui.QMainWindow):
 		window.show()
 		
 	def tm_change_task_price_action(self, window):
+		pass
 		# get new workroom
 		new_price = float(window.new_dialog_name.text())
 				
@@ -6342,6 +6352,7 @@ class MainWindow(QtGui.QMainWindow):
 		window.show()
 		
 	def tm_change_task_artist_action(self, window):
+		pass
 		# get new artist
 		new_artist = window.combo_dialog_combo_box.currentText()
 		if new_artist in ['None', '-None-']:
@@ -6421,6 +6432,7 @@ class MainWindow(QtGui.QMainWindow):
 		window.show()
 		
 	def tm_change_input_action(self, window):
+		pass
 		# get input task
 		input_task = window.combo_dialog_combo_box.currentText()
 		if input_task == 'None':
@@ -6456,6 +6468,7 @@ class MainWindow(QtGui.QMainWindow):
 		
 	# ------ change task type ------------
 	def tm_change_task_type_ui(self):
+		pass
 		# create window
 		loader = QtUiTools.QUiLoader()
 		file = QtCore.QFile(self.combo_dialog_path)
@@ -6497,6 +6510,7 @@ class MainWindow(QtGui.QMainWindow):
 		
 	# ------ change task extension ------------
 	def tm_change_task_extension_ui(self):
+		pass
 		# create window
 		loader = QtUiTools.QUiLoader()
 		file = QtCore.QFile(self.combo_dialog_path)
@@ -6538,6 +6552,7 @@ class MainWindow(QtGui.QMainWindow):
 		
 	# ------- change TZ link ----------- self.new_dialog_path
 	def tm_change_tz_link_ui(self):
+		pass
 		# create window
 		loader = QtUiTools.QUiLoader()
 		file = QtCore.QFile(self.new_dialog_path)
@@ -6648,6 +6663,7 @@ class MainWindow(QtGui.QMainWindow):
 		
 		
 	def tm_save_preview_image_action(self, window):
+		pass
 		# self.preview_img_path
 		if not os.path.exists(self.selected_project.preview_img_path):
 			try:
