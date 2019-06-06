@@ -4249,6 +4249,9 @@ class task(studio):
 			new_artist = new_artist.nik_name
 		else:
 			new_artist = ''
+		# затыка
+		if artist_outsource is None:
+			artist_outsource = '0'
 		#print('*** artist_outsource: %s' % str(artist_outsource))
 			
 		# (3) get task_outsource
@@ -6170,6 +6173,10 @@ class artist(studio):
 			return(False, '\"Nik Name\" not specified!')
 		if not keys.get('password'):
 			return(False, '\"Password\" not specified!')
+		if not keys.get('outsource'):
+			keys['outsource'] = '0'
+		else:
+			keys['outsource'] = '1'
 
 		# создание таблицы, если отсутствует.
 		# определение level - если первый юзер то рут.
@@ -6256,6 +6263,32 @@ class artist(studio):
 				else:
 					artists_dict[row['nik_name']] = row
 		return(True, artists_dict)
+	
+	# список активных артистов подходящих для данного типа задачи.
+	# task_type (str) - тип задачи
+	# workroom_ob (workroom)предполагается что выполнена процедура workroom.get_list() и заполнено поле list_workroom (список всех отделов)
+	# rturn - (True, сортированный список имён артистов, словарь артистов по именам.) или (False, comment)
+	def get_artists_for_task_type(self, task_type, workroom_ob):
+		pass
+		artists_dict = {}
+		active_artists_list = []
+		for wr in workroom_ob.list_workroom:
+			if task_type in wr.type:
+				b, r_data = self.read_artist_of_workroom(wr.id)
+				if not b:
+					print('*** problem in workroom.read_artist_of_workroom() by "%s"' % wr.name)
+					print(r_data)
+					continue
+				else:
+					for artist_name in r_data:
+						if r_data[artist_name].status=='active':
+							active_artists_list.append(artist_name)
+					artists_dict.update(r_data)
+		
+		active_artists_list = list(set(active_artists_list))
+		active_artists_list.sort()
+	
+		return(True, active_artists_list, artists_dict)
 		
 	def login_user(self, nik_name, password):
 		pass
