@@ -6206,66 +6206,13 @@ class MainWindow(QtGui.QMainWindow):
 		# change table
 		self.myWidget.tm_data_label_2.setText(new_activity)
 		
-		self.close_window(window)
-		
-	# ------ change workroom --------------
-	
-	def tm_change_task_workroom_ui(self, *args):
-		pass
-		# get item
+		# edit table item (no change status)
+		item_text = self.tm_get_item_text(self.selected_task)
 		item = self.myWidget.task_manager_table.currentItem()
-				
-		# get list of activity
-		copy = self.db_workroom
-		result = copy.get_list(DICTONARY = 'by_name')
-		if not result[0]:
-			self.message(result[1], 2)
-			return
-		workroom_list = result[1].keys()
-		workroom_list.sort()
-		
-		# create window
-		loader = QtUiTools.QUiLoader()
-		file = QtCore.QFile(self.combo_dialog_path)
-		#file.open(QtCore.QFile.ReadOnly)
-		window = self.changeActivityWindow = loader.load(file, self)
-		file.close()
-		
-		# edit window
-		window.setWindowTitle(('Change Workroom of Task: \'' + item.task['task_name'] + '\"'))
-		window.combo_dialog_label.setText('Select WorkRoom:')
-		window.combo_dialog_combo_box.addItems(workroom_list)
-		window.combo_dialog_cancel.clicked.connect(partial(self.close_window, window))
-		window.combo_dialog_ok.clicked.connect(partial(self.tm_change_task_workroom_action, window, item))
-		
-		# set modal window
-		window.setWindowModality(QtCore.Qt.WindowModal)
-		window.setAttribute(QtCore.Qt.WA_DeleteOnClose, True)
-		
-		window.show()
-		
-	def tm_change_task_workroom_action(self, window, item_):
-		pass
-		# get new workroom
-		new_workroom = window.combo_dialog_combo_box.currentText()
-				
-		# change workroom
-		task_data = dict(item_.task)
-		copy = self.db_chat # db_task
-		result = copy.change_workroom(self.current_project, task_data, new_workroom)
-		if not result[0]:
-			self.message(result[1], 2)
-			return
-			
-		new_workroom_id = result[1]
-		
-		# change table
-		task_data['workroom'] = new_workroom_id
-		item_.task = task_data
-		self.myWidget.tm_data_label_3.setText(new_workroom)
+		item.setText(item_text)
 		
 		self.close_window(window)
-	
+		
 	# ------ change price --------------
 	
 	def tm_change_task_price_ui(self, *args):
@@ -6306,6 +6253,11 @@ class MainWindow(QtGui.QMainWindow):
 			
 		# change table
 		self.myWidget.tm_data_label_5.setText(str(new_price))
+		
+		# edit table item (no change status)
+		item_text = self.tm_get_item_text(self.selected_task)
+		item = self.myWidget.task_manager_table.currentItem()
+		item.setText(item_text)
 		
 		self.close_window(window)
 		
@@ -6498,6 +6450,11 @@ class MainWindow(QtGui.QMainWindow):
 		# edit label
 		self.myWidget.tm_data_label_6.setText(task_type)
 		
+		# edit table item (no change status)
+		item_text = self.tm_get_item_text(self.selected_task)
+		item = self.myWidget.task_manager_table.currentItem()
+		item.setText(item_text)
+		
 		self.close_window(window)
 		
 	# ------ change task extension ------------
@@ -6539,6 +6496,11 @@ class MainWindow(QtGui.QMainWindow):
 		
 		# edit label
 		self.myWidget.tm_data_label_7.setText(extension)
+		
+		# edit table item (no change status)
+		item_text = self.tm_get_item_text(self.selected_task)
+		item = self.myWidget.task_manager_table.currentItem()
+		item.setText(item_text)
 		
 		self.close_window(window)
 		
