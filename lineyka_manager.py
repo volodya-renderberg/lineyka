@@ -6313,22 +6313,14 @@ class MainWindow(QtGui.QMainWindow):
 	
 	def tm_change_task_artist_ui(self, *args):
 		pass
-		active_artists_list = []
-		for wr in self.db_workroom.list_workroom:
-			if self.selected_task.task_type in wr.type:
-				b, r_data = self.artist.read_artist_of_workroom(wr.id)
-				if not b:
-					print('*** problem in workroom.read_artist_of_workroom() by "%s"' % wr.name)
-					print(r_data)
-					continue
-				else:
-					self.current_artists_dict = r_data
-					for artist_name in r_data:
-						if r_data[artist_name].status=='active':
-							active_artists_list.append(artist_name)
-		active_artists_list = list(set(active_artists_list))
-	
-		active_artists_list.sort()
+		
+		r_data = self.artist.get_artists_for_task_type(self.selected_task.task_type, self.db_workroom)
+		if not r_data[0]:
+			self.message(r_data[1], 3)
+			return
+		else:
+			active_artists_list, self.current_artists_dict = r_data[1], r_data[2]
+		
 		active_artists_list.insert(0, '-None-')
 		
 		# create window
