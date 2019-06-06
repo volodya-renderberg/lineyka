@@ -6175,8 +6175,6 @@ class artist(studio):
 			return(False, '\"Password\" not specified!')
 		if not keys.get('outsource'):
 			keys['outsource'] = '0'
-		else:
-			keys['outsource'] = '1'
 
 		# создание таблицы, если отсутствует.
 		# определение level - если первый юзер то рут.
