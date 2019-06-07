@@ -9,58 +9,54 @@ import subprocess
 #import edit_db
 
 class publish:
-	def __init__(self, task, NormPath):
-		self.task = task
+	def __init__(self, NormPath):
 		self.NormPath = NormPath
 	
-	
-	def publish(self, task_data):
+	def publish(self, task_ob):
 		# get final file path
-		result = self.task.get_final_file_path(task_data)
+		result = task_ob.get_final_file_path()
 		if not result[0]:
 			return(False, result[1])
 			
-		#self.project = self.task.asset.project
-		self.task_data = task_data
 		self.final_file_path = result[1]
 		self.asset_path = result[2]
 		
-		if self.task_data['task_type'] == 'sketch':
-			result = self.publish_sketch()
+		if task_ob.task_type == 'sketch':
+			result = self.publish_sketch(task_ob)
 			if not result[0]:
 				return(False, result[1])
-		elif self.task_data['task_type'] in ['model', 'sculpt']:
-			result = self.publish_model()
+		elif task_ob.task_type in ['model', 'sculpt']:
+			result = self.publish_model(task_ob)
 			if not result[0]:
 				return(False, result[1])
-		elif self.task_data['task_type'] in ['rig']:
-			result = self.publish_rig()
+		elif task_ob.task_type in ['rig']:
+			result = self.publish_rig(task_ob)
 			if not result[0]:
 				return(False, result[1])
-		elif self.task_data['task_type'] in ['animation_shot']:
-			result = self.moving_files()
+		elif task_ob.task_type in ['animation_shot']:
+			result = self.moving_files(task_ob)
 			if not result[0]:
 				return(False, result[1])
-		elif self.task_data['task_type'] in ['simulation_din', 'render']:
-			result = self.publish_simulation_render()
+		elif task_ob.task_type in ['simulation_din', 'render']:
+			result = self.publish_simulation_render(task_ob)
 			if not result[0]:
 				return(False, result[1])
 		else:
-			result = self.moving_files()
+			result = self.moving_files(task_ob)
 			if not result[0]:
 				return(False, result[1])
 		
 		return(True, 'Ok')
 		
-	def publish_simulation_render(self):
-		result = self.moving_files()
+	def publish_simulation_render(self, task_ob):
+		result = self.moving_files(task_ob)
 		if not result[0]:
 			return(False, result[1])
 		
-		if self.task_data['extension'] == '.blend':
+		if task_ob.extension == '.blend':
 			# get src_physics_dir_path
 			scr_physics_dir = os.path.dirname(self.final_file_path)
-			physics_dir_name = 'blendcache_' + self.task_data['asset']
+			physics_dir_name = 'blendcache_%s' % task_ob.asset
 			src_physics_dir_path = self.NormPath(os.path.join(scr_physics_dir, physics_dir_name))
 			
 			# get dst_physics_dir_path
@@ -75,28 +71,28 @@ class publish:
 		
 		return(True, 'Ok')
 		
-	def publish_rig(self):
-		result = self.moving_files()
+	def publish_rig(self, task_ob):
+		result = self.moving_files(task_ob)
 		if not result[0]:
 			return(False, result[1])
 			
 		return(True, 'Ok')
 		
-	def publish_model(self):
+	def publish_model(self, task_ob):
 		if not self.final_file_path:
 			return(False, 'Not Publish - Not Final File!')
 		
-		res, data  = self.moving_files()
+		res, data  = self.moving_files(task_ob)
 		if not res:
 			return(False, data) 
 		
 		return(True, 'Ok')
 		
-	def publish_sketch(self):
+	def publish_sketch(self, task_ob):
 		if not self.final_file_path:
 			return(False, 'Not Publish - Not Final File!')
         
-		res, data  = self.moving_files()
+		res, data  = self.moving_files(task_ob)
 		if not res:
 			return(False, data)
 		new_file_path = data
@@ -126,7 +122,7 @@ class publish:
 		#print(self.task.convert_exe, new_file_path, png_path)
 		png_path = new_file_path.replace(self.task_data['extension'], '.png')
 		
-		cmd = '\"' + self.task.convert_exe + '\" \"' + new_file_path + '\" -flatten \"' + png_path + '\"'
+		cmd = '\"' + task_ob.convert_exe + '\" \"' + new_file_path + '\" -flatten \"' + png_path + '\"'
 		#print(cmd)
 		
 		try:
@@ -141,12 +137,12 @@ class publish:
 		return(True, 'Ok')
 		
 	## UTILITS
-	def moving_files(self):
+	def moving_files(self, task_ob):
 		#  ************* moving Files
 		# -- get publish folder path
-		activity_dir_name = self.task.asset.ACTIVITY_FOLDER[self.task_data['asset_type']][self.task_data['activity']]
+		activity_dir_name = task_ob.asset.ACTIVITY_FOLDER[task_ob.asset_type][task_ob.activity]
 		
-		publish_dir = self.NormPath(os.path.join(self.asset_path, self.task.publish_folder_name))
+		publish_dir = self.NormPath(os.path.join(self.asset_path, task_ob.publish_folder_name))
 		if not os.path.exists(publish_dir):
 			os.mkdir(publish_dir)
 		

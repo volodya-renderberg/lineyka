@@ -169,7 +169,7 @@ class studio:
 	
 	# constants (0 - 3 required parameters)
 	tasks_keys = {
-	'asset_name': 'text',
+	#'asset_name': 'text',
 	'activity': 'text',
 	'task_name': 'text',
 	'task_type': 'text',
@@ -192,8 +192,8 @@ class studio:
 	'readers': 'json',
 	'output': 'json',
 	'priority':'integer',
-	'asset_id': 'text',
-	'asset_type': 'text',
+	#'asset_id': 'text',
+	#'asset_type': 'text',
 	#'asset_path': 'text', # каждый раз определяется при считывании данных. ## больше не нужен это task.asset.path
 	'extension': 'text',
 	}
@@ -1680,9 +1680,9 @@ class asset(studio):
 					task_['price'] = task_['cost']
 						
 					# asset
-					task_['asset_name'] = keys['name']
-					task_['asset_id'] = keys['id']
-					task_['asset_type'] = asset_type
+					#task_['asset_name'] = keys['name']
+					#task_['asset_id'] = keys['id']
+					#task_['asset_type'] = asset_type
 					
 					# season
 					task_['season'] = keys['season']
@@ -2245,7 +2245,7 @@ class task(studio):
 		#self.db_workroom = workroom() # ??????? как всегда под вопросом
 		#self.publish = lineyka_publish.publish()
 		
-		self.publish = publish(self, NormPath) # ??????? как всегда под вопросом
+		self.publish = publish(NormPath) # ??????? как всегда под вопросом
 		
 	# инициализация по имени
 	# new (bool) - если True - то возвращается новый инициализированный объект класса task, если False - то инициализируется текущий объект
@@ -3372,11 +3372,11 @@ class task(studio):
 		# 4
 		for task_keys in list_of_tasks:
 			# 4.1
-			if not task_keys.get('asset_name'):
-				task_keys['asset_name'] = asset_name
-			if not task_keys.get('asset_id'):
-				task_keys['asset_id'] = asset_id
-			task_keys['asset_path'] = ''
+			#if not task_keys.get('asset_name'):
+				#task_keys['asset_name'] = asset_name
+			#if not task_keys.get('asset_id'):
+				#task_keys['asset_id'] = asset_id
+			#task_keys['asset_path'] = ''
 			task_keys['outsource'] = 0
 			# 4.2
 			bool_, return_data = database().insert('project', self.asset.project, table_name, self.tasks_keys, task_keys, table_root=self.tasks_db)
@@ -3542,8 +3542,8 @@ class task(studio):
 		task_data['outsource'] = 0
 		task_data['season'] = self.asset.season
 		#task_data['asset_name'] = self.asset.name
-		task_data['asset_id'] = self.asset.id
-		task_data['asset_type'] = self.asset.type
+		#task_data['asset_id'] = self.asset.id
+		#task_data['asset_type'] = self.asset.type
 		
 		# (3)
 		table_name = '"%s:%s"' % ( self.asset.id, self.tasks_t)
@@ -3750,117 +3750,43 @@ class task(studio):
 		return(True, task_data_dict)
 	
 	# self.asset.project - должен быть инициализирован
-	# task_data (bool / dict) - необходим если task не инициализирован
 	# new_activity (str)
-	def change_activity(self, new_activity, task_data=False): # v2
+	def change_activity(self, new_activity): # v2
 		pass
-		# (1) исходные данные
-		if task_data:
-			asset_id = task_data['asset_id']
-			task_name = task_data['task_name']
-		else:
-			asset_id = self.asset_id
-			task_name = self.task_name
 		# (2) проверка валидации new_activity
 		if not new_activity in self.asset.ACTIVITY_FOLDER[self.asset.type]:
 			return(False, 'Incorrect activity: "%s"' % new_activity)
 		# (3) запись БД
-		table_name = '"%s:%s"' % (asset_id, self.tasks_t)
+		table_name = '"%s:%s"' % (self.asset.id, self.tasks_t)
 		read_ob = self.asset.project
 		update_data = {'activity':new_activity}
-		where = {'task_name':task_name}
+		where = {'task_name':self.task_name}
 		#
 		bool_, return_data = database().update('project', read_ob, table_name, self.tasks_keys, update_data, where, table_root=self.tasks_db)
 		# запись нового активити в поле объекта, если он инициализирован
-		if bool_ and not task_data:
+		if bool_ :
 			self.activity = new_activity
 		return(bool_, return_data)
-		'''
-		# Connect to db
-		conn = sqlite3.connect(self.tasks_path, detect_types=sqlite3.PARSE_DECLTYPES|sqlite3.PARSE_COLNAMES)
-		conn.row_factory = sqlite3.Row
-		c = conn.cursor()
-		
-		# Exists table
-		table = '\"' + task_data['asset_id'] + ':' + self.tasks_t + '\"'
-		try:
-			str_ = 'select * from ' + table
-		except:
-			conn.close()
-			return(False, 'Not Table!')
-			
-		# edit db
-		string = 'UPDATE ' +  table + ' SET  \"activity\"  = ? WHERE \"task_name\" = \"' + task_data['task_name'] + '\"'
-				
-		data = (new_activity,)
-		
-		c.execute(string, data)
-		conn.commit()
-		conn.close()
-		return(True, 'Ok!')
-		'''
-		
-	def change_workroom(self, project_name, task_data, new_workroom): # не будет вообще - надо менять тип задачи в changes_without_a_change_of_status()
-		result = self.get_project(project_name)
-		if not result[0]:
-			return(False, result[1])
-			
-		# get new_workroom_id
-		copy = workroom()
-		result = copy.get_id_by_name(new_workroom)
-		if not result[0]:
-			return(False, result[1])
-		new_workroom_id = result[1]
-			
-		# Connect to db
-		conn = sqlite3.connect(self.tasks_path, detect_types=sqlite3.PARSE_DECLTYPES|sqlite3.PARSE_COLNAMES)
-		conn.row_factory = sqlite3.Row
-		c = conn.cursor()
-		
-		# Exists table
-		table = '\"' + task_data['asset_id'] + ':' + self.tasks_t + '\"'
-		try:
-			str_ = 'select * from ' + table
-		except:
-			conn.close()
-			return(False, 'Not Table!')
-			
-		# edit db
-		string = 'UPDATE ' +  table + ' SET  \"workroom\"  = ? WHERE \"task_name\" = \"' + task_data['task_name'] + '\"'
-				
-		data = (new_workroom_id,)
-		
-		c.execute(string, data)
-		conn.commit()
-		conn.close()
-		
-		return(True, new_workroom_id)
 	
 	# self.asset.project - должен быть инициализирован
-	# task_data (bool / dict) - необходим если task не инициализирован
 	# new_price (float)
-	def change_price(self, new_price, task_data=False): # v2
-		if task_data:
-			asset_id = task_data['asset_id']
-			task_name = task_data['task_name']
-		else:
-			asset_id = self.asset_id
-			task_name = self.task_name
-		table_name = '"%s:%s"' % (asset_id, self.tasks_t)
+	def change_price(self, new_price): # v2
+		pass
+		#
+		table_name = '"%s:%s"' % (self.asset.id, self.tasks_t)
 		read_ob = self.asset.project
 		update_data = {'price': new_price}
-		where = {'task_name':task_name}
+		where = {'task_name':self.task_name}
 		#
 		bool_, return_data = database().update('project', read_ob, table_name, self.tasks_keys, update_data, where, table_root=self.tasks_db)
 		# запись новой цены в поле объекта, если он инициализирован
-		if bool_ and not task_data:
+		if bool_ :
 			self.price = new_price
 		return(bool_, return_data)
 		
 	# key (str) - ключ для которого идёт замена
 	# new_data (по типу ключа) - данные на замену
-	# task_data (bool/dict) - изменяемая задача, если False - значит предполагается, что task инициализирован.
-	def changes_without_a_change_of_status(self, key, new_data, task_data=False): # v2
+	def changes_without_a_change_of_status(self, key, new_data): # v2
 		changes_keys = [
 		'activity',
 		'task_type',
@@ -3873,28 +3799,17 @@ class task(studio):
 		if not key in changes_keys:
 			return(False, 'This key invalid! You can only edit keys from this list: %s' % json.dumps(changes_keys))
 		
-		if task_data:
-			asset_id = task_data['asset_id']
-			task_name = task_data['task_name']
-		else:
-			asset_id = self.asset_id
-			task_name = self.task_name
+		#
 		read_ob = self.asset.project
-		table_name = '"%s:%s"' % (asset_id, self.tasks_t)
+		table_name = '"%s:%s"' % (self.asset.id, self.tasks_t)
 		update_data = {key: new_data}
-		where = {'task_name': task_name}
+		where = {'task_name': self.task_name}
 		bool_, r_data = database().update('project', read_ob, table_name, self.tasks_keys, update_data, where, table_root=self.tasks_db)
 		if not bool_:
 			return(bool_, r_data)
 		# запись новых данных в поле объекта, если он инициализирован
-		if not task_data:
-			setattr(self, key, new_data)
-			'''
-			if isinstance(new_data, str):
-				exec('self.%s = "%s"' % (key, new_data))
-			else:
-				exec('self.%s = %s' % (key, new_data))
-			'''
+		setattr(self, key, new_data)
+
 		return(True, 'Ok!')
 	
 	# принудительная перезапись какого либо поля в таблице базы данных текущей задачи, без каких либо изменений во взаимосвязях.
@@ -3904,7 +3819,7 @@ class task(studio):
 		pass
 		#
 		read_ob = self.asset.project
-		table_name = '"%s:%s"' % (self.asset_id, self.tasks_t)
+		table_name = '"%s:%s"' % (self.asset.id, self.tasks_t)
 		update_data = {key: new_data}
 		where = {'task_name': self.task_name}
 		bool_, r_data = database().update('project', read_ob, table_name, self.tasks_keys, update_data, where, table_root=self.tasks_db)
@@ -3915,16 +3830,15 @@ class task(studio):
 		setattr(self, key, new_data)
 		
 		return(True, 'Ok!')
-		
+	
+	# добавление читателей к текущей задаче
 	# add_readers_list (list) - список никнеймов проверяющих (читателей)
-	# task_data (dict) - изменяемая задача, если False - значит предполагается, что task инициализирован.
-	def add_readers(self, add_readers_list, task_data=False): # v2 *** тестилось без смены статуса.
+	def add_readers(self, add_readers_list): # v2 *** тестилось без смены статуса.
 		pass
 		# ? - проверять ли актуальность списка читателей.
-		# 1 - получение task_data
 		# 2 - чтение словаря 'readers' и определение change_status
 		# 3 - определение update_data
-		# 4 - если задача инициализирована - редактирование данного объекта задачи.
+		# 4 - редактирование данного объекта задачи.
 		# 5 - перезапись задачи
 		# 6 - смена исходящих статусов если change_status=True
 		
@@ -3932,59 +3846,14 @@ class task(studio):
 		if not isinstance(add_readers_list, list) and not isinstance(add_readers_list, tuple):
 			return(False, '###\nin task.add_readers()\nInvalid type of "add_readers_list": "%s"' % add_readers_list.__class__.__name__)
 		
-		# (1)
-		if not task_data:
-			task_data={}
-			for key in self.tasks_keys:
-				exec('task_data["%s"] = self.%s' % (key, key))
-	
 		change_status = False
 		readers_dict = {}
 		
 		# (2)
-		read_ob = self.asset.project
-		table_name = '"%s:%s"' % (task_data['asset_id'], self.tasks_t)
-		keys = self.tasks_keys
-		where = {'task_name': task_data['task_name']}
-		bool_, r_data = database().read('project', read_ob, table_name, keys, where=where, table_root=self.tasks_db)
-		if not bool_:
-			return(bool_, r_data)
-		elif not r_data:
-			return(False, 'This Task (%s) Not Found' % task_data['task_name'])
-		else:
-			readers_dict = r_data[0].get('readers')
-			if r_data[0].get('status') == 'done':
-				change_status = True
+		readers_dict = self.readers
+		if self.status == 'done':
+			change_status = True
 		
-		'''
-		try:
-			# Connect to db
-			conn = sqlite3.connect(self.tasks_path, detect_types=sqlite3.PARSE_DECLTYPES|sqlite3.PARSE_COLNAMES)
-			conn.row_factory = sqlite3.Row
-			c = conn.cursor()
-		except:
-			return(False, ('in task().add_readers Not Connect Table - path = ' + self.tasks_path))
-			
-		# Exists table
-		table = '\"' + task_data['asset_id'] + ':' + self.tasks_t + '\"'
-		string = 'select * from ' + table
-		try:
-			c.execute(string)
-			# -- get old readers dict
-			for row in c.fetchall():
-				if row['task_name'] == task_data['task_name']:
-					try:
-						if json.loads(row['readers']):
-							readers_dict = json.loads(row['readers'])
-					except:
-						pass
-					if row['status'] == 'done':
-						change_status = True
-					break
-		except:
-			conn.close()
-			return(False, ('in task().add_readers Not Table! - ' + table))
-		'''
 		for artist_name in add_readers_list:
 			readers_dict[artist_name] = 0
 			
@@ -3993,115 +3862,68 @@ class task(studio):
 		if change_status:
 			new_status = 'checking'
 			update_data = {'status': new_status, 'readers': readers_dict}
-			#string = 'UPDATE ' +  table + ' SET  status  = ?, readers  = ? WHERE task_name = ?'
-			#data = ('checking', json.dumps(readers_dict), task_data['task_name'])
+
 		else:
 			update_data = {'readers': readers_dict}
-			#string = 'UPDATE ' +  table + ' SET  readers  = ? WHERE task_name = ?'
-			#data = (json.dumps(readers_dict), task_data['task_name'])
-			
+					
 		# (4)
-		if self.task_name == task_data['task_name']:
-			self.readers = readers_dict
-			if new_status:
-				self.status = new_status
+		self.readers = readers_dict
+		if new_status:
+			self.status = new_status
 		
 		# (5)
+		read_ob = self.asset.project
+		table_name = '"%s:%s"' % (self.asset.id, self.tasks_t)
+		keys = self.tasks_keys
+		where = {'task_name': self.task_name}
+		#
 		bool_, r_data = database().update('project', read_ob, table_name, keys, update_data, where, table_root=self.tasks_db)
 		if not bool_:
 			return(bool_, r_data)
 		
 		# (6) change output statuses
 		if change_status:
-			bool_, r_data = self.this_change_from_end(task_data)
+			bool_, r_data = self.this_change_from_end()
 			if not bool_:
 				return(bool_, r_data)
 		
 		return(True, readers_dict, change_status)
 	
 	# nik_name (str) - никнейм артиста
-	# task_data (dict) - изменяемая задача, если False - значит предполагается, что task инициализирован.
-	def make_first_reader(self, nik_name, task_data=False): # v2
+	def make_first_reader(self, nik_name): # v2
 		pass
 		# ? - проверять ли актуальность читателя.
-		# 1 - получение task_data
-		# 2 - чтение словаря 'readers' и определение change_status
+		
+		# 2 - чтение словаря 'readers'
 		# 3 - редактирование задачи в случае если она инициализирована.
 		# 4 - перезапись задачи
 		
 		#
-		readers_dict = {}
 		# (1)
-		if task_data:
-			asset_id = task_data['asset_id']
-			task_name = task_data['task_name']
-		else:
-			asset_id = self.asset_id
-			task_name = self.task_name
-		
+				
 		# (2)
-		read_ob = self.asset.project
-		table_name = '"%s:%s"' % (asset_id, self.tasks_t)
-		keys = self.tasks_keys
-		where = {'task_name': task_name}
-		bool_, r_data = database().read('project', read_ob, table_name, keys, where=where, table_root=self.tasks_db)
-		if not bool_:
-			return(bool_, r_data)
-		elif not r_data:
-			return(False, 'This Task (%s) Not Found' % task_name)
-		else:
-			readers_dict = r_data[0].get('readers')
-		'''
-		try:
-			# Connect to db
-			conn = sqlite3.connect(self.tasks_path, detect_types=sqlite3.PARSE_DECLTYPES|sqlite3.PARSE_COLNAMES)
-			conn.row_factory = sqlite3.Row
-			c = conn.cursor()
-		except:
-			return(False, ('in task().add_readers Not Connect Table - path = ' + self.tasks_path))
-			
-		# Exists table
-		table = '\"' + task_data['asset_id'] + ':' + self.tasks_t + '\"'
-		string = 'select * from ' + table
-		try:
-			c.execute(string)
-			# -- get old readers dict
-			for row in c.fetchall():
-				if row['task_name'] == task_data['task_name']:
-					try:
-						readers_dict = json.loads(row['readers'])
-					except:
-						pass
-					break
-		except:
-			conn.close()
-			return(False, ('in task().add_readers Not Table! - ' + table))
-		'''
+		readers_dict = self.readers
 		readers_dict['first_reader'] = nik_name
 		
 		# (3)
-		if self.task_name == task_name:
-			self.readers = readers_dict
+		self.readers = readers_dict
 			
 		# (4)
+		read_ob = self.asset.project
+		table_name = '"%s:%s"' % (self.asset.id, self.tasks_t)
+		keys = self.tasks_keys
+		where = {'task_name': self.task_name}
+		#
 		update_data = {'readers': readers_dict}
+		#
 		bool_, r_data = database().update('project', read_ob, table_name, keys, update_data, where, table_root=self.tasks_db)
 		if not bool_:
 			return(bool_, r_data)
-		'''
-		# edit .db
-		string = 'UPDATE ' +  table + ' SET  readers  = ? WHERE task_name = ?'
-		data = (json.dumps(readers_dict), task_data['task_name'])
 		
-		c.execute(string, data)
-		conn.commit()
-		conn.close()
-		'''		
 		return(True, readers_dict)
 	
 	# remove_readers_list (list) - список никнеймов удаляемых из списка читателей
-	# task_data (dict) - изменяемая задача, если False - значит предполагается, что task инициализирован.
-	def remove_readers(self, remove_readers_list, task_data=False): # v2
+	def remove_readers(self, remove_readers_list): # v2
 		pass
 		# 1 - получение task_data
 		# 2 - чтение БД - readers_dict
@@ -4115,49 +3937,10 @@ class task(studio):
 		readers_dict = {}
 		
 		# (1)
-		if not task_data:
-			task_data = {}
-			for key in self.tasks_keys:
-				exec('task_data["%s"] = self.%s' % (key, key))
-		# (2)
-		read_ob = self.asset.project
-		table_name = '"%s:%s"' % (task_data['asset_id'], self.tasks_t)
-		keys = self.tasks_keys
-		where = {'task_name': task_data['task_name']}
-		bool_, r_data = database().read('project', read_ob, table_name, keys, where=where, table_root=self.tasks_db)
-		if not bool_:
-			return(bool_, r_data)
-		elif not r_data:
-			return(False, 'This Task (%s) Not Found' % task_name)
-		else:
-			readers_dict = r_data[0].get('readers')
-		'''
-		try:
-			# Connect to db
-			conn = sqlite3.connect(self.tasks_path, detect_types=sqlite3.PARSE_DECLTYPES|sqlite3.PARSE_COLNAMES)
-			conn.row_factory = sqlite3.Row
-			c = conn.cursor()
-		except:
-			return(False, ('in task().remove_readers Not Connect Table - path = ' + self.tasks_path))
-					
-		# Exists table
-		table = '\"' + task_data['asset_id'] + ':' + self.tasks_t + '\"'
-		string = 'select * from ' + table
-		try:
-			c.execute(string)
-			# -- get old readers dict
-			for row in c.fetchall():
-				if row['task_name'] == task_data['task_name']:
-					try:
-						readers_dict = json.loads(row['readers'])
-					except:
-						pass
-					break
-		except:
-			conn.close()
-			return(False, ('in task().remove_readers Not Table! - ' + table))
-		'''
 		
+		# (2)
+		readers_dict = self.readers
+				
 		# (3) remove artists
 		for artist_name in remove_readers_list:
 			try:
@@ -4168,7 +3951,7 @@ class task(studio):
 				del readers_dict['first_reader']
 		
 		# (4) get change status
-		if task_data['status'] == 'checking':
+		if self.status == 'checking':
 			change_status = True
 		if not readers_dict:
 			change_status = False
@@ -4179,34 +3962,29 @@ class task(studio):
 					break
 		
 		# (5) edit db
+		read_ob = self.asset.project
+		table_name = '"%s:%s"' % (self.asset.id, self.tasks_t)
+		keys = self.tasks_keys
+		where = {'task_name': self.task_name}
+		#
 		new_status = False
 		if change_status:
 			new_status = 'done'
 			update_data = {'status': new_status, 'readers': readers_dict}
-			#string = 'UPDATE ' +  table + ' SET  status = ?, readers  = ? WHERE task_name = ?'
-			#data = ('done', json.dumps(readers_dict), task_data['task_name'])
 		else:
 			update_data = {'readers': readers_dict}
-			#string = 'UPDATE ' +  table + ' SET  readers  = ? WHERE task_name = ?'
-			#data = (json.dumps(readers_dict), task_data['task_name'])
 		bool_, r_data = database().update('project', read_ob, table_name, keys, update_data, where, table_root=self.tasks_db)
 		if not bool_:
 			return(bool_, r_data)
-		'''
-		c.execute(string, data)
-		conn.commit()
-		conn.close()
-		'''
 		
 		# (6)
-		if self.task_name == task_data['task_name']:
-			self.readers = readers_dict
-			if new_status:
-				self.status = new_status
+		self.readers = readers_dict
+		if new_status:
+			self.status = new_status
 		
 		# (7) change output statuses
 		if change_status:
-			result = self.this_change_to_end(task_data)
+			result = self.this_change_to_end()
 			if not result[0]:
 				return(False, result[1])
 		
@@ -4214,7 +3992,7 @@ class task(studio):
 		
 	# new_artist (str/artist) - nik_name или artist - объект
 	# task_data (dict) - изменяемая задача, если False - значит предполагается, что task инициализирован.
-	def change_artist(self, new_artist, task_data=False): # v2  !!!!! возможно надо рассмотреть варианты когда меняется артист в завершённых статусах задачь.
+	def change_artist(self, new_artist): # v2  !!!!! возможно надо рассмотреть варианты когда меняется артист в завершённых статусах задачь.
 		pass
 		# 1 - получение task_data.
 		# 2 - чтение нового артиста и определение аутсорсер он или нет.
@@ -4226,11 +4004,7 @@ class task(studio):
 		#print('*** new artist: ', new_artist)
 		
 		# (1)
-		if not task_data:
-			task_data = {}
-			for key in self.tasks_keys:
-				exec('task_data["%s"] = self.%s' % (key, key))
-        
+		        
 		#print('### task_data["outsource"].type = %s, value = %s' % (task_data["outsource"].__class__.__name__, str(task_data["outsource"])))
 		
 		# --------------- edit Status ------------
@@ -4251,37 +4025,31 @@ class task(studio):
 			new_artist = ''
 		# затыка
 		if artist_outsource is None:
-			artist_outsource = '0'
+			artist_outsource = 0
 		#print('*** artist_outsource: %s' % str(artist_outsource))
 			
 		# (3) get task_outsource
-		task_outsource = task_data['outsource']
-		'''
-		task_outsource = False
-		if task_data['outsource']:
-			task_outsource = bool(task_data['outsource'])
-		'''
-		#print('*** task_outsource: %s' % str(task_outsource))
-		
+		task_outsource = self.outsource
+				
 		# (4) get new status
-		if task_data['status'] in self.VARIABLE_STATUSES:
+		if self.status in self.VARIABLE_STATUSES:
 			#print('****** in variable')
 			if not new_artist :
 				new_status = 'ready'
-			elif (not task_data['artist']) or (not task_outsource):
+			elif (not self.artist) or (not task_outsource):
 				#print('****** start not outsource')
 				if artist_outsource:
-					new_status = self.CHANGE_BY_OUTSOURCE_STATUSES['to_outsource'][task_data['status']]
+					new_status = self.CHANGE_BY_OUTSOURCE_STATUSES['to_outsource'][self.status]
 				else:
 					pass
 					#print('****** artist not outsource')
 			elif task_outsource and (not artist_outsource):
 				#print('****** to studio 1')
-				new_status = self.CHANGE_BY_OUTSOURCE_STATUSES['to_studio'][task_data['status']]
+				new_status = self.CHANGE_BY_OUTSOURCE_STATUSES['to_studio'][self.status]
 			else:
 				#print('****** start outsource')
 				if not artist_outsource:
-					new_status = self.CHANGE_BY_OUTSOURCE_STATUSES['to_studio'][task_data['status']]
+					new_status = self.CHANGE_BY_OUTSOURCE_STATUSES['to_studio'][self.status]
 				else:
 					pass
 					#print('****** artist outsource')
@@ -4292,9 +4060,9 @@ class task(studio):
 			
 		# (5)
 		read_ob = self.asset.project
-		table_name = '"%s:%s"' % (task_data['asset_id'], self.tasks_t)
+		table_name = '"%s:%s"' % (self.asset.id, self.tasks_t)
 		keys = self.tasks_keys
-		where = {'task_name': task_data['task_name']}
+		where = {'task_name': self.task_name}
 		if new_status:
 			update_data = {'artist': new_artist, 'outsource': int(artist_outsource), 'status':new_status}
 		else:
@@ -4306,42 +4074,14 @@ class task(studio):
 		if not bool_:
 			return(bool_, r_data)
 		
-		'''
-		# ------------- edit DB -----------------
-		# Connect to db
-		conn = sqlite3.connect(self.tasks_path, detect_types=sqlite3.PARSE_DECLTYPES|sqlite3.PARSE_COLNAMES)
-		conn.row_factory = sqlite3.Row
-		c = conn.cursor()
-		
-		# Exists table
-		table = '\"' + task_data['asset_id'] + ':' + self.tasks_t + '\"'
-		try:
-			str_ = 'select * from ' + table
-		except:
-			conn.close()
-			return(False, 'Not Table!')
-			
-		# edit db
-		if new_status:
-			string = 'UPDATE ' +  table + ' SET  \"artist\"  = ?, \"outsource\"  = ?, \"status\"  = ?  WHERE \"task_name\" = \"' + task_data['task_name'] + '\"'
-			data = (new_artist, str(int(artist_outsource)), new_status)
-		else:
-			string = 'UPDATE ' +  table + ' SET  \"artist\"  = ?, \"outsource\"  = ?  WHERE \"task_name\" = \"' + task_data['task_name'] + '\"'
-			data = (new_artist, str(int(artist_outsource)))
-		
-		c.execute(string, data)
-		conn.commit()
-		conn.close()
-		'''
 		# (6)
-		if self.task_name == task_data['task_name']:
-			if new_status:
-				self.status = new_status
-				self.outsource = int(artist_outsource)
-				self.artist = new_artist
-			else:
-				self.outsource = int(artist_outsource)
-				self.artist = new_artist
+		if new_status:
+			self.status = new_status
+			self.outsource = int(artist_outsource)
+			self.artist = new_artist
+		else:
+			self.outsource = int(artist_outsource)
+			self.artist = new_artist
 		
 		return(True, (new_status, int(artist_outsource)))
 		
@@ -4428,7 +4168,7 @@ class task(studio):
 		return(True, (new_status, old_input_task, new_input_task))
 		
 	# task_data (dict) - изменяемая задача, если False - значит предполагается, что task инициализирован.
-	def accept_task(self, task_data=False): # v2
+	def accept_task(self): # v2
 		pass
 		# 1 - получение task_data,
 		# 2 - паблиш Хуки
@@ -4437,61 +4177,37 @@ class task(studio):
 		# 5 - внесение изменений в объект если он инициализирован
 		
 		# (1)
-		if not task_data:
-			task_data={}
-			for key in self.tasks_keys:
-				exec('task_data["%s"] = self.%s' % (key, key))
-			
+					
 		# (2) publish
 		#result = lineyka_publish.publish().publish(project_name, task_data)
-		result = self.publish.publish(task_data)
+		result = self.publish.publish(self) # ???????????????????????????????????????????????? переработать
 		if not result[0]:
 			return(False, result[1])
 		
 		# (3)
 		read_ob = self.asset.project
-		table_name = '"%s:%s"' % (task_data['asset_id'], self.tasks_t)
+		table_name = '"%s:%s"' % (self.asset.id, self.tasks_t)
 		keys = self.tasks_keys
 		update_data = {'readers':{}, 'status':'done'}
-		where = {'task_name': task_data['task_name']}
+		where = {'task_name': self.task_name}
 		bool_, r_data = database().update('project', read_ob, table_name, keys, update_data, where, table_root=self.tasks_db)
 		if not bool_:
 			return(bool_, r_data)
 		
-		'''	
-		# -- Connect to db
-		conn = sqlite3.connect(self.tasks_path, detect_types=sqlite3.PARSE_DECLTYPES|sqlite3.PARSE_COLNAMES)
-		conn.row_factory = sqlite3.Row
-		c = conn.cursor()
-		
-		# Exists table
-		table = '\"' + task_data['asset_id'] + ':' + self.tasks_t + '\"'
-		#try:
-		# remove readers
-		readers = json.dumps({})
-		
-		string = 'UPDATE ' +  table + ' SET  readers = ?, status  = ? WHERE task_name = ?'
-		data = (readers, 'done', task_data['task_name'])
-		c.execute(string, data)
-		conn.commit()
-		conn.close()
-		'''
-		
 		# (4) change output statuses
-		result = self.this_change_to_end(task_data)
+		result = self.this_change_to_end()
 		if not result[0]:
 			return(False, result[1])
 		
 		# (5)
-		if self.task_name == task_data['task_name']:
-			self.status = 'done'
+		self.status = 'done'
+		self.readers = {} # ???
 			
 		return(True, 'Ok!')
 	
 	# приём задачи текущим ридером
 	# current_artist (artist) - экземпляр класса артист, должен быть инициализирован - artist.get_user()
-	# task_data (dict) - изменяемая задача, если False - значит предполагается, что task инициализирован.
-	def readers_accept_task(self, current_artist, task_data=False): # v2
+	def readers_accept_task(self, current_artist): # v2
 		pass
 		# 0 - проверка, чтобы current_artist был экземпляром класса artist
 		# 1 - получение task_data,
@@ -4506,14 +4222,10 @@ class task(studio):
 			return(False, 'in task.readers_accept_task() - "current_artist" must be an instance of "artist" class, and not "%s"' % current_artist.__class__.__name__)
 		
 		# (1)
-		if not task_data:
-			task_data={}
-			for key in self.tasks_keys:
-				exec('task_data["%s"] = self.%s' % (key, key))
-			
+		
 		# (2)
 		change_status = True
-		readers = task_data['readers']
+		readers = self.readers
 		if current_artist.nik_name in readers:
 			readers[current_artist.nik_name] = 1
 		else:
@@ -4528,83 +4240,39 @@ class task(studio):
 			
 		# (3) -- publish
 		if change_status:
-			result = self.publish.publish(task_data)
+			result = self.publish.publish(self)
 			if not result[0]:
 				return(False, result[1])
 			
 		# (4)
 		read_ob = self.asset.project
-		table_name = '"%s:%s"' % (task_data['asset_id'], self.tasks_t)
+		table_name = '"%s:%s"' % (self.asset.id, self.tasks_t)
 		keys = self.tasks_keys
 		if change_status:
 			update_data = {'readers':readers, 'status':'done'}
 		else:
 			update_data = {'readers':readers}
-		where = {'task_name': task_data['task_name']}
+		where = {'task_name': self.task_name}
 		bool_, r_data = database().update('project', read_ob, table_name, keys, update_data, where, table_root=self.tasks_db)
 		if not bool_:
 			return(bool_, r_data)
 		
-		'''
-		# -- Connect to db
-		conn = sqlite3.connect(self.tasks_path, detect_types=sqlite3.PARSE_DECLTYPES|sqlite3.PARSE_COLNAMES)
-		conn.row_factory = sqlite3.Row
-		c = conn.cursor()
-		
-		# Exists table
-		change_status = True
-		table = '\"' + task_data['asset_id'] + ':' + self.tasks_t + '\"'
-		
-		
-		# read .db
-		string = 'SELECT * FROM ' +  table + ' WHERE task_name = ?'
-		data = (task_data['task_name'],)
-		c.execute(string, data)
-		task_data = dict(c.fetchone())
-		readers = json.loads(task_data['readers'])
-		if nik_name in readers:
-			readers[nik_name] = 1
-		task_data['readers'] = json.dumps(readers)
-
-		# get change_status
-		for key in readers:
-			if key == 'first_reader':
-				continue
-			elif readers[key] == 0:
-				change_status = False
-				break
-
-		# update readers .db
-		if change_status:
-			string = 'UPDATE ' +  table + ' SET status  = ?, readers  = ? WHERE task_name = ?'
-			data = ('done', task_data['readers'], task_data['task_name'])
-			c.execute(string, data)
-		else:
-			string = 'UPDATE ' +  table + ' SET  readers  = ? WHERE task_name = ?'
-			data = (task_data['readers'], task_data['task_name'])
-			c.execute(string, data)
-			
-		conn.commit()
-		conn.close()
-		'''
-		
 		# (5) change output statuses
 		if change_status:
 			# -- change output statuses
-			result = self.this_change_to_end(task_data)
+			result = self.this_change_to_end()
 			if not result[0]:
 				return(False, result[1])
 		
 		# (6)
-		if self.task_name == task_data['task_name']:
-			if change_status:
-				self.status = 'done'
-				#self.readers = readers
+		self.readers = readers
+		if change_status:
+			self.status = 'done'
 		
 		return(True, 'Ok')
 	
-	# task_data (dict) - изменяемая задача, если False - значит предполагается, что task инициализирован.
-	def close_task(self, task_data=False): # v2
+	# 
+	def close_task(self): # v2
 		pass
 		# 1 - получение task_data
 		# 2 - запись изменений задачи в БД
@@ -4612,48 +4280,24 @@ class task(studio):
 		# 4 - внесение изменений в объект если он инициализирован
 		
 		# (1)
-		if not task_data:
-			task_data={}
-			for key in self.tasks_keys:
-				exec('task_data["%s"] = self.%s' % (key, key))
-				
+						
 		# (2)
 		read_ob = self.asset.project
-		table_name = '"%s:%s"' % (task_data['asset_id'], self.tasks_t)
+		table_name = '"%s:%s"' % (self.asset.id, self.tasks_t)
 		keys = self.tasks_keys
 		update_data = {'status':'close'}
-		where = {'task_name': task_data['task_name']}
+		where = {'task_name': self.task_name}
 		bool_, r_data = database().update('project', read_ob, table_name, keys, update_data, where, table_root=self.tasks_db)
 		if not bool_:
 			return(bool_, r_data)
-		'''	
-		# -- Connect to db
-		conn = sqlite3.connect(self.tasks_path, detect_types=sqlite3.PARSE_DECLTYPES|sqlite3.PARSE_COLNAMES)
-		conn.row_factory = sqlite3.Row
-		c = conn.cursor()
-		
-		# Exists table
-		table = '\"' + task_data['asset_id'] + ':' + self.tasks_t + '\"'
-		try:
-			string = 'UPDATE ' +  table + ' SET  status  = ? WHERE task_name = ?'
-			data = ('close', task_data['task_name'])
-			c.execute(string, data)
-			conn.commit()
-			conn.close()
-						
-		except:
-			conn.close()
-			return(False, 'in accept_task - Not Edit Table!')
-		'''
-		
+				
 		# (3) change output statuses
-		result = self.this_change_to_end(task_data)
+		result = self.this_change_to_end()
 		if not result[0]:
 			return(False, result[1])
 		
 		# (4)
-		if self.task_name == task_data['task_name']:
-			self.status = 'close'
+		self.status = 'close'
 			
 		return(True, 'Ok!')
 	
@@ -5034,9 +4678,8 @@ class task(studio):
 		'''
 		return(True, chek_list)
 	
-	# input_task_list (list) - список задач (словари)
-	# task_data (dict) - изменяемая задача, если False - значит предполагается, что task инициализирован.
-	def service_add_list_to_input(self, input_task_list, task_data=False): # v2
+	# input_task_list (list) - список задач (объекты)
+	def service_add_list_to_input(self, input_task_list): # v2
 		pass
 		# 0 - получение task_data.
 		# 1 - проверка на srvice
@@ -5047,14 +4690,10 @@ class task(studio):
 		# 6 - внесение изменений в объект, если он инициализирован
 		
 		# (0)
-		if not task_data:
-			task_data={}
-			for key in self.tasks_keys:
-				exec('task_data["%s"] = self.%s' % (key, key))
-				
+						
 		# (1)
-		if task_data['task_type'] != 'service':
-			description = 'In task.service_add_list_to_input() - incorrect type!\nThe type of task to be changed must be "service".\nThis type: "%s"' % task_data['task_type']
+		if self.task_type != 'service':
+			description = 'In task.service_add_list_to_input() - incorrect type!\nThe type of task to be changed must be "service".\nThis type: "%s"' % self.task_type
 			return(False, description)
 		
 		# (2)
@@ -5064,115 +4703,80 @@ class task(studio):
 		inputs = []
 		done_statuses = []
 		rebild_input_task_list = []
-		for task in input_task_list:
+		for task_ob in input_task_list:
 			# -- get inputs list
-			if task_data['input']:
+			if self.input:
 				ex_inputs = []
 				try:
-					ex_inputs = task_data['input']
+					ex_inputs = self.input
 				except:
 					pass
-				if task['task_name'] in ex_inputs:
-					overlap_list.append(task['task_name'])
+				if task_ob.task_name in ex_inputs:
+					overlap_list.append(task_ob.task_name)
 					continue
-			inputs.append(task['task_name'])
+			inputs.append(task_ob.task_name)
 			# -- get done statuses
-			done_statuses.append(task['status'] in self.end_statuses)
+			done_statuses.append(task_ob.status in self.end_statuses)
 			
 			# edit outputs
-			if task['output']:
+			if task_ob.output:
 				ex_outputs = []
 				try:
-					ex_outputs = task['output']
+					ex_outputs = task_ob.output
 				except:
 					pass
-				ex_outputs.append(task_data['task_name'])
-				task['output'] = ex_outputs
+				ex_outputs.append(self.task_name)
+				task_ob.output = ex_outputs
 			else:
 				this_outputs = []
-				this_outputs.append(task_data['task_name'])
-				task['output'] = this_outputs
+				this_outputs.append(self.task_name)
+				task_ob.output = this_outputs
 				
-			rebild_input_task_list.append(task)
+			rebild_input_task_list.append(task_ob)
 			
-		if not task_data['input']:
-			task_data['input'] = inputs
+		if not self.input:
+			self.input = inputs
 		else:
 			ex_inputs = []
 			try:
-				ex_inputs = task_data['input']
+				ex_inputs = self.input
 			except:
 				pass
-			task_data['input'] = ex_inputs + inputs
+			self.input = ex_inputs + inputs
 		
 		# (3) change status
-		if task_data['status'] in self.end_statuses:
+		if self.status in self.end_statuses:
 			if False in done_statuses:
-				task_data['status'] = 'null'
-				self.this_change_from_end(task_data)
+				self.status = 'null'
+				self.this_change_from_end()
 				
 		# (4)
 		read_ob = self.asset.project
-		table_name = '"%s:%s"' % (task_data['asset_id'], self.tasks_t)
+		table_name = '"%s:%s"' % (self.asset.id, self.tasks_t)
 		keys = self.tasks_keys
-		update_data = {'input':task_data['input'], 'status':task_data['status']}
-		where = {'task_name': task_data['task_name']}
+		update_data = {'input':self.input, 'status':self.status}
+		where = {'task_name': self.task_name}
 		bool_, r_data = database().update('project', read_ob, table_name, keys, update_data, where, table_root=self.tasks_db)
 		if not bool_:
 			return(bool_, r_data)
 		
 		# (5)
 		append_task_name_list = []
-		for task in rebild_input_task_list:
-			if not task['task_name'] in overlap_list:
-				table_name = '"%s:%s"' % (task['asset_id'], self.tasks_t)
-				update_data = {'output':task['output']}
-				where = {'task_name': task['task_name']}
-				append_task_name_list.append(task['task_name'])
+		for task_ob in rebild_input_task_list:
+			if not task_ob.task_name in overlap_list:
+				table_name = '"%s:%s"' % (task_ob.asset.id, self.tasks_t)
+				update_data = {'output':task_ob.output}
+				where = {'task_name': task_ob.task_name}
+				append_task_name_list.append(task_ob.task_name)
 				bool_, r_data = database().update('project', read_ob, table_name, keys, update_data, where, table_root=self.tasks_db)
 				if not bool_:
 					return(bool_, r_data)
 				
 		# (6)
-		if self.task_name == task_data['task_name']:
-			self.status = task_data['status']
-			self.input = task_data['input']
+		#self.status = task_data['status']
+		#self.input = task_data['input']
 		
-		'''
-		# edit db
-		# -- Connect to db
-		conn = sqlite3.connect(self.tasks_path, detect_types=sqlite3.PARSE_DECLTYPES|sqlite3.PARSE_COLNAMES)
-		conn.row_factory = sqlite3.Row
-		c = conn.cursor()
-		
-		# -- -- edit Current Task
-		table = '\"' + task_data['asset_id'] + ':' + self.tasks_t + '\"'
-		
-		string = 'UPDATE ' +  table + ' SET  \"input\"  = ?, \"status\"  = ?  WHERE \"task_name\" = \"' + task_data['task_name'] + '\"'
-		data = (task_data['input'], task_data['status'])
-		c.execute(string, data)
-		# debug
-		#print('input: ', string, data)
-		
-		# -- -- edit Outputs Task
-		append_task_name_list = []
-		#for task in input_task_list:
-		for task in rebild_input_task_list:
-			#print(task['task_name'], task['output'])
-			if not task['task_name'] in overlap_list:
-				table = '\"' + task['asset_id'] + ':' + self.tasks_t + '\"'
-				string = 'UPDATE ' +  table + ' SET  \"output\"  = ?  WHERE \"task_name\" = \"' + task['task_name'] + '\"'
-				data = (task['output'],)
-				c.execute(string, data)
-				append_task_name_list.append(task['task_name'])
-				# debug
-				print('output: ', string, data)
-		
-		conn.commit()
-		conn.close()
-		'''
-		
-		return(True, (task_data['status'], append_task_name_list))
+		return(True, (self.status, append_task_name_list))
 		
 	# asset_list (list) - подсоединяемые ассеты (словари, или объекты)
 	# task_data (dict) - изменяемая задача, если False - значит предполагается, что task инициализирован

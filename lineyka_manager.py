@@ -6668,7 +6668,7 @@ class MainWindow(QtGui.QMainWindow):
 		self.addTaskDialog = QtGui.QDialog(self)
 		self.addTaskDialog.setModal(True)
 		self.addTaskDialog.resize(500, 200)
-		self.addTaskDialog.setWindowTitle(('Create Single Task to Asset: /// ' + self.current_task['asset']))
+		self.addTaskDialog.setWindowTitle(('Create Single Task to Asset: /// %s' % self.selected_task.asset.name))
 		
 		# root frames
 		v_layout = QtGui.QVBoxLayout()
@@ -6698,45 +6698,43 @@ class MainWindow(QtGui.QMainWindow):
 		button_frame.setLayout(h_layout)
 		
 		# get task_list of asset
-		result = self.db_chat.get_list(self.current_project, self.current_task['asset_id'])
+		result = self.selected_task.get_list()
 		if not result[0]:
 			self.message(result[1], 2)
 			return
 		task_list = result[1]
 		for tsk in task_list:
-			if tsk['task_type'] == 'service':
+			if tsk.task_type == 'service':
 				#print(tsk['task_name'].split(':')[1][:5])
-				if tsk['task_name'].split(':')[1][:5] == 'final':
+				if tsk.task_name.split(':')[1].endswith('final'):
 					task_list.remove(tsk)
 		
 		# -- Labels <-> Fields
 		self.addTaskDialog.new_task_data = {}
 		
 		hh_layout = QtGui.QGridLayout()
-		headers = ['task_name', 'input', 'output', 'activity', 'workroom', 'task_type', 'planned_time','price','tz', 'extension']
+		headers = ['task_name', 'input', 'output', 'activity', 'task_type', 'planned_time','price','tz', 'extension']
 		for i, head in enumerate(headers):
 			label = QtGui.QLabel(head, parent = headers_frame)
 			line = QtGui.QLineEdit(parent = headers_frame)	
 			# -- line context menu
-			if head in ['input', 'output', 'activity', 'workroom', 'task_type', 'extension']:
+			if head in ['input', 'output', 'activity', 'task_type', 'extension']:
 				textes = []
 				if head == 'activity':
-					textes = self.db_chat.ACTIVITY_FOLDER[self.current_task['asset_type']].keys()
+					textes = self.selected_task.asset.ACTIVITY_FOLDER[self.selected_task.asset_type].keys()
 				elif head == 'extension':
-					textes = self.db_chat.extensions
-				elif head == 'workroom':
-					textes = self.db_workroom.dict_by_id
+					textes = self.selected_task.extensions
 				elif head == 'task_type':
-					textes = self.db_chat.task_types
+					textes = self.selected_task.task_types
 				elif head == 'input':
 					textes = ['None']
 					for task_ in task_list:
-						textes.append(task_['task_name'])
+						textes.append(task_.task_name)
 				elif head == 'output':
 					textes = ['None']
 					for tsk_ in task_list:
-						if tsk_['task_type'] != 'service':
-							textes.append(tsk_['task_name'])
+						if tsk_.task_type != 'service':
+							textes.append(tsk_.task_name)
 				line.setReadOnly(True)
 				for text in textes:
 					# context menu
@@ -6764,10 +6762,10 @@ class MainWindow(QtGui.QMainWindow):
 	
 	def tm_add_task_action(self, dialog):
 		task_keys = {}
-		task_keys['asset'] = self.current_task['asset']
-		task_keys['asset_id'] = self.current_task['asset_id']
-		task_keys['asset_type'] = self.current_task['asset_type']
-		task_keys['asset_path'] = self.current_task['asset_path']
+		#task_keys['asset_id'] = self.selected_task.asset_id
+		#task_keys['asset_type'] = self.selected_task.asset_type
+		#task_keys['asset_path'] = self.selected_task.asset_path
+		print(dialog.new_task_data)
 		
 		required_keys = ['task_name', 'activity', 'workroom', 'task_type', 'extension']
 		for key in dialog.new_task_data:
