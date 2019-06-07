@@ -6092,7 +6092,7 @@ class MainWindow(QtGui.QMainWindow):
 
 		
 	# ---- accept task --------------
-	def tm_accept_task_action(self):
+	def tm_accept_task_action(self): # v2 не ткстилось с контентом
 		pass		
 		# change task
 		ask = self.message(('Do you want to accept the task: "%s" ?') % self.selected_task.task_name, 0)
@@ -6117,7 +6117,7 @@ class MainWindow(QtGui.QMainWindow):
 		self.tm_reload_task_list()
 		
 	# ---- close task --------------
-	def tm_close_task_action(self):
+	def tm_close_task_action(self): # v2
 		pass
 		
 		# change task
@@ -6151,7 +6151,7 @@ class MainWindow(QtGui.QMainWindow):
 		self.tm_reload_task_list()
 		
 	# ---- return a job -------------
-	def tm_return_a_job_action(self):
+	def tm_return_a_job_action(self): # v2
 		pass
 		
 		# change task
@@ -6166,7 +6166,7 @@ class MainWindow(QtGui.QMainWindow):
 			
 	# ---- change activity ----------
 			
-	def tm_change_task_activity_ui(self, *args):
+	def tm_change_task_activity_ui(self, *args): # v2
 		pass
 		# get list of activity
 		#copy = db.asset()
@@ -6193,7 +6193,7 @@ class MainWindow(QtGui.QMainWindow):
 		
 		window.show()
 		
-	def tm_change_task_activity_action(self, window):
+	def tm_change_task_activity_action(self, window): # v2
 		pass
 		# get new activity
 		new_activity = window.combo_dialog_combo_box.currentText()
@@ -6215,7 +6215,7 @@ class MainWindow(QtGui.QMainWindow):
 		
 	# ------ change price --------------
 	
-	def tm_change_task_price_ui(self, *args):
+	def tm_change_task_price_ui(self, *args): # v2
 		pass
 		# get item
 		item = self.myWidget.task_manager_table.currentItem()
@@ -6240,7 +6240,7 @@ class MainWindow(QtGui.QMainWindow):
 		
 		window.show()
 		
-	def tm_change_task_price_action(self, window):
+	def tm_change_task_price_action(self, window): # v2
 		pass
 		# get new workroom
 		new_price = float(window.new_dialog_name.text())
@@ -6263,7 +6263,7 @@ class MainWindow(QtGui.QMainWindow):
 		
 	# ------ change artist --------------
 	
-	def tm_change_task_artist_ui(self, *args):
+	def tm_change_task_artist_ui(self, *args): # v2
 		pass
 		
 		r_data = self.artist.get_artists_for_task_type(self.selected_task.task_type, self.db_workroom)
@@ -6295,7 +6295,7 @@ class MainWindow(QtGui.QMainWindow):
 		
 		window.show()
 		
-	def tm_change_task_artist_action(self, window):
+	def tm_change_task_artist_action(self, window): # v2
 		pass
 		# get new artist
 		new_artist = window.combo_dialog_combo_box.currentText()
@@ -6336,7 +6336,7 @@ class MainWindow(QtGui.QMainWindow):
 		
 	# ------ change input --------------
 	
-	def tm_change_input_ui(self, *args):
+	def tm_change_input_ui(self, *args): # v2
 		pass		
 		# get task list
 		task_list = []
@@ -6375,7 +6375,7 @@ class MainWindow(QtGui.QMainWindow):
 		
 		window.show()
 		
-	def tm_change_input_action(self, window):
+	def tm_change_input_action(self, window): # v2
 		pass
 		# get input task
 		input_task = window.combo_dialog_combo_box.currentText()
@@ -6411,7 +6411,7 @@ class MainWindow(QtGui.QMainWindow):
 		self.close_window(window)
 		
 	# ------ change task type ------------
-	def tm_change_task_type_ui(self):
+	def tm_change_task_type_ui(self): # v2
 		pass
 		# create window
 		loader = QtUiTools.QUiLoader()
@@ -6439,7 +6439,7 @@ class MainWindow(QtGui.QMainWindow):
 		
 		window.show()
 		
-	def tm_change_task_type_action(self, window):
+	def tm_change_task_type_action(self, window): # v2
 		task_type = window.combo_dialog_combo_box.currentText()
 		
 		b, r_data = self.selected_task.changes_without_a_change_of_status('task_type', task_type)
@@ -6458,7 +6458,7 @@ class MainWindow(QtGui.QMainWindow):
 		self.close_window(window)
 		
 	# ------ change task extension ------------
-	def tm_change_task_extension_ui(self):
+	def tm_change_task_extension_ui(self): # v2
 		pass
 		# create window
 		loader = QtUiTools.QUiLoader()
@@ -6486,7 +6486,7 @@ class MainWindow(QtGui.QMainWindow):
 		
 		window.show()
 		
-	def tm_change_task_extension_action(self, window):
+	def tm_change_task_extension_action(self, window): # v2
 		extension = window.combo_dialog_combo_box.currentText()
 		
 		result = self.selected_task.changes_without_a_change_of_status('extension', extension)
@@ -6505,7 +6505,7 @@ class MainWindow(QtGui.QMainWindow):
 		self.close_window(window)
 		
 	# ------- change TZ link ----------- self.new_dialog_path
-	def tm_change_tz_link_ui(self):
+	def tm_change_tz_link_ui(self): # v2
 		pass
 		# create window
 		loader = QtUiTools.QUiLoader()
@@ -6527,7 +6527,7 @@ class MainWindow(QtGui.QMainWindow):
 		
 		window.show()
 		
-	def tm_change_tz_link_action(self, window):
+	def tm_change_tz_link_action(self, window): # v2
 		link = window.new_dialog_name.text()
 		
 		result = self.selected_task.changes_without_a_change_of_status('tz', link)
@@ -6541,7 +6541,7 @@ class MainWindow(QtGui.QMainWindow):
 		self.close_window(window)
 		
 	# ------- make preview ----------
-	def tm_make_preview_ui(self):
+	def tm_make_preview_ui(self): # v2
 		self.makePreviewDialog = QtGui.QDialog(self)
 		self.makePreviewDialog.setModal(True)
 		#self.makePreviewDialog.resize(300, 300)
@@ -6583,7 +6583,7 @@ class MainWindow(QtGui.QMainWindow):
 					
 		self.makePreviewDialog.show()
 	
-	def tm_paste_image_from_clipboard(self, img_label):
+	def tm_paste_image_from_clipboard(self, img_label): # v2
 		rand  = uuid.uuid4().hex
 		img_path = os.path.normpath(os.path.join(self.db_studio.tmp_folder, ('tmp_image_%s.png' % rand)))
 		
@@ -6616,7 +6616,7 @@ class MainWindow(QtGui.QMainWindow):
 		self.makePreviewDialog.img_path = img_path
 		
 		
-	def tm_save_preview_image_action(self, window):
+	def tm_save_preview_image_action(self, window): # v2
 		pass
 		# self.preview_img_path
 		if not os.path.exists(self.selected_project.preview_img_path):
@@ -6657,7 +6657,7 @@ class MainWindow(QtGui.QMainWindow):
 		self.close_window(window)
 		
 	# ------ show tz ------------
-	def tm_tz(self):
+	def tm_tz(self): # v2
 		if self.selected_task.tz:
 			webbrowser.open_new_tab(self.selected_task.tz)
 		else:
@@ -6759,7 +6759,7 @@ class MainWindow(QtGui.QMainWindow):
 		
 		self.addTaskDialog.show()
 		
-	def tm_set_text(self, widget, text):
+	def tm_set_text(self, widget, text): # v2
 		widget.setText(text)
 	
 	def tm_add_task_action(self, dialog):
