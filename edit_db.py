@@ -2385,7 +2385,7 @@ class task(studio):
 		
 		#
 		from_end_list = []
-		this_asset_type = this_task.asset_type
+		this_asset_type = this_task.asset.type
 		
 		# (1)
 		output_list = this_task.output
@@ -2413,7 +2413,7 @@ class task(studio):
 			# (6) make new status char и obj не отключают локацию и аним шот, а локация отключает аним шот. ??????
 			if task_ob.status == 'close':
 				continue
-			elif task_ob.asset_type in ['location', 'shot_animation'] and this_asset_type not in ['location', 'shot_animation']:
+			elif task_ob.asset.type in ['location', 'shot_animation'] and this_asset_type not in ['location', 'shot_animation']:
 				continue
 			elif task_ob.status == 'done':
 				from_end_list.append(task_ob)
@@ -2456,9 +2456,8 @@ class task(studio):
 		return(True, 'Ok!')
 		
 	# замена статусов исходящих задачь при изменении статуса текущей задачи на done или close.
-	# task_data (dict/task) - текущая задача.
 	# assets (dict) - словарь всех ассетов по всем типам (ключи - имена, данные - ассеты (словари)) - результат функции asset.get_dict_by_name_by_all_types()
-	def this_change_to_end(self, task_data, assets = False): # v2 *** no test
+	def this_change_to_end(self, assets = False): # v2 *** no test
 		pass
 		# 1 - список исходящих задачь
 		# 2 - получение списка всех ассетов
@@ -2470,10 +2469,7 @@ class task(studio):
 		# 8 - отправка далее в себя же - this_change_to_end() - по списку service_to_done
         
 		# (1)
-		if isinstance(task_data, dict):
-			output_list = task_data.get('output')
-		elif task_data.__class___.__name__ == 'task':
-			output_list = task_data.output
+		output_list = self.output
 		if not output_list:
 			return(True, 'Ok!')
 		# (2)
@@ -2614,7 +2610,7 @@ class task(studio):
 	def get_final_file_path(self, task_data=False): # v2
 		asset_path = self.asset.path
 		if not task_data:
-			asset_type = self.asset_type
+			asset_type = self.asset.type
 			activity = self.activity
 			asset = self.asset.name
 			extension = self.extension
@@ -4397,7 +4393,7 @@ class task(studio):
 		
 		# (4)
 		read_ob = self.asset.project
-		table_name = '"%s:%s"' % (self.asset_id, self.tasks_t)
+		table_name = '"%s:%s"' % (self.asset.id, self.tasks_t)
 		keys = self.tasks_keys
 		update_data = {'readers':{}, 'status':new_status}
 		where = {'task_name': self.task_name}
