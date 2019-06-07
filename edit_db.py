@@ -1773,7 +1773,7 @@ class asset(studio):
 				continue
 			if row.output:
 				for task_name in row.output:
-					if task_name.split(':')[0] != row.asset_name:
+					if task_name.split(':')[0] != row.asset.name:
 						output_tasks.append((row, task_name))
 						output_tasks_name_list.append(task_name)
 			# -- -- get status
@@ -2616,7 +2616,7 @@ class task(studio):
 		if not task_data:
 			asset_type = self.asset_type
 			activity = self.activity
-			asset = self.asset_name
+			asset = self.asset.name
 			extension = self.extension
 		else:
 			asset_type = task_data['asset_type']
@@ -2675,7 +2675,7 @@ class task(studio):
 		if not task_data:
 			asset_type = self.asset_type
 			activity = self.activity
-			asset = self.asset_name
+			asset = self.asset.name
 			extension = self.extension
 		else:
 			asset_type = task_data['asset_type']
@@ -2700,7 +2700,7 @@ class task(studio):
 		if not task_data:
 			asset_type = self.asset_type
 			activity = self.activity
-			asset = self.asset_name
+			asset = self.asset.name
 			extension = self.extension
 		else:
 			asset_type = task_data['asset_type']
@@ -3541,7 +3541,7 @@ class task(studio):
 		task_data['status'] = 'ready'
 		task_data['outsource'] = 0
 		task_data['season'] = self.asset.season
-		task_data['asset_name'] = self.asset.name
+		#task_data['asset_name'] = self.asset.name
 		task_data['asset_id'] = self.asset.id
 		task_data['asset_type'] = self.asset.type
 		
@@ -4914,70 +4914,23 @@ class task(studio):
 		task_list = []
 		task_input_task_list = {}
 		for asset_name in asset_list:
-			if asset_list[asset_name]['status']== 'active':
+			if asset_list[asset_name].status == 'active':
 				asset_id = asset_list[asset_name].id
-				bool_, return_data = self.get_list(asset_id=asset_id, artist = nik_name)
+				#bool_, return_data = self.get_list(asset_id=asset_id, artist = nik_name)
+				bool_, return_data = task(asset_list[asset_name]).get_list(artist = nik_name)
 				if not bool_:
 					return(bool_, return_data)
 				task_list = task_list + return_data
 		# (3)
-		for task in task_list:
-			task_input_task_list[task['task_name']] = {'task' : task}
-			if task['input']:
-				input_asset_id = asset_list[task['input'].split(':')[0]].id
-				bool_, return_data = self.__read_task(task['input'])
+		for task_ob in task_list:
+			task_input_task_list[task_ob.task_name] = {'task' : task_ob}
+			if task_ob.input:
+				input_asset_id = asset_list[task_ob.input.split(':')[0]].id
+				bool_, return_data = self.__read_task(task_ob.input)
 				if not bool_:
 					return(bool_, return_data)
-				task_input_task_list[task['task_name']]['input'] = return_data
+				task_input_task_list[task_ob.task_name]['input'] = return_data
 				
-		'''
-		# read tasks
-		conn = sqlite3.connect(self.tasks_path, detect_types=sqlite3.PARSE_DECLTYPES|sqlite3.PARSE_COLNAMES)
-		conn.row_factory = sqlite3.Row
-		c = conn.cursor()
-		
-		task_list = []
-		task_input_task_list = {}
-		
-		for asset_name in asset_list:
-			if asset_list[asset_name]['status']== 'active':
-				asset_id = asset_list[asset_name]['id']
-				table = '\"' + asset_id + ':' + self.tasks_t + '\"'
-				string = 'select * from ' + table + ' WHERE artist = ?'
-				data = (nik_name,)
-				try:
-					c.execute(string, data)
-					rows = c.fetchall()
-					task_list = task_list + rows
-				except:
-					conn.close()
-					return(False, string)
-					
-		for task in task_list:
-			row = {}
-			if task['input']:
-				input_asset_id = asset_list[task['input'].split(':')[0]]['id']
-				table = '\"' + input_asset_id + ':' + self.tasks_t + '\"'
-				string = 'select * from ' + table + ' WHERE task_name = ?'
-				data = (task['input'],)
-				
-				try:
-					c.execute(string, data)
-					row = c.fetchone()
-					#task_input_task_list[task['task_name']] = {'task' : dict(task), 'input':dict(row)}
-				except:
-					conn.close()
-					return(False, string)
-			
-			try:
-				task_input_task_list[task['task_name']] = {'task' : dict(task), 'input':dict(row)}
-			except:
-				print('*'*250)
-				print(task['task_name'], task['input'])
-				print(row)
-				continue
-		conn.close()
-		'''
 		# (4)
 		return(True, task_input_task_list, asset_list)
 		
