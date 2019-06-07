@@ -2342,7 +2342,7 @@ class task(studio):
 		# get task_outsource
 		task_outsource = bool(this_task.outsource)
 		
-		new_status = None
+		new_status = 'null'
 		# change status
 		if input_task:
 			if input_task.status in self.end_statuses:
@@ -2472,7 +2472,7 @@ class task(studio):
 		# (1)
 		if isinstance(task_data, dict):
 			output_list = task_data.get('output')
-		elif isinstance(task_data, task):
+		elif task_data.__class___.__name__ == 'task':
 			output_list = task_data.output
 		if not output_list:
 			return(True, 'Ok!')
@@ -2548,8 +2548,8 @@ class task(studio):
 		#conn.close()
 		# (8)
 		if service_to_done:
-			for task in service_to_done:
-				self.this_change_to_end(task, assets = assets)
+			for task_ob in service_to_done:
+				self.this_change_to_end(task_ob, assets = assets)
 		
 		return(True, 'Ok!')
 	'''	
@@ -4729,7 +4729,7 @@ class task(studio):
 		return(True, 'Ok!')
 	
 	# task_data (dict) - изменяемая задача, если False - значит предполагается, что task инициализирован.
-	def return_a_job_task(self, task_data=False): # v2
+	def return_a_job_task(self): # v2
 		pass
 		# 1 - получение task_data,
 		# 2 - чтение входящей задачи
@@ -4738,41 +4738,33 @@ class task(studio):
 		# 5 - внесение изменений в объект если он инициализирован
 		# 6 - изменение статусов исходящих задач
 		
-		# (1)
-		if not task_data:
-			task_data={}
-			for key in self.tasks_keys:
-				exec('task_data["%s"] = self.%s' % (key, key))
-	
 		# (2)
-		input_task_name = task_data['input']
-		input_task_data = False
-		if input_task_name:
-			result = self.__read_task(input_task_name)
+		input_task = False
+		if self.input:
+			result = self.__read_task(self.input)
 			if not result[0]:
 				return(False, result[1])
-			input_task_data = result[1]
+			input_task = result[1]
 		
 		# (3)
-		task_data['status'] = 'null'
-		new_status = self.from_input_status(input_task_data)
+		self.status = 'null'
+		new_status = self.from_input_status(input_task)
+		#return(True, new_status)
 		
 		# (4)
 		read_ob = self.asset.project
-		table_name = '"%s:%s"' % (task_data['asset_id'], self.tasks_t)
+		table_name = '"%s:%s"' % (self.asset_id, self.tasks_t)
 		keys = self.tasks_keys
 		update_data = {'readers':{}, 'status':new_status}
-		where = {'task_name': task_data['task_name']}
+		where = {'task_name': self.task_name}
 		bool_, r_data = database().update('project', read_ob, table_name, keys, update_data, where, table_root=self.tasks_db)
 		if not bool_:
 			return(bool_, r_data)
 		
 		# (5)
-		if self.task_name == task_data['task_name']:
-			self.status = new_status
-		
+				
 		# (6) change output statuses
-		result = self.this_change_from_end(self.init_by_keys(task_data))
+		result = self.this_change_from_end()
 		if not result[0]:
 			return(False, result[1])
 		else:
@@ -6174,7 +6166,7 @@ class artist(studio):
 		if not keys.get('password'):
 			return(False, '\"Password\" not specified!')
 		if not keys.get('outsource'):
-			keys['outsource'] = '0'
+			keys['outsource'] = 0
 
 		# создание таблицы, если отсутствует.
 		# определение level - если первый юзер то рут.
