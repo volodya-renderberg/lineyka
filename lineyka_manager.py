@@ -99,6 +99,7 @@ class MainWindow(QtGui.QMainWindow):
 		self.selected_asset = None # выбранный в таблице ассет (объект)
 		self.selected_task = None # выбранный так в таблице в task editor
 		self.current_artists_dict = None # словарь артистов по именам, полученный парсером по отделам.
+		self.current_readers_dict = None # словарь ридеров (артисты) по именам - получаемый при назанчении ридеров в tm_
 		
 		# CONSTANTS
 		self.SEASON_COLUMNS = ['name', 'status']
@@ -5660,11 +5661,11 @@ class MainWindow(QtGui.QMainWindow):
 		
 		# -- READERS visibility, content
 		# get CLEANED readers list
-		self.cleaned_readers_list = {}
+		self.cleaned_readers_dict = {}
 		for key in self.selected_task.readers:
 			if key == 'first_reader':
 				continue
-			self.cleaned_readers_list[key] = self.selected_task.readers[key]
+			self.cleaned_readers_dict[key] = self.selected_task.readers[key]
 		
 		# set visible
 		if not self.selected_task.readers:
@@ -5679,23 +5680,23 @@ class MainWindow(QtGui.QMainWindow):
 		self.myWidget.readers_list.clear()
 		
 		# get CLEANED readers list
-		self.cleaned_readers_list = {}
-		for key in self.current_readers_list:
+		self.cleaned_readers_dict = {}
+		for key in self.current_readers_dict:
 			if key == 'first_reader':
 				continue
-			self.cleaned_readers_list[key] = self.current_readers_list[key]
+			self.cleaned_readers_dict[key] = self.current_readers_dict[key]
 		
-		if not self.cleaned_readers_list:
+		if not self.cleaned_readers_dict:
 			self.myWidget.readers_list.setVisible(False)
 			self.myWidget.edit_readers_button.setVisible(True)
 			return
 		
 		string = 'readers:\n'
-		for key in self.cleaned_readers_list:
-			new_string = key + '- '*(20 - len(key)) + str(self.cleaned_readers_list[key]) + '\n'
-			if 'first_reader' in self.current_readers_list:
-				if key == self.current_readers_list['first_reader']:
-					new_string = '(***)' + key + '- '*(20 - len(key)) + str(self.cleaned_readers_list[key]) + '\n'
+		for key in self.cleaned_readers_dict:
+			new_string = key + '- '*(20 - len(key)) + str(self.cleaned_readers_dict[key]) + '\n'
+			if 'first_reader' in self.current_readers_dict:
+				if key == self.current_readers_dict['first_reader']:
+					new_string = '(***)' + key + '- '*(20 - len(key)) + str(self.cleaned_readers_dict[key]) + '\n'
 			string = string + new_string
 		self.myWidget.readers_list.append(string)
 		
@@ -5751,24 +5752,24 @@ class MainWindow(QtGui.QMainWindow):
 		num_column = len(headers)
 		num_row = 0
 		
-		if self.cleaned_readers_list:
-			num_row = len(self.cleaned_readers_list)
+		if self.cleaned_readers_dict:
+			num_row = len(self.cleaned_readers_dict)
 		
 		
 		table.setColumnCount(num_column)
 		table.setRowCount(num_row)
 		table.setHorizontalHeaderLabels(headers)
 		
-		if self.cleaned_readers_list:
-			for i,reader_name in enumerate(self.cleaned_readers_list):
+		if self.cleaned_readers_dict:
+			for i,reader_name in enumerate(self.cleaned_readers_dict):
 				if reader_name == 'first_reader':
 					continue
 				for j,key in enumerate(headers):
 					newItem = QtGui.QTableWidgetItem()
 					if key == 'nik_name':
 						newItem.setText(reader_name)
-						if 'first_reader' in self.current_readers_list:
-							if self.current_readers_list['first_reader'] == reader_name:
+						if 'first_reader' in self.current_readers_dict:
+							if self.current_readers_dict['first_reader'] == reader_name:
 								newItem.setText((reader_name + ' (***)'))
 						color = self.artist_color
 						brush = QtGui.QBrush(color)
@@ -5803,12 +5804,12 @@ class MainWindow(QtGui.QMainWindow):
 		table.setSelectionMode(QtGui.QAbstractItemView.ExtendedSelection)
 		
 		# -- load workroom_list
-		result = self.db_workroom.get_list(DICTONARY = 'by_name')
-		if not result[0]:
-			self.message(result[1], 2)
-		workroom_dict = result[1]
-		window.workroom_dict = workroom_dict
-		window.dialog_comboBox_1.addItems((['-select workroom-'] + workroom_dict.keys()))
+		#result = self.db_workroom.get_list() # под вопросом
+		wr_list = []
+		for wr in self.db_workroom.list_workroom:
+			if self.selected_task.task_type in wr.type:
+				wr_list.append(wr.name)
+		window.dialog_comboBox_1.addItems((['-select workroom-'] + wr_list))
 		window.dialog_comboBox_1.activated[str].connect(partial(self.tm_add_readers_ui_load_artist_list))
 		
 		# button connect
@@ -5819,17 +5820,18 @@ class MainWindow(QtGui.QMainWindow):
 		
 	def tm_add_readers_ui_load_artist_list(self, workrom_name):
 		table = self.selectReadersDialog.select_from_list_data_list_table
-		workroom_dict = self.selectReadersDialog.workroom_dict
+		#workroom_dict = self.selectReadersDialog.workroom_dict
 		
 		self.clear_table(table)
-		result = self.db_workroom.read_artist_of_workroom(workroom_dict[workrom_name]['id'])
+		result = self.artist.read_artist_of_workroom(self.db_workroom.dict_by_name[workrom_name].id)
 		if not result[0]:
 			self.message(result[1], 2)
 			
 		artirs_dict = result[1]
+		#print(artirs_dict)
 		
 		# load table
-		headers = ['nik_name', 'level']
+		headers = ['nik_name', 'level', 'outsource']
 		num_column = len(headers)
 		num_row = 0
 		if artirs_dict:
@@ -5840,18 +5842,19 @@ class MainWindow(QtGui.QMainWindow):
 		table.setHorizontalHeaderLabels(headers)
 		
 		if artirs_dict:
-			for i,reader_name in enumerate(artirs_dict):
+			for i,reader_name in enumerate(sorted(list(artirs_dict.keys()))):
 				for j,key in enumerate(headers):
 					newItem = QtGui.QTableWidgetItem()
-					newItem.setText(artirs_dict[reader_name][key])
-					newItem.reader_name = reader_name
+					newItem.setText(str(getattr(artirs_dict[reader_name], key)))
+					#newItem.reader_name = reader_name
+					newItem.reader = artirs_dict[reader_name]
 					
 					if key == 'nik_name':
 						color = self.artist_color
 						brush = QtGui.QBrush(color)
 						newItem.setBackground(brush)
-					if self.current_readers_list:
-						if reader_name in self.current_readers_list.keys():
+					if self.current_readers_dict:
+						if reader_name in self.current_readers_dict.keys():
 							color = self.grey_color
 							brush = QtGui.QBrush(color)
 							newItem.setBackground(brush)
@@ -5866,8 +5869,8 @@ class MainWindow(QtGui.QMainWindow):
 		for item in items:
 			name = item.reader_name
 			if not name in readers:
-				if self.current_readers_list:
-					if not name in self.current_readers_list.keys():
+				if self.current_readers_dict:
+					if not name in self.current_readers_dict.keys():
 						readers.append(name)
 				else:
 					readers.append(name)
@@ -5881,7 +5884,7 @@ class MainWindow(QtGui.QMainWindow):
 		if not result[0]:
 			self.message(result[1], 2)
 			
-		self.current_readers_list = result[1]
+		self.current_readers_dict = result[1]
 		
 		# reload widgets
 		# -- task_list
@@ -5892,7 +5895,7 @@ class MainWindow(QtGui.QMainWindow):
 			# -- 
 			table = self.myWidget.task_manager_table
 			edit_task_data = dict(table.currentItem().task)
-			edit_task_data['readers'] = json.dumps(self.current_readers_list)
+			edit_task_data['readers'] = json.dumps(self.current_readers_dict)
 			table.currentItem().task = edit_task_data
 		
 		# -- readers list
@@ -5929,7 +5932,7 @@ class MainWindow(QtGui.QMainWindow):
 		if not result[0]:
 			self.message(result[1], 2)
 			
-		self.current_readers_list = result[1]
+		self.current_readers_dict = result[1]
 		
 		# reload widgets
 		# -- task_list
@@ -5939,7 +5942,7 @@ class MainWindow(QtGui.QMainWindow):
 			# -- 
 			table = self.myWidget.task_manager_table
 			edit_task_data = dict(table.currentItem().task)
-			edit_task_data['readers'] = json.dumps(self.current_readers_list)
+			edit_task_data['readers'] = json.dumps(self.current_readers_dict)
 			table.currentItem().task = edit_task_data
 			
 		# -- readers list
@@ -5957,12 +5960,12 @@ class MainWindow(QtGui.QMainWindow):
 			self.message(data, 3)
 			return
 			
-		self.current_readers_list = data
+		self.current_readers_dict = data
 		
 		# edit data in tm_table
 		tm_table = self.myWidget.task_manager_table
 		edit_task_data = dict(tm_table.currentItem().task)
-		edit_task_data['readers'] = json.dumps(self.current_readers_list)
+		edit_task_data['readers'] = json.dumps(self.current_readers_dict)
 		tm_table.currentItem().task = edit_task_data
 	
 		self.tm_edit_readers_ui_reload_table()

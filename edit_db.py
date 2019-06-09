@@ -5800,7 +5800,7 @@ class artist(studio):
 				workrooms = row['workroom']
 			except:
 				continue
-			if workroom_id in workrooms:
+			if workrooms and workroom_id in workrooms:
 				if objects:
 					artists_dict[row['nik_name']] = self.init_by_keys(row)
 				else:
