@@ -3408,14 +3408,14 @@ class MainWindow(QtGui.QMainWindow):
 			self.asset_to_task_manager('from_asset_editor')
 		
 	def asset_to_task_manager(self, action):
+		pass
 		print(action)
 		if action == 'from_asset_editor':
-			asset_data = None
-			try:
-				asset_data = self.myWidget.studio_editor_table.currentItem().asset
-			except:
-				self.message('Asset is not selected!', 2)
-				return
+			table = self.myWidget.studio_editor_table
+			if not table.selectedItems():
+				self.message('No asset selected!', 2)
+			self.selected_asset = table.selectedItems()[0].asset
+			
 			'''
 			# -- group dict
 			result = self.db_group.get_groups_dict_by_id()
@@ -3429,7 +3429,7 @@ class MainWindow(QtGui.QMainWindow):
 			self.myWidget.main_tabWidget.setCurrentIndex(1)
 			# -- fill current project
 			for i in range(0, self.myWidget.task_manager_comboBox_1.model().rowCount()):
-				if self.myWidget.task_manager_comboBox_1.itemText(i) == self.current_project:
+				if self.myWidget.task_manager_comboBox_1.itemText(i) == self.selected_project.name:
 					self.myWidget.task_manager_comboBox_1.setCurrentIndex(i)
 					#self.tm_reload_task_list()
 					break
@@ -3437,7 +3437,7 @@ class MainWindow(QtGui.QMainWindow):
 			#self.myWidget.global_search_qline.setText(asset_data['name']) #old
 			#self.tm_fill_season_groups(self.current_project) # old
 			
-			#self.tm_reload_task_list_by_global_search_action(None, group_dict, self.myWidget.studio_editor_table.currentItem())
+			self.tm_reload_task_list_by_global_search_action()
 		
 		elif action == 'from_content_editor':
 			print(self.action_to_tm)
@@ -5358,7 +5358,9 @@ class MainWindow(QtGui.QMainWindow):
 		
 		self.searchDialog.show()
 		
-	def tm_reload_task_list_by_global_search_action(self, window, group_dict, item):
+	def tm_reload_task_list_by_global_search_action(self, window=False):
+		pass
+		'''
 		asset_data = item.asset
 		
 		# 1 - 3 load comboboxes
@@ -5375,6 +5377,21 @@ class MainWindow(QtGui.QMainWindow):
 				break
 		
 		self.close_window(window)
+		'''
+		self.myWidget.task_manager_comboBox_4.setCurrentIndex(0)
+		self.myWidget.task_manager_comboBox_2.setCurrentIndex(0)
+		self.myWidget.task_manager_comboBox_5.setCurrentIndex(0)
+		self.tm_fill_season_groups(self.myWidget.task_manager_comboBox_1.currentText())
+		
+		self.myWidget.local_search_qline.setText(self.selected_asset.name)
+		for i in range(0, self.myWidget.task_manager_comboBox_3.model().rowCount()):
+			if self.myWidget.task_manager_comboBox_3.itemText(i) == self.selected_group.name:
+				self.myWidget.task_manager_comboBox_3.setCurrentIndex(i)
+				self.tm_reload_task_list()
+				break
+		
+		if window:
+			self.close_window(window)
 		
 	def tm_reload_task_list_by_status(self, status):
 		self.myWidget.local_search_qline.setText(status)
@@ -5405,9 +5422,11 @@ class MainWindow(QtGui.QMainWindow):
 		# ==================== METADATA ==================== self.tasks_rows, num_column, num_row
 		# get current workroom id list
 		wr_name = self.myWidget.task_manager_comboBox_4.currentText()
+		#print('*'*15, wr_name)
 		current_wr_type_list = [] # список id читаемых отделов.
 		if wr_name != 'all workrooms':
-			current_wr_type_list = self.db_workroom.dict_by_name.get(wr_name).type
+			if self.db_workroom.dict_by_name:
+				current_wr_type_list = self.db_workroom.dict_by_name.get(wr_name).type
 		else:
 			current_wr_type_list = self.myWidget.task_manager_comboBox_4.wr_type_list
 		
