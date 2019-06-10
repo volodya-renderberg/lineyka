@@ -3505,7 +3505,7 @@ class task(studio):
 			
 		# (1)
 		for td in self.get_list()[1]:
-			if td['task_name'] == task_data['task_name']:
+			if td.task_name == task_data['task_name']:
 				return(False, 'Task with this name: "%s" already exists!' % task_data['task_name'])
 			
 		# (2)
@@ -3515,13 +3515,15 @@ class task(studio):
 		# -- output
 		output_task_name = False
 		if task_data.get('output'):
-			output_task_name = task_data.get('output')
+			output_task_name = task_data.get('output')[0]
+			task_data['output'].append('%s:final' % self.asset.name)
+		else:
 			task_data['output'] = ['%s:final' % self.asset.name]
 		# -- input
 		input_task_name = False
 		if task_data.get('input'):
 			input_task_name = task_data.get('input')
-			task_data['input']= ''
+			#task_data['input']= ''
 		else:
 			task_data['input'] = ''
 		#
@@ -3547,19 +3549,21 @@ class task(studio):
 		if not bool_:
 			return(bool_, return_data)
 		
+		new_task = self.init_by_keys(task_data, new=True)
+		
 		# (4)
 		if input_task_name:
-			bool_, return_data = self.change_input(input_task_name, task_data)
+			bool_, return_data = new_task.change_input(input_task_name)
 			if not bool_:
 				return(bool_, return_data)
 		
 		# (5)
 		if output_task_name:
-			bool_, output_task_data = self.__read_task(output_task_name)
+			bool_, output_task = self.__read_task(output_task_name)
 			if not bool_:
 				return(bool_, return_data)
 			# --
-			bool_, return_data = self.change_input(task_data['task_name'], output_task_data)
+			bool_, return_data = output_task.change_input(new_task.task_name)
 			if not bool_:
 				return(bool_, return_data)
 		
