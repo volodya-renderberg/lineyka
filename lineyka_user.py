@@ -45,13 +45,36 @@ class G(object):
 class MainWindow(QtGui.QMainWindow):
 	def __init__(self, parent = None):
 		# moduls
-		self.db_studio = db.studio()
-		self.db_artist = db.artist()
-		self.project = db.project
+		self.db_studio = db.studio
+		self.db_studio()
+		self.db_artist = db.artist() # по совместительству текущий а`ртист
+		self.project = db.project() # 
+		self.project.get_list()
 		self.db_asset = db.asset(self.project)
-		self.db_task = db.task()
-		self.db_log = db.log()
-		self.db_chat = db.chat()
+		self.db_task = db.task(self.db_asset)
+		self.db_log = db.log(self.db_task)
+		self.db_chat = db.chat(self.db_task)
+		
+		# constants
+		TASK_LOOK_STATUSES = [
+		'ready',
+		'work',
+		'pause',
+		'recast',
+		'checking',
+		]
+		NOT_USED_EXTENSIONS = [
+		'.blend','.tiff', '.ods', '.xcf', '.svg'
+		]
+		
+		# variables
+		self.selected_task = None # текущая задача
+		self.selected_project = None # текущий проект
+		self.current_file = None # текущий рабочий файл
+		self.action = 'work_list' # ??????
+		self.working_task_list = []
+		self.task_list = []
+		self.all_task_list = {}
 		
 		# get Path
 		path = os.path.dirname(ui.__file__)
@@ -150,14 +173,14 @@ class MainWindow(QtGui.QMainWindow):
 			self.load_task_list_table(project_name, action = 'check_list')
 	
 	def load_task_list_table(self, project_name, get_project_name = False, action = 'work_list'):
-		G.action = action
+		self.action = action
 		
 		self.myWidget.task_list_table.setVisible(True)
 		if get_project_name:
 			project_name = self.myWidget.project_box.currentText()
 			
 		if project_name == '--select project--':
-			G.current_project = ''
+			self.selected_project = None
 			self.clear_table()
 			
 			# hide widgets
@@ -166,16 +189,16 @@ class MainWindow(QtGui.QMainWindow):
 			self.myWidget.work_frame.setVisible(False)
 			return
 			
-		G.current_project = project_name
-		
-		G.working_task_list = []
-		result = (False, 'fack!')
+		self.selected_project = self.project.dict_projects[project_name]
+		self.db_task.asset.project = self.selected_project
+		self.working_task_list = []
+		#
 		if action == 'work_list':
-			result = self.db_task.get_task_list_of_artist(G.current_project, self.db_artist.nik_name)
+			result = self.db_task.get_task_list_of_artist(self.db_artist.nik_name)
 		elif action == 'check_list':
-			result = self.db_task.get_chek_list_of_artist(G.current_project, self.db_artist.nik_name)
+			result = self.db_task.get_chek_list_of_artist(self.db_artist.nik_name)
 		if not result[0]:
-			G.task_list = []
+			self.task_list = []
 			self.message(result[1], 2)
 			
 			# hide widgets
@@ -1364,13 +1387,11 @@ class MainWindow(QtGui.QMainWindow):
 		
 		return(True, 'Ok!')
 	
-	def load_project_list(self): 
+	def load_project_list(self):
+		pass
 		enum_list = ['--select project--']
-		if self.db_studio.list_projects:
-			project_list = self.db_studio.list_projects.keys()
-			for key in project_list:
-				if self.db_studio.list_projects[key]['status'] == 'active':
-					enum_list.append(key)
+		if self.project.list_active_projects:
+			enum_list = enum_list + self.project.list_active_projects
 		else:
 			pass
 		self.myWidget.project_box.addItems(enum_list)
@@ -1382,8 +1403,10 @@ class MainWindow(QtGui.QMainWindow):
 				self.message(result[1], 2)
 
 		if not self.db_artist.nik_name:
+			self.setWindowTitle('Lineyka Not User')
 			self.myWidget.nik_name.setText('Not User')
 		else:
+			self.setWindowTitle('Lineyka %s' % self.db_artist.nik_name)
 			self.myWidget.nik_name.setText(self.db_artist.nik_name)
 	
 	def close_window(self, window):
