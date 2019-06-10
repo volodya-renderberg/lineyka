@@ -5977,13 +5977,8 @@ class MainWindow(QtGui.QMainWindow):
 	# ---- look file ----------------
 	def tm_look_file_action(self):
 		pass
-		# get item
-		item = self.myWidget.task_manager_table.currentItem()
-		task_data = item.task
-		
-		#print(json.dumps(dict(task_data), sort_keys = True, indent = 4))
-		
-		result = self.db_chat.get_final_file_path(self.current_project, task_data)
+				
+		result = self.selected_task.get_final_file_path()
 		if not result[0]:
 			return(False, result[1])
 		
@@ -5994,16 +5989,16 @@ class MainWindow(QtGui.QMainWindow):
 			return(False, 'Not Saved Version!')
 		
 		# get tmp_file_path
-		tmp_path = self.db_chat.tmp_folder
-		tmp_file_name = task_data['task_name'].replace(':','_', 2) + '_' + hex(random.randint(0, 1000000000)).replace('0x', '') + task_data['extension']
+		tmp_path = self.selected_task.tmp_folder
+		tmp_file_name = self.selected_task.task_name.replace(':','_', 2) + '_' + hex(random.randint(0, 1000000000)).replace('0x', '') + self.selected_task.extension
 		tmp_file_path = os.path.join(tmp_path, tmp_file_name)
 		
 		# copy to tmp
 		shutil.copyfile(open_path, tmp_file_path)
 				
 		# open file
-		soft = self.db_studio.soft_data[task_data['extension']]
-		cmd = '\"%s\" \"%s\"' % (soft, tmp_file_path)
+		soft = self.db_studio.soft_data[self.selected_task.extension]
+		cmd = '"%s" "%s"' % (soft, tmp_file_path)
 		print(cmd)
 		print('$PATH:', os.environ['PATH'])
 		
