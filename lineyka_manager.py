@@ -105,6 +105,7 @@ class MainWindow(QtGui.QMainWindow):
 		self.SEASON_COLUMNS = ['name', 'status']
 		self.GROUP_COLUMNS = ['name', 'type', 'description', 'season']
 		self.look_keys = ['nik_name','specialty','outsource','level']
+		self.REQUIRED_KEYS = ['task_name', 'activity', 'workroom', 'task_type', 'extension'] # обязательные параметры при создании одной задачи для ассета.
 		
 		#self.current_project = False # удаляем.
 		self.current_group = False
@@ -6738,7 +6739,10 @@ class MainWindow(QtGui.QMainWindow):
 		hh_layout = QtGui.QGridLayout()
 		headers = ['task_name', 'input', 'output', 'activity', 'task_type', 'planned_time','price','tz', 'extension']
 		for i, head in enumerate(headers):
-			label = QtGui.QLabel(head, parent = headers_frame)
+			if head in self.REQUIRED_KEYS:
+				label = QtGui.QLabel('%s*' % head, parent = headers_frame)
+			else:
+				label = QtGui.QLabel(head, parent = headers_frame)
 			line = QtGui.QLineEdit(parent = headers_frame)	
 			# -- line context menu
 			if head in ['input', 'output', 'activity', 'task_type', 'extension']:
@@ -6785,43 +6789,61 @@ class MainWindow(QtGui.QMainWindow):
 	
 	def tm_add_task_action(self, dialog):
 		task_keys = {}
-		#task_keys['asset_id'] = self.selected_task.asset_id
-		#task_keys['asset_type'] = self.selected_task.asset_type
-		#task_keys['asset_path'] = self.selected_task.asset_path
-		print(dialog.new_task_data)
+		#print(dialog.new_task_data)
 		
-		required_keys = ['task_name', 'activity', 'workroom', 'task_type', 'extension']
 		for key in dialog.new_task_data:
-			# test exists fields
-			if key in required_keys and not dialog.new_task_data[key].text():
-				self.message(('Not Key Data: ' + key), 2)
+			# test exists required fields
+			if key in self.REQUIRED_KEYS and not dialog.new_task_data[key].text():
+				self.message(('Not Key Data: "%s"' % key), 2)
 				return
-			# remove 'spaces'
-			if not key in ['workroom']:
-				task_keys[key] = dialog.new_task_data[key].text().replace(' ','_')
-			else:
-				task_keys[key] = dialog.new_task_data[key].text()
-		
-		# test input <-> output
-		if task_keys['input'] == task_keys['output'] and (task_keys['input'] != '' and task_keys['input'] != 'None'):
-			self.message('Input and Output Match!', 2)
-			return
+			if dialog.new_task_data[key].text():
+				# fill task_keys
+				if self.db_studio.tasks_keys[key] == 'text':
+					task_keys[key] = dialog.new_task_data[key].text().replace(' ','_')
+				elif self.db_studio.tasks_keys[key] == 'integer':
+					task_keys[key] = int(dialog.new_task_data[key].text())
+				elif self.db_studio.tasks_keys[key] == 'real':
+					task_keys[key] = float(dialog.new_task_data[key].text().replace(',','.'))
+				elif self.db_studio.tasks_keys[key] == 'json':
+					try:
+						task_keys[key] = json.loads(dialog.new_task_data[key].text())
+					except:
+						task_keys[key] = dialog.new_task_data[key].text()
+				else:
+					task_keys[key] = dialog.new_task_data[key].text()
+				
 			
-		# edit input <-> output
-		if task_keys['output'] == 'None':
-			task_keys['output'] = json.dumps([])
-		elif not task_keys['output']:
-			task_keys['output'] = json.dumps([])
+		# edit fields
+		# -- output
+		if task_keys.get('output'):
+			if task_keys['output'] == 'None':
+				task_keys['output'] = []
+			elif not task_keys['output']:
+				task_keys['output'] = []
+			else:
+				task_keys['output'] = [task_keys['output']]
 		else:
-			task_keys['output'] = json.dumps([task_keys['output']])
-		if task_keys['input'] == 'None':
+			task_keys['output'] = []
+		# -- input
+		if task_keys.get('input'):
+			if task_keys['input'] == 'None':
+				task_keys['input'] = ''
+		else:
 			task_keys['input'] = ''
 			
-		# edit task_name
-		task_keys['task_name'] = task_keys['asset'] + ':' + task_keys['task_name']
+		# -- task_name
+		task_keys['task_name'] = '%s:%s' % (self.selected_task.asset.name, task_keys['task_name'])
+		
+		# test input <-> output
+		if task_keys['input'] in task_keys['output']:
+			self.message('Input and Output Match!', 2)
+			return
+		
+		print(json.dumps(task_keys, sort_keys=1, indent=4))
+		#return
 			
 		# create
-		result = self.db_chat.add_single_task(self.current_project, task_keys)
+		result = self.selected_task.add_single_task(task_keys)
 		if not result[0]:
 			self.message(result[1], 2)
 			return
