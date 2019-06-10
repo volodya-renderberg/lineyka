@@ -4542,41 +4542,45 @@ class task(studio):
 	# nik_name (str) -
 	def get_task_list_of_artist(self, nik_name): # v2
 		pass
-		# 1 - получаем список ассетов asset_list
+		# 1 - получаем список ассетов asset_dict
 		# 2 - для каждого ассета(со статусом "active") получаем список задач данного исполнителя. заполняем список task_list.
 		# 3 - бежим по task_list - и достаём входящую задачу.
 		#	-- заполняется словарь task_input_task_list = {task_name: {'task':{data}, 'input':{data}}, ... }
-		# 4 - возвращаемое значение (True, task_input_task_list, asset_list)
+		# 4 - возвращаемое значение (True, task_input_task_list, asset_dict)
 		
 		# (1)
 		result = self.asset.get_dict_by_name_by_all_types()
 		if not result[0]:
 			return(False, result[1])
-		asset_list = result[1]
+		asset_dict = result[1]
 		
 		# (2)
 		task_list = []
+		task_dict = {}
 		task_input_task_list = {}
-		for asset_name in asset_list:
-			if asset_list[asset_name].status == 'active':
-				asset_id = asset_list[asset_name].id
+		for asset_name in asset_dict:
+			if asset_dict[asset_name].status == 'active':
+				#asset_id = asset_dict[asset_name].id
 				#bool_, return_data = self.get_list(asset_id=asset_id, artist = nik_name)
-				bool_, return_data = task(asset_list[asset_name]).get_list(artist = nik_name)
+				bool_, return_data = task(asset_dict[asset_name]).get_list(artist = nik_name)
 				if not bool_:
 					return(bool_, return_data)
-				task_list = task_list + return_data
+				#task_list = task_list + return_data
+				task_dict[return_data['task_name']] = self.init_by_keys(return_data)
+		'''
 		# (3)
 		for task_ob in task_list:
 			task_input_task_list[task_ob.task_name] = {'task' : task_ob}
 			if task_ob.input:
-				input_asset_id = asset_list[task_ob.input.split(':')[0]].id
+				input_asset_id = asset_dict[task_ob.input.split(':')[0]].id
 				bool_, return_data = self.__read_task(task_ob.input)
 				if not bool_:
 					return(bool_, return_data)
 				task_input_task_list[task_ob.task_name]['input'] = return_data
-				
+		'''
 		# (4)
-		return(True, task_input_task_list, asset_list)
+		#return(True, task_input_task_list, asset_dict)
+		return(True, task_dict, asset_dict)
 		
 	# возврат списка задачь со статусом checking где данный исполнитель в списке проверяющих.
 	# self.asset.project - должен быть инициализирован
