@@ -258,10 +258,12 @@ class studio:
 	'phone': 'text',
 	'specialty': 'text',
 	'outsource': 'integer',
-	'workroom': 'json',
+	'workroom': 'json',# список id отделов
 	'level': 'text',
 	'share_dir': 'text',
-	'status': 'text'
+	'status': 'text',
+	'working_tasks': 'json',# список имён назначенных в работу задач
+	'checking_tasks': 'json',# список имён назначенных на проверку задач
 	}
 	chats_keys = {
 	'message_id':'text',
@@ -3991,15 +3993,15 @@ class task(studio):
 		return(True, readers_dict, change_status)
 		
 	# new_artist (str/artist) - nik_name или artist - объект
-	# task_data (dict) - изменяемая задача, если False - значит предполагается, что task инициализирован.
 	def change_artist(self, new_artist): # v2  !!!!! возможно надо рассмотреть варианты когда меняется артист в завершённых статусах задачь.
 		pass
 		# 1 - получение task_data.
-		# 2 - чтение нового артиста и определение аутсорсер он или нет.
+		# 2 - чтение нового и старого артиста и определение аутсорсер новый или нет.
 		# 3 - чтение outsource - изменяемой задачи.
 		# 4 - определение нового статуса задачи
 		# 5 - внесение изменений в БД
 		# 6 - если task инициализирована - внеси в неё изменения.
+		# 7 - переписывание поля "working_tasks" артистов (нового и старого)
 		
 		#print('*** new artist: ', new_artist)
 		
@@ -4012,17 +4014,30 @@ class task(studio):
 				
 		# (2) get artist outsource
 		artist_outsource = False
+		new_artist_ob = None
+		old_artist_ob = None
+		# -- old artist
+		if self.artist:
+			old_artist_ob = artist().init(self.artist)
+		# -- new artist
 		if new_artist and (isinstance(new_artist, str) or isinstance(new_artist, unicode)):
 			result = artist().read_artist({'nik_name':new_artist})
 			if not result[0]:
 				return(False, result[1])
-			if result[1][0].outsource:
-				artist_outsource = bool(result[1][0].outsource)
+			else:
+				new_artist_ob = result[1][0]
+			if new_artist_ob.outsource:
+				artist_outsource = new_artist_ob.outsource
 		elif new_artist and isinstance(new_artist, artist):
-			artist_outsource = new_artist.outsource
-			new_artist = new_artist.nik_name
+			new_artist_ob = new_artist
+			artist_outsource = new_artist_ob.outsource
+			new_artist = new_artist_ob.nik_name
 		else:
 			new_artist = ''
+		# тест на совпадение нового и старого артиста
+		if old_artist_ob and new_artist_ob and old_artist_ob.nik_name == new_artist_ob.nik_name:
+			return(False, 'This artist "%s" has already been assigned to this task.' % new_artist_ob.nik_name)
+		
 		# затыка
 		if artist_outsource is None:
 			artist_outsource = 0
@@ -4082,7 +4097,28 @@ class task(studio):
 		else:
 			self.outsource = int(artist_outsource)
 			self.artist = new_artist
+			
+		# (7)
+		#print(old_artist_ob, new_artist_ob)
 		
+		# -- old
+		if old_artist_ob and  old_artist_ob.working_tasks and self.task_name in old_artist_ob.working_tasks:
+			old_artist_ob.working_tasks.remove(self.task_name)
+			b, r = old_artist_ob.edit_artist({'working_tasks': old_artist_ob.working_tasks})
+			if not b:
+				print('*'*5, r)
+				#return(r)
+		# -- new
+		if new_artist:
+			if not new_artist_ob.working_tasks:
+				new_artist_ob.working_tasks = []
+			if not self.task_name in new_artist_ob.working_tasks:
+				new_artist_ob.working_tasks.append(self.task_name)
+			b, r = new_artist_ob.edit_artist({'working_tasks': new_artist_ob.working_tasks})
+			if not b:
+				print('*'*5, r)
+				#return(r)
+			
 		return(True, (new_status, int(artist_outsource)))
 		
 	# new_input (bool/str) - имя новой входящей задачи или False
