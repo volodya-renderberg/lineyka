@@ -3843,6 +3843,7 @@ class task(studio):
 		# 4 - редактирование данного объекта задачи.
 		# 5 - перезапись задачи
 		# 6 - смена исходящих статусов если change_status=True
+		# 7 - запись изменеий в artist.checking_tasks
 		
 		#
 		if not isinstance(add_readers_list, list) and not isinstance(add_readers_list, tuple):
@@ -3888,6 +3889,18 @@ class task(studio):
 			bool_, r_data = self.this_change_from_end()
 			if not bool_:
 				return(bool_, r_data)
+			
+		# (7)
+		for artist_name in add_readers_list:
+			artist_ob = artist().init(artist_name)
+			if not artist_ob.checking_tasks:
+				artist_ob.checking_tasks = []
+			if not self.task_name in artist_ob.checking_tasks:
+				artist_ob.checking_tasks.append(self.task_name)
+			b, r = artist_ob.edit_artist({'checking_tasks': artist_ob.checking_tasks}, current_user='force')
+			if not b:
+				print('*'*5, r)
+				continue		
 		
 		return(True, readers_dict, change_status)
 	
@@ -3899,6 +3912,7 @@ class task(studio):
 		# 2 - чтение словаря 'readers'
 		# 3 - редактирование задачи в случае если она инициализирована.
 		# 4 - перезапись задачи
+		# 5 - редактирование artist.checking_tasks
 		
 		#
 		# (1)
@@ -3922,6 +3936,16 @@ class task(studio):
 		if not bool_:
 			return(bool_, r_data)
 		
+		# (5)
+		artist_ob = artist().init(nik_name)
+		if not artist_ob.checking_tasks:
+			artist_ob.checking_tasks = []
+		if not self.task_name in artist_ob.checking_tasks:
+			artist_ob.checking_tasks.append(self.task_name)
+		b, r = artist_ob.edit_artist({'checking_tasks': artist_ob.checking_tasks}, current_user='force')
+		if not b:
+			print('*'*5, r)
+		
 		return(True, readers_dict)
 	
 	# remove_readers_list (list) - список никнеймов удаляемых из списка читателей
@@ -3934,6 +3958,7 @@ class task(studio):
 		# 5 - запись изменения readers в БД
 		# 6 - в случае если данная задача инициализирована - внесение в неё изменений.
 		# 7 - в случае изменения статуса - изменение статуса исходящих задачь.
+		# 8 - редактирование artist.checking_tasks
 
 		change_status = False
 		readers_dict = {}
@@ -3989,6 +4014,18 @@ class task(studio):
 			result = self.this_change_to_end()
 			if not result[0]:
 				return(False, result[1])
+			
+		# (8)
+		for artist_name in remove_readers_list:
+			artist_ob = artist().init(artist_name)
+			if not artist_ob.checking_tasks:
+				continue
+			if self.task_name in artist_ob.checking_tasks:
+				artist_ob.checking_tasks.remove(self.task_name)
+			b, r = artist_ob.edit_artist({'checking_tasks': artist_ob.checking_tasks}, current_user='force')
+			if not b:
+				print('*'*5, r)
+				continue
 		
 		return(True, readers_dict, change_status)
 		
