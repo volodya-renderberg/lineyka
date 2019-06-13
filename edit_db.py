@@ -4104,7 +4104,7 @@ class task(studio):
 		# -- old
 		if old_artist_ob and  old_artist_ob.working_tasks and self.task_name in old_artist_ob.working_tasks:
 			old_artist_ob.working_tasks.remove(self.task_name)
-			b, r = old_artist_ob.edit_artist({'working_tasks': old_artist_ob.working_tasks})
+			b, r = old_artist_ob.edit_artist({'working_tasks': old_artist_ob.working_tasks}, current_user='force')
 			if not b:
 				print('*'*5, r)
 				#return(r)
@@ -4114,7 +4114,7 @@ class task(studio):
 				new_artist_ob.working_tasks = []
 			if not self.task_name in new_artist_ob.working_tasks:
 				new_artist_ob.working_tasks.append(self.task_name)
-			b, r = new_artist_ob.edit_artist({'working_tasks': new_artist_ob.working_tasks})
+			b, r = new_artist_ob.edit_artist({'working_tasks': new_artist_ob.working_tasks}, current_user='force')
 			if not b:
 				print('*'*5, r)
 				#return(r)
@@ -5977,7 +5977,7 @@ class artist(studio):
 	
 	# редактирование объекта артиста. текущий объект artist должен быть инициализирован. редактирует параметры текущего-редактируемого объекта.
 	# keys (dict) - данные на замену - nik_name - не редактируется, поэтому удаляется из данных перед записью.
-	# current_user (artist) - редактор - залогиненный пользователь.
+	# current_user (artist) - редактор - залогиненный пользователь. если force - проверки уровней не выполняются.
 	def edit_artist(self, keys, current_user=False):
 		pass
 		# 1 - проверка заполненности keys
@@ -5989,25 +5989,27 @@ class artist(studio):
 		# (1)
 		if not keys:
 			return(False, 'No data to write!')
-		# (2)
-		if current_user and not isinstance(current_user, artist):
-			return(False, 'In artist.edit_artist() - wrong type of "current_user" - %s' % current_user.__class__.__name__)
-		elif not current_user:
-			current_user = artist()
-			bool_, return_data = current_user.get_user()
-			if not bool_:
-				return(bool_, return_data)
 		
-		# (3)
-		# -- user не менеджер
-		if not current_user.level in self.manager_levels:
-			return(False, 'Not Access! (your level does not allow you to make similar changes)')
-		# -- попытка возвести в ранг выше себя
-		elif keys.get("level") and self.user_levels.index(current_user.level) < self.user_levels.index(keys.get("level")):
-			return(False, 'Not Access! (attempt to assign a level higher than yourself)')
-		# -- попытка сделать изменения пользователя с более высоким уровнем.
-		elif self.user_levels.index(current_user.level) < self.user_levels.index(self.level):
-			return(False, 'Not Access! (attempt to change a user with a higher level)')
+		# (2)
+		if current_user != 'force':
+			if current_user and not isinstance(current_user, artist):
+				return(False, 'In artist.edit_artist() - wrong type of "current_user" - %s' % current_user.__class__.__name__)
+			elif not current_user:
+				current_user = artist()
+				bool_, return_data = current_user.get_user()
+				if not bool_:
+					return(bool_, return_data)
+			
+			# (3)
+			# -- user не менеджер
+			if not current_user.level in self.manager_levels:
+				return(False, 'Not Access! (your level does not allow you to make similar changes)')
+			# -- попытка возвести в ранг выше себя
+			elif keys.get("level") and self.user_levels.index(current_user.level) < self.user_levels.index(keys.get("level")):
+				return(False, 'Not Access! (attempt to assign a level higher than yourself)')
+			# -- попытка сделать изменения пользователя с более высоким уровнем.
+			elif self.user_levels.index(current_user.level) < self.user_levels.index(self.level):
+				return(False, 'Not Access! (attempt to change a user with a higher level)')
 		
 		# (4)
 		# update
