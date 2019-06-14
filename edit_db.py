@@ -6053,8 +6053,29 @@ class artist(studio):
 		return(True, tasks)
 	
 	# список задач, на которых артист назначен читателем
-	def get_reading_tasks(self, checking=False):
+	def get_reading_tasks(self, project_ob, checking=False):
 		pass
+		# 1 - получаем список всех ассетов
+		# 2 - пробегаемся по списку artist.checking_tasks - и инициализируем задачи.
+		# 3 - возвращаем словарь по именам
+		
+		# (1)
+		b, r = asset(project_ob).get_dict_by_name_by_all_types()
+		if not b:
+			return(False, r)
+		assets = r
+		
+		# (2)
+		tasks = {}		
+		for task_name in self.checking_tasks.get(project_ob.name):
+			asset_name = task_name.split(':')[0]
+			if asset_name in assets:
+				task_ob = task(assets[asset_name]).init(task_name)
+				if checking and task_ob.status != 'checking':
+					continue
+				tasks[task_name] = task_ob
+				
+		return(True, tasks)
 		
 	def add_stat(self, user_name, keys):
 		pass
