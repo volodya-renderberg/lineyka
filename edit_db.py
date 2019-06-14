@@ -6053,7 +6053,8 @@ class artist(studio):
 		return(True, tasks)
 	
 	# список задач, на которых артист назначен читателем
-	def get_reading_tasks(self, project_ob, checking=False):
+	# status (bool/ str) - если не True, то возвращает только задачи соответствующие данному статусу.
+	def get_reading_tasks(self, project_ob, status=False):
 		pass
 		# 1 - получаем список всех ассетов
 		# 2 - пробегаемся по списку artist.checking_tasks - и инициализируем задачи.
@@ -6071,7 +6072,7 @@ class artist(studio):
 			asset_name = task_name.split(':')[0]
 			if asset_name in assets:
 				task_ob = task(assets[asset_name]).init(task_name)
-				if checking and task_ob.status != 'checking':
+				if status and task_ob.status != status:
 					continue
 				tasks[task_name] = task_ob
 				
