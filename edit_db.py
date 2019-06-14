@@ -6031,19 +6031,29 @@ class artist(studio):
 	
 	# словарь по именам  рабочих задач артиста, данного проекта.
 	# project_ob (project) - текущий проект
-	def get_working_tasks_list(self, project_ob):
+	def get_working_tasks(self, project_ob):
 		pass
 		# 1 - получаем список всех ассетов
 		# 2 - пробегаемся по списку artist.working_tasks - и инициализируем задачи.
 		# 3 - возвращаем словарь по именам
 		
+		# (1)
 		b, r = asset(project_ob).get_dict_by_name_by_all_types()
 		if not b:
 			return(False, r)
-		asset_dict = r
+		assets = r
+		
+		# (2)
+		tasks = {}		
+		for task_name in self.working_tasks.get(project_ob.name):
+			asset_name = task_name.split(':')[0]
+			if asset_name in assets:
+				tasks[task_name] = task(assets[asset_name]).init(task_name)
+				
+		return(True, tasks)
 	
 	# список задач, на которых артист назначен читателем
-	def get_reading_tasks_list(self, checking=False):
+	def get_reading_tasks(self, checking=False):
 		pass
 		
 	def add_stat(self, user_name, keys):
