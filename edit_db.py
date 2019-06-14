@@ -1738,7 +1738,6 @@ class asset(studio):
 		return(True, make_assets)
 	
 	# удаление текущего ассета
-	# asset_data (dict) - словарь по asset_keys
 	def remove(self): # v2
 		pass
 		# 1 - получение id recycle_bin
@@ -3894,9 +3893,11 @@ class task(studio):
 		for artist_name in add_readers_list:
 			artist_ob = artist().init(artist_name)
 			if not artist_ob.checking_tasks:
-				artist_ob.checking_tasks = []
-			if not self.task_name in artist_ob.checking_tasks:
-				artist_ob.checking_tasks.append(self.task_name)
+				artist_ob.checking_tasks = {}
+			if not self.asset.project.name in artist_ob.checking_tasks.keys():
+				artist_ob.checking_tasks[self.asset.project.name] = []
+			if not self.task_name in artist_ob.checking_tasks[self.asset.project.name]:
+				artist_ob.checking_tasks[self.asset.project.name].append(self.task_name)
 			b, r = artist_ob.edit_artist({'checking_tasks': artist_ob.checking_tasks}, current_user='force')
 			if not b:
 				print('*'*5, r)
@@ -3939,9 +3940,11 @@ class task(studio):
 		# (5)
 		artist_ob = artist().init(nik_name)
 		if not artist_ob.checking_tasks:
-			artist_ob.checking_tasks = []
-		if not self.task_name in artist_ob.checking_tasks:
-			artist_ob.checking_tasks.append(self.task_name)
+			artist_ob.checking_tasks = {}
+		if not self.asset.project.name in artist_ob.checking_tasks.keys():
+				artist_ob.checking_tasks[self.asset.project.name] = []
+		if not self.task_name in artist_ob.checking_tasks[self.asset.project.name]:
+				artist_ob.checking_tasks[self.asset.project.name].append(self.task_name)
 		b, r = artist_ob.edit_artist({'checking_tasks': artist_ob.checking_tasks}, current_user='force')
 		if not b:
 			print('*'*5, r)
@@ -4018,10 +4021,10 @@ class task(studio):
 		# (8)
 		for artist_name in remove_readers_list:
 			artist_ob = artist().init(artist_name)
-			if not artist_ob.checking_tasks:
+			if not artist_ob.checking_tasks or not artist_ob.checking_tasks.get(self.asset.project.name):
 				continue
-			if self.task_name in artist_ob.checking_tasks:
-				artist_ob.checking_tasks.remove(self.task_name)
+			if self.task_name in artist_ob.checking_tasks[self.asset.project.name]:
+				artist_ob.checking_tasks[self.asset.project.name].remove(self.task_name)
 			b, r = artist_ob.edit_artist({'checking_tasks': artist_ob.checking_tasks}, current_user='force')
 			if not b:
 				print('*'*5, r)
@@ -4139,8 +4142,8 @@ class task(studio):
 		#print(old_artist_ob, new_artist_ob)
 		
 		# -- old
-		if old_artist_ob and  old_artist_ob.working_tasks and self.task_name in old_artist_ob.working_tasks:
-			old_artist_ob.working_tasks.remove(self.task_name)
+		if old_artist_ob and  old_artist_ob.working_tasks.get(self.asset.project.name) and self.task_name in old_artist_ob.working_tasks[self.asset.project.name]:
+			old_artist_ob.working_tasks[self.asset.project.name].remove(self.task_name)
 			b, r = old_artist_ob.edit_artist({'working_tasks': old_artist_ob.working_tasks}, current_user='force')
 			if not b:
 				print('*'*5, r)
@@ -4148,9 +4151,11 @@ class task(studio):
 		# -- new
 		if new_artist:
 			if not new_artist_ob.working_tasks:
-				new_artist_ob.working_tasks = []
-			if not self.task_name in new_artist_ob.working_tasks:
-				new_artist_ob.working_tasks.append(self.task_name)
+				new_artist_ob.working_tasks = {}
+			if not self.asset.project.name in new_artist_ob.working_tasks.keys():
+				new_artist_ob.working_tasks[self.asset.project.name] = []
+			if not self.task_name in new_artist_ob.working_tasks[self.asset.project.name]:
+				new_artist_ob.working_tasks[self.asset.project.name].append(self.task_name)
 			b, r = new_artist_ob.edit_artist({'working_tasks': new_artist_ob.working_tasks}, current_user='force')
 			if not b:
 				print('*'*5, r)
@@ -5973,45 +5978,6 @@ class artist(studio):
 					out_source = False
 				return True, (rows[0]['nik_name'], rows[0]['user_name'], out_source, rows[0])
 	
-	# key_data = обязательное поле nik_name
-	# artist_current_data - текущие данные пользователя на момент редактирования.
-	def edit_artist_old(self, key_data, artist_current_data = False):
-		pass
-		# test nik_name
-		nik_name = key_data.get('nik_name')
-		if not nik_name:
-			return False, 'not nik_name!'
-		# test level
-		level = key_data.get('level')
-		if level and not level in self.user_levels:
-			return False, 'wrong level: "%s"!' % level
-		# get artist_current_data
-		if not artist_current_data:
-			bool_, return_data = database().read('studio', self, self.artists_t, self.artists_keys, where = {'nik_name': nik_name})
-			if not bool_:
-				return(bool_, return_data)
-			else:
-				if return_data:
-					artist_current_data = return_data[0]
-				else:
-					return(False, return_data)
-		# test Access Rights
-		# -- user не менеджер
-		if not self.level in self.manager_levels:
-			return(False, 'Not Access! (your level does not allow you to make similar changes)')
-		# -- попытка возвести в ранг выше себя
-		elif key_data.get("level") and self.user_levels.index(self.level) < self.user_levels.index(key_data.get("level")):
-			return(False, 'Not Access! (attempt to assign a level higher than yourself)')
-		# -- попытка сделать изменения пользователя с более высоким уровнем.
-		elif artist_current_data.get("level") and self.user_levels.index(self.level) < self.user_levels.index(artist_current_data.get("level")):
-			return(False, 'Not Access! (attempt to change a user with a higher level)')
-		# update
-		del key_data['nik_name']
-		bool_, return_data = database().update('studio', self, self.artists_t, self.artists_keys, key_data, where = {'nik_name': nik_name})
-		if not bool_:
-			return(bool_, return_data)
-		return True, 'ok'
-	
 	# редактирование объекта артиста. текущий объект artist должен быть инициализирован. редактирует параметры текущего-редактируемого объекта.
 	# keys (dict) - данные на замену - nik_name - не редактируется, поэтому удаляется из данных перед записью.
 	# current_user (artist) - редактор - залогиненный пользователь. если force - проверки уровней не выполняются.
@@ -6062,6 +6028,23 @@ class artist(studio):
 				exec('self.%s = keys.get("%s")' % (key, key))
 		
 		return True, 'ok'
+	
+	# словарь по именам  рабочих задач артиста, данного проекта.
+	# project_ob (project) - текущий проект
+	def get_working_tasks_list(self, project_ob):
+		pass
+		# 1 - получаем список всех ассетов
+		# 2 - пробегаемся по списку artist.working_tasks - и инициализируем задачи.
+		# 3 - возвращаем словарь по именам
+		
+		b, r = asset(project_ob).get_dict_by_name_by_all_types()
+		if not b:
+			return(False, r)
+		asset_dict = r
+	
+	# список задач, на которых артист назначен читателем
+	def get_reading_tasks_list(self, checking=False):
+		pass
 		
 	def add_stat(self, user_name, keys):
 		pass
