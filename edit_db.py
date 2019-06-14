@@ -6031,7 +6031,8 @@ class artist(studio):
 	
 	# словарь по именам  рабочих задач артиста, данного проекта.
 	# project_ob (project) - текущий проект
-	def get_working_tasks(self, project_ob):
+	# statuses (bool / list) - фильтр по статтусам, список статусов.
+	def get_working_tasks(self, project_ob, statuses = False):
 		pass
 		# 1 - получаем список всех ассетов
 		# 2 - пробегаемся по списку artist.working_tasks - и инициализируем задачи.

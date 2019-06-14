@@ -56,21 +56,21 @@ class MainWindow(QtGui.QMainWindow):
 		self.db_chat = db.chat(self.db_task)
 		
 		# constants
-		TASK_LOOK_STATUSES = [
+		self.TASK_LOOK_STATUSES = [
 		'ready',
 		'work',
 		'pause',
 		'recast',
 		'checking',
 		]
-		NOT_USED_EXTENSIONS = [
+		self.NOT_USED_EXTENSIONS = [
 		'.blend','.tiff', '.ods', '.xcf', '.svg'
 		]
 		
 		# variables
 		self.selected_task = None # текущая задача
 		self.selected_project = None # текущий проект
-		self.current_file = None # текущий рабочий файл
+		self.current_file = None # текущий рабочий файл ??????
 		self.action = 'work_list' # ??????
 		self.working_task_list = []
 		self.task_list = []
@@ -118,8 +118,8 @@ class MainWindow(QtGui.QMainWindow):
 		
 		
 		# radio_button connect
-		self.myWidget.chek_list_radio_button.clicked.connect(partial(self.load_task_list_table, '', get_project_name = True, action = 'check_list'))
-		self.myWidget.work_list_radio_button.clicked.connect(partial(self.load_task_list_table, '', get_project_name = True, action = 'work_list'))
+		self.myWidget.chek_list_radio_button.clicked.connect(partial(self.load_task_list_table, '', get_project = True, action = 'check_list'))
+		self.myWidget.work_list_radio_button.clicked.connect(partial(self.load_task_list_table, '', get_project = True, action = 'work_list'))
 		# menu connect
 		self.myWidget.actionSet_studio.triggered.connect(self.set_studio_ui)
 		self.myWidget.actionLogin.triggered.connect(self.user_login_ui)
@@ -164,98 +164,74 @@ class MainWindow(QtGui.QMainWindow):
 	# *********************** Task List **************************************************
 	def show_task_list(self):
 		self.myWidget.task_list_table.setVisible(True)
-		self.load_task_list_table(self, G.current_project)
+		self.load_task_list_table()
 		
-	def determinant_of_that_load(self, project_name):
+	def determinant_of_that_load(self):
 		if self.myWidget.work_list_radio_button.isChecked():
-			self.load_task_list_table(project_name)
+			self.load_task_list_table(get_project = True)
 		elif self.myWidget.chek_list_radio_button.isChecked():
-			self.load_task_list_table(project_name, action = 'check_list')
+			self.load_task_list_table(get_project = True, action = 'check_list')
 	
-	def load_task_list_table(self, project_name, get_project_name = False, action = 'work_list'):
+	def load_task_list_table(self, get_project = False, action = 'work_list'):
 		self.action = action
-		
-		self.myWidget.task_list_table.setVisible(True)
-		if get_project_name:
+		table = self.myWidget.task_list_table
+		table.setVisible(True)
+		self.clear_table(table)
+				
+		if get_project:
 			project_name = self.myWidget.project_box.currentText()
+			if project_name == '--select project--':
+				self.selected_project = None
+				self.clear_table()
+				
+				# hide widgets
+				self.myWidget.task_info.setVisible(False)
+				self.myWidget.distrib_frame.setVisible(False)
+				self.myWidget.work_frame.setVisible(False)
+				return
+			else:
+				self.selected_project = self.project.dict_projects[project_name]
 			
-		if project_name == '--select project--':
-			self.selected_project = None
-			self.clear_table()
-			
-			# hide widgets
-			self.myWidget.task_info.setVisible(False)
-			self.myWidget.distrib_frame.setVisible(False)
-			self.myWidget.work_frame.setVisible(False)
-			return
-			
-		self.selected_project = self.project.dict_projects[project_name]
 		self.db_task.asset.project = self.selected_project
-		self.working_task_list = []
+		self.tasks_list = []
 		#
 		if action == 'work_list':
-			result = self.db_task.get_task_list_of_artist(self.db_artist.nik_name)
+			b, r = self.db_artist.get_working_tasks(self.selected_project, statuses = self.TASK_LOOK_STATUSES)
 		elif action == 'check_list':
-			result = self.db_task.get_chek_list_of_artist(self.db_artist.nik_name)
-		if not result[0]:
-			self.task_list = []
-			self.message(result[1], 2)
+			b, r = self.artist.get_reading_tasks(self.selected_project, status=False)
+		else:
+			pass
+		if not b:
+			self.tasks_list = []
+			self.message(r, 2)
 			
 			# hide widgets
 			self.myWidget.task_info.setVisible(False)
 			self.myWidget.distrib_frame.setVisible(False)
 			self.myWidget.work_frame.setVisible(False)
 			return
-		
-		# get G.working_task_list
-		if action == 'work_list':
-			G.all_task_list = result[1]
-			for key in G.all_task_list:
-				if G.all_task_list[key]['task']['status'] in G.task_look_statuses:
-					G.working_task_list.append(G.all_task_list[key]['task'])
-		elif action == 'check_list':
-			G.working_task_list = result[1]
-				#print(G.all_task_list[key]['task']['task_name'])
-		
+		else:
+			self.tasks_list = r
 		
 		# make table
 		headers = ['icon', 'task_name','activity', 'extension', 'status']
 		
-		self.myWidget.task_list_table.setColumnCount(len(headers))
-		self.myWidget.task_list_table.setRowCount(len(G.working_task_list))
-		self.myWidget.task_list_table.setHorizontalHeaderLabels(headers)
+		table.setColumnCount(len(headers))
+		table.setRowCount(len(self.tasks_list))
+		table.setHorizontalHeaderLabels(headers)
 		
 		# selection mode   
-		self.myWidget.task_list_table.setSortingEnabled(True)
-		self.myWidget.task_list_table.setSelectionBehavior(QtGui.QAbstractItemView.SelectRows)
-		self.myWidget.task_list_table.setSelectionMode(QtGui.QAbstractItemView.SingleSelection)
+		table.setSortingEnabled(True)
+		table.setSelectionBehavior(QtGui.QAbstractItemView.SelectRows)
+		table.setSelectionMode(QtGui.QAbstractItemView.SingleSelection)
 		
 		# fill table
-		for i, task in enumerate(G.working_task_list):
+		#print(self.tasks_list)
+		for i, task_name in enumerate(sorted(list(self.tasks_list.keys()))):
+			print('***** %s: %s' % (i, task_name))
 			for j,key in enumerate(headers):
-				if key != 'icon':
-					newItem = QtGui.QTableWidgetItem()
-					newItem.setText(task[key])
-					newItem.task = False
-					newItem.task = task
-				
-				if key == 'task_name':
-					color = QtGui.QColor(255, 241, 150)
-					brush = QtGui.QBrush(color)
-					newItem.setBackground(brush)
-					#newItem.task = task
-					
-				elif key == 'status':
-					rgb = self.db_task.color_status[task['status']]
-					r = (rgb[0]*255)
-					g = (rgb[1]*255)
-					b = (rgb[2]*255)
-					color = QtGui.QColor(r, g, b)
-					brush = QtGui.QBrush(color)
-					newItem.setBackground(brush)
-					
-				elif key == 'icon':
-					path = os.path.join(self.db_task.preview_img_path, (task['asset'] + '_icon.png'))
+				if key == 'icon':
+					path = os.path.join(self.selected_project.preview_img_path, (self.tasks_list[task_name].asset.name + '_icon.png'))
 					label = QtGui.QLabel()
 					if os.path.exists(path):
 						image = QtGui.QImage(path)
@@ -263,26 +239,37 @@ class MainWindow(QtGui.QMainWindow):
 						label.setPixmap(pix)
 					else:
 						label.setText('no Images')
-						
 					label.show()
-					self.myWidget.task_list_table.setCellWidget(i, j, label)
+					table.setCellWidget(i, j, label)
+				else:
+					newItem = QtGui.QTableWidgetItem()
+					newItem.setText(str(getattr(self.tasks_list[task_name], key)))
+					newItem.task = self.tasks_list[task_name]
+					
+					if key == 'task_name':
+						color = QtGui.QColor(255, 241, 150)
+						brush = QtGui.QBrush(color)
+						newItem.setBackground(brush)
 						
-				
-				if key != 'icon':
-					self.myWidget.task_list_table.setItem(i, j, newItem)
+					elif key == 'status':
+						rgb = self.db_studio.color_status[self.tasks_list[task_name].status]
+						r = (rgb[0]*255)
+						g = (rgb[1]*255)
+						b = (rgb[2]*255)
+						color = QtGui.QColor(r, g, b)
+						brush = QtGui.QBrush(color)
+						newItem.setBackground(brush)
+							
+					table.setItem(i, j, newItem)
 		
-		self.myWidget.task_list_table.resizeRowsToContents()
-		self.myWidget.task_list_table.resizeColumnsToContents()
+		table.resizeRowsToContents()
+		table.resizeColumnsToContents()
 		
 		# table connect
-		try:
-			self.myWidget.task_list_table.itemClicked.disconnect()
-		except:
-			pass
 		if action == 'work_list':
-			self.myWidget.task_list_table.itemClicked.connect(self.fill_distrib_panel)
+			table.itemClicked.connect(self.fill_distrib_panel)
 		elif action == 'check_list':
-			self.myWidget.task_list_table.itemClicked.connect(self.fill_chek_panel)
+			table.itemClicked.connect(self.fill_chek_panel)
 		
 		# hide widgets
 		self.myWidget.task_info.setVisible(False)
@@ -687,7 +674,7 @@ class MainWindow(QtGui.QMainWindow):
 			return
 		
 		# reload check_list
-		self.load_task_list_table('', get_project_name = True, action = 'check_list')
+		self.load_task_list_table('', get_project = True, action = 'check_list')
 		
 	def accept_action(self):
 		ask = self.message('Are you sure?', 0)
@@ -703,7 +690,7 @@ class MainWindow(QtGui.QMainWindow):
 		#self.message(str(result[1]), 1)
 		
 		# reload check_list
-		self.load_task_list_table('', get_project_name = True, action = 'check_list')
+		self.load_task_list_table('', get_project = True, action = 'check_list')
 	
 	# *********************** Panels *****************************************************
 	
@@ -1413,22 +1400,32 @@ class MainWindow(QtGui.QMainWindow):
 		window.close()
 	
 	def clear_table(self, table = False):
+		pass
+	
 		if not table:
 			table = self.myWidget.task_list_table
+		
+		# disconnects
+		# -- context menu
+		try:
+			table.customContextMenuRequested.disconnect()
+		except Exception as e:
+			print(e)
+			
+		# -- context menu
+		try:
+			table.itemDoubleClicked.disconnect()
+		except Exception as e:
+			print(e)
+			
+		try:
+			table.itemClicked.disconnect()
+		except Exception as e:
+			print(e)
 		
 		# -- clear table
 		num_row = table.rowCount()
 		num_column = table.columnCount()
-		
-		# old
-		'''
-		for i in range(0, num_row):
-			for j in range(0, num_column):
-				item = table.item(i, j)
-				table.takeItem(i, j)
-
-				table.removeCellWidget(i, j)
-		'''
 		
 		# new
 		table.clear()
