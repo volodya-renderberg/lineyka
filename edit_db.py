@@ -4492,50 +4492,30 @@ class task(studio):
 		else:
 			return(True, new_status)
 			
-	# change_statuses (list) - [(task_data, new_status), ...]
+	# change_statuses (list) - [(task_ob, new_status), ...]
 	# тупо смена статусов в пределах рабочих, что не приводит к смене статусов исходящих задач.
 	# task.asset инициализирован
 	def change_work_statuses(self, change_statuses): # v2
 		table_name = '"%s:%s"' % (self.asset.id, self.tasks_t)
 		return_data_ = {}
 		for data in change_statuses:
-			task_data = data[0]
+			task_ob = data[0]
 			new_status = data[1]
+			#
+			if new_status not in (self.working_statuses + ['checking']):
+				continue
+			#
 			update_data = {'status': new_status}
-			where = {'task_name': task_data['task_name']}
+			where = {'task_name': task_ob.task_name}
 			bool_, return_data = database().update('project', self.asset.project, table_name, self.tasks_keys, update_data, where, table_root=self.tasks_db)
 			if not bool_:
 				return(False, return_data)
-			return_data_[task_data['task_name']] = new_status
+			#
+			task_ob.status = new_status
+			#
+			return_data_[task_ob.task_name] = new_status
 			
 		return(True, return_data_)
-		'''
-		# -- Connect to db
-		conn = sqlite3.connect(self.tasks_path, detect_types=sqlite3.PARSE_DECLTYPES|sqlite3.PARSE_COLNAMES)
-		conn.row_factory = sqlite3.Row
-		c = conn.cursor()
-		
-		return_data = {}
-		
-		for data in change_statuses:
-			task_data = data[0]
-			new_status = data[1]
-			# Exists table
-			table = '\"' + task_data['asset_id'] + ':' + self.tasks_t + '\"'
-			try:
-				string = 'UPDATE ' +  table + ' SET  status  = ? WHERE task_name = ?'
-				data = (new_status, task_data['task_name'])
-				c.execute(string, data)
-				return_data[task_data['task_name']] = new_status
-			except:
-				conn.close()
-				return(False, 'in change_work_statuses - Not Edit Table!')
-				
-		conn.commit()
-		conn.close()
-		
-		return(True, return_data)
-		'''
 	
 	# task_name (str) - имя задачи
 	# возврат словаря задачи по имени задачи. если нужен объект используем task.init(name)
