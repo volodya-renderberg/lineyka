@@ -25,7 +25,7 @@ class MainWindow(QtGui.QMainWindow):
 	def __init__(self, parent = None):
 		# moduls
 		self.db_studio = db.studio
-		self.db_studio()
+		self.studio = self.db_studio()
 		self.db_artist = db.artist() # по совместительству текущий а`ртист
 		self.project = db.project() # 
 		self.project.get_list()
@@ -554,68 +554,18 @@ class MainWindow(QtGui.QMainWindow):
 		# close window
 		self.close_window(window)
 		
-		
 	def open_action(self, input_task = False, open_path = None):
-		print('{OPEN} %s' % self.selected_task.task_name)
-		# (1) ***** CHANGE STATUS
-		if self.selected_task.status != 'work':
-			change_statuses = [(self.selected_task, 'work'),]
-			for task_name in self.tasks_list:
-				if self.tasks_list[task_name].status == 'work':
-					change_statuses.append((self.tasks_list[task_name], 'pause',))
+		pass
 		
-			result = self.selected_task.change_work_statuses(change_statuses)
-			if not result[0]:
-				self.message(result[1], 2)
-				#return
-			
-			else:
-				pass
-				#self.selected_task.status = 'work'
-				#for task_name in result[1]:
-					#G.all_task_list[task_name]['task']['status'] = result[1][task_name]
+		b, r = self.selected_task.open_file( look=False, current_artist=self.db_artist, tasks=self.tasks_list, input_task=input_task, open_path=open_path)
+		if not b:
+			self.message(r, 2)
+			return
 		
-		# ******* OPEN FILE
-		task_ob = None
-		if input_task:
-			task_ob = input_task
-		else:
-			task_ob = self.selected_task
+		self.current_file = r
 		
-		if not open_path:
-			result = task_ob.get_final_file_path()
-			if not result[0]:
-				return(False, result[1])
-			open_path = result[1]
-		
-			# get tmp_file_path
-			tmp_file_name = '%s_%s%s' % (task_ob.task_name.replace(':','_', 2), hex(random.randint(0, 1000000000)).replace('0x', ''), task_ob.extension)
-			tmp_file_path = os.path.join(self.db_task.tmp_folder, tmp_file_name)
-			
-			if open_path:
-				# copy to tmp
-				shutil.copyfile(open_path, tmp_file_path)
-			else:
-				if task_ob.extension in self.NOT_USED_EXTENSIONS:
-					empty_folder = os.path.split(self.ui_folder)[0]
-					empty_path = os.path.join(empty_folder, 'empty_files', ('empty' + task_ob.extension))
-					shutil.copyfile(empty_path, tmp_file_path)
-		
-			self.current_file = tmp_file_path
-		
-		else:
-			self.current_file = open_path
-		
-		
+		# ****** edit widget
 		self.myWidget.current_file.setText(self.current_file)
-				
-		# open file
-		soft = self.db_studio.soft_data[task_ob.extension]
-		#cmd = soft + " \"" + tmp_file_path + "\""
-		cmd = "\"" + soft + "\"  \"" + self.current_file + "\""
-		subprocess.Popen(cmd, shell = True)
-		
-		# ****** edit widget visible
 		self.myWidget.task_list_table.setVisible(False)
 		self.myWidget.distrib_frame.setVisible(False)
 		self.myWidget.work_frame.setVisible(True)
@@ -1245,7 +1195,7 @@ class MainWindow(QtGui.QMainWindow):
 			line.setText(str(file_path))
 			
 			# edit data
-			result = self.db_studio.edit_extension_dict(key, file_path)
+			result = self.studio.edit_extension_dict(key, file_path)
 			if not result[0]:
 				self.message(result[1], 2)
 				
@@ -1262,7 +1212,7 @@ class MainWindow(QtGui.QMainWindow):
 		text = line.text()
 		
 		# edit data
-		result = self.db_studio.edit_extension_dict(key, text)
+		result = self.studio.edit_extension_dict(key, text)
 		if not result[0]:
 			self.message(result[1], 2)
 		else:
