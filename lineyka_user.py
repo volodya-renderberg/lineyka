@@ -378,37 +378,17 @@ class MainWindow(QtGui.QMainWindow):
 		
 			
 	def look_file_action(self):
-		pass		
-		result = self.selected_task.get_final_file_path()
-		if not result[0]:
-			return(False, result[1])
+		b, r = self.selected_task.open_file( look=True)
+		if not b:
+			self.message(r, 2)
+			return
 		
-		open_path = result[1]
-		
-		if not open_path:
-			#return(False, 'Not Saved Version!')
-			self.message('Not Saved Version!', 1)
-		
-		# get tmp_file_path
-		tmp_file_name = '%s_%s%s' % (self.selected_task.task_name.replace(':','_', 2), hex(random.randint(0, 1000000000)).replace('0x', ''), self.selected_task.extension)
-		tmp_file_path = os.path.join(self.db_task.tmp_folder, tmp_file_name)
-				
-		# copy to tmp
-		shutil.copyfile(open_path, tmp_file_path)
+		self.current_file = r
 		
 		# vising current file
-		self.current_file = tmp_file_path
 		self.myWidget.current_file.setText(self.current_file)
 		self.myWidget.current_file.setVisible(True)
-				
-		# open file
-		soft = self.db_studio.soft_data[self.selected_task.extension]
-		#cmd = soft + " \"" + tmp_file_path + "\""
-		#cmd = "\"" + soft + "\"  \"" + tmp_file_path + "\""
-		cmd = '"%s" "%s"' % (soft, tmp_file_path)
-		subprocess.Popen(cmd, shell = True)
 		
-		print(cmd)
 	
 	def look_version_action(self, window, look = True):
 		pass
