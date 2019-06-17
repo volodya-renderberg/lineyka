@@ -5863,7 +5863,10 @@ class artist(studio):
 		for task_name in self.working_tasks.get(project_ob.name):
 			asset_name = task_name.split(':')[0]
 			if asset_name in assets:
-				tasks[task_name] = task(assets[asset_name]).init(task_name)
+				task_ob = task(assets[asset_name]).init(task_name)
+				if statuses and task_ob.status not in statuses:
+					continue
+				tasks[task_name] = task_ob
 				
 		return(True, tasks)
 	

@@ -193,7 +193,11 @@ class MainWindow(QtGui.QMainWindow):
 			self.tasks_list = r
 		
 		# make table
+<<<<<<< HEAD
 		headers = ['icon', 'task_name', 'priority', 'price', 'activity', 'extension', 'status']
+=======
+		headers = ['icon', 'task_name','activity', 'extension', 'price', 'priority', 'status']
+>>>>>>> aae532ff61138ba4d22af1ddfb4872b39208e1cb
 		
 		table.setColumnCount(len(headers))
 		table.setRowCount(len(self.tasks_list))
@@ -260,12 +264,12 @@ class MainWindow(QtGui.QMainWindow):
 	
 	# *********************** Task DISTRIB ***********************************************
 	def fill_distrib_panel(self, *args):
-		G.current_task = self.myWidget.task_list_table.currentItem().task
+		self.selected_task = self.myWidget.task_list_table.currentItem().task
 		
 		self.myWidget.distrib_frame.setVisible(True)
 		self.myWidget.work_frame.setVisible(False)
-		self.fill_info_panel()
-		self.get_versions_list()
+		#self.fill_info_panel()
+		#self.get_versions_list()
 		
 		# edit buttons
 		# -- chat button
@@ -288,12 +292,14 @@ class MainWindow(QtGui.QMainWindow):
 		self.myWidget.open_from_file_button.clicked.disconnect()
 		self.myWidget.open_from_file_button.clicked.connect(self.open_from_file_action)
 		
+		print('fill distrib panel')
+		
 		
 	def fill_chek_panel(self, *args):
 		G.current_task = self.myWidget.task_list_table.currentItem().task
 		self.myWidget.distrib_frame.setVisible(True)
 		self.myWidget.work_frame.setVisible(False)
-		self.fill_info_panel()
+		#self.fill_info_panel()
 		
 		# edit buttons
 		self.myWidget.chat_button.clicked.disconnect()
@@ -309,25 +315,29 @@ class MainWindow(QtGui.QMainWindow):
 		# -- open from input
 		self.myWidget.open_from_input_button.setVisible(False)
 		self.myWidget.open_from_file_button.setVisible(False)
+		
+		print('fill chek panel')
 	
 	def fill_info_panel(self):
-		if G.action == 'work_list':
-			string = 'name:' + ' '*10 + G.current_task['task_name'].replace(':',' : ')  + '\n'
-			string = string + 'activity:' + ' '*16 + G.current_task['activity']  + '\n'
+		if self.action == 'work_list':
+			string = 'name:' + ' '*10 + self.selected_task.task_name.replace(':',' : ')  + '\n'
+			string = string + 'activity:' + ' '*16 + self.selected_task.activity  + '\n'
+			'''
 			if G.all_task_list[G.current_task['task_name']]['input']:
 				string = string + 'input activity:' + ' '*10 + G.all_task_list[G.current_task['task_name']]['input']['activity']  + '\n'
 			else:
 				string = string + 'input activity:' + ' '*10 + 'None\n'
-			string = string + 'status:' + ' '*18 + G.current_task['status']  + '\n'
-			string = string + 'extension:' + ' '*15 + G.current_task['extension']  + '\n'
-			string = string + 'priority:' + ' '*16 + G.current_task['priority']  + '\n'
-			string = string + 'price:' + ' '*19 + str(G.current_task['price'])  + '\n'
-		elif G.action == 'check_list':
-			string = 'name:' + ' '*10 + G.current_task['task_name'].replace(':',' : ')  + '\n'
-			string = string + 'activity:' + ' '*16 + G.current_task['activity']  + '\n'
-			string = string + 'extension:' + ' '*15 + G.current_task['extension']  + '\n'
-			string = string + 'priority:' + ' '*16 + G.current_task['priority']  + '\n'
-			string = string + 'artist:' + ' '*19 + G.current_task['artist']  + '\n'
+            '''
+			string = string + 'status:' + ' '*18 + self.selected_task.status  + '\n'
+			string = string + 'extension:' + ' '*15 + self.selected_task.extension  + '\n'
+			string = string + 'priority:' + ' '*16 + str(self.selected_task.priority)  + '\n'
+			string = string + 'price:' + ' '*19 + str(self.selected_task.price)  + '\n'
+		elif self.action == 'check_list':
+			string = 'name:' + ' '*10 + self.selected_task.task_name.replace(':',' : ')  + '\n'
+			string = string + 'activity:' + ' '*16 + self.selected_task.activity  + '\n'
+			string = string + 'extension:' + ' '*15 + self.selected_task.extension  + '\n'
+			string = string + 'priority:' + ' '*16 + str(self.selected_task.priority)  + '\n'
+			string = string + 'artist:' + ' '*19 + self.selected_task.artist  + '\n'
 		
 		self.myWidget.task_info.clear()
 		self.myWidget.task_info.append(string)
