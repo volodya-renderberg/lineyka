@@ -19,28 +19,7 @@ import edit_db as db
 # /home/vofka/Yandex.Disk/Lineyka_/lineyka_user.py
 
 class G(object):
-	current_project = ''
-	current_user = ''
-	current_task = {}
-	current_file = ''
-	action = 'work_list'
-	
-	task_list = []
-	working_task_list = []
-	all_task_list = {}
-	versions_list = []
-	
-	task_look_statuses = [
-	'ready',
-	'work',
-	'pause',
-	'recast',
-	'checking',
-	]
-	
-	not_used_extensions = [
-	'.blend','.tiff', '.ods', '.xcf', '.svg'
-	]
+	pass
 
 class MainWindow(QtGui.QMainWindow):
 	def __init__(self, parent = None):
@@ -118,8 +97,8 @@ class MainWindow(QtGui.QMainWindow):
 		
 		
 		# radio_button connect
-		self.myWidget.chek_list_radio_button.clicked.connect(partial(self.load_task_list_table, '', get_project = True, action = 'check_list'))
-		self.myWidget.work_list_radio_button.clicked.connect(partial(self.load_task_list_table, '', get_project = True, action = 'work_list'))
+		self.myWidget.chek_list_radio_button.clicked.connect(partial(self.load_task_list_table, get_project = True, action = 'check_list'))
+		self.myWidget.work_list_radio_button.clicked.connect(partial(self.load_task_list_table, get_project = True, action = 'work_list'))
 		# menu connect
 		self.myWidget.actionSet_studio.triggered.connect(self.set_studio_ui)
 		self.myWidget.actionLogin.triggered.connect(self.user_login_ui)
@@ -198,7 +177,7 @@ class MainWindow(QtGui.QMainWindow):
 		if action == 'work_list':
 			b, r = self.db_artist.get_working_tasks(self.selected_project, statuses = self.TASK_LOOK_STATUSES)
 		elif action == 'check_list':
-			b, r = self.artist.get_reading_tasks(self.selected_project, status=False)
+			b, r = self.db_artist.get_reading_tasks(self.selected_project, status='checking')
 		else:
 			pass
 		if not b:
@@ -214,7 +193,7 @@ class MainWindow(QtGui.QMainWindow):
 			self.tasks_list = r
 		
 		# make table
-		headers = ['icon', 'task_name','activity', 'extension', 'status']
+		headers = ['icon', 'task_name', 'priority', 'price', 'activity', 'extension', 'status']
 		
 		table.setColumnCount(len(headers))
 		table.setRowCount(len(self.tasks_list))
@@ -674,7 +653,7 @@ class MainWindow(QtGui.QMainWindow):
 			return
 		
 		# reload check_list
-		self.load_task_list_table('', get_project = True, action = 'check_list')
+		self.load_task_list_table(get_project = True, action = 'check_list')
 		
 	def accept_action(self):
 		ask = self.message('Are you sure?', 0)
@@ -690,7 +669,7 @@ class MainWindow(QtGui.QMainWindow):
 		#self.message(str(result[1]), 1)
 		
 		# reload check_list
-		self.load_task_list_table('', get_project = True, action = 'check_list')
+		self.load_task_list_table(get_project = True, action = 'check_list')
 	
 	# *********************** Panels *****************************************************
 	
