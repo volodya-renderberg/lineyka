@@ -52,7 +52,7 @@ class MainWindow(QtGui.QMainWindow):
 		self.current_file = None # текущий рабочий файл ??????
 		self.action = 'work_list' # ??????
 		self.working_task_list = []
-		self.task_list = []
+		self.tasks_list = []
 		self.all_task_list = {}
 		
 		# get Path
@@ -193,11 +193,8 @@ class MainWindow(QtGui.QMainWindow):
 			self.tasks_list = r
 		
 		# make table
-<<<<<<< HEAD
 		headers = ['icon', 'task_name', 'priority', 'price', 'activity', 'extension', 'status']
-=======
-		headers = ['icon', 'task_name','activity', 'extension', 'price', 'priority', 'status']
->>>>>>> aae532ff61138ba4d22af1ddfb4872b39208e1cb
+
 		
 		table.setColumnCount(len(headers))
 		table.setRowCount(len(self.tasks_list))
@@ -346,36 +343,43 @@ class MainWindow(QtGui.QMainWindow):
 	
 	# ***************** Functional ********************************
 	def tz(self):
-		if G.current_task['tz']:
-			webbrowser.open_new_tab(G.current_task['tz'])
+		if self.selected_task.tz:
+			webbrowser.open_new_tab(self.selected_task.tz)
 		else:
-			self.message('Not Link!', 2)
+			self.message('Not Link!', 1)
 			
 	def report_action(self):
-		if not G.versions_list:
-			self.message('Not Versions of Activity', 2)
-			return
+		pass
+		# (1) test exists version
+		open_path = None
+		result = self.selected_task.get_final_file_path()
+		if not result[0]:
+			return(False, result[1])
+		else:
+			open_path = result[1]
 		
-		# ask
+		if not open_path:
+			self.message('Not Saved Version!', 1)
+		
+		# (2) ask
 		ask = self.message(('Submit?'), 0)
 		if not ask:
 			return
 		
-		# change status in db
-		result = self.db_task.change_work_statuses(G.current_project, [(G.current_task, 'checking')])
+		# (3) change status in db
+		result = self.selected_task.change_work_statuses([(self.selected_task, 'checking')])
 		if not result[0]:
 			self.message(result[1], 2)
 			return
 		
-		# change current status
-		G.current_task['status'] = 'checking'
+		# (4) change current status
+		self.selected_task.status = 'checking'
 		self.show_task_list()
 		
 			
 	def look_file_action(self):
-		task_data = G.current_task
-		
-		result = self.db_task.get_final_file_path(G.current_project, task_data)
+		pass		
+		result = self.selected_task.get_final_file_path()
 		if not result[0]:
 			return(False, result[1])
 		
@@ -383,30 +387,31 @@ class MainWindow(QtGui.QMainWindow):
 		
 		if not open_path:
 			#return(False, 'Not Saved Version!')
-			self.message('Not Saved Version!', 2)
+			self.message('Not Saved Version!', 1)
 		
 		# get tmp_file_path
-		tmp_path = self.db_task.tmp_folder
-		tmp_file_name = task_data['task_name'].replace(':','_', 2) + '_' + hex(random.randint(0, 1000000000)).replace('0x', '') + task_data['extension']
-		tmp_file_path = os.path.join(tmp_path, tmp_file_name)
+		tmp_file_name = '%s_%s%s' % (self.selected_task.task_name.replace(':','_', 2), hex(random.randint(0, 1000000000)).replace('0x', ''), self.selected_task.extension)
+		tmp_file_path = os.path.join(self.db_task.tmp_folder, tmp_file_name)
 				
 		# copy to tmp
 		shutil.copyfile(open_path, tmp_file_path)
 		
 		# vising current file
-		G.current_file = tmp_file_path
-		self.myWidget.current_file.setText(G.current_file)
+		self.current_file = tmp_file_path
+		self.myWidget.current_file.setText(self.current_file)
 		self.myWidget.current_file.setVisible(True)
 				
 		# open file
-		soft = self.db_studio.soft_data[task_data['extension']]
+		soft = self.db_studio.soft_data[self.selected_task.extension]
 		#cmd = soft + " \"" + tmp_file_path + "\""
-		cmd = "\"" + soft + "\"  \"" + tmp_file_path + "\""
+		#cmd = "\"" + soft + "\"  \"" + tmp_file_path + "\""
+		cmd = '"%s" "%s"' % (soft, tmp_file_path)
 		subprocess.Popen(cmd, shell = True)
 		
 		print(cmd)
 	
 	def look_version_action(self, window, look = True):
+		pass
 		# get version
 		list_items = []
 		select_items = window.select_from_list_data_list_table.selectedItems()
@@ -479,6 +484,7 @@ class MainWindow(QtGui.QMainWindow):
 			self.close_window(window)
 		
 	def push_action(self, window):
+		pass
 		# ****** Get Comment
 		comment = window.new_dialog_name.text()
 		if not comment:
@@ -550,67 +556,63 @@ class MainWindow(QtGui.QMainWindow):
 		
 		
 	def open_action(self, input_task = False, open_path = None):
-		print('{OPEN}')
-		# ***** CHANGE STATUS
-		if G.current_task['status'] != 'work':
-			#result = G.func.open_change_status(G.current_project, G.current_task, G.all_task_list)
-			change_statuses = [(G.current_task, 'work'),]
-			for task_name in G.all_task_list:
-				if G.all_task_list[task_name]['task']['status'] == 'work':
-					change_statuses.append((G.all_task_list[task_name]['task'], 'pause',))
+		print('{OPEN} %s' % self.selected_task.task_name)
+		# (1) ***** CHANGE STATUS
+		if self.selected_task.status != 'work':
+			change_statuses = [(self.selected_task, 'work'),]
+			for task_name in self.tasks_list:
+				if self.tasks_list[task_name].status == 'work':
+					change_statuses.append((self.tasks_list[task_name], 'pause',))
 		
-			result = self.db_task.change_work_statuses(G.current_project, change_statuses)
+			result = self.selected_task.change_work_statuses(change_statuses)
 			if not result[0]:
 				self.message(result[1], 2)
 				#return
 			
 			else:
-				G.current_task['status'] = 'work'
-				# result[1] = dict {task_name : new_status, ...}
-				for task_name in result[1]:
-					G.all_task_list[task_name]['task']['status'] = result[1][task_name]
-			G.current_task['status'] = 'work'
+				pass
+				#self.selected_task.status = 'work'
+				#for task_name in result[1]:
+					#G.all_task_list[task_name]['task']['status'] = result[1][task_name]
 		
 		# ******* OPEN FILE
-		task_data = None
+		task_ob = None
 		if input_task:
-			task_data = input_task
+			task_ob = input_task
 		else:
-			task_data = G.current_task
+			task_ob = self.selected_task
 		
 		if not open_path:
-			result = self.db_task.get_final_file_path(G.current_project, task_data)
-			if result[0]:
-				open_path = result[1]
-			else:
-				print('*'*25, result[1])
+			result = task_ob.get_final_file_path()
+			if not result[0]:
+				return(False, result[1])
+			open_path = result[1]
 		
 			# get tmp_file_path
-			tmp_path = self.db_task.tmp_folder
-			tmp_file_name = task_data['task_name'].replace(':','_', 2) + '_' + hex(random.randint(0, 1000000000)).replace('0x', '') + task_data['extension']
-			tmp_file_path = os.path.join(tmp_path, tmp_file_name)
+			tmp_file_name = '%s_%s%s' % (task_ob.task_name.replace(':','_', 2), hex(random.randint(0, 1000000000)).replace('0x', ''), task_ob.extension)
+			tmp_file_path = os.path.join(self.db_task.tmp_folder, tmp_file_name)
 			
 			if open_path:
 				# copy to tmp
 				shutil.copyfile(open_path, tmp_file_path)
 			else:
-				if task_data['extension'] in G.not_used_extensions:
+				if task_ob.extension in self.NOT_USED_EXTENSIONS:
 					empty_folder = os.path.split(self.ui_folder)[0]
-					empty_path = os.path.join(empty_folder, 'empty_files', ('empty' + task_data['extension']))
+					empty_path = os.path.join(empty_folder, 'empty_files', ('empty' + task_ob.extension))
 					shutil.copyfile(empty_path, tmp_file_path)
 		
-			G.current_file = tmp_file_path
+			self.current_file = tmp_file_path
 		
 		else:
-			G.current_file = open_path
+			self.current_file = open_path
 		
 		
-		self.myWidget.current_file.setText(G.current_file)
+		self.myWidget.current_file.setText(self.current_file)
 				
 		# open file
-		soft = self.db_studio.soft_data[task_data['extension']]
+		soft = self.db_studio.soft_data[task_ob.extension]
 		#cmd = soft + " \"" + tmp_file_path + "\""
-		cmd = "\"" + soft + "\"  \"" + G.current_file + "\""
+		cmd = "\"" + soft + "\"  \"" + self.current_file + "\""
 		subprocess.Popen(cmd, shell = True)
 		
 		# ****** edit widget visible
