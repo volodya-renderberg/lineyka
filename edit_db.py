@@ -11,6 +11,7 @@ import random
 import shutil
 import uuid
 import tempfile
+import subprocess
 
 try:
 	from .lineyka_publish import publish
@@ -83,6 +84,8 @@ class studio:
 	task_status = ('null','ready', 'ready_to_send', 'work', 'work_to_outsorce', 'pause', 'recast', 'checking', 'done', 'close')
 	working_statuses = ['ready', 'ready_to_send', 'work', 'work_to_outsorce', 'pause', 'recast']
 	end_statuses = ('done', 'close')
+	
+	NOT_USED_EXTENSIONS = ['.blend','.tiff', '.ods', '.xcf', '.svg']
 	
 	color_status = {
 	'null':(0.451000005, 0.451000005, 0.451000005),
@@ -2770,6 +2773,72 @@ class task(studio):
 			return(False, 'Publish/File Not Found!')
 			
 		return(True, file_path)
+	
+	# откроет файл в приложении - согласно расширению.
+	# look (bool) - если True - то статусы меняться не будут, если False - то статусы меняться будут.
+	# current_artist (artist) - если не передавать, то в случае look=False - будет выполняться get_user() - лишнее обращение к БД.
+	# tasks (dict) - словарь задачь данного артиста по именам. - нужен для случая когда look=False, при отсутствии будет считан - лишнее обращение к БД.
+	# input_task (task) - входящая задача - для open_from_input
+	# open_path (unicode/str) - путь к файлу - указывается для open_from_file
+	def open_file(self, look=False, current_artist=False, tasks=False, input_task=False, open_path=False):
+		pass
+		
+		# (1) ***** CHANGE STATUS
+		if not look:
+			if not current_artist:
+				current_artist = artist()
+				b, r = current_artist.get_user()
+				if not b:
+					return(b,r)
+			if not tasks:
+				b, r = current_artist.get_working_tasks(self.asset.project, statuses = self.working_statuses)
+				if not b:
+					return(b,r)
+				tasks = r
+			if self.status != 'work':
+				change_statuses = [(self, 'work'),]
+				for task_name in tasks:
+					if tasks[task_name].status == 'work':
+						change_statuses.append((tasks[task_name], 'pause',))
+			
+				result = self.change_work_statuses(change_statuses)
+				if not result[0]:
+					return(False, result[1])
+				else:
+					pass
+		
+		# (2) ope path
+		task_ob = self
+		if input_task:
+			task_ob = input_task
+		
+		if not open_path:
+			result = task_ob.get_final_file_path()
+			if not result[0]:
+				return(False, result[1])
+			open_path = result[1]
+		
+			if not open_path:
+				if task_ob.extension in self.NOT_USED_EXTENSIONS:
+					empty_root = os.path.dirname(__file__)
+					open_path = os.path.join(empty_root, 'empty_files', 'empty%s' % task_ob.extension)
+				else:
+					return(False, 'No found saved version!')
+					
+		# get tmp_file_path
+		tmp_file_name = '%s_%s%s' % (task_ob.task_name.replace(':','_', 2), hex(random.randint(0, 1000000000)).replace('0x', ''), task_ob.extension)
+		tmp_file_path = os.path.join(self.tmp_folder, tmp_file_name)
+		# copy file to tmp
+		shutil.copyfile(open_path, tmp_file_path)
+		
+		# (3) open file
+		soft = self.soft_data.get(task_ob.extension)
+		if not soft:
+			return(False, 'No application found for this extension "%s"' % task_ob.extension)
+		cmd = '"%s" "%s"' % (soft, tmp_file_path)
+		subprocess.Popen(cmd, shell = True)
+		
+		return(True, tmp_file_path)
 		
 	
 	# **************************** CACHE  ( file path ) ****************************
