@@ -3333,7 +3333,7 @@ class task(studio):
 		# --3.1 если conflicting_names не пустой - то (return False, 'Matching names, look at the terminal!'); print(conflicting_names)
 		# --3.2 если task_name или activity вообще остутсвуют - ошибка
 		# 4-создаём задачи
-		# --4.1 заполняем недостающие поля: asset_name, asset_id, outsource=0
+		# --4.1 заполняем недостающие поля: outsource=0, priority
 		# --4.2 запись базы данных.
 		
 		table_name = '"%s:%s"' % ( asset_id, self.tasks_t)
@@ -3369,11 +3369,11 @@ class task(studio):
 		# 4
 		for task_keys in list_of_tasks:
 			# 4.1
-			#if not task_keys.get('asset_name'):
-				#task_keys['asset_name'] = asset_name
-			#if not task_keys.get('asset_id'):
-				#task_keys['asset_id'] = asset_id
-			#task_keys['asset_path'] = ''
+			if not task_keys.get('priority'):
+				if not self.asset.priority:
+					task_keys['priority'] = 0
+				else:
+					task_keys['priority'] = self.asset.priority
 			task_keys['outsource'] = 0
 			# 4.2
 			bool_, return_data = database().insert('project', self.asset.project, table_name, self.tasks_keys, task_keys, table_root=self.tasks_db)
@@ -4573,192 +4573,6 @@ class task(studio):
 			task_ob = task(read_asset)
 			task_ob.init_by_keys(task_data, new=False)
 			return(True, task_ob)
-	
-		'''
-		if keys == 'all':
-			new_keys = []
-			for key in self.tasks_keys:
-				new_keys.append(key[0])
-			keys = new_keys
-			
-		# other errors test
-		result = self.get_project(project_name)
-		if not result[0]:
-			return(False, result[1])
-		
-		# read tasks
-		conn = sqlite3.connect(self.tasks_path, detect_types=sqlite3.PARSE_DECLTYPES|sqlite3.PARSE_COLNAMES)
-		conn.row_factory = sqlite3.Row
-		c = conn.cursor()
-		
-		table = '\"' + asset_id + ':' + self.tasks_t + '\"'
-		string = 'select * from ' + table + ' WHERE task_name = \"' + task_name + '\"'
-		
-		try:
-			c.execute(string)
-			row = c.fetchone()
-		except:
-			conn.close()
-			#return(False, ('can_not_read_asset', string))
-			return(False, string)
-		conn.close()
-		
-		if not row:
-			return(False, 'not_task_name')
-				
-		data = {}
-		for key in keys:
-			try:
-				data[key] = row[key]
-			except:
-				pass
-				print(('not key: ' + key + ' in ' + row['task_name']))
-		return(True, data)
-		'''
-	
-	# self.asset.project - должен быть инициализирован
-	# nik_name (str) -
-	def get_task_list_of_artist(self, nik_name): # v2
-		pass
-		# 1 - получаем список ассетов asset_dict
-		# 2 - для каждого ассета(со статусом "active") получаем список задач данного исполнителя. заполняем список task_list.
-		# 3 - бежим по task_list - и достаём входящую задачу.
-		#	-- заполняется словарь task_input_task_list = {task_name: {'task':{data}, 'input':{data}}, ... }
-		# 4 - возвращаемое значение (True, task_input_task_list, asset_dict)
-		
-		# (1)
-		result = self.asset.get_dict_by_name_by_all_types()
-		if not result[0]:
-			return(False, result[1])
-		asset_dict = result[1]
-		
-		# (2)
-		task_list = []
-		task_dict = {}
-		task_input_task_list = {}
-		for asset_name in asset_dict:
-			if asset_dict[asset_name].status == 'active':
-				#asset_id = asset_dict[asset_name].id
-				#bool_, return_data = self.get_list(asset_id=asset_id, artist = nik_name)
-				bool_, return_data = task(asset_dict[asset_name]).get_list(artist = nik_name)
-				if not bool_:
-					return(bool_, return_data)
-				#task_list = task_list + return_data
-				task_dict[return_data['task_name']] = self.init_by_keys(return_data)
-		'''
-		# (3)
-		for task_ob in task_list:
-			task_input_task_list[task_ob.task_name] = {'task' : task_ob}
-			if task_ob.input:
-				input_asset_id = asset_dict[task_ob.input.split(':')[0]].id
-				bool_, return_data = self.__read_task(task_ob.input)
-				if not bool_:
-					return(bool_, return_data)
-				task_input_task_list[task_ob.task_name]['input'] = return_data
-		'''
-		# (4)
-		#return(True, task_input_task_list, asset_dict)
-		return(True, task_dict, asset_dict)
-		
-	# возврат списка задачь со статусом checking где данный исполнитель в списке проверяющих.
-	# self.asset.project - должен быть инициализирован
-	# nik_name (str) -
-	def get_chek_list_of_artist(self, nik_name): # v2
-		pass
-		# 1 - получаем список ассетов asset_list
-		# 2 - для каждого ассета(со статусом "active") получаем список задач данного исполнителя (статус - checking). заполняем список task_list.
-		# 3 - заполняем chek_list
-		
-		# (1)
-		result = self.asset.get_dict_by_name_by_all_types()
-		if not result[0]:
-			return(False, result[1])
-		asset_list = result[1]
-		
-		# (2)
-		task_list = []
-		for asset_name in asset_list:
-			if asset_list[asset_name].status== 'active':
-				asset_id = asset_list[asset_name].id
-				bool_, return_data = self.get_list(asset_id=asset_id, task_status='checking')
-				if not bool_:
-					return(bool_, return_data)
-				task_list = task_list + return_data
-				
-		# (3)
-		chek_list = []
-		for task in task_list:
-			readers = task['readers']
-			readers2 = {}
-			if task['chat_local']:
-				readers2 = task['chat_local']
-			
-			if nik_name in readers and task['status'] == 'checking':
-				if readers[nik_name] == 0:
-					if 'first_reader' in readers:
-						if readers['first_reader'] == nik_name:
-							chek_list.append(task)
-						elif readers[readers['first_reader']] == 1:
-							chek_list.append(task)
-					else:
-						chek_list.append(task)
-			elif nik_name in readers and nik_name in readers2 and readers2[nik_name] == 0:
-				chek_list.append(task)
-			else:
-				pass
-		'''
-		# read tasks
-		conn = sqlite3.connect(self.tasks_path, detect_types=sqlite3.PARSE_DECLTYPES|sqlite3.PARSE_COLNAMES)
-		conn.row_factory = sqlite3.Row
-		c = conn.cursor()
-		
-		task_list = []
-		chek_list = []
-		
-		for asset_name in asset_list:
-			if asset_list[asset_name]['status']== 'active':
-				asset_id = asset_list[asset_name]['id']
-				table = '\"' + asset_id + ':' + self.tasks_t + '\"'
-				#string = 'select * from ' + table + ' WHERE status = ?'
-				string = 'select * from ' + table
-				data = ('checking',)
-				try:
-					#c.execute(string, data)
-					c.execute(string)
-					rows = c.fetchall()
-					task_list = task_list + rows
-				except:
-					conn.close()
-					return(False, string)
-					
-		for task in task_list:
-			try:
-				readers = json.loads(task['readers'])
-			except:
-				continue
-			readers2 = {}
-			try:
-				readers2 = json.loads(task['chat_local'])
-				#print(readers2)
-			except:
-				pass
-			
-			if nik_name in readers and task['status'] == 'checking':
-				if readers[nik_name] == 0:
-					if 'first_reader' in readers:
-						if readers['first_reader'] == nik_name:
-							chek_list.append(dict(task))
-						elif readers[readers['first_reader']] == 1:
-							chek_list.append(dict(task))
-					else:
-						chek_list.append(dict(task))
-			elif nik_name in readers and nik_name in readers2 and readers2[nik_name] == 0:
-				chek_list.append(dict(task))
-			else:
-				pass
-				#print('epte!')
-		'''
-		return(True, chek_list)
 	
 	# input_task_list (list) - список задач (объекты)
 	def service_add_list_to_input(self, input_task_list): # v2
