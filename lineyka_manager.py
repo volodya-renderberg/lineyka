@@ -67,7 +67,7 @@ class MainWindow(QtGui.QMainWindow):
 		# load db.
 		# studio level
 		self.db_studio = db.studio
-		self.db_studio()
+		self.studio = self.db_studio()
 		self.artist = db.artist() # - по совместительству current user - все объекты artist - не текущего юзера, должны быть другими объектами.
 		self.db_workroom = db.workroom()
 		self.db_set_of_tasks = db.set_of_tasks()
@@ -7005,7 +7005,7 @@ class MainWindow(QtGui.QMainWindow):
 			line.setText(str(file_path))
 			
 			# edit data
-			result = self.db_studio.edit_extension_dict(key, file_path)
+			result = self.studio.edit_extension_dict(key, file_path)
 			if not result[0]:
 				self.message(result[1], 2)
 				
@@ -7022,7 +7022,7 @@ class MainWindow(QtGui.QMainWindow):
 		text = line.text()
 		
 		# edit data
-		result = self.db_studio.edit_extension_dict(key, text)
+		result = self.studio.edit_extension_dict(key, text)
 		if not result[0]:
 			self.message(result[1], 2)
 		else:

@@ -81,7 +81,7 @@ class studio:
 	manager_levels = ('manager', 'root')
 
 	task_status = ('null','ready', 'ready_to_send', 'work', 'work_to_outsorce', 'pause', 'recast', 'checking', 'done', 'close')
-	working_statuses = ('ready', 'ready_to_send', 'work', 'work_to_outsorce', 'pause', 'recast')
+	working_statuses = ['ready', 'ready_to_send', 'work', 'work_to_outsorce', 'pause', 'recast']
 	end_statuses = ('done', 'close')
 	
 	color_status = {
