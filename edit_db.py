@@ -2698,7 +2698,7 @@ class task(studio):
 	def get_new_file_path(self, task_data=False): # v2
 		pass
 		if not task_data:
-			asset_type = self.asset_type
+			asset_type = self.asset.type
 			activity = self.activity
 			asset = self.asset.name
 			extension = self.extension
@@ -2839,6 +2839,58 @@ class task(studio):
 		subprocess.Popen(cmd, shell = True)
 		
 		return(True, tmp_file_path)
+	
+	# локальная запись новой рабочей версии файла
+	# comment (str) - комментарий к версии
+	# current_file (unicode/str) - текущее местоположение рабочего файла (как правило в темп)
+	# current_artist (artist) - если не передавать, то будет выполняться get_user() - лишнее обращение к БД.
+	def push_file(self, description, current_file, current_artist=False):
+		pass
+		
+		# (1) test data
+		if not current_artist:
+			current_artist = artist()
+			b, r = current_artist.get_user()
+			if not b:
+				return(b,r)
+		# -- 
+		if not os.path.exists(current_file):
+			return(False, 'Current file not found: %s' % current_file)
+		
+		#return(False, current_file)
+	
+		# (2) COPY to ACtTIVITY
+		result = self.get_new_file_path()
+		if not result[0]:
+			return(False, result[1])
+		
+		new_dir_path, new_file_path = result[1]
+		
+		# -- make version folder
+		if not os.path.exists(new_dir_path):
+			os.mkdir(new_dir_path)
+		
+		# copy file
+		shutil.copyfile(current_file, new_file_path)
+		
+		#print('#'*25, new_file_path)
+		
+		# (3) ****** LOG
+		logs_keys = {
+		'action': 'push',
+		'description': description,
+		'version': os.path.basename(new_dir_path),
+		}
+		
+		#print(logs_keys, current_artist.nik_name)
+		
+		result = log(self).write_log(logs_keys, current_artist)
+		if not result[0]:
+			return(False, result[1])
+		
+		#print('%'*25)
+		
+		return(True, new_file_path)
 		
 	
 	# **************************** CACHE  ( file path ) ****************************
@@ -5228,64 +5280,13 @@ class log(studio):
 		logs_keys['activity'] = self.task.activity
 		
 		# (4)
-		table_name = '"%s:%s:logs"' % (self.task.asset_id, logs_keys['activity'])
+		table_name = '"%s:%s:logs"' % (self.task.asset.id, logs_keys['activity'])
 		read_ob = self.task.asset.project
 		#
 		bool_, r_data = database().insert('project', read_ob, table_name, self.logs_keys, logs_keys, table_root=self.logs_db)
 		if not bool_:
 			return(bool_, r_data)
-		'''
-		# open db
-		conn = sqlite3.connect(self.tasks_path, detect_types=sqlite3.PARSE_DECLTYPES|sqlite3.PARSE_COLNAMES)
-		conn.row_factory = sqlite3.Row
-		c = conn.cursor()
-		
-		table = '\"' + asset_id + ':' + logs_keys['activity'] + ':logs\"'
-		
-		# exists and create table
-		try:
-			str_ = 'select * from ' + table
-			c.execute(str_)
 			
-		except:
-			string2 = "CREATE TABLE " + table + " ("
-			for i,key in enumerate(self.logs_keys):
-				if i == 0:
-					string2 = string2 + key[0] + ' ' + key[1]
-				else:
-					string2 = string2 + ', ' + key[0] + ' ' + key[1]
-			string2 = string2 + ')'
-			c.execute(string2)
-			
-		# create string to add log
-		string = "insert into " + table + " values"
-		values = '('
-		data = []
-		for i, key in enumerate(self.logs_keys):
-			if i< (len(self.logs_keys) - 1):
-				values = values + '?, '
-			else:
-				values = values + '?'
-			if key[0] in logs_keys:
-				data.append(logs_keys[key[0]])
-			else:
-				if key[1] == 'real':
-					data.append(0.0)
-				elif key[1] == 'timestamp':
-					data.append(None)
-				else:
-					data.append('')
-					
-		values = values + ')'
-		data = tuple(data)
-		string = string + values
-		
-		# add log
-		c.execute(string, data)
-		conn.commit()
-		conn.close()
-		'''
-		
 		return(True, 'ok')
 	
 	# запись лога задачи
@@ -5306,7 +5307,7 @@ class log(studio):
 			return(False, 'in log.read_log() - wrong "action" - "%s"!' % action)
 		
 		# (3)
-		table_name = '"%s:%s:logs"' % (self.task.asset_id, self.task.activity)
+		table_name = '"%s:%s:logs"' % (self.task.asset.id, self.task.activity)
 		read_ob = self.task.asset.project
 		if action:
 			where = {'action': action}

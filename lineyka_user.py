@@ -465,12 +465,13 @@ class MainWindow(QtGui.QMainWindow):
 		
 	def push_action(self, window):
 		pass
-		# ****** Get Comment
-		comment = window.new_dialog_name.text()
-		if not comment:
+	
+		# (0) ****** Get Description
+		description = window.new_dialog_name.text()
+		if not description:
 			self.message('Not Comment!', 2)
 			return
-		
+		'''
 		# ****** COPY to ACtTIVITY
 		result = self.db_task.get_new_file_path(G.current_project, G.current_task)
 		if not result[0]:
@@ -515,21 +516,33 @@ class MainWindow(QtGui.QMainWindow):
 		result = self.db_log.notes_log(G.current_project, logs_keys, G.current_task['asset_id'])
 		if not result[0]:
 			return(False, result[1])
-		
 		'''
-		# converce Tiff to Png
-		if G.current_task['extension'] == '.tiff':
-			png_path = new_file_path.replace(G.current_task['extension'], '.png')
-			cmd = 'ffmpeg -i \"' + new_file_path + '\"  \"' + png_path + '\"'
-			print(cmd)
-			os.system(cmd)
-		'''
+		if not os.path.exists(self.current_file):
+			current_file_path = self.myWidget.current_file.text()
+			if os.path.exists(current_file_path):
+				ask = self.message(('This is your File? ' + current_file_path), 0)
+				if ask:
+					self.current_file = current_file_path
+				else:
+					return
+			else:
+				self.message('Current file not found: %s' % current_file_path, 2)
+				return
 		
+		# PUSH
+		b,r = self.selected_task.push_file(description, self.current_file, current_artist=self.db_artist)
+		if not b:
+			self.message(r, 2)
+			self.close_window(window)
+			return
+		
+		new_file_path = r
+		#print(new_file_path)
 		# message
-		self.message(('push to ' + new_file_path), 1)
+		self.message('push to: %s' % new_file_path, 1)
 		
 		# get versions list
-		self.get_versions_list()
+		#self.get_versions_list()
 		
 		# close window
 		self.close_window(window)
@@ -552,24 +565,23 @@ class MainWindow(QtGui.QMainWindow):
 		self.myWidget.current_file.setVisible(True)
 		
 	def open_input_action(self):
-		input_task = G.all_task_list[G.current_task['task_name']]['input']
-		
-		if not input_task:
-			self.message('Not Input task!', 2)
-			return
-			
-		elif input_task['task_type'] == 'service':
-			self.message('Type of incoming service tasks!', 2)
+		input_task_name = self.selected_task.input
+		if not input_task_name:
+			self.message('No Input task!', 2)
 			return
 		
-		if G.current_task['extension'] != input_task['extension']:
-			report_text = 'extession of input_task are not ' + G.current_task['extension']
+		input_task = self.selected_task.init(input_task_name)
+		
+		if input_task.task_type == 'service':
+			self.message('No Input task!', 2)
+			return
+		
+		if self.selected_task.extension != input_task.extension:
+			report_text = 'Inappropriate extension of incoming task "%s"' % input_task.extension
 			self.message(report_text, 2)
 			
 		else:
 			self.open_action(input_task = input_task)
-		
-		#self.close_window(window)
 		
 	def open_from_file_action(self):
 		home = os.path.expanduser('~')
@@ -616,12 +628,11 @@ class MainWindow(QtGui.QMainWindow):
 	# *********************** Panels *****************************************************
 	
 	def push_comment_ui(self):
+		pass
 		# ask
 		ask = self.message(('You save the file?'), 0)
 		if not ask:
 			return
-		
-		task_data = G.current_task
 		
 		# make widjet
 		ui_path = self.new_dialog_path
@@ -643,7 +654,6 @@ class MainWindow(QtGui.QMainWindow):
 		window.new_dialog_ok.clicked.connect(partial(self.push_action, window))
 		
 		window.show()
-		pass
 	
 	def look_version_ui(self, look = True):
 		task_data = G.current_task
