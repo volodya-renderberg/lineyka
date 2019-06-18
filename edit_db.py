@@ -2673,7 +2673,7 @@ class task(studio):
 	def get_version_file_path(self, version, task_data=False): # v2
 		asset_path = self.asset.path
 		if not task_data:
-			asset_type = self.asset_type
+			asset_type = self.asset.type
 			activity = self.activity
 			asset = self.asset.name
 			extension = self.extension
@@ -2780,7 +2780,7 @@ class task(studio):
 	# tasks (dict) - словарь задачь данного артиста по именам. - нужен для случая когда look=False, при отсутствии будет считан - лишнее обращение к БД.
 	# input_task (task) - входящая задача - для open_from_input
 	# open_path (unicode/str) - путь к файлу - указывается для open_from_file
-	def open_file(self, look=False, current_artist=False, tasks=False, input_task=False, open_path=False):
+	def open_file(self, look=False, current_artist=False, tasks=False, input_task=False, open_path=False, version=False):
 		pass
 		
 		# (1) ***** CHANGE STATUS
@@ -2813,7 +2813,10 @@ class task(studio):
 			task_ob = input_task
 		
 		if not open_path:
-			result = task_ob.get_final_file_path()
+			if version:
+				result = task_ob.get_version_file_path(version)
+			else:
+				result = task_ob.get_final_file_path()
 			if not result[0]:
 				return(False, result[1])
 			open_path = result[1]
@@ -2841,7 +2844,7 @@ class task(studio):
 		return(True, tmp_file_path)
 	
 	# локальная запись новой рабочей версии файла
-	# comment (str) - комментарий к версии
+	# description (str) - комментарий к версии
 	# current_file (unicode/str) - текущее местоположение рабочего файла (как правило в темп)
 	# current_artist (artist) - если не передавать, то будет выполняться get_user() - лишнее обращение к БД.
 	def push_file(self, description, current_file, current_artist=False):

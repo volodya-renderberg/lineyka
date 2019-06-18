@@ -392,76 +392,32 @@ class MainWindow(QtGui.QMainWindow):
 	
 	def look_version_action(self, window, look = True):
 		pass
-		# get version
-		list_items = []
-		select_items = window.select_from_list_data_list_table.selectedItems()
-		for item in select_items:
-			if item.log:
-				list_items.append(item.log)
-				
-		if not list_items:
-			self.message('Not Selected Versions!', 2)
+		
+		item = None
+		if window.select_from_list_data_list_table.selectedItems():
+			item = window.select_from_list_data_list_table.selectedItems()[0]
+		if not item:
+			self.message('No version selected!', 2)
 			return
 			
-		version = list_items[0]['version']
+		version = item.log['version']
+		b, r = self.selected_task.open_file( look=look, version=version)
+		if not b:
+			self.message(r, 2)
+			return
 		
-		# get file_path
-		result = self.db_task.get_version_file_path(G.current_project, G.current_task, version)
-		if not result[0]:
-			return(False, result[1])
-			
-		open_path = result[1]
-		
-		if not open_path:
-			return(False, 'Not Saved Version!')
-			
-		# get tmp_file_path
-		task_data = G.current_task
-		tmp_path = self.db_task.tmp_folder
-		tmp_file_name = task_data['task_name'].replace(':','_', 2) + '_' + hex(random.randint(0, 1000000000)).replace('0x', '') + task_data['extension']
-		tmp_file_path = os.path.join(tmp_path, tmp_file_name)
-		
+		self.current_file = r
 		# vising current file
-		G.current_file = tmp_file_path
-		self.myWidget.current_file.setText(G.current_file)
-		
-		# copy to tmp
-		shutil.copyfile(open_path, tmp_file_path)
-				
-		# open file
-		soft = self.db_studio.soft_data[task_data['extension']]
-		#cmd = soft + " \"" + tmp_file_path + "\""
-		cmd = "\"" + soft + "\"  \"" + tmp_file_path + "\""
-		subprocess.Popen(cmd, shell = True)
+		self.myWidget.current_file.setText(self.current_file)
+		self.myWidget.current_file.setVisible(True)
 		
 		if not look:
-			# ***** CHANGE STATUS
-			if G.current_task['status'] != 'work':
-				#result = G.func.open_change_status(G.current_project, G.current_task, G.all_task_list)
-				change_statuses = [(G.current_task, 'work'),]
-				for task_name in G.all_task_list:
-					if G.all_task_list[task_name]['task']['status'] == 'work':
-						change_statuses.append((G.all_task_list[task_name]['task'], 'pause',))
-			
-				result = self.db_task.change_work_statuses(G.current_project, change_statuses)
-				if not result[0]:
-					self.message(result[1], 2)
-					#return
-				
-				else:
-					G.current_task['status'] = 'work'
-					# result[1] = dict {task_name : new_status, ...}
-					for task_name in result[1]:
-						G.all_task_list[task_name]['task']['status'] = result[1][task_name]
-				G.current_task['status'] = 'work'
-				
 			# ****** edit widget visible
 			self.myWidget.task_list_table.setVisible(False)
 			self.myWidget.distrib_frame.setVisible(False)
 			self.myWidget.work_frame.setVisible(True)
-			self.myWidget.current_file.setVisible(True)
 			
-			self.close_window(window)
+		self.close_window(window)
 		
 	def push_action(self, window):
 		pass
@@ -656,14 +612,9 @@ class MainWindow(QtGui.QMainWindow):
 		window.show()
 	
 	def look_version_ui(self, look = True):
-		task_data = G.current_task
-		
-		# get logs
-		#result = self.db_log.get_push_logs(G.current_project, G.current_task)
-		#if not result[0]:
-		if not G.versions_list:
-			#self.message(result[1], 2)
-			self.message('Not Versions of Activity!', 2)
+		versions_list = self.get_versions_list()
+		if not versions_list:
+			self.message('No saved versions!', 2)
 			return
 		
 		# make widjet
@@ -692,10 +643,10 @@ class MainWindow(QtGui.QMainWindow):
 		# make table
 		headers = []
 		for key in self.db_log.logs_keys:
-			headers.append(key[0])
+			headers.append(key)
 		
 		window.select_from_list_data_list_table.setColumnCount(len(headers))
-		window.select_from_list_data_list_table.setRowCount(len(G.versions_list))
+		window.select_from_list_data_list_table.setRowCount(len(versions_list))
 		window.select_from_list_data_list_table.setHorizontalHeaderLabels(headers)
 		
 		# selection mode   
@@ -704,15 +655,17 @@ class MainWindow(QtGui.QMainWindow):
 		window.select_from_list_data_list_table.setSelectionMode(QtGui.QAbstractItemView.SingleSelection)
 		
 		# make tabel
-		for i,log in enumerate(G.versions_list):
+		for i,log in enumerate(versions_list):
 			#print(log)
 			for j,key in enumerate(headers):
 				newItem = QtGui.QTableWidgetItem()
-				newItem.setText(log[key])
+				if key == 'date_time':
+					newItem.setText(log[key].strftime("%m/%d/%Y, %H:%M:%S"))
+				else:
+					newItem.setText(log[key])
 				newItem.log = False
 								
-				if key == 'version':
-					newItem.log = log
+				newItem.log = log
 					
 				window.select_from_list_data_list_table.setItem(i, j, newItem)
 				
@@ -1295,15 +1248,14 @@ class MainWindow(QtGui.QMainWindow):
 		print('user registration action')
     
 	#*********************** UTILITS *******************************************
-	def get_versions_list(self):
-		result = self.db_log.get_push_logs(G.current_project, G.current_task)
+	def get_versions_list(self, action = 'push'):
+		self.db_log.task = self.selected_task
+		b, r = self.db_log.read_log(action = action)
 		
-		if not result[0]:
-			G.versions_list = []
+		if not b:
+			return(None)
 		else:
-			G.versions_list = result[1]
-		
-		return(True, 'Ok!')
+			return(r)
 	
 	def load_project_list(self):
 		pass
