@@ -274,8 +274,8 @@ class studio:
 	'date_time': 'timestamp',
 	'date_time_of_edit': 'timestamp',
 	'author': 'text',
-	'topic': 'text',
-	'color': 'text',
+	'topic': 'json',
+	'color': 'json',
 	'status': 'text',
 	'reading_status': 'text',
 	}
@@ -4144,7 +4144,7 @@ class task(studio):
 				del readers_dict['first_reader']
 		
 		# (4) get change status
-		if self.status == 'checking':
+		if self.status in ['checking']:
 			change_status = True
 		if not readers_dict:
 			change_status = False
@@ -6402,7 +6402,7 @@ class chat(studio):
 			
 		# (2)
 		for item in ['topic','color','status', 'reading_status']:
-			if not input_keys[item]:
+			if not input_keys.get(item):
 				return(False, 'in chat.record_messages() - missing "%s"!' % item)
 			
 		# (3)

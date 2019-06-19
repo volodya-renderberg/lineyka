@@ -16,36 +16,42 @@ import datetime
 import ui
 import edit_db as db
 '''
-class G(object):
-	pass
 
 class lineyka_chat:
 	
 	#def chat_ui(self, root):
 	def __init__(self, MW):
-		G.MW = MW
+		self.MW = MW
 		
-		task_data = MW.current_task
-		nik_name = MW.current_user
-		project = MW.current_project
+		self.selected_task = MW.selected_task
+		self.db_artist = MW.db_artist
+		self.db_chat = MW.db_chat
+		self.db_chat.task = self.selected_task
 		
+		self.chat_status = MW.chat_status
+		self.chat_add_topic_path = MW.chat_add_topic_path
+		#self.chatAddTopic = MW.chatAddTopic
+		
+		self.message = MW.message
+		self.close_window = MW.close_window
+				
 		# make widjet
 		ui_path = MW.chat_main_path
 		# widget
 		loader = QtUiTools.QUiLoader()
 		file = QtCore.QFile(ui_path)
 		#file.open(QtCore.QFile.ReadOnly)
-		window = G.MW.chatMain = loader.load(file, MW)
+		window = self.chatMain = loader.load(file, MW)
 		file.close()
 		
 		# fill meta data
 		window.setWindowTitle('Lineyka Chat')
-		window.chat_nik_name_label.setText(nik_name)
-		window.chat_asset_name_label.setText(task_data['asset'])
-		window.chat_task_name_label.setText(task_data['task_name'].split(':')[1])
+		window.chat_nik_name_label.setText(self.db_artist.nik_name)
+		window.chat_asset_name_label.setText(self.db_chat.task.asset.name)
+		window.chat_task_name_label.setText(self.db_chat.task.task_name.split(':')[1])
 		
 		# button connect
-		window.close_button.clicked.connect(partial(MW.close_window, window))
+		window.close_button.clicked.connect(partial(self.close_window, window))
 		window.reload_button.clicked.connect(partial(self.chat_load_topics, window))
 		window.chat_add_topic_button.clicked.connect(partial(self.chat_new_topic_ui, window))
 		
@@ -53,25 +59,26 @@ class lineyka_chat:
 		
 		self.chat_load_topics(window)
 		
-		print(MW.chat_status)
+		print(self.chat_status)
 		
+		'''
 		# edit read_status
-		if G.MW.chat_status == 'manager':
-			result = G.MW.db_chat.task_edit_rid_status_read(project, task_data, nik_name)
+		if self.chat_status == 'manager':
+			result = self.db_chat.task_edit_rid_status_read(project, task_data, nik_name)
 			if not result[0]:
-				G.MW.message(result[1], 2)
+				self.message(result[1], 2)
 				return
+		'''
 		
 		
 	def chat_load_topics(self, window):
-		task_data = G.MW.current_task
-		project_name = G.MW.current_project
+		pass
 		
 		# read chat data
 		topics = None
-		result = G.MW.db_chat.read_the_chat(project_name, task_data['task_name'])
+		result = self.db_chat.read_the_chat()
 		if not result[0]:
-			#G.MW.message(result[1], 2)
+			#self.message(result[1], 2)
 			pass
 		else:
 			topics = result[1]
@@ -91,11 +98,13 @@ class lineyka_chat:
 		
 		if topics:
 			for topic in topics:
-				dt = topic['date_time']
-				date = str(dt.year) + '/' + str(dt.month) + '/' + str(dt.day) + '/' + str(dt.hour) + ':' + str(dt.minute)
-				header = topic['author'] + ' '*5 + date
+				#dt = topic['date_time']
+				#date = str(dt.year) + '/' + str(dt.month) + '/' + str(dt.day) + '/' + str(dt.hour) + ':' + str(dt.minute)
+				date = topic['date_time'].strftime("%m/%d/%Y, %H:%M:%S")
+				header = '%s     %s'  % (date, topic['author'])
 				
-				lines = json.loads(topic['topic'])
+				#lines = json.loads(topic['topic'])
+				lines = topic['topic']
 				
 				topic_widget = QtGui.QFrame()
 				v_layout = QtGui.QVBoxLayout()
@@ -128,12 +137,12 @@ class lineyka_chat:
 				
 	def chat_new_topic_ui(self, window):
 		# make widjet
-		ui_path = G.MW.chat_add_topic_path
+		ui_path = self.chat_add_topic_path
 		# widget
 		loader = QtUiTools.QUiLoader()
 		file = QtCore.QFile(ui_path)
 		#file.open(QtCore.QFile.ReadOnly)
-		add_window = G.MW.chatAddTopic = loader.load(file, G.MW)
+		add_window = self.chatAddTopic = loader.load(file, self.MW)
 		file.close()
 		
 		# set modal window
@@ -172,23 +181,23 @@ class lineyka_chat:
 		add_window.line_data['1'] = (button, text_field)
 		
 		# connect button
-		add_window.cansel_button.clicked.connect(partial(G.MW.close_window, add_window))
+		add_window.cansel_button.clicked.connect(partial(self.close_window, add_window))
 		add_window.add_line_button.clicked.connect(partial(self.chat_add_line_to_message, add_window, v_layout))
-		add_window.send_message_button.clicked.connect(partial(self.chat_new_topic_action, add_window, G.MW.chat_status))
+		add_window.send_message_button.clicked.connect(partial(self.chat_new_topic_action, add_window, self.chat_status))
 		
 		add_window.show()
 		
 		
 	def chat_add_img_to_line(self, button):
 		rand  = hex(random.randint(0, 1000000000)).replace('0x', '')
-		img_path = os.path.join(G.MW.db_chat.tmp_folder, ('tmp_image_' + rand + '.png')).replace('\\','/')
+		img_path = os.path.join(self.db_chat.tmp_folder, ('tmp_image_' + rand + '.png')).replace('\\','/')
 		
 		clipboard = QtGui.QApplication.clipboard()
 		img = clipboard.image()
 		if img:
 			img.save(img_path)
 		else:
-			G.MW.message('Cannot Image!', 2)
+			self.message('Cannot Image!', 2)
 			return(False, 'Cannot Image!')
 			
 		button.setIcon(QtGui.QIcon(img_path))
@@ -202,12 +211,12 @@ class lineyka_chat:
 		if not button.img_path:
 			return
 		# make widjet
-		ui_path = G.MW.chat_img_viewer_path
+		ui_path = self.MW.chat_img_viewer_path
 		# widget
 		loader = QtUiTools.QUiLoader()
 		file = QtCore.QFile(ui_path)
 		#file.open(QtCore.QFile.ReadOnly)
-		img_window = G.MW.chatImgViewer = loader.load(file, G.MW)
+		img_window = self.MW.chatImgViewer = loader.load(file, self.MW)
 		file.close()
 		
 		
@@ -222,7 +231,7 @@ class lineyka_chat:
 		img_window.image_label.setPixmap(QtGui.QPixmap.fromImage(image))
 		
 		# connect button
-		img_window.cansel_button.clicked.connect(partial(G.MW.close_window, img_window))
+		img_window.cansel_button.clicked.connect(partial(self.close_window, img_window))
 		
 		img_window.show()
     
@@ -260,23 +269,15 @@ class lineyka_chat:
 		add_window.line_data[str(num)] = (button, text_field)
 		
 	def chat_new_topic_action(self, add_window, status):
-		task_data = G.MW.current_task
-		nik_name = G.MW.current_user
-		project = G.MW.current_project
-		
-		# get project
-		result = G.MW.db_chat.get_project(project)
-		if not result[0]:
-			G.MW.message(result[1], 2)
-			return
+		nik_name = self.db_artist.nik_name
 		
 		# get color
 		if status == 'manager' or status == 'manager_to_outsource':
-			color = json.dumps(G.MW.db_chat.color_status['checking'])
+			color = self.db_chat.color_status['checking']
 		elif status == 'user' or status == 'user_outsource':
-			color = json.dumps(G.MW.db_chat.color_status['work'])
+			color = self.db_chat.color_status['work']
 		else:
-			color = json.dumps(G.MW.db_chat.color_status['done'])
+			color = self.db_chat.color_status['done']
 			
 		message = {}
 		line_data = add_window.line_data
@@ -289,12 +290,12 @@ class lineyka_chat:
 				
 				# -- copy to img_path
 				rand  = hex(random.randint(0, 1000000000)).replace('0x', '')
-				img_path = os.path.normpath(os.path.join(G.MW.db_chat.chat_img_path, (task_data['task_name'].replace(':','_') + rand + '.png')))
+				img_path = os.path.normpath(os.path.join(self.db_chat.task.asset.project.chat_img_path, (self.db_chat.task.task_name.replace(':','_') + rand + '.png')))
 				shutil.copyfile(tmp_img_path, img_path)
 				
 				# -- make icon
 				icon_path = img_path.replace('.png', '_icon.png')
-				cmd = G.MW.db_chat.convert_exe + ' \"' + tmp_img_path + '\" -resize 100 \"' + icon_tmp_img_path + '\"'
+				cmd = self.db_chat.convert_exe + ' \"' + tmp_img_path + '\" -resize 100 \"' + icon_tmp_img_path + '\"'
 				
 				os.system(cmd)
 				shutil.copyfile(icon_tmp_img_path, icon_path)
@@ -317,27 +318,29 @@ class lineyka_chat:
 			# append message
 			message[key] = (img_path, icon_path, text)
 		
-		topic = json.dumps(message, sort_keys=True, indent=4)
+		#topic = json.dumps(message, sort_keys=True, indent=4)
 		
 		# save message 
 		chat_keys = {
 		'author':nik_name,
 		'color':color,
-		'topic':topic,
-		'status':status
+		'topic':message,
+		'status':status,
+		'reading_status': 'none'
 		}
-		result = G.MW.db_chat.record_messages(project, task_data['task_name'], chat_keys)
+		result = self.db_chat.record_messages(chat_keys, self.db_artist)
 		if not result[0]:
-			G.MW.message(result[1], 2)
+			self.message(result[1], 2)
 			return
 		else:
 			print(result[1])
-			G.MW.close_window(add_window)
-			self.chat_load_topics(G.MW.chatMain)
-		
+			self.close_window(add_window)
+			self.chat_load_topics(self.chatMain)
+		'''
 		# edit read_status
-		if G.MW.chat_status == 'user':
-			result = G.MW.db_chat.task_edit_rid_status_unread(project, task_data)
+		if self.chat_status == 'user':
+			result = self.db_chat.task_edit_rid_status_unread(project, task_data)
 			if not result[0]:
-				G.MW.message(result[1], 2)
+				self.message(result[1], 2)
 				return
+		'''

@@ -428,52 +428,7 @@ class MainWindow(QtGui.QMainWindow):
 		if not description:
 			self.message('Not Comment!', 2)
 			return
-		'''
-		# ****** COPY to ACtTIVITY
-		result = self.db_task.get_new_file_path(G.current_project, G.current_task)
-		if not result[0]:
-			self.message(result[1], 3)
-			return
 		
-		new_dir_path, new_file_path = result[1]
-		
-		# make version folder
-		if not os.path.exists(new_dir_path):
-			os.mkdir(new_dir_path)
-		
-		# copy file
-		if os.path.exists(G.current_file):
-			shutil.copyfile(G.current_file, new_file_path)
-		else:
-			current_file_path = self.myWidget.current_file.text()
-			if os.path.exists(current_file_path):
-				ask = self.message(('This is your File? ' + current_file_path), 0)
-				if ask:
-					G.current_file = current_file_path
-					shutil.copyfile(G.current_file, new_file_path)
-				else:
-					return
-			
-			else:
-				self.message('you can not copy a file!', 3)
-				print(os.path.normpath(G.current_file), os.path.exists(G.current_file))
-				print(new_file_path, os.path.exists(new_dir_path))
-				return
-				
-		# ****** LOG
-		logs_keys = {
-		'activity': G.current_task['activity'],
-		'task_name': G.current_task['task_name'],
-		'action': 'push',
-		'comment': comment,
-		'version': os.path.basename(new_dir_path),
-		'artist': G.current_task['artist']
-		}
-		
-		result = self.db_log.notes_log(G.current_project, logs_keys, G.current_task['asset_id'])
-		if not result[0]:
-			return(False, result[1])
-		'''
 		if not os.path.exists(self.current_file):
 			current_file_path = self.myWidget.current_file.text()
 			if os.path.exists(current_file_path):
@@ -677,10 +632,7 @@ class MainWindow(QtGui.QMainWindow):
 	# *********************** CHAT *******************************************************
 	def chat_ui(self, chat_status = 'user'):
 		self.chat_status = chat_status
-		self.current_task = G.current_task
-		self.current_user = self.db_artist.nik_name
-		self.current_project = G.current_project
-		
+				
 		import lineyka_chat
 		chat_window = lineyka_chat.lineyka_chat(self)
 		#chat_class.__init__(self)

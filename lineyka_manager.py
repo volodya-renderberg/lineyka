@@ -79,7 +79,7 @@ class MainWindow(QtGui.QMainWindow):
 		self.db_group = db.group(self.project)
 		self.db_list_of_assets = db.list_of_assets(self.db_group)
 		self.db_task = db.task(self.db_asset)
-		#self.db_chat = db.chat()
+		self.db_chat = db.chat(self.db_task)
 		#self.db_log = db.log()
 		
 		# other moduls
