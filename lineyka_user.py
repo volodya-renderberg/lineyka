@@ -542,7 +542,8 @@ class MainWindow(QtGui.QMainWindow):
 		
 	def open_from_file_action(self):
 		home = os.path.expanduser('~')
-		f = u'Files ' + G.current_task['extension'] + '  (*' + G.current_task['extension'] + ')'
+		#f = u'Files ' + self.selected_task.extension + '  (*' + self.selected_task.extension + ')'
+		f = u'Files %s(*%s)' % (self.selected_task.extension, self.selected_task.extension)
 		file_ = QtGui.QFileDialog.getOpenFileName(self, caption = 'Open From File',  dir = home, filter = f)
 		
 		if file_[0]:
