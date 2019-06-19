@@ -85,7 +85,8 @@ class studio:
 	working_statuses = ['ready', 'ready_to_send', 'work', 'work_to_outsorce', 'pause', 'recast']
 	end_statuses = ('done', 'close')
 	
-	NOT_USED_EXTENSIONS = ['.blend','.tiff', '.ods', '.xcf', '.svg']
+	#NOT_USED_EXTENSIONS = ['.blend','.tiff', '.ods', '.xcf', '.svg']
+	EMPTY_FILES_DIR_NAME = 'empty_files'
 	
 	color_status = {
 	'null':(0.451000005, 0.451000005, 0.451000005),
@@ -393,12 +394,15 @@ class studio:
 		home = os.path.expanduser('~')
 		
 		folder = NormPath(os.path.join(home, self.init_folder))
+		empty_folder = NormPath(os.path.join(folder, self.EMPTY_FILES_DIR_NAME))
 		self.init_path = NormPath(os.path.join(home, self.init_folder, self.init_file))
 		self.set_path = NormPath(os.path.join(folder, self.set_file))
 		
 		# make folder
 		if not os.path.exists(folder):
 			os.mkdir(folder)
+		if not os.path.exists(empty_folder):
+			os.mkdir(empty_folder)
 		
 		# make init_file
 		if not os.path.exists(self.init_path):
@@ -2822,10 +2826,26 @@ class task(studio):
 			open_path = result[1]
 		
 			if not open_path:
+				'''
 				if task_ob.extension in self.NOT_USED_EXTENSIONS:
 					empty_root = os.path.dirname(__file__)
 					open_path = os.path.join(empty_root, 'empty_files', 'empty%s' % task_ob.extension)
 				else:
+					return(False, 'No found saved version!')
+				'''
+				global_empty_path = NormPath(os.path.join(os.path.dirname(__file__), self.EMPTY_FILES_DIR_NAME, 'empty%s' % task_ob.extension))
+				user_empty_path = NormPath(os.path.join(os.path.expanduser('~'), self.init_folder, self.EMPTY_FILES_DIR_NAME, 'empty%s' % task_ob.extension))
+				print('*'*5, global_empty_path, os.path.exists(global_empty_path))
+				print('*'*5, user_empty_path, os.path.exists(user_empty_path))
+				#
+				for path in [user_empty_path, global_empty_path]:
+					if not os.path.exists(path):
+						continue
+					else:
+						open_path = path
+						break
+				#
+				if not open_path:
 					return(False, 'No found saved version!')
 					
 		# get tmp_file_path

@@ -94,7 +94,8 @@ class MainWindow(QtGui.QMainWindow):
 		self.myWidget.work_list_radio_button.setText('Work List')
 		self.myWidget.work_list_radio_button.setChecked(True)
 		self.myWidget.chek_list_radio_button.setText('Check List')
-		
+		self.myWidget.tz_button.setText('Specification')
+		self.myWidget.tz_button_2.setText('Specification')
 		
 		# radio_button connect
 		self.myWidget.chek_list_radio_button.clicked.connect(partial(self.load_task_list_table, get_project = True, action = 'check_list'))
@@ -991,7 +992,7 @@ class MainWindow(QtGui.QMainWindow):
 		# add line
 		# -- get extension_dict
 		ext_dict = {}
-		result = self.db_studio.get_extension_dict()
+		result = self.db_studio().get_extension_dict()
 		if result[0]:
 			ext_dict = result[1]
 		
