@@ -5663,10 +5663,11 @@ class MainWindow(QtGui.QMainWindow):
 		# -- READERS visibility, content
 		# get CLEANED readers list
 		self.cleaned_readers_dict = {}
-		for key in self.selected_task.readers:
-			if key == 'first_reader':
-				continue
-			self.cleaned_readers_dict[key] = self.selected_task.readers[key]
+		if self.selected_task.readers:
+			for key in self.selected_task.readers:
+				if key == 'first_reader':
+					continue
+				self.cleaned_readers_dict[key] = self.selected_task.readers[key]
 		
 		# set visible
 		if not self.selected_task.readers:

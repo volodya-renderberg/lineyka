@@ -2800,6 +2800,8 @@ class task(studio):
 					return(b,r)
 				tasks = r
 			if self.status != 'work':
+				pass
+				# statuses
 				change_statuses = [(self, 'work'),]
 				for task_name in tasks:
 					if tasks[task_name].status == 'work':
@@ -2810,6 +2812,23 @@ class task(studio):
 					return(False, result[1])
 				else:
 					pass
+				
+				# readers
+				if self.readers:
+					for nik_name in self.readers:
+						if nik_name == 'first_reader':
+							continue
+						else:
+							self.readers[nik_name] = 0
+					
+					# edit db	
+					table_name = '"%s:%s"' % (self.asset.id, self.tasks_t)
+					read_ob = self.asset.project
+					update_data = {'readers': self.readers}
+					where = {'task_name': self.task_name}
+					bool_, return_data = database().update('project', read_ob, table_name, self.tasks_keys, update_data, where, table_root=self.tasks_db)
+					if not bool_:
+						return(bool_, return_data)
 		
 		# (2) ope path
 		task_ob = self

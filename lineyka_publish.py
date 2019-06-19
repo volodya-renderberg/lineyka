@@ -99,7 +99,7 @@ class publish:
 		'''
 		#  ************* moving Files
 		# -- get publish folder path
-		activity_dir_name = self.task.ACTIVITY_FOLDER[self.task_data['asset_type']][self.task_data['activity']]
+		activity_dir_name = self.task.ACTIVITY_FOLDER[self.task_data['asset.type']][self.task_data['activity']]
 		
 		publish_dir = self.NormPath(os.path.join(self.asset_path, self.task.publish_folder_name))
 		if not os.path.exists(publish_dir):
@@ -120,8 +120,10 @@ class publish:
 				
 		#  ************* Convert to PNG
 		#print(self.task.convert_exe, new_file_path, png_path)
-		png_path = new_file_path.replace(self.task_data['extension'], '.png')
+		png_path = new_file_path.replace(task_ob.extension, '.png')
 		
+		if not task_ob.convert_exe:
+			return(False, 'The path to the "convert.exe" is not defined!')
 		cmd = '\"' + task_ob.convert_exe + '\" \"' + new_file_path + '\" -flatten \"' + png_path + '\"'
 		#print(cmd)
 		
@@ -140,7 +142,7 @@ class publish:
 	def moving_files(self, task_ob):
 		#  ************* moving Files
 		# -- get publish folder path
-		activity_dir_name = task_ob.asset.ACTIVITY_FOLDER[task_ob.asset_type][task_ob.activity]
+		activity_dir_name = task_ob.asset.ACTIVITY_FOLDER[task_ob.asset.type][task_ob.activity]
 		
 		publish_dir = self.NormPath(os.path.join(self.asset_path, task_ob.publish_folder_name))
 		if not os.path.exists(publish_dir):
