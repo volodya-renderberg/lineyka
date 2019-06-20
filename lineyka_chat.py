@@ -34,6 +34,10 @@ class lineyka_chat:
 		
 		self.message = MW.message
 		self.close_window = MW.close_window
+		
+		# page
+		self.page=1
+		self.num_topics = 10
 				
 		# make widjet
 		ui_path = MW.chat_main_path
@@ -55,9 +59,31 @@ class lineyka_chat:
 		window.reload_button.clicked.connect(partial(self.chat_load_topics, window))
 		window.chat_add_topic_button.clicked.connect(partial(self.chat_new_topic_ui, window))
 		
+		# add button '\u9758'
+		#root_layout = window.buttonVerticalLayout
+		#layout = QtGui.QHBoxLayout()
+		#root_layout.addLayout(layout)
+		layout=window.pagesHorizontalLayout
+		
+		# widgets
+		pages_label = QtGui.QLabel()
+		next_button = QtGui.QPushButton(u'\u25B6')
+		next_button.setFlat(True)
+		next_button.clicked.connect(partial(self.flipping_page, 'next', pages_label, window))
+		previous_button = QtGui.QPushButton(u'\u25C0')
+		previous_button.setFlat(True)
+		previous_button.clicked.connect(partial(self.flipping_page, 'previous', pages_label, window))
+		
+		#
+		layout.addWidget(previous_button)
+		layout.addWidget(pages_label)
+		layout.addWidget(next_button)
+				
 		window.show()
 		
 		self.chat_load_topics(window)
+		
+		pages_label.setText('%s / %s' % (str(self.page), self.max_pages))
 		
 		print(self.chat_status)
 		
@@ -69,7 +95,20 @@ class lineyka_chat:
 				self.message(result[1], 2)
 				return
 		'''
-		
+	
+	def flipping_page(self, action, label, window):
+		pass
+		if action == 'next':
+			#
+			if self.page<self.max_pages:
+				self.page+=1
+				label.setText('%s / %s' % (str(self.page), self.max_pages))
+		elif action == 'previous':
+			if self.page>1:
+				self.page-=1
+				label.setText('%s / %s' % (str(self.page), self.max_pages))
+				
+		self.chat_load_topics(window, )
 		
 	def chat_load_topics(self, window):
 		pass
@@ -81,7 +120,12 @@ class lineyka_chat:
 			#self.message(result[1], 2)
 			pass
 		else:
-			topics = result[1]
+			#topics = result[1]
+			topics = sorted(result[1], key=lambda x: x['date_time'], reverse=True)
+			#
+			self.max_pages = len(topics)//self.num_topics
+			if len(topics) % self.num_topics:
+				self.max_pages+=1
 		
 		tool_box = window.chat_tool_box
 		# clear tool box
@@ -97,7 +141,15 @@ class lineyka_chat:
 		tool_box.setSizePolicy(QtGui.QSizePolicy(QtGui.QSizePolicy.Expanding, QtGui.QSizePolicy.Minimum))
 		
 		if topics:
-			for topic in topics:
+			#for topic in topics:
+			for i in range(0, self.num_topics):
+				pass
+				# pages
+				num = i+((self.page-1)*self.num_topics)
+				if num >= len(topics):
+					break
+				topic = topics[num]
+				
 				#dt = topic['date_time']
 				#date = str(dt.year) + '/' + str(dt.month) + '/' + str(dt.day) + '/' + str(dt.hour) + ':' + str(dt.minute)
 				date = topic['date_time'].strftime("%m/%d/%Y, %H:%M:%S")

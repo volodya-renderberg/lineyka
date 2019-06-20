@@ -164,48 +164,56 @@
     </widget>
    </item>
    <item>
-    <widget class="QFrame" name="frame">
+    <widget class="QFrame" name="downButtonFrame">
      <property name="frameShape">
       <enum>QFrame::StyledPanel</enum>
      </property>
      <property name="frameShadow">
       <enum>QFrame::Raised</enum>
      </property>
-     <layout class="QHBoxLayout" name="horizontalLayout">
-      <item>
-       <spacer name="horizontalSpacer">
-        <property name="orientation">
-         <enum>Qt::Horizontal</enum>
-        </property>
-        <property name="sizeHint" stdset="0">
-         <size>
-          <width>63</width>
-          <height>20</height>
-         </size>
-        </property>
-       </spacer>
-      </item>
-      <item>
-       <widget class="QPushButton" name="close_button">
-        <property name="text">
-         <string>Close</string>
-        </property>
-       </widget>
-      </item>
-      <item>
-       <widget class="QPushButton" name="reload_button">
-        <property name="text">
-         <string>Reload</string>
-        </property>
-       </widget>
-      </item>
-      <item>
-       <widget class="QPushButton" name="chat_add_topic_button">
-        <property name="text">
-         <string>Add Message</string>
-        </property>
-       </widget>
-      </item>
+     <layout class="QVBoxLayout" name="buttonVerticalLayout">
+       <item>
+        <layout class="QHBoxLayout" name="pagesHorizontalLayout">
+        </layout>
+       </item>
+       <item>
+        <layout class="QHBoxLayout" name="horizontalLayout">
+        <item>
+        <spacer name="horizontalSpacer">
+            <property name="orientation">
+            <enum>Qt::Horizontal</enum>
+            </property>
+            <property name="sizeHint" stdset="0">
+            <size>
+            <width>63</width>
+            <height>20</height>
+            </size>
+            </property>
+        </spacer>
+        </item>
+        <item>
+        <widget class="QPushButton" name="close_button">
+            <property name="text">
+            <string>Close</string>
+            </property>
+        </widget>
+        </item>
+        <item>
+        <widget class="QPushButton" name="reload_button">
+            <property name="text">
+            <string>Reload</string>
+            </property>
+        </widget>
+        </item>
+        <item>
+        <widget class="QPushButton" name="chat_add_topic_button">
+            <property name="text">
+            <string>Add Message</string>
+            </property>
+        </widget>
+        </item>
+        </layout>
+       </item>
      </layout>
     </widget>
    </item>
