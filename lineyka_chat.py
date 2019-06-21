@@ -24,7 +24,10 @@ class lineyka_chat:
 		self.MW = MW
 		
 		self.selected_task = MW.selected_task
-		self.db_artist = MW.db_artist
+		try:
+			self.db_artist = MW.db_artist
+		except:
+			self.db_artist = MW.artist
 		self.db_chat = MW.db_chat
 		self.db_chat.task = self.selected_task
 		

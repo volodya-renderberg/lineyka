@@ -16,6 +16,7 @@ import uuid
 # from lineyka 
 import ui
 import edit_db as db
+import lineyka_chat
 #import lineyka_publish
 
 # sudo chmod +x "/home/vofka/Yandex.Disk/Lineyka/lineyka_manager.py"
@@ -5092,7 +5093,7 @@ class MainWindow(QtGui.QMainWindow):
 		#self.current_user = G.current_user
 		#self.current_project = G.current_project
 		
-		import lineyka_chat
+		#import lineyka_chat
 		chat_window = lineyka_chat.lineyka_chat(self)
 		#chat_class.__init__(self)
 		
