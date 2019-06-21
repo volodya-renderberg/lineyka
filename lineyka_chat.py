@@ -73,8 +73,18 @@ class lineyka_chat:
 		previous_button = QtGui.QPushButton(u'\u25C0')
 		previous_button.setFlat(True)
 		previous_button.clicked.connect(partial(self.flipping_page, 'previous', pages_label, window))
+		#
+		label2 = QtGui.QLabel('Per page:')
+		#
+		num_field = QtGui.QLineEdit()
+		num_field.setMaxLength(3)
+		num_field.setValidator(QtGui.QIntValidator(1, 100))
+		num_field.setText(unicode(self.num_topics))
+		num_field.textChanged.connect(partial(self.rebild_size_pages, window, pages_label))
 		
 		#
+		layout.addWidget(label2)
+		layout.addWidget(num_field)
 		layout.addWidget(previous_button)
 		layout.addWidget(pages_label)
 		layout.addWidget(next_button)
@@ -95,6 +105,17 @@ class lineyka_chat:
 				self.message(result[1], 2)
 				return
 		'''
+		
+	def rebild_size_pages(self, *args):
+		print(args)
+		#return
+		num = int(args[2])
+		if not num:
+			return
+		self.num_topics=num
+		self.page=1
+		self.chat_load_topics(args[0])
+		args[1].setText('%s / %s' % (str(self.page), self.max_pages))
 	
 	def flipping_page(self, action, label, window):
 		pass
