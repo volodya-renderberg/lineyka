@@ -124,7 +124,7 @@ class MainWindow(QtGui.QMainWindow):
 		
 		self.myWidget.push_button.clicked.connect(self.push_comment_ui)
 		self.myWidget.report_button.clicked.connect(self.report_action)
-		self.myWidget.show_task_list_button.clicked.connect(self.show_task_list)
+		self.myWidget.show_task_list_button.clicked.connect(partial(self.show_task_list, ask=True))
 		
 		# comobox connect
 		try:
@@ -143,7 +143,11 @@ class MainWindow(QtGui.QMainWindow):
 		self.load_nik_name()
 						
 	# *********************** Task List **************************************************
-	def show_task_list(self):
+	def show_task_list(self, ask=False):
+		if ask:
+			ask = self.message('Are you sure?\nthe work session will end,\nthe connection with the file will be lost!', 0)
+			if not ask:
+				return
 		self.myWidget.task_list_table.setVisible(True)
 		self.load_task_list_table()
 		
@@ -376,7 +380,7 @@ class MainWindow(QtGui.QMainWindow):
 		
 		# (4) change current status
 		self.selected_task.status = 'checking'
-		self.show_task_list()
+		self.show_task_list(ask=False)
 		
 			
 	def look_file_action(self):
@@ -988,16 +992,16 @@ class MainWindow(QtGui.QMainWindow):
     
 		if i==1:
 			mBox.setIcon(QtGui.QMessageBox.Information)
-			mBox.setWindowTitle('information')
+			mBox.setWindowTitle('Info')
 		elif i == 2:
 			mBox.setIcon(QtGui.QMessageBox.Warning)
-			mBox.setWindowTitle('Oh my God!')
+			mBox.setWindowTitle('Warning!')
 		elif i == 3:
 			mBox.setIcon(QtGui.QMessageBox.Critical)
-			mBox.setWindowTitle('Saint Mary!')
+			mBox.setWindowTitle('Error!')
 		elif i == 0:
 			mBox.setIcon(QtGui.QMessageBox.Question)
-			mBox.setWindowTitle('tel me!')
+			mBox.setWindowTitle('Confirm!')
     
 		com = mBox.exec_()
     
