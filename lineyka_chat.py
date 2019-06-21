@@ -154,9 +154,12 @@ class lineyka_chat:
 		else:
 			topics=self.topics
 		
-		self.max_pages = len(topics)//self.num_topics
-		if len(topics) % self.num_topics:
-			self.max_pages+=1
+		if topics is None:
+			self.max_pages=1
+		else:
+			self.max_pages = len(topics)//self.num_topics
+			if len(topics) % self.num_topics:
+				self.max_pages+=1
 		
 		tool_box = window.chat_tool_box
 		# clear tool box
@@ -197,8 +200,10 @@ class lineyka_chat:
 					# button
 					if lines[key][1]:
 						button = QtGui.QPushButton(QtGui.QIcon(lines[key][1]), '', parent = widget)
+						button.setFlat(True)
 					else:
 						button = QtGui.QPushButton('not Image', parent = widget)
+						button.setFlat(True)
 					button.setIconSize(QtCore.QSize(100, 100))
 					button.setFixedSize(100, 100)
 					button.img_path = lines[key][0]
@@ -208,6 +213,7 @@ class lineyka_chat:
 					# text field
 					text_field = QtGui.QTextEdit(lines[key][2], parent = widget)
 					text_field.setMaximumHeight(100)
+					text_field.setFrameStyle(0)
 					layout.addWidget(text_field)
 					
 					widget.setLayout(layout)
@@ -215,9 +221,68 @@ class lineyka_chat:
 					
 					v_layout.addWidget(widget)
 				topic_widget.setLayout(v_layout)
+				topic_widget.topic = topic
+				
+				#
+				if topic['author'] == self.db_artist.nik_name:
+					topic_widget.setContextMenuPolicy( QtCore.Qt.ActionsContextMenu )
+					addgrup_action = QtGui.QAction( 'Edit messege', window)
+					addgrup_action.triggered.connect(partial(self.chat_edit_topic_ui, topic_widget))
+					topic_widget.addAction( addgrup_action )
 							
 				tool_box.addItem(topic_widget, header)
 				
+	def chat_edit_topic_ui(self, in_widget):
+		print(in_widget.topic['message_id'])
+		
+		# make widjet
+		ui_path = self.chat_add_topic_path
+		# widget
+		loader = QtUiTools.QUiLoader()
+		file = QtCore.QFile(ui_path)
+		#file.open(QtCore.QFile.ReadOnly)
+		edit_window = self.chatEditTopic = loader.load(file, self.MW)
+		file.close()
+		
+		# set modal window
+		edit_window.setWindowModality(QtCore.Qt.WindowModal)
+		edit_window.setAttribute(QtCore.Qt.WA_DeleteOnClose, True)
+		
+		# V
+		v_layout = QtGui.QVBoxLayout()
+		lines = in_widget.topic['topic']
+		for key in lines:
+			widget = QtGui.QFrame(parent = edit_window.new_topics_frame)
+			layout = QtGui.QHBoxLayout()
+			# button
+			if lines[key][1]:
+				button = QtGui.QPushButton(QtGui.QIcon(lines[key][1]), '', parent = widget)
+				button.setFlat(True)
+			else:
+				button = QtGui.QPushButton('not Image', parent = widget)
+				button.setFlat(True)
+			button.setIconSize(QtCore.QSize(100, 100))
+			button.setFixedSize(100, 100)
+			button.img_path = lines[key][0]
+			button.clicked.connect(partial(self.chat_image_view_ui, button))
+			layout.addWidget(button)
+			
+			# text field
+			text_field = QtGui.QTextEdit(lines[key][2], parent = widget)
+			text_field.setMaximumHeight(100)
+			text_field.setFrameStyle(0)
+			layout.addWidget(text_field)
+			
+			widget.setLayout(layout)
+			#print(widget.sizeHint())
+			
+			v_layout.addWidget(widget)
+		
+		edit_window.new_topics_frame.setLayout(v_layout)
+		
+		
+		edit_window.show()
+	
 	def chat_new_topic_ui(self, window):
 		# make widjet
 		ui_path = self.chat_add_topic_path
@@ -240,6 +305,7 @@ class lineyka_chat:
 		button = QtGui.QPushButton('img', parent = line_frame)
 		button.setFixedSize(100, 100)
 		button.img_path = False
+		button.setFlat(True)
 		h_layout.addWidget(button)
 		# -- button connect
 		button.clicked.connect(partial(self.chat_image_view_ui, button))
@@ -252,6 +318,7 @@ class lineyka_chat:
 		text_field = QtGui.QTextEdit(parent = line_frame)
 		#text_field = QtGui.QTextBrowser(parent = line_frame)
 		text_field.setMaximumHeight(100)
+		text_field.setFrameStyle(0)
 		h_layout.addWidget(text_field)
 		line_frame.setLayout(h_layout)
 		# V
@@ -327,6 +394,7 @@ class lineyka_chat:
 		button = QtGui.QPushButton('img', parent = line_frame)
 		button.setFixedSize(100, 100)
 		button.img_path = False
+		button.setFlat(True)
 		h_layout.addWidget(button)
 		# -- button connect
 		button.clicked.connect(partial(self.chat_image_view_ui, button))
@@ -338,6 +406,7 @@ class lineyka_chat:
 		# text field
 		text_field = QtGui.QTextEdit(parent = line_frame)
 		text_field.setMaximumHeight(100)
+		text_field.setFrameStyle(0)
 		h_layout.addWidget(text_field)
 		line_frame.setLayout(h_layout)
 		

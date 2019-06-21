@@ -7246,7 +7246,7 @@ class MainWindow(QtGui.QMainWindow):
 			mBox.setWindowTitle('Error!')
 		elif i == 0:
 			mBox.setIcon(QtGui.QMessageBox.Question)
-			mBox.setWindowTitle('Tel me!')
+			mBox.setWindowTitle('Confirm!')
     
 		com = mBox.exec_()
     
