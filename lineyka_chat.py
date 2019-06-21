@@ -36,6 +36,7 @@ class lineyka_chat:
 		self.close_window = MW.close_window
 		
 		# page
+		self.topics=None
 		self.page=1
 		self.num_topics = 10
 				
@@ -414,7 +415,7 @@ class lineyka_chat:
 		else:
 			print(result[1])
 			self.close_window(add_window)
-			self.chat_load_topics(self.chatMain)
+			self.chat_load_topics(self.chatMain, reload_db=True)
 		'''
 		# edit read_status
 		if self.chat_status == 'user':
