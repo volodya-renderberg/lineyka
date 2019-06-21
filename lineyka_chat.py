@@ -56,7 +56,7 @@ class lineyka_chat:
 		
 		# button connect
 		window.close_button.clicked.connect(partial(self.close_window, window))
-		window.reload_button.clicked.connect(partial(self.chat_load_topics, window))
+		window.reload_button.clicked.connect(partial(self.chat_load_topics, window, True))
 		window.chat_add_topic_button.clicked.connect(partial(self.chat_new_topic_ui, window))
 		
 		# add button '\u9758'
@@ -91,7 +91,7 @@ class lineyka_chat:
 				
 		window.show()
 		
-		self.chat_load_topics(window)
+		self.chat_load_topics(window, reload_db=True)
 		
 		pages_label.setText('%s / %s' % (str(self.page), self.max_pages))
 		
@@ -107,7 +107,7 @@ class lineyka_chat:
 		'''
 		
 	def rebild_size_pages(self, *args):
-		print(args)
+		#print(args)
 		#return
 		num = int(args[2])
 		if not num:
@@ -131,22 +131,28 @@ class lineyka_chat:
 				
 		self.chat_load_topics(window, )
 		
-	def chat_load_topics(self, window):
+	def chat_load_topics(self, window, reload_db=False):
 		pass
 		
 		# read chat data
 		topics = None
-		result = self.db_chat.read_the_chat()
-		if not result[0]:
-			#self.message(result[1], 2)
-			pass
+		
+		if reload_db:
+			result = self.db_chat.read_the_chat()
+			if not result[0]:
+				#self.message(result[1], 2)
+				pass
+			else:
+				#topics = result[1]
+				topics = sorted(result[1], key=lambda x: x['date_time'], reverse=True)
+				self.topics = topics
+				#
 		else:
-			#topics = result[1]
-			topics = sorted(result[1], key=lambda x: x['date_time'], reverse=True)
-			#
-			self.max_pages = len(topics)//self.num_topics
-			if len(topics) % self.num_topics:
-				self.max_pages+=1
+			topics=self.topics
+		
+		self.max_pages = len(topics)//self.num_topics
+		if len(topics) % self.num_topics:
+			self.max_pages+=1
 		
 		tool_box = window.chat_tool_box
 		# clear tool box
