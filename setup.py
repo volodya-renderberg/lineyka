@@ -46,9 +46,9 @@ def linux_setup():
 	cmd = 'sudo chmod +x %s' % manager_exec
 	alternative_cmd = 'chmod +x %s' % manager_exec
 	try:
-        os.system(cmd)
-    except:
-        os.system(alternative_cmd)
+		os.system(cmd)
+	except:
+		os.system(alternative_cmd)
 	
 	with open(save_path, 'w') as f:
 		f.write(linux_manager_file_data % (manager_exec, manager_icon, path_dir))
@@ -62,9 +62,9 @@ def linux_setup():
 	cmd = 'sudo chmod +x %s' % user_exec
 	alternative_cmd = 'chmod +x %s' % user_exec
 	try:
-        os.system(cmd)
-    except:
-        os.system(alternative_cmd)
+		os.system(cmd)
+	except:
+		os.system(alternative_cmd)
 	
 	with open(save_path, 'w') as f:
 		f.write(linux_artist_file_data % (user_exec, user_icon, path_dir))
