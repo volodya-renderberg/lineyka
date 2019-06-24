@@ -6487,15 +6487,15 @@ class chat(studio):
 		if message_id:
 			where = {'message_id': message_id}
 			return(database().read('project', self.task.asset.project, table_name, self.chats_keys, where = where, table_root = self.chats_db))
-        else:
-            b, r = database().read('project', self.task.asset.project, table_name, self.chats_keys, table_root = self.chats_db)
-            if not b:
-                return(b, r)
-            if sort_key:
-                topics = sorted(r, key=lambda x: x[sort_key], reverse=reverse)
-                return(True, topics)
-            else:
-                return(b, r)
+		else:
+			b, r = database().read('project', self.task.asset.project, table_name, self.chats_keys, table_root = self.chats_db)
+			if not b:
+				return(b, r)
+			if sort_key:
+				topics = sorted(r, key=lambda x: x[sort_key], reverse=reverse)
+				return(True, topics)
+			else:
+				return(b, r)
 
 		'''
 		table = '\"' + task_name + '\"'
