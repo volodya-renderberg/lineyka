@@ -6476,8 +6476,9 @@ class chat(studio):
 	# чтение сообщений чата задачи
 	# self.task - должен быть инициализирован
 	# message_id (hex/bool) - id читаемого сообщения, если False - то читаются все сообщения чата.
-	# reverse (bool) - пока никак не используется
-	def read_the_chat(self, message_id=False, reverse = False): # v2
+	# sort_key (str) - ключ по которому сортируется список. Если  False то сортировки не происходит.
+	# reverse (bool) - если True - то обратный порядок. имеет смысл только если передаётся sort_key.
+	def read_the_chat(self, message_id=False, sort_key=False, reverse = False): # v2
 		pass
 		# 1 - чтение БД
 		
@@ -6486,7 +6487,15 @@ class chat(studio):
 		if message_id:
 			where = {'message_id': message_id}
 			return(database().read('project', self.task.asset.project, table_name, self.chats_keys, where = where, table_root = self.chats_db))
-		return(database().read('project', self.task.asset.project, table_name, self.chats_keys, table_root = self.chats_db))
+        else:
+            b, r = database().read('project', self.task.asset.project, table_name, self.chats_keys, table_root = self.chats_db)
+            if not b:
+                return(b, r)
+            if sort_key:
+                topics = sorted(r, key=lambda x: x[sort_key], reverse=reverse)
+                return(True, topics)
+            else:
+                return(b, r)
 
 		'''
 		table = '\"' + task_name + '\"'
