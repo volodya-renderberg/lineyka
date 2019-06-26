@@ -6535,9 +6535,12 @@ class chat(studio):
 		# 3 - запись изменений
 		
 		# (0)
+		removed_keys = []
 		for key in new_data:
 			if not key in ['topic', 'color']:
-				del(new_data[key])
+				removed_keys.append(key)
+		for key in removed_keys:
+			del new_data[key]
 		
 		# (1)
 		if artist_ob and not isinstance(artist_ob, artist):

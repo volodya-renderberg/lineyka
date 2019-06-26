@@ -9,7 +9,7 @@ import webbrowser
 import getpass
 from functools import partial
 import json
-import random
+import uuid
 import subprocess
 import datetime
 '''
@@ -42,7 +42,7 @@ class lineyka_chat:
 		self.topics=None
 		self.page=1
 		self.num_topics = 10
-				
+		
 		# make widjet
 		ui_path = MW.chat_main_path
 		# widget
@@ -111,6 +111,7 @@ class lineyka_chat:
 		'''
 		
 	def rebild_size_pages(self, *args):
+		pass
 		#print(args)
 		#return
 		num = int(args[2])
@@ -142,13 +143,13 @@ class lineyka_chat:
 		topics = None
 		
 		if reload_db:
-			result = self.db_chat.read_the_chat()
+			result = self.db_chat.read_the_chat(sort_key='date_time', reverse=True)
 			if not result[0]:
 				#self.message(result[1], 2)
 				pass
 			else:
-				#topics = result[1]
-				topics = sorted(result[1], key=lambda x: x['date_time'], reverse=True)
+				topics = result[1]
+				#topics = sorted(result[1], key=lambda x: x['date_time'], reverse=True)
 				self.topics = topics
 				#
 		else:
@@ -222,12 +223,14 @@ class lineyka_chat:
 					v_layout.addWidget(widget)
 				topic_widget.setLayout(v_layout)
 				topic_widget.topic = topic
+				#self.changeable_message = topic
 				
 				#
 				if topic['author'] == self.db_artist.nik_name:
 					topic_widget.setContextMenuPolicy( QtCore.Qt.ActionsContextMenu )
 					addgrup_action = QtGui.QAction( 'Edit messege', window)
 					addgrup_action.triggered.connect(partial(self.chat_edit_topic_ui, topic_widget))
+					#addgrup_action.triggered.connect(partial(self.chat_edit_topic_ui))
 					topic_widget.addAction( addgrup_action )
 							
 				tool_box.addItem(topic_widget, header)
@@ -244,14 +247,19 @@ class lineyka_chat:
 		edit_window = self.chatEditTopic = loader.load(file, self.MW)
 		file.close()
 		
+		#
+		edit_window.setWindowTitle('Edit Message')
+		
 		# set modal window
 		edit_window.setWindowModality(QtCore.Qt.WindowModal)
 		edit_window.setAttribute(QtCore.Qt.WA_DeleteOnClose, True)
 		
+		edit_window.line_data = {}
+		
 		# V
 		v_layout = QtGui.QVBoxLayout()
 		lines = in_widget.topic['topic']
-		for key in lines:
+		for i, key in enumerate(lines.keys()):
 			widget = QtGui.QFrame(parent = edit_window.new_topics_frame)
 			layout = QtGui.QHBoxLayout()
 			# button
@@ -265,6 +273,12 @@ class lineyka_chat:
 			button.setFixedSize(100, 100)
 			button.img_path = lines[key][0]
 			button.clicked.connect(partial(self.chat_image_view_ui, button))
+			# context
+			button.setContextMenuPolicy( QtCore.Qt.ActionsContextMenu )
+			addgrup_action = QtGui.QAction( 'Inser Image From Clipboard', edit_window)
+			addgrup_action.triggered.connect(partial(self.chat_add_img_to_line, button))
+			button.addAction( addgrup_action )
+			
 			layout.addWidget(button)
 			
 			# text field
@@ -275,15 +289,23 @@ class lineyka_chat:
 			
 			widget.setLayout(layout)
 			#print(widget.sizeHint())
-			
+						
 			v_layout.addWidget(widget)
+			
+			edit_window.line_data[str(i)] = (button, text_field)
 		
 		edit_window.new_topics_frame.setLayout(v_layout)
+		
+		# connect button
+		edit_window.cansel_button.clicked.connect(partial(self.close_window, edit_window))
+		edit_window.add_line_button.clicked.connect(partial(self.chat_add_line_to_message, edit_window, v_layout))
+		edit_window.send_message_button.clicked.connect(partial(self.chat_new_topic_action, edit_window, self.chat_status, message_id=in_widget.topic['message_id']))
 		
 		
 		edit_window.show()
 	
 	def chat_new_topic_ui(self, window):
+		pass
 		# make widjet
 		ui_path = self.chat_add_topic_path
 		# widget
@@ -292,6 +314,9 @@ class lineyka_chat:
 		#file.open(QtCore.QFile.ReadOnly)
 		add_window = self.chatAddTopic = loader.load(file, self.MW)
 		file.close()
+		
+		#
+		add_window.setWindowTitle('New Message')
 		
 		# set modal window
 		add_window.setWindowModality(QtCore.Qt.WindowModal)
@@ -339,7 +364,7 @@ class lineyka_chat:
 		
 		
 	def chat_add_img_to_line(self, button):
-		rand  = hex(random.randint(0, 1000000000)).replace('0x', '')
+		rand  = uuid.uuid4().hex
 		img_path = os.path.join(self.db_chat.tmp_folder, ('tmp_image_' + rand + '.png')).replace('\\','/')
 		
 		clipboard = QtGui.QApplication.clipboard()
@@ -387,6 +412,7 @@ class lineyka_chat:
     
 				
 	def chat_add_line_to_message(self, add_window, v_layout):
+		pass
 		# H
 		h_layout = QtGui.QHBoxLayout()
 		line_frame = QtGui.QFrame(parent = add_window.new_topics_frame)
@@ -420,7 +446,7 @@ class lineyka_chat:
 		num = max(numbers) + 1
 		add_window.line_data[str(num)] = (button, text_field)
 		
-	def chat_new_topic_action(self, add_window, status):
+	def chat_new_topic_action(self, add_window, status, message_id=False):
 		nik_name = self.db_artist.nik_name
 		
 		# get color
@@ -441,7 +467,7 @@ class lineyka_chat:
 				icon_tmp_img_path = tmp_img_path.replace('.png', '_icon.png')
 				
 				# -- copy to img_path
-				rand  = hex(random.randint(0, 1000000000)).replace('0x', '')
+				rand  = uuid.uuid4().hex
 				img_path = os.path.normpath(os.path.join(self.db_chat.task.asset.project.chat_img_path, (self.db_chat.task.task_name.replace(':','_') + rand + '.png')))
 				shutil.copyfile(tmp_img_path, img_path)
 				
@@ -478,9 +504,12 @@ class lineyka_chat:
 		'color':color,
 		'topic':message,
 		'status':status,
-		'reading_status': 'none'
+		'reading_status': 'none',
 		}
-		result = self.db_chat.record_messages(chat_keys, self.db_artist)
+		if message_id:
+			result= self.db_chat.edit_message(message_id, chat_keys, artist_ob=self.db_artist)
+		else:
+			result = self.db_chat.record_messages(chat_keys, self.db_artist)
 		if not result[0]:
 			self.message(result[1], 2)
 			return
@@ -496,3 +525,6 @@ class lineyka_chat:
 				self.message(result[1], 2)
 				return
 		'''
+		
+	def chat_edit_topic_action(self, add_window, status):
+		pass
