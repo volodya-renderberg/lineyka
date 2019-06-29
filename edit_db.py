@@ -7159,7 +7159,9 @@ class group(studio):
 		
 		# get id
 		keys['id'] = uuid.uuid4().hex
-		keys['description'] = ''
+		# get description
+		if not 'description' in keys:
+			keys['description'] = ''
 		
 		# test season key
 		if keys['type'] in self.asset_types_with_season:
