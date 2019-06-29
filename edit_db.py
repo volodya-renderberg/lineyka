@@ -7127,7 +7127,8 @@ class group(studio):
 		if new:
 			return(ob)
 		else:
-			self = ob
+			for key in self.group_keys:
+				setattr(self, key, getattr(ob, key))
 			return(True, 'Ok!')
 		
 	# инициализация по словарю
