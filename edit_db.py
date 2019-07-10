@@ -7129,7 +7129,8 @@ class group(studio):
 		if new:
 			return(ob)
 		else:
-			self = ob
+			for key in self.group_keys:
+				setattr(self, key, getattr(ob, key))
 			return(True, 'Ok!')
 		
 	# инициализация по словарю
@@ -7147,7 +7148,8 @@ class group(studio):
 			return(True, 'Ok!')
 	
 	# keys - словарь по group_keys (name и type - обязательные ключи)
-	def create(self, keys):
+	# new (bool) - если True - то возвращается новый инициализированный объект класса group, если False - то инициализируется текущий объект.
+	def create(self, keys, new=True):
 		pass
 		# test name
 		if not keys.get('name'):
@@ -7159,6 +7161,9 @@ class group(studio):
 		
 		# get id
 		keys['id'] = uuid.uuid4().hex
+		# get description
+		if not 'description' in keys:
+			keys['description'] = ''
 		
 		# test season key
 		if keys['type'] in self.asset_types_with_season:
@@ -7184,7 +7189,12 @@ class group(studio):
 		if not bool_:
 			return(bool_, return_data)
 		
-		return(True, 'ok')
+		if new:
+			return(True, self.init_by_keys(keys))
+		else:
+			for key in self.group_keys:
+				setattr(self, key, keys[key])
+			return(True, 'ok')
 		
 	def create_recycle_bin(self):
 		pass
