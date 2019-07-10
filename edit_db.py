@@ -302,6 +302,7 @@ class studio:
 	'list_of_assets_path': 'text',
 	'preview_img_path': 'text',
 	'fps': 'real',
+	'units': 'text',
 	}
 	
 	group_keys = {
