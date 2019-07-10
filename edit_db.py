@@ -301,6 +301,7 @@ class studio:
 	'chat_img_path': 'text',
 	'list_of_assets_path': 'text',
 	'preview_img_path': 'text',
+	'fps': 'real',
 	}
 	
 	group_keys = {
@@ -5977,14 +5978,15 @@ class artist(studio):
 		assets = r
 		
 		# (2)
-		tasks = {}		
-		for task_name in self.checking_tasks.get(project_ob.name):
-			asset_name = task_name.split(':')[0]
-			if asset_name in assets:
-				task_ob = task(assets[asset_name]).init(task_name)
-				if status and task_ob.status != status:
-					continue
-				tasks[task_name] = task_ob
+		tasks = {}
+		if self.checking_tasks:
+			for task_name in self.checking_tasks.get(project_ob.name):
+				asset_name = task_name.split(':')[0]
+				if asset_name in assets:
+					task_ob = task(assets[asset_name]).init(task_name)
+					if status and task_ob.status != status:
+						continue
+					tasks[task_name] = task_ob
 				
 		return(True, tasks)
 		
