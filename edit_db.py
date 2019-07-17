@@ -176,7 +176,6 @@ class studio:
 	'activity': 'text',
 	'task_name': 'text',
 	'task_type': 'text',
-	'season': 'text',
 	'input': 'json',
 	'status': 'text',
 	'outsource': 'integer',
@@ -184,7 +183,6 @@ class studio:
 	'planned_time': 'real',
 	'time': 'real',
 	'start': 'timestamp',
-	'approved_date': 'timestamp',
 	'end': 'timestamp',
 	'price': 'real',
 	'tz': 'text',
@@ -1436,41 +1434,29 @@ class asset(studio):
 				continue
 			if r:
 				asset_data = r[0]
+		
 		if not asset_data:
 			return(False, 'An asset with that name(%s) was not found!' % asset_name)
 				
-		if new:
-			new_asset = asset(self.project)
-			for key in self.asset_keys:
-				#exec('new_asset.%s = keys.get("%s")' % (key, key))
-				setattr(new_asset, key, asset_data.get(key))
-			# path
-			new_asset.path = NormPath(os.path.join(self.project.path, self.project.folders['assets'],asset_data['type'], asset_data['name']))
-			return new_asset
-		else:
-			for key in self.asset_keys:
-				#exec('self.%s = keys.get("%s")' % (key, key))
-				setattr(self, key, asset_data.get(key))
-			# path
-			self.path = NormPath(os.path.join(self.project.path, self.project.folders['assets'],asset_data['type'], asset_data['name']))
-			return(True, 'Ok!')
+		return(self.init_by_keys(asset_data, new=new))
 		
 	# инициализация по словарю ассета
 	# заполнение полей по self.asset_keys
 	# new (bool) - если True - то возвращается новый инициализированный объект класса asset, если False - то инициализируется текущий объект
 	def init_by_keys(self, keys, new = True):
+		pass
 		if new:
-			new_asset = asset(self.project)
-			for key in self.asset_keys:
-				exec('new_asset.%s = keys.get("%s")' % (key, key))
-			# path
-			new_asset.path = NormPath(os.path.join(self.project.path, self.project.folders['assets'],keys['type'], keys['name']))
-			return new_asset
+			r_ob = asset(self.project)
 		else:
-			for key in self.asset_keys:
-				exec('self.%s = keys.get("%s")' % (key, key))
-			# path
-			self.path = NormPath(os.path.join(self.project.path, self.project.folders['assets'],keys['type'], keys['name']))
+			r_ob = self
+			
+		for key in self.asset_keys:
+			setattr(r_ob, key, keys.get(key))
+			r_ob.path = NormPath(os.path.join(self.project.path, self.project.folders['assets'],keys['type'], keys['name']))
+			
+		if new:
+			return r_ob
+		else:
 			return(True, 'Ok!')
 		
 	# list_keys (list) - список словарей по ключам asset_keys
@@ -2273,14 +2259,21 @@ class task(studio):
 	# инициализация по словарю
 	# new (bool) - если True - то возвращается новый инициализированный объект класса task, если False - то инициализируется текущий объект
 	def init_by_keys(self, keys, new = True):
+		pass
 		if new:
-			new_task = task(self.asset)
-			for key in self.tasks_keys:
-				setattr(new_task, key, keys.get(key))
-			return new_task
+			r_ob = task(self.asset)
 		else:
-			for key in self.tasks_keys:
-				setattr(self, key, keys.get(key))
+			r_ob = self
+			
+		for key in self.tasks_keys:
+			setattr(r_ob, key, keys.get(key))
+		
+		# approved_date
+		r_ob.approved_date = ''
+			
+		if new:
+			return(r_ob)
+		else:
 			return(True, 'Ok')
 		
 	# ************************ CHANGE STATUS ******************************** start
@@ -4705,8 +4698,7 @@ class task(studio):
 			return(False, 'Not Found task whith name "%s"!' % task_name)
 		
 		task_data = return_data[0]
-		task_data['asset_path'] = asset_path
-		
+				
 		if not other_asset:	
 			return(True, self.init_by_keys(task_data))
 		else:
