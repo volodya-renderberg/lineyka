@@ -1460,7 +1460,7 @@ class asset(studio):
 			return(True, 'Ok!')
 		
 	# list_keys (list) - список словарей по ключам asset_keys
-	# -- обязательные параметры в keys (list_keys): name, group(id).
+	# -- обязательные параметры в keys (list_keys): name, group(id). важный параметр set_of_tasks - имя набора
 	# asset_type (str) - тип для всех ассетов
 	def create(self, asset_type, list_keys):  # v2
 		pass
@@ -2243,27 +2243,25 @@ class task(studio):
 	def init(self, task_name, new = True):
 		pass
 		# get keys
-		bool_, task_ob = self.__read_task(task_name)
-		if not bool_:
-			return(bool_, task_ob)
-				
-		# fill fields
-		if new:
-			return task_ob
-		else:
-			for key in self.tasks_keys:
-				setattr(self, key, getattr(task_ob, key))
-			self.asset=task_ob.asset
-			return(True, 'Ok')
+		b, r = self.__read_task(task_name)
+		if not b:
+			return(bool_, r)
+		
+		return(self.init_by_keys(r[0], new=new, new_asset=r[1]))
 		
 	# инициализация по словарю
 	# new (bool) - если True - то возвращается новый инициализированный объект класса task, если False - то инициализируется текущий объект
-	def init_by_keys(self, keys, new = True):
+	def init_by_keys(self, keys, new = True, new_asset=False):
 		pass
 		if new:
-			r_ob = task(self.asset)
+			if new_asset:
+				r_ob = task(new_asset)
+			else:
+				r_ob = task(self.asset)
 		else:
 			r_ob = self
+			if new_asset:
+				self.asset = new_asset
 			
 		for key in self.tasks_keys:
 			setattr(r_ob, key, keys.get(key))
@@ -3713,9 +3711,8 @@ class task(studio):
 		
 		# (5)
 		if output_task_name:
-			bool_, output_task = self.__read_task(output_task_name)
-			if not bool_:
-				return(bool_, return_data)
+			output_task = self.init(output_task_name)
+			
 			# --
 			bool_, return_data = output_task.change_input(new_task.task_name)
 			if not bool_:
@@ -4332,18 +4329,12 @@ class task(studio):
 		# get old inputs tasks data (task instance)
 		old_input_task = None
 		if self.input:
-			result = self.__read_task(self.input)
-			if not result[0]:
-				return(False, result[1])
-			old_input_task = result[1]
+			old_input_task = self.init(self.input)
 		
 		# get new inputs task data (task instance)
 		new_input_task = None
 		if new_input:
-			result = self.__read_task(new_input)
-			if not result[0]:
-				return(False, result[1])
-			new_input_task = result[1]
+			new_input_task = self.init(new_input)
 		
 		# ???
 		# change status
@@ -4616,10 +4607,7 @@ class task(studio):
 		# (2)
 		input_task = False
 		if self.input:
-			result = self.__read_task(self.input)
-			if not result[0]:
-				return(False, result[1])
-			input_task = result[1]
+			input_task = self.init(self.input)
 		
 		# (3)
 		self.status = 'null'
@@ -4674,22 +4662,24 @@ class task(studio):
 	# возврат словаря задачи по имени задачи. если нужен объект используем task.init(name)
 	def __read_task(self, task_name): # v2
 		pass
+		# 1 - get asset_id, other_asset
+		# 2 - read task_data
+		# 3 - return
 		
 		# (1)
 		other_asset=False
-		asset_path = False
+		
 		if self.asset.name == task_name.split(':')[0]: # задача из данного ассета
-			asset_path = self.asset.path
 			asset_id = self.asset.id
 		# asset_path
 		else: # задача из другого ассета
-			other_asset=True
-			read_asset = self.asset.init(task_name.split(':')[0])
-			asset_path = read_asset.path
-			asset_id = read_asset.id
-		# read task
+			other_asset = self.asset.init(task_name.split(':')[0])
+			asset_id = other_asset.id
+		
+		# (2) read task
 		table_name = '"%s:%s"' % (asset_id, self.tasks_t)
 		where={'task_name': task_name}
+		
 		# -- read
 		bool_, return_data = database().read('project', self.asset.project, table_name, self.tasks_keys , where=where, table_root=self.tasks_db)
 		if not bool_:
@@ -4698,13 +4688,17 @@ class task(studio):
 			return(False, 'Not Found task whith name "%s"!' % task_name)
 		
 		task_data = return_data[0]
-				
-		if not other_asset:	
+		
+		# (3)
+		return (True, (task_data, other_asset))
+		'''
+		if not other_asset:
 			return(True, self.init_by_keys(task_data))
 		else:
-			task_ob = task(read_asset)
+			task_ob = task(other_asset)
 			task_ob.init_by_keys(task_data, new=False)
 			return(True, task_ob)
+		'''
 	
 	# input_task_list (list) - список задач (объекты)
 	def service_add_list_to_input(self, input_task_list): # v2
@@ -4853,9 +4847,7 @@ class task(studio):
 								final_tasks_list.append(td)
 			else:
 				task_name = (ast_ob.name + ':final')
-				bool_, td = tsk_ob.__read_task(task_name)
-				if not bool_:
-					return(bool_, td)
+				td = tsk_ob.init(task_name)
 				final_tasks_list.append(td)
 		'''
 		# edit db

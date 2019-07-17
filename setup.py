@@ -52,10 +52,10 @@ def linux_setup():
 		os.system(cmd)
 	except:
 		os.system(alternative_cmd)
-	
+	'''
 	with open(save_path, 'w') as f:
 		f.write(linux_manager_file_data % (manager_exec, manager_icon, path_dir))
-	'''
+	
 	print('Manager')
 		
 	#user
