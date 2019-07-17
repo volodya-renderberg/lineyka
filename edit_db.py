@@ -160,7 +160,7 @@ class studio:
 	asset_keys = {
 	'name': 'text',
 	'group': 'text',
-	#'path': 'text',
+	#'path': 'text', # каждый раз определяется при инициализации.
 	'type': 'text',
 	'season': 'text',
 	'priority': 'integer',
@@ -173,7 +173,6 @@ class studio:
 	
 	# constants (0 - 3 required parameters)
 	tasks_keys = {
-	#'asset_name': 'text',
 	'activity': 'text',
 	'task_name': 'text',
 	'task_type': 'text',
@@ -182,23 +181,19 @@ class studio:
 	'status': 'text',
 	'outsource': 'integer',
 	'artist': 'text',
-	'planned_time': 'text',
-	'time': 'text',
+	'planned_time': 'real',
+	'time': 'real',
 	'start': 'timestamp',
+	'approved_date': 'timestamp',
 	'end': 'timestamp',
-	'supervisor': 'text',
-	'approved_date': 'text',
 	'price': 'real',
 	'tz': 'text',
 	'chat_local': 'json',
 	'web_chat': 'text',
-	#'workroom': 'text',- не актуально, исполнители предлагаются из отделов соответствующего типа.
+	'supervisor': 'text',
 	'readers': 'json',
 	'output': 'json',
 	'priority':'integer',
-	#'asset_id': 'text',
-	#'asset_type': 'text',
-	#'asset_path': 'text', # каждый раз определяется при считывании данных. ## больше не нужен это task.asset.path
 	'extension': 'text',
 	}
 	'''
