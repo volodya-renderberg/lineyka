@@ -306,7 +306,8 @@ class MainWindow(QtGui.QMainWindow):
 						wr_list = []
 						for wr_id in getattr(artist, key):
 							wr_list.append(self.db_workroom.dict_by_id[wr_id].name)
-						newItem.setText(','.join(wr_list))
+						item_text = ','.join(wr_list).replace(',', ',\n')
+						newItem.setText(item_text)
 				elif key == 'nik_name':
 					color = self.artist_color
 					brush = QtGui.QBrush(color)
@@ -317,8 +318,12 @@ class MainWindow(QtGui.QMainWindow):
 				newItem.artist = artist
 				self.myWidget.studio_editor_table.setItem(i, j, newItem)
 				
-		# context menu
 		table = self.myWidget.studio_editor_table
+				
+		table.resizeRowsToContents()
+		table.resizeColumnsToContents()
+				
+		# context menu
 		table.setContextMenuPolicy(QtCore.Qt.CustomContextMenu)
 		table.customContextMenuRequested.connect(self._artist_editor_context_menu)
 
@@ -810,7 +815,7 @@ class MainWindow(QtGui.QMainWindow):
 				#
 				if key == 'type':
 					if workroom.type:
-						type_string = ','.join(workroom.type).replace(',', ', ')
+						type_string = ','.join(workroom.type).replace(',', ',\n')
 						newItem.setText(type_string)
 					else:
 						newItem.setText('')
