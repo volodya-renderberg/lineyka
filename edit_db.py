@@ -185,7 +185,7 @@ class studio:
 	'start': 'timestamp',
 	'end': 'timestamp',
 	'price': 'real',
-	'tz': 'text',
+	'specification': 'text',
 	'chat_local': 'json',
 	'web_chat': 'text',
 	'supervisor': 'text',
@@ -3685,7 +3685,7 @@ class task(studio):
 			#'time',
 			#'supervisor',
 			#'price',
-			#'tz',
+			#'specification',
 			#]
 		#
 		task_data['status'] = 'ready'
@@ -3943,7 +3943,7 @@ class task(studio):
 		'task_type',
 		'season',
 		'price',
-		'tz',
+		'specification',
 		#'workroom',
 		'extension'
 		]
@@ -6567,7 +6567,7 @@ class set_of_tasks(studio):
 		'task_name',
 		'input',
 		'activity',
-		'tz',
+		'specification',
 		'cost',
 		'standart_time',
 		'task_type',

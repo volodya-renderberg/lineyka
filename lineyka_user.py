@@ -112,8 +112,8 @@ class MainWindow(QtGui.QMainWindow):
 		self.myWidget.look_version_button.clicked.connect(self.look_version_ui)
 		self.myWidget.chat_button.clicked.connect(self.chat_ui)
 		self.myWidget.chat_button_2.clicked.connect(self.chat_ui)
-		self.myWidget.tz_button.clicked.connect(self.tz)
-		self.myWidget.tz_button_2.clicked.connect(self.tz)
+		self.myWidget.tz_button.clicked.connect(self.specification)
+		self.myWidget.tz_button_2.clicked.connect(self.specification)
 		
 		self.myWidget.open_button.clicked.connect(self.open_action)
 		self.myWidget.open_version_button.clicked.connect(partial(self.look_version_ui, look = False))
@@ -349,8 +349,8 @@ class MainWindow(QtGui.QMainWindow):
 	
 	# ***************** Functional ********************************
 	def tz(self):
-		if self.selected_task.tz:
-			webbrowser.open_new_tab(self.selected_task.tz)
+		if self.selected_task.specification:
+			webbrowser.open_new_tab(self.selected_task.specification)
 		else:
 			self.message('Not Link!', 1)
 			

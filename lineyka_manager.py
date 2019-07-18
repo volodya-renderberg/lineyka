@@ -5644,7 +5644,7 @@ class MainWindow(QtGui.QMainWindow):
 		self.myWidget.tm_data_label_5.setText(str(self.selected_task.price))
 		self.myWidget.tm_data_label_6.setText(self.selected_task.task_type)
 		self.myWidget.tm_data_label_7.setText(self.selected_task.extension)
-		self.myWidget.tm_data_label_8.setText(self.selected_task.tz)
+		self.myWidget.tm_data_label_8.setText(self.selected_task.specification)
 		
 		# -- load to preview img
 		if old_asset_name != self.selected_task.asset.name:
@@ -6540,9 +6540,9 @@ class MainWindow(QtGui.QMainWindow):
 		window.setAttribute(QtCore.Qt.WA_DeleteOnClose, True)
 		
 		# edit window
-		window.setWindowTitle(('Change Tz Link: %s' % self.selected_task.task_name))
+		window.setWindowTitle(('Change Specification Link: %s' % self.selected_task.task_name))
 		window.new_dialog_label.setText('Link:')
-		window.new_dialog_name.setText(self.selected_task.tz)
+		window.new_dialog_name.setText(self.selected_task.specification)
 		window.new_dialog_cancel.clicked.connect(partial(self.close_window, window))
 		window.new_dialog_ok.clicked.connect(partial(self.tm_change_tz_link_action, window))
 		
@@ -6551,7 +6551,7 @@ class MainWindow(QtGui.QMainWindow):
 	def tm_change_tz_link_action(self, window): # v2
 		link = window.new_dialog_name.text()
 		
-		result = self.selected_task.changes_without_a_change_of_status('tz', link)
+		result = self.selected_task.changes_without_a_change_of_status('specification', link)
 		if not result[0]:
 			self.message(result[1], 2)
 			return
@@ -6679,8 +6679,8 @@ class MainWindow(QtGui.QMainWindow):
 		
 	# ------ show tz ------------
 	def tm_tz(self): # v2
-		if self.selected_task.tz:
-			webbrowser.open_new_tab(self.selected_task.tz)
+		if self.selected_task.specification:
+			webbrowser.open_new_tab(self.selected_task.specification)
 		else:
 			self.message('Link not specified!', 1)
 		
@@ -6734,7 +6734,7 @@ class MainWindow(QtGui.QMainWindow):
 		self.addTaskDialog.new_task_data = {}
 		
 		hh_layout = QtGui.QGridLayout()
-		headers = ['task_name', 'input', 'output', 'activity', 'task_type', 'planned_time','price','tz', 'extension']
+		headers = ['task_name', 'input', 'output', 'activity', 'task_type', 'planned_time','price','specification', 'extension']
 		for i, head in enumerate(headers):
 			if head in self.REQUIRED_KEYS:
 				label = QtGui.QLabel('%s*' % head, parent = headers_frame)
