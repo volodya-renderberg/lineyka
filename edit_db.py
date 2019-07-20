@@ -2874,6 +2874,7 @@ class task(studio):
 	# description (str) - комментарий к версии
 	# current_file (unicode/str) - текущее местоположение рабочего файла (как правило в темп)
 	# current_artist (artist) - если не передавать, то будет выполняться get_user() - лишнее обращение к БД.
+	# return(True, new_file_path) или (False, comment)
 	def push_file(self, description, current_file, current_artist=False):
 		pass
 		
