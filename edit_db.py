@@ -1791,7 +1791,7 @@ class asset(studio):
 			if not key[1]:
 				continue
 			if output_tasks_data_dict[key[1]].task_type == 'service':
-				b,r = output_tasks_data_dict[key[1]].service_remove_task_from_input([key[0]])
+				b,r = output_tasks_data_dict[key[1]]._service_remove_task_from_input([key[0]])
 				if not b:
 					return(b,r)
 			else:
@@ -2292,7 +2292,7 @@ class task(studio):
 	# изменение статуса сервис задачи, по проверке статусов входящих задачь.
 	# задача должна быть инициализирована
 	# assets (dict) - словарь всех ассетов по всем типам (ключи - имена, данные - ассеты (объекты)) - результат функции asset.get_dict_by_name_by_all_types()
-	def service_input_to_end(self, assets): # v2 *** не тестилось.
+	def _service_input_to_end(self, assets): # v2 *** не тестилось.
 		new_status = False
 		
 		# (1) get input_list
@@ -2308,7 +2308,7 @@ class task(studio):
 			asset_name = task_name.split(':')[0]
 			asset_ob = assets.get(asset_name)
 			if not asset_ob:
-				print('in task.service_input_to_end() incorrect asset_name  "%s"' % asset_name)
+				print('in task._service_input_to_end() incorrect asset_name  "%s"' % asset_name)
 				continue
 			# (3) get task data
 			task_ob = task(asset_ob).init(task_name)
@@ -2325,14 +2325,14 @@ class task(studio):
 			new_status = 'null'
 		else:
 			new_status = 'done'
-			#self.this_change_to_end(self, project_name, task_data)
+			#self._this_change_to_end(self, project_name, task_data)
 			
 		return(True, new_status)
 	
 	# возвращает новый статус текущей задачи (если this_task=False), на основе входящей задачи, ?? не меняя статуса данной задачи.
 	# input_task (task / False) входящая задача.
 	# this_task (task / False) - если False - то предполагается текущая задача.
-	def from_input_status(self, input_task, this_task=False):  # v2 no test
+	def _from_input_status(self, input_task, this_task=False):  # v2 no test
 		pass
 		if not this_task:
 			this_task=self
@@ -2363,7 +2363,7 @@ class task(studio):
 	# замена статусов исходящих задачь при изменении статуса текущей задачи с done или с close.
 	# this_task (task / False) - если False то текущая задача.
 	# assets (dict) - словарь всех ассетов по всем типам (ключи - имена, данные - ассеты (объекты)) - результат функции asset.get_dict_by_name_by_all_types()
-	def this_change_from_end(self, this_task=False, assets = False): # v2 *** no test
+	def _this_change_from_end(self, this_task=False, assets = False): # v2 *** no test
 		pass
 		# 0 - задаём объект текущей задачи
 		# 1 - список исходящих задачь
@@ -2374,7 +2374,7 @@ class task(studio):
 		# - 6 - определение нового статуса
 		# - 7 - изменения в readers
 		# - 8 - запись таск
-		# 9 - отправка далее в себя же - this_change_from_end() - по списку from_end_list
+		# 9 - отправка далее в себя же - _this_change_from_end() - по списку from_end_list
 		
 		# (0)
 		if not this_task:
@@ -2402,7 +2402,7 @@ class task(studio):
 			asset_name = task_name.split(':')[0]
 			asset_ob = assets.get(asset_name)
 			if not asset_ob:
-				print('in task.this_change_from_end() incorrect asset_name  "%s"' % asset_name)
+				print('in task._this_change_from_end() incorrect asset_name  "%s"' % asset_name)
 				continue
 			# (5) get task data
 			task_ob = task(asset_ob).init(task_name)
@@ -2447,14 +2447,14 @@ class task(studio):
 		# (9) ****** edit from_end_list
 		if from_end_list:
 			for t_ob in from_end_list:
-				t_ob.this_change_from_end(assets = assets)
+				t_ob._this_change_from_end(assets = assets)
 		
 		
 		return(True, 'Ok!')
 		
 	# замена статусов исходящих задачь при изменении статуса текущей задачи на done или close.
 	# assets (dict) - словарь всех ассетов по всем типам (ключи - имена, данные - ассеты (экземпляры)) - результат функции asset.get_dict_by_name_by_all_types()
-	def this_change_to_end(self, assets = False): # v2 *** no test
+	def _this_change_to_end(self, assets = False): # v2 *** no test
 		pass
 		# 1 - список исходящих задачь
 		# 2 - получение списка всех ассетов
@@ -2463,7 +2463,7 @@ class task(studio):
 		# - 5 - чтение таск даты
 		# - 6 - определение нового статуса
 		# - 7 - запись таск
-		# 8 - отправка далее в себя же - this_change_to_end() - по списку service_to_done
+		# 8 - отправка далее в себя же - _this_change_to_end() - по списку service_to_done
         
 		# (1)
 		output_list = self.output
@@ -2488,7 +2488,7 @@ class task(studio):
 			# (4) asse id
 			asset_id = assets[task_name.split(':')[0]].id
 			if not asset_id:
-				print('in this_change_to_end incorrect key "id" in  "%s"' % task_name.split(':')[0])
+				print('in _this_change_to_end incorrect key "id" in  "%s"' % task_name.split(':')[0])
 				continue
 			'''
 			table = '\"' + asset_id + ':' + self.tasks_t + '\"'
@@ -2498,7 +2498,7 @@ class task(studio):
 				task_data_ = c.fetchone()
 			except:
 				conn.close()
-				return(False, ('in this_change_to_end can not read ', string))
+				return(False, ('in _this_change_to_end can not read ', string))
 			'''
 			# (5) get task data
 			table_name = '"%s:%s"' % (asset_id, self.tasks_t)
@@ -2514,8 +2514,8 @@ class task(studio):
             
 			# (6) make new status
 			if task_data_.task_type == 'service':
-				#result = self.service_input_to_end(task_data_, assets)
-				result = task_data_.service_input_to_end(assets)
+				#result = self._service_input_to_end(task_data_, assets)
+				result = task_data_._service_input_to_end(assets)
 				if not result[0]:
 					return(False, result[1])
 				new_status = result[1]
@@ -2542,7 +2542,7 @@ class task(studio):
 		# (8)
 		if service_to_done:
 			for task_ob in service_to_done:
-				self.this_change_to_end(task_ob, assets = assets)
+				self._this_change_to_end(task_ob, assets = assets)
 		
 		return(True, 'Ok!')
 	'''	
@@ -3833,7 +3833,7 @@ class task(studio):
 			# change status to output
 			if (old_status != 'close') and (old_status in self.end_statuses):
 				#print('change status')
-				self.this_change_from_end(project_name, dict(output_row))
+				self._this_change_from_end(project_name, dict(output_row))
 		'''
 				
 		return(True, 'Ok')
@@ -4040,7 +4040,7 @@ class task(studio):
 		
 		# (6) change output statuses
 		if change_status:
-			bool_, r_data = self.this_change_from_end()
+			bool_, r_data = self._this_change_from_end()
 			if not bool_:
 				return(bool_, r_data)
 			
@@ -4169,7 +4169,7 @@ class task(studio):
 		
 		# (7) change output statuses
 		if change_status:
-			result = self.this_change_to_end()
+			result = self._this_change_to_end()
 			if not result[0]:
 				return(False, result[1])
 			
@@ -4343,9 +4343,9 @@ class task(studio):
 		
 		# ???
 		# change status
-		new_status = self.from_input_status(new_input_task)
+		new_status = self._from_input_status(new_input_task)
 		if self.status in self.end_statuses and not new_status in self.end_statuses:
-			self.this_change_from_end()
+			self._this_change_from_end()
 				
 		# change outputs
 		# -- in old input
@@ -4422,7 +4422,7 @@ class task(studio):
 			return(bool_, r_data)
 		
 		# (4) change output statuses
-		result = self.this_change_to_end()
+		result = self._this_change_to_end()
 		if not result[0]:
 			return(False, result[1])
 		
@@ -4487,7 +4487,7 @@ class task(studio):
 		# (5) change output statuses
 		if change_status:
 			# -- change output statuses
-			result = self.this_change_to_end()
+			result = self._this_change_to_end()
 			if not result[0]:
 				return(False, result[1])
 		
@@ -4519,7 +4519,7 @@ class task(studio):
 			return(bool_, r_data)
 				
 		# (3) change output statuses
-		result = self.this_change_to_end()
+		result = self._this_change_to_end()
 		if not result[0]:
 			return(False, result[1])
 		
@@ -4597,7 +4597,7 @@ class task(studio):
 		
 		# (3)
 		self.status = 'null'
-		new_status = self.from_input_status(input_task)
+		new_status = self._from_input_status(input_task)
 		#return(True, new_status)
 		
 		# (4)
@@ -4613,7 +4613,7 @@ class task(studio):
 		# (5)
 				
 		# (6) change output statuses
-		result = self.this_change_from_end()
+		result = self._this_change_from_end()
 		if not result[0]:
 			return(False, result[1])
 		else:
@@ -4687,7 +4687,7 @@ class task(studio):
 		'''
 	
 	# input_task_list (list) - список задач (объекты)
-	def service_add_list_to_input(self, input_task_list): # v2
+	def _service_add_list_to_input(self, input_task_list): # v2
 		pass
 		# 0 - получение task_data.
 		# 1 - проверка на srvice
@@ -4701,7 +4701,7 @@ class task(studio):
 						
 		# (1)
 		if self.task_type != 'service':
-			description = 'In task.service_add_list_to_input() - incorrect type!\nThe type of task to be changed must be "service".\nThis type: "%s"' % self.task_type
+			description = 'In task._service_add_list_to_input() - incorrect type!\nThe type of task to be changed must be "service".\nThis type: "%s"' % self.task_type
 			return(False, description)
 		
 		# (2)
@@ -4756,7 +4756,7 @@ class task(studio):
 		if self.status in self.end_statuses:
 			if False in done_statuses:
 				self.status = 'null'
-				self.this_change_from_end()
+				self._this_change_from_end()
 				
 		# (4)
 		read_ob = self.asset.project
@@ -4788,7 +4788,7 @@ class task(studio):
 		
 	# asset_list (list) - подсоединяемые ассеты (словари, или объекты)
 	# task_data (dict) - изменяемая задача, если False - значит предполагается, что task инициализирован
-	def service_add_list_to_input_from_asset_list(self, asset_list, task_data=False): # v2
+	def _service_add_list_to_input_from_asset_list(self, asset_list, task_data=False): # v2
 		pass
 		# 1 - получение task_data.
 		# 2 - проверка на srvice
@@ -4802,7 +4802,7 @@ class task(studio):
 				
 		# (2)
 		if task_data['task_type'] != 'service':
-			description = 'In task.service_add_list_to_input_from_asset_list() - incorrect type!\nThe type of task to be changed must be "service".\nThis type: "%s"' % task_data['task_type']
+			description = 'In task._service_add_list_to_input_from_asset_list() - incorrect type!\nThe type of task to be changed must be "service".\nThis type: "%s"' % task_data['task_type']
 			return(False, description)
 		
 		# (3)
@@ -4858,7 +4858,7 @@ class task(studio):
 				try:
 					c.execute(string)
 				except:
-					print(('Not exicute in service_add_list_to_input_from_asset_list -> ' + asset['name']))
+					print(('Not exicute in _service_add_list_to_input_from_asset_list -> ' + asset['name']))
 					continue
 				else:
 					td_dict = {}
@@ -4886,7 +4886,7 @@ class task(studio):
 		conn.close()
 		'''
 		
-		result = self.service_add_list_to_input(final_tasks_list, task_data)
+		result = self._service_add_list_to_input(final_tasks_list, task_data)
 		if not result[0]:
 			return(False, result[1])
 		
@@ -4902,7 +4902,7 @@ class task(studio):
 	# self.asset.project - должен быть инициализирован
 	# task_data (dict) - изменяемая задача, если False - значит предполагается, что task инициализирован.
 	# removed_tasks_list (list) - содержит словари удаляемых из инпута задач.
-	def service_remove_task_from_input(self, removed_tasks_list, task_data=False, change_status = True): # v2
+	def _service_remove_task_from_input(self, removed_tasks_list, task_data=False, change_status = True): # v2
 		pass
 		# 0 - получение task_data.
 		# 1 - тест на статус сервис-не сервис.
@@ -4921,7 +4921,7 @@ class task(studio):
 		
 		# (1)
 		if task_data['task_type'] != 'service':
-			description = 'In task.service_remove_task_from_input() - incorrect type!\nThe type of task being cleared, must be "service".\nThis type: "%s"' % task_data['task_type']
+			description = 'In task._service_remove_task_from_input() - incorrect type!\nThe type of task being cleared, must be "service".\nThis type: "%s"' % task_data['task_type']
 			return(False, description)
 		
 		# (2)
@@ -5065,9 +5065,9 @@ class task(studio):
 		# (6)
 		if change_status:
 			if old_status == 'done' and new_status == 'null':
-				self.this_change_from_end(task_data, assets = assets)
+				self._this_change_from_end(task_data, assets = assets)
 			elif old_status == 'null' and new_status == 'done':
-				self.this_change_to_end(task_data, assets = assets)
+				self._this_change_to_end(task_data, assets = assets)
 				
 		# (7)
 		if self.task_name == task_data['task_name']:
@@ -5085,7 +5085,7 @@ class task(studio):
 	# removed_task_data (dict) - удаляемая задача
 	# added_task_data (dict) - добавляемая задача
 	# task_data (dict) - изменяемая задача, если False - значит предполагается, что task инициализирован.
-	def service_change_task_in_input(self, removed_task_data, added_task_data, task_data=False): # v2
+	def _service_change_task_in_input(self, removed_task_data, added_task_data, task_data=False): # v2
 		pass
 		# 0 - получение task_data.
 		
@@ -5101,7 +5101,7 @@ class task(studio):
 		#print(added_task_data['task_name'])
 		
 		# remove task
-		result = self.service_remove_task_from_input([removed_task_data], task_data=task_data)
+		result = self._service_remove_task_from_input([removed_task_data], task_data=task_data)
 		if not result[0]:
 			return(False, result[1])
 		
@@ -5119,7 +5119,7 @@ class task(studio):
 		#return(False, 'Epteeeee!')
 		
 		# add task
-		result = self.service_add_list_to_input([added_task_data], task_data=task_data)
+		result = self._service_add_list_to_input([added_task_data], task_data=task_data)
 		if not result[0]:
 			return(False, result[1])
 		

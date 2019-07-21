@@ -4708,7 +4708,7 @@ class MainWindow(QtGui.QMainWindow):
 			self.message('Not Selected Assets!', 2)
 			return
 			
-		result = self.db_chat.service_add_list_to_input(self.current_project, task_data, task_list)
+		result = self.db_chat._service_add_list_to_input(self.current_project, task_data, task_list)
 		if not result[0]:
 			self.message(result[1], 2)
 			return
@@ -4738,7 +4738,7 @@ class MainWindow(QtGui.QMainWindow):
 				
 		add_td = task_list[0]
 		
-		result = self.db_chat.service_change_task_in_input(self.current_project, srv_td, rm_td, add_td)
+		result = self.db_chat._service_change_task_in_input(self.current_project, srv_td, rm_td, add_td)
 		if not result[0]:
 			self.message(result[1], 2)
 			return
@@ -4873,7 +4873,7 @@ class MainWindow(QtGui.QMainWindow):
 			self.message('Not Selected Assets!', 2)
 			return
 			
-		result = self.db_chat.service_add_list_to_input_from_asset_list(self.current_project, task_data, asset_list)
+		result = self.db_chat._service_add_list_to_input_from_asset_list(self.current_project, task_data, asset_list)
 		if not result[0]:
 			self.message(result[1], 2)
 			return
@@ -4902,7 +4902,7 @@ class MainWindow(QtGui.QMainWindow):
 				list_removed_tasks.append(item.task)
 		
 		# remove tasks
-		result = self.db_chat.service_remove_task_from_input(self.current_project, service_task_data, list_removed_tasks)
+		result = self.db_chat._service_remove_task_from_input(self.current_project, service_task_data, list_removed_tasks)
 		if not result[0]:
 			self.message(result[1], 2)
 			return
