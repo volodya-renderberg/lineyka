@@ -4531,7 +4531,7 @@ class task(studio):
 	# task должен быть инициализирован.
 	# task_data (dict) - изменяемая задача, если False - значит предполагается, что task инициализирован.
 	# current_user (artist) - экземпляр класса артист, должен быть инициализирован - artist.get_user() - если False - то чат проверятся не будет (для тех нужд)
-	def rework_task(self, current_user = False): # v2 ** продолжение возможно только после редактирования chat().read_the_chat()
+	def rework_task(self, current_user): # v2 ** продолжение возможно только после редактирования chat().read_the_chat()
 		pass
 		# 1 - get exists chat
 		# 2 - edit readers
