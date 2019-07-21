@@ -270,7 +270,7 @@ class studio:
 	'topic': 'json',
 	'color': 'json',
 	'status': 'text',
-	'reading_status': 'text',
+	'reading_status': 'json',
 	}
 	'''
 	projects_keys = [
@@ -326,6 +326,7 @@ class studio:
 	'action': 'text',
 	'artist': 'text',
 	'description': 'text',
+	'branch' : 'text',
 	}
 	
 	init_folder = '.lineyka'
@@ -2328,7 +2329,7 @@ class task(studio):
 			
 		return(True, new_status)
 	
-	# возвращает новый статус текущей задачи (если this_task=False), на основе входящей задачи.
+	# возвращает новый статус текущей задачи (если this_task=False), на основе входящей задачи, ?? не меняя статуса данной задачи.
 	# input_task (task / False) входящая задача.
 	# this_task (task / False) - если False - то предполагается текущая задача.
 	def from_input_status(self, input_task, this_task=False):  # v2 no test
@@ -2452,7 +2453,7 @@ class task(studio):
 		return(True, 'Ok!')
 		
 	# замена статусов исходящих задачь при изменении статуса текущей задачи на done или close.
-	# assets (dict) - словарь всех ассетов по всем типам (ключи - имена, данные - ассеты (словари)) - результат функции asset.get_dict_by_name_by_all_types()
+	# assets (dict) - словарь всех ассетов по всем типам (ключи - имена, данные - ассеты (экземпляры)) - результат функции asset.get_dict_by_name_by_all_types()
 	def this_change_to_end(self, assets = False): # v2 *** no test
 		pass
 		# 1 - список исходящих задачь
@@ -2770,7 +2771,7 @@ class task(studio):
 	# look (bool) - если True - то статусы меняться не будут, если False - то статусы меняться будут.
 	# current_artist (artist) - если не передавать, то в случае look=False - будет выполняться get_user() - лишнее обращение к БД.
 	# tasks (dict) - словарь задачь данного артиста по именам. - нужен для случая когда look=False, при отсутствии будет считан - лишнее обращение к БД.
-	# input_task (task) - входящая задача - для open_from_input
+	# input_task (task) - входящая задача - для open_from_input - если передавать - то имеется ввиду открытие из активити входящей задачи.
 	# open_path (unicode/str) - путь к файлу - указывается для open_from_file
 	def open_file(self, look=False, current_artist=False, tasks=False, input_task=False, open_path=False, version=False):
 		pass
@@ -2821,7 +2822,10 @@ class task(studio):
 		# (2) ope path
 		task_ob = self
 		if input_task:
-			task_ob = input_task
+			if input_task.extension == self.extension:
+				task_ob = input_task
+			else:
+				return(False, 'Incorrect extension of incoming task!')
 		
 		if not open_path:
 			if version:
@@ -3473,7 +3477,7 @@ class task(studio):
 	# **************** Task NEW  METODS ******************
 	
 	# объект asset, передаваемый в task должен быть инициализирован.
-	# list_of_tasks (list) - список задачь (словари по tasks_keys).
+	# list_of_tasks (list) - список задачь (словари по tasks_keys, обязательные параметры: task_name).
 	def create_tasks_from_list(self, list_of_tasks): #v2
 		asset_name = self.asset.name #asset_data['name']
 		asset_id = self.asset.id #asset_data['id']
@@ -4660,7 +4664,7 @@ class task(studio):
 		return(True, return_data_)
 	
 	# task_name (str) - имя задачи
-	# возврат словаря задачи по имени задачи. если нужен объект используем task.init(name)
+	# возврат словаря задачи (по ключам из tasks_keys, чтение БД) по имени задачи. если нужен объект используем task.init(name)
 	def __read_task(self, task_name): # v2
 		pass
 		# 1 - get asset_id, other_asset
