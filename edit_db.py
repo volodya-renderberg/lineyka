@@ -4528,27 +4528,24 @@ class task(studio):
 			
 		return(True, 'Ok!')
 	
+	# task должен быть инициализирован.
 	# task_data (dict) - изменяемая задача, если False - значит предполагается, что task инициализирован.
 	# current_user (artist) - экземпляр класса артист, должен быть инициализирован - artist.get_user() - если False - то чат проверятся не будет (для тех нужд)
-	def rework_task(self, current_user = False, task_data=False): # v2 ** продолжение возможно только после редактирования chat().read_the_chat()
+	def rework_task(self, current_user = False): # v2 ** продолжение возможно только после редактирования chat().read_the_chat()
 		pass
-		# 1 - получение task_data
-		
+		# 1 - get exists chat
+		# 2 - edit readers
+		# 3 - write db
+		# 4 - edit self.status
 		
 		# (1)
-		if not task_data:
-			task_data={}
-			for key in self.tasks_keys:
-				exec('task_data["%s"] = self.%s' % (key, key))
-		
-		# get exists chat
 		if current_user:
 			if not isinstance(current_user, artist):
 				return(False, 'in task.rework_task() - "current_user" must be an instance of "artist" class, and not "%s"' % current_user.__class__.__name__)
 			exists_chat = False
-			result = chat().read_the_chat(project_name, task_data['task_name'])
+			result = chat(self).read_the_chat()
 			if not result[0]:
-				return(False, 'not chat!')
+				return(False, 'No chat messages! To send for rework, you must specify the reason in the chat.')
 			
 			delta = datetime.timedelta(minutes = 45)
 			now_time = datetime.datetime.now()
@@ -4559,44 +4556,28 @@ class task(studio):
 						break
 						
 			if not exists_chat:
-				return(False, 'not chat!')
-			
-		# -- Connect to db
-		conn = sqlite3.connect(self.tasks_path, detect_types=sqlite3.PARSE_DECLTYPES|sqlite3.PARSE_COLNAMES)
-		conn.row_factory = sqlite3.Row
-		c = conn.cursor()
+				return(False, 'No chat messages or no fresh (30 minutes) messages! To send for rework, you must specify the reason in the chat.')
 		
-		# Exists table
-		table = '\"' + task_data['asset_id'] + ':' + self.tasks_t + '\"'
-		
-		#try:
-			
-		# read .db
-		string = 'SELECT * FROM ' +  table + ' WHERE task_name = ?'
-		data = (task_data['task_name'],)
-		c.execute(string, data)
-		task_data = dict(c.fetchone())
-		if task_data['readers']:
-			readers = json.loads(task_data['readers'])
-			for nik_name in readers:
+		# (2)
+		if self.readers:
+			for nik_name in self.readers:
 				if nik_name == 'first_reader':
 					continue
-				readers[nik_name] = 0
-			task_data['readers'] = json.dumps(readers)
+				self.readers[nik_name] = 0
 		
-		string = 'UPDATE ' +  table + ' SET  readers = ?, status  = ? WHERE task_name = ?'
-		data = (task_data['readers'], 'recast', task_data['task_name'])
-		c.execute(string, data)
+		# (3)
+		read_ob = self.asset.project
+		table_name = '"%s:%s"' % (self.asset.id, self.tasks_t)
+		keys = self.tasks_keys
+		update_data = {'status':'recast', 'readers': self.readers}
+		where = {'task_name': self.task_name}
+		bool_, r_data = database().update('project', read_ob, table_name, keys, update_data, where, table_root=self.tasks_db)
+		if not bool_:
+			return(bool_, r_data)
 		
-		conn.commit()
-		conn.close()
+		# (4)
+		self.status = 'recast'
 		
-		'''				
-		except:
-			conn.close()
-			return(False, 'in rework_task - Not Edit Table!')
-		'''
-			
 		return(True, 'Ok!')
 	
 	# task_data (dict) - изменяемая задача, если False - значит предполагается, что task инициализирован.
