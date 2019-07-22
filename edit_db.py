@@ -2244,7 +2244,7 @@ class task(studio):
 	def init(self, task_name, new = True):
 		pass
 		# get keys
-		b, r = self.__read_task(task_name)
+		b, r = self._read_task(task_name)
 		if not b:
 			return(bool_, r)
 		
@@ -3161,7 +3161,7 @@ class task(studio):
 					task_key_data['status'] = "ready"
 				######
 			else:
-				input_task_data = self.__read_task(project_name, task_key_data['input'], ('status',))
+				input_task_data = self._read_task(project_name, task_key_data['input'], ('status',))
 				if input_task_data[0]:
 					if input_task_data[1]['status'] == 'done':
 						######
@@ -3296,7 +3296,7 @@ class task(studio):
 			input_task_name = task_key_data['input']
 		except:
 			input_task_name = current_task_data['input']
-		input_task_data = self.__read_task(project_name, input_task_name, ['status'])
+		input_task_data = self._read_task(project_name, input_task_name, ['status'])
 		if input_task_data[0]:
 			input_status = input_task_data[1]['status']
 		elif not input_task_data[0] and input_task_data[1] == 'not_task_name':
@@ -3358,7 +3358,7 @@ class task(studio):
 				elif key == 'input':
 					######
 					continue
-					data_from_input_task = self.__read_task(project_name, task_key_data['input'], ('status',))
+					data_from_input_task = self._read_task(project_name, task_key_data['input'], ('status',))
 					string = string + ' ' + key + ' = \"' + task_key_data[key] + '\",'
 				
 				else:
@@ -3428,7 +3428,7 @@ class task(studio):
 		
 		return True, 'ok'
 	'''
-	def __read_task(self, project_name, task_name, keys):
+	def _read_task(self, project_name, task_name, keys):
 		if keys == 'all':
 			new_keys = []
 			for key in self.tasks_keys:
@@ -4646,7 +4646,7 @@ class task(studio):
 	
 	# task_name (str) - имя задачи
 	# возврат словаря задачи (по ключам из tasks_keys, чтение БД) по имени задачи. если нужен объект используем task.init(name)
-	def __read_task(self, task_name): # v2
+	def _read_task(self, task_name): # v2
 		pass
 		# 1 - get asset_id, other_asset
 		# 2 - read task_data
