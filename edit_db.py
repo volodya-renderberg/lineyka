@@ -653,7 +653,7 @@ class studio:
 		
 	def edit_extension(self, extension, action, new_extension = False):
 		if not extension:
-			return(False, 'Not Extension!')
+			return(False, 'Extension not specified!')
 			
 		if not action in ['ADD', 'REMOVE', 'EDIT']:
 			return(False, 'Incorrect Action!')

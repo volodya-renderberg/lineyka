@@ -733,6 +733,11 @@ class MainWindow(QtGui.QMainWindow):
 			self.setWindow.set_tmp_field.setText('set tmp_folder')
 			print(data[0])
 			
+		# connect fields
+		self.setWindow.set_studio_field.returnPressed.connect(self.set_studio_action_from_line)
+		self.setWindow.set_tmp_field.returnPressed.connect(self.set_tmp_path_action_from_line)
+		self.setWindow.set_convert_exe_field.returnPressed.connect(self.set_convert_path_action_from_line)
+			
 		# set modal window
 		self.setWindow.setWindowModality(QtCore.Qt.WindowModal)
 		self.setWindow.setAttribute(QtCore.Qt.WA_DeleteOnClose, True)
@@ -763,6 +768,24 @@ class MainWindow(QtGui.QMainWindow):
 			# finish
 			self.clear_table()
 		print('set studio folder')
+		
+	def set_studio_action_from_line(self):
+		pass
+		folder = self.setWindow.set_studio_field.text()
+		
+		if os.path.exists(folder):
+			result = self.db_studio.set_studio(folder)
+			if not result[0]:
+				self.message(result[1], 2)
+				
+			self.clear_table()
+		else:
+			self.message('This path is not found!', 2)
+			return
+          
+		# finish
+		print('set studio folder')
+		self.message('Data saved!', 1)
     
 	def set_tmp_path_action(self):
 		# get path
@@ -778,6 +801,22 @@ class MainWindow(QtGui.QMainWindow):
 				self.message(result[1], 2)
       
 		# finish
+		print('set tmp folder')
+		
+	def set_tmp_path_action_from_line(self):
+		pass
+		folder = self.setWindow.set_tmp_field.text()
+		
+		if os.path.exists(folder):
+			result = self.db_studio.set_tmp_dir(folder)
+			if not result[0]:
+				self.message(result[1], 2)
+		else:
+			self.message('This path is not found!', 2)
+			return
+      
+		# finish
+		self.message('Data saved!', 1)
 		print('set tmp folder')
 		
 	def set_convert_path_action(self):
@@ -796,6 +835,22 @@ class MainWindow(QtGui.QMainWindow):
 		# finish
 		print('set convert.exe path')
 		
+	def set_convert_path_action_from_line(self):
+		pass
+		path = self.setWindow.set_convert_exe_field.text()
+		
+		if os.path.exists(path):
+			result = self.db_studio.set_convert_exe_path(path)
+			if not result[0]:
+				self.message(result[1], 2)
+		else:
+			self.message('This path is not found!', 2)
+			return
+      
+		# finish
+		self.message('Data saved!', 1)
+		print('set convert.exe path')
+		
 	def set_exe_path(self, line, key):
 		# get path
 		home = os.path.expanduser('~')
@@ -810,7 +865,7 @@ class MainWindow(QtGui.QMainWindow):
 				self.message(result[1], 2)
 				
 	def edit_extension(self, line, action, window):
-		result = self.db_studio.edit_extension(line.text(), action)
+		result = self.db_studio().edit_extension(line.text(), action)
 		if not result[0]:
 			self.message(result[1], 2)
 			return
