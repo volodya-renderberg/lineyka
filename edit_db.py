@@ -512,7 +512,7 @@ class studio:
 			return(False, "****** init file  can not be read")
 
 		self.convert_exe = path
-				
+		
 		return True, 'Ok'
 		
 	def set_share_dir(self, path):
@@ -541,7 +541,8 @@ class studio:
 			return "****** init file  can not be read"
 
 		#self.out_source_share_folder = path
-				
+		
+		self.get_studio()
 		return True, 'Ok'
 		
 	def get_share_dir(self):
@@ -647,6 +648,7 @@ class studio:
 			jsn = json.dump(data, f, sort_keys=True, indent=4)
 			f.close()
 		
+		self.get_studio()
 		return(True, 'Ok')
 		
 	def edit_extension(self, extension, action, new_extension = False):
@@ -695,6 +697,7 @@ class studio:
 			jsn = json.dump(data, f, sort_keys=True, indent=4)
 			f.close()
 		
+		self.get_studio()
 		return(True, 'Ok')
 	
 class database():

@@ -6922,8 +6922,7 @@ class MainWindow(QtGui.QMainWindow):
 		self.setWindow.additional_frame.setLayout(layout)
 
 		# fill field
-		copy = self.db_studio
-		data = copy.get_studio()
+		data = self.db_studio.get_studio()
 		if data[0]:
 			self.setWindow.set_studio_field.setText(str(copy.studio_folder))
 			self.setWindow.set_tmp_field.setText(str(copy.tmp_folder))
