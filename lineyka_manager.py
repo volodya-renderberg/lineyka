@@ -6163,14 +6163,10 @@ class MainWindow(QtGui.QMainWindow):
 		item = self.myWidget.task_manager_table.currentItem()
 		
 		# change task
-		ask = self.message(('Do you want to Rework the task: ' + item.task['task_name'] + ' ?'), 0)
+		ask = self.message(('Do you want to Rework the task: "%s" ?'  % self.selected_task.task_name), 0)
 		if ask:
-			result = self.db_chat.rework_task(self.current_project, item.task, current_user = self.artist.nik_name)
+			result = self.selected_task.rework_task(self.artist)
 			if not result[0]:
-				if result[1] == 'not chat!':
-					self.message('no posts in the chat!', 2)
-					self.chat_ui()
-					return
 				self.message(result[1], 2)
 				return
 		# reload table

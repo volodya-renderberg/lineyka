@@ -348,7 +348,7 @@ class MainWindow(QtGui.QMainWindow):
 		self.myWidget.task_info.setVisible(True)
 	
 	# ***************** Functional ********************************
-	def tz(self):
+	def specification(self):
 		if self.selected_task.specification:
 			webbrowser.open_new_tab(self.selected_task.specification)
 		else:

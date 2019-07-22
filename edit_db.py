@@ -4550,7 +4550,7 @@ class task(studio):
 			delta = datetime.timedelta(minutes = 45)
 			now_time = datetime.datetime.now()
 			for topic in result[1]:
-				if topic['author'] == current_user:
+				if topic['author'] == current_user.nik_name:
 					if (now_time - topic['date_time']) <= delta:
 						exists_chat = True
 						break
