@@ -104,6 +104,8 @@ class studio:
 	'close':(0.613, 0.373, 0.195)
 	}
 	
+	projects_units = ['m', 'cm', 'mm']
+	
 	task_types = [
 	# -- film
 	'animatic',
@@ -323,7 +325,8 @@ class studio:
 	location_position_file = 'location_content_position.json'
 	user_registr_file_name = 'user_registr.json'
 	recycle_bin_name = '-Recycle_Bin-'
-	list_of_assets_name = '.list_of_assets.json' # to delete
+	list_of_assets_name = '.list_of_assets.json'
+	PROJECT_SETTING = '.setting.json'
 	
 	#database files
 	# --- projects
@@ -1200,9 +1203,20 @@ class project(studio):
 		else:
 			self.path = path
 		
-		self.project_database = ['sqlite3', False] # новый проект в начале всегда sqlite3, чтобы сработало всё в database
-		self.list_of_assets_path = NormPath(os.path.join(self.path, '.list_of_assets_path.json'))
+		# read data
+		data = self._read_settings()
+		if not data:
+			self.project_database = ['sqlite3', False] # новый проект в начале всегда sqlite3, чтобы сработало всё в database
+			self.fps = 24
+			self.units = 'm'
+		else:
+			self.project_database = data['project_database']
+			self.fps = data['fps']
+			self.units = data['units']
+			#self.name = data['name']
 		
+		#
+		self.list_of_assets_path = NormPath(os.path.join(self.path, self.list_of_assets_name))
 		# create folders
 		self.__make_folders(self.path)
 		# -- get chat_img_folder
@@ -1237,6 +1251,7 @@ class project(studio):
 		if not result[0]:
 			return(False, result[1])
 		#
+		self._write_settings()
 		return True, 'ok'
 		
 	# заполняет поля класса list_active_projects, list_projects, dict_projects.
@@ -1279,7 +1294,8 @@ class project(studio):
 			return(bool_, rdata)
 		
 		self.name = new_name
-		#		
+		#
+		self._write_settings()
 		return(True, 'Ok!')
 		
 	# удаляет проект из БД, перезагружает studio.list_projects, приводит объектк empty.
@@ -1309,6 +1325,43 @@ class project(studio):
 		
 		self.status = status
 		#
+		self._write_settings()
+		return(True, 'Ok')
+	
+	def change_fps(self, fps):
+		pass
+		try:
+			fps = float(fps)
+		except:
+			return(False, 'invalid value for FPS: "%s"' % str(fps))
+		
+		# database
+		ud = {'fps': fps}
+		wh = {'name': self.name}
+		bool_, return_data = database().update('studio', self, self.projects_t, self.projects_keys, update_data=ud, where=wh, table_root=self.projects_db)
+		if not bool_:
+			return(bool_, return_data)
+		
+		self.fps = fps
+		#
+		self._write_settings()
+		return(True, 'Ok')
+	
+	def change_units(self, units):
+		if not units in self.projects_units:
+			return(False, 'invalid value for Units: "%s"' % str(units))
+		pass
+	
+		# database
+		ud = {'units': units}
+		wh = {'name': self.name}
+		bool_, return_data = database().update('studio', self, self.projects_t, self.projects_keys, update_data=ud, where=wh, table_root=self.projects_db)
+		if not bool_:
+			return(bool_, return_data)
+	
+		self.units = units
+		#
+		self._write_settings()
 		return(True, 'Ok')
 		
 	def __make_folders(self, root): # v2
@@ -1319,6 +1372,40 @@ class project(studio):
 				#print '\n****** Created'
 			else:
 				return False, '\n****** studio.project.make_folders -> No Created'
+	
+	def _write_settings(self):
+		pass
+		# 1 - get data
+		# 2 - write data
+	
+		ignoring_keys = ['path', 'list_active_projects', 'list_projects', 'dict_projects']
+	
+		# (1)
+		data = {}
+		for key in self.projects_keys:
+			if key in ignoring_keys:
+				continue
+			data[key] = getattr(self, key)
+		
+		# (2)
+		path = NormPath(os.path.join(self.path, self.PROJECT_SETTING))
+		with open(path, 'w') as f:
+			jsn = json.dump(data, f, sort_keys=True, indent=4)
+			
+		return(True, 'Ok')
+	
+	def _read_settings(self):
+		pass
+	
+		#
+		path = NormPath(os.path.join(self.path, self.PROJECT_SETTING))
+		if not os.path.exists(path):
+			return(None)
+		#
+		with open(path, 'r') as f:
+			data = json.load(f)
+			
+		return data
 	
 class asset(studio):
 	'''

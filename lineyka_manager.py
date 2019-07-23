@@ -1469,7 +1469,7 @@ class MainWindow(QtGui.QMainWindow):
 		self.project.get_list() # ?
 		
 		# get table data
-		columns = ('name', 'status', 'path')
+		columns = ('name', 'fps', 'units', 'status', 'path')
 		num_row = len(self.project.list_projects)
 		num_column = len(columns)
 		headers = columns
@@ -1484,7 +1484,7 @@ class MainWindow(QtGui.QMainWindow):
 		for i, project in enumerate(self.project.list_projects):
 			for j,key in enumerate(headers):
 				newItem = QtGui.QTableWidgetItem()
-				newItem.setText(getattr(project, key))
+				newItem.setText(str(getattr(project, key)))
 				newItem.project = project
 				if key == 'name':
 					color = self.project_color
@@ -1508,7 +1508,7 @@ class MainWindow(QtGui.QMainWindow):
 		item = table.selectedItems()[0]
 		#print(item.column_name)
 		menu = QtGui.QMenu(table)
-		menu_items = ['Rename', 'Remove', 'Deactivate', 'Set Active']
+		menu_items = ['Rename', 'Set Fps', 'Set Units', 'Remove', 'Deactivate', 'Set Active']
 		for label in menu_items:
 			action = menu.addAction(label)
 			action.triggered.connect(partial(self._project_editor_context_menu_action, label, item))
@@ -1518,6 +1518,10 @@ class MainWindow(QtGui.QMainWindow):
 		pass
 		if label=='Rename':
 			self.rename_project_ui(project=item.project)
+		elif label=='Set Fps':
+			self.set_fps_ui(project=item.project)
+		elif label=='Set Units':
+			self.set_units_ui(project=item.project)
 		elif label=='Remove':
 			self.remove_project_action(project=item.project)
 		elif label=='Deactivate':
@@ -1612,6 +1616,108 @@ class MainWindow(QtGui.QMainWindow):
 		self.fill_project_table(self.myWidget.studio_editor_table)
 		self.close_window(window)
 		
+		self.tm_fill_project_list()
+		
+	def set_fps_ui(self, project=False):
+		pass
+		if not project:
+			# get selected rows
+			table = self.myWidget.studio_editor_table
+			selected = table.selectedItems()
+							
+			if not selected:
+				self.message('Not Selected Project', 2)
+				return
+			project = selected[0].project
+			
+		self.selected_project = project
+		
+		# widget
+		loader = QtUiTools.QUiLoader()
+		file = QtCore.QFile(self.new_dialog_path)
+		#file.open(QtCore.QFile.ReadOnly)
+		window = self.setProjectDialog = loader.load(file, self)
+		file.close()
+		
+		# edit widget
+		window.setWindowTitle(('Set Fps for Project: %s' % self.selected_project.name))
+		window.new_dialog_label.setText('New Fps:')
+		#window.new_dialog_name.setText(str(self.selected_project.fps))
+		window.new_dialog_name.setMaxLength(3)
+		window.new_dialog_name.setValidator(QtGui.QIntValidator(1, 100))
+		window.new_dialog_name.setText(unicode(int(self.selected_project.fps)))
+		window.new_dialog_cancel.clicked.connect(partial(self.close_window, window))
+		window.new_dialog_ok.clicked.connect(partial(self.set_fps_action, window))
+		
+		# set modal window
+		window.setWindowModality(QtCore.Qt.WindowModal)
+		window.setAttribute(QtCore.Qt.WA_DeleteOnClose, True)
+		
+		window.show()
+		print('new project ui', self.selected_project.name)
+	
+	def set_fps_action(self, window):
+		pass
+		fps = window.new_dialog_name.text()
+		b, r = self.selected_project.change_fps(fps)
+		if not b:
+			self.message(r, 2)
+		
+		self.clear_table()
+		self.fill_project_table(self.myWidget.studio_editor_table)
+		self.close_window(window)
+		self.tm_fill_project_list()
+	
+	def set_units_ui(self, project=False):
+		pass
+		if not project:
+			# get selected rows
+			table = self.myWidget.studio_editor_table
+			selected = table.selectedItems()
+							
+			if not selected:
+				self.message('Not Selected Project', 2)
+				return
+			project = selected[0].project
+			
+		self.selected_project = project
+		
+		# widget
+		loader = QtUiTools.QUiLoader()
+		file = QtCore.QFile(self.new_dialog_path)
+		#file.open(QtCore.QFile.ReadOnly)
+		window = self.setProjectDialog = loader.load(file, self)
+		file.close()
+		
+		# edit widget
+		window.setWindowTitle(('Set Units for Project: %s' % self.selected_project.name))
+		window.new_dialog_label.setText('New Units:')
+		
+		window.new_dialog_name.setVisible(False)
+		
+		window.units_combo = QtGui.QComboBox()
+		window.units_combo.addItems(self.db_studio.projects_units)
+		window.horizontalLayout.addWidget(window.units_combo)
+		
+		window.new_dialog_cancel.clicked.connect(partial(self.close_window, window))
+		window.new_dialog_ok.clicked.connect(partial(self.set_units_action, window))
+		
+		# set modal window
+		window.setWindowModality(QtCore.Qt.WindowModal)
+		window.setAttribute(QtCore.Qt.WA_DeleteOnClose, True)
+		
+		window.show()
+	
+	def set_units_action(self, window):
+		pass
+		units = window.units_combo.currentText()
+		b, r = self.selected_project.change_units(units)
+		if not b:
+			self.message(r, 2)
+	
+		self.clear_table()
+		self.fill_project_table(self.myWidget.studio_editor_table)
+		self.close_window(window)
 		self.tm_fill_project_list()
 		
 	def remove_project_action(self, project=False):
