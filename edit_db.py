@@ -326,7 +326,7 @@ class studio:
 	user_registr_file_name = 'user_registr.json'
 	recycle_bin_name = '-Recycle_Bin-'
 	list_of_assets_name = '.list_of_assets.json'
-	PROJECT_SETTING = '.setting.json'
+	PROJECT_SETTING = '.project_setting.json'
 	
 	#database files
 	# --- projects
