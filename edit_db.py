@@ -272,20 +272,7 @@ class studio:
 	'status': 'text',
 	'reading_status': 'json',
 	}
-	'''
-	projects_keys = [
-	('name', 'text'),
-	('assets_path', 'text'),
-	('chat_img_path', 'text'),
-	('chat_path', 'text'),
-	('list_of_assets_path', 'text'),
-	('path', 'text'),
-	('preview_img_path', 'text'),
-	('status', 'text'),
-	('tasks_path', 'text'),
-	('project_database', 'json') # формат который конвертируется через json и записывается строкой.
-	]
-	'''
+	
 	projects_keys = {
 	'name': 'text',
 	'path': 'text',
