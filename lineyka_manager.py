@@ -5208,6 +5208,9 @@ class MainWindow(QtGui.QMainWindow):
 		chat_window = lineyka_chat.lineyka_chat(self)
 		#chat_class.__init__(self)
 		
+	def chat_close(*args):
+		pass
+		
 	def boxes_default_state(self):
 		self.myWidget.task_manager_comboBox_2.setVisible(False)
 		self.myWidget.task_manager_comboBox_2.clear()

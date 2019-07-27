@@ -101,6 +101,8 @@ class lineyka_chat:
 		
 		print(self.chat_status)
 		
+		window.rejected.connect(partial(self.MW.chat_close, MW))
+		
 		'''
 		# edit read_status
 		if self.chat_status == 'manager':
