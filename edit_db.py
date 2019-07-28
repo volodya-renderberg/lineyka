@@ -2850,7 +2850,8 @@ class task(studio):
 	# tasks (dict) - словарь задачь данного артиста по именам. - нужен для случая когда look=False, при отсутствии будет считан - лишнее обращение к БД.
 	# input_task (task) - входящая задача - для open_from_input - если передавать - то имеется ввиду открытие из активити входящей задачи.
 	# open_path (unicode/str) - путь к файлу - указывается для open_from_file
-	def open_file(self, look=False, current_artist=False, tasks=False, input_task=False, open_path=False, version=False):
+	# launch (bool) - если True - то будет произведён запуск приложением, которое установлено в соответствии с данным расширением файла (для универсальной юзерской панели и для менеджерской панели, при открытии на проверку), если False - то запуска не будет, но все смены статусов произойдут и будет возвращён путь к файлу.
+	def open_file(self, look=False, current_artist=False, tasks=False, input_task=False, open_path=False, version=False, launch=True):
 		pass
 		
 		# (1) ***** CHANGE STATUS
@@ -2943,11 +2944,12 @@ class task(studio):
 		shutil.copyfile(open_path, tmp_file_path)
 		
 		# (3) open file
-		soft = self.soft_data.get(task_ob.extension)
-		if not soft:
-			return(False, 'No application found for this extension "%s"' % task_ob.extension)
-		cmd = '"%s" "%s"' % (soft, tmp_file_path)
-		subprocess.Popen(cmd, shell = True)
+		if launch:
+			soft = self.soft_data.get(task_ob.extension)
+			if not soft:
+				return(False, 'No application found for this extension "%s"' % task_ob.extension)
+			cmd = '"%s" "%s"' % (soft, tmp_file_path)
+			subprocess.Popen(cmd, shell = True)
 		
 		return(True, tmp_file_path)
 	
