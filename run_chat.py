@@ -38,6 +38,7 @@ class MainWindow(QtGui.QMainWindow):
 		chat_window = lineyka_chat.lineyka_chat(self)
 		
 	def chat_close(self, mw):
+		#print(dir(mw))
 		self.close_window(mw)
 		
 	def close_window(self, window):
