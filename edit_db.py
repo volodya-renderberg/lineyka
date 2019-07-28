@@ -4723,6 +4723,16 @@ class task(studio):
 			
 		return(True, return_data_)
 	
+	# отправка текущей задачи на проверку
+	# обёртка на task.change_work_statuses()
+	# задача должна быть инициализирована
+	def to_checking(self):
+		b, r = self.change_work_statuses([(self, 'checking')])
+		if not b:
+			return(b, r)
+		else:
+			return(True, 'Ok!')
+	
 	# task_name (str) - имя задачи
 	# возврат словаря задачи (по ключам из tasks_keys, чтение БД) по имени задачи. если нужен объект используем task.init(name)
 	def _read_task(self, task_name): # v2
