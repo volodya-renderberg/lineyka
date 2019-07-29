@@ -76,7 +76,24 @@ class MainWindow(QtGui.QMainWindow):
 
 if __name__=='__main__':
 	app = QtGui.QApplication(sys.argv)
-	mw = MainWindow(sys.argv[1])
+	
+	###
+	project_name = sys.argv[1]
+	task_name = sys.argv[2]
+
+	studio = db.studio()
+
+	project = db.project().init(project_name)
+
+	asset_name = task_name.split(':')[0]
+	asset = db.asset(project).init(asset_name)
+
+	task = db.task(asset).init(task_name)
+	
+	mw = MainWindow(task)
+	###
+	
+	#mw = MainWindow(sys.argv[1])
 	mw.show()
 	app.exec_()
 	
