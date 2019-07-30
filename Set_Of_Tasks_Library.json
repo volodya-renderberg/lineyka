@@ -1,0 +1,640 @@
+{
+    "Anim_shot": {
+        "asset_type": "shot_animation", 
+        "sets": [
+            {
+                "activity": "shot_animation", 
+                "cost": "", 
+                "extension": ".blend", 
+                "input": "pre", 
+                "standart_time": "", 
+                "task_name": "make_anim_scene", 
+                "task_type": "animation_shot", 
+                "tz": "www.lineyka.org.ru/home/blender_addon_for_artist_rus/blender-types-of-tasks-rus/blender-task-type-animation-shot-rus", 
+                "workroom": "607382019"
+            }, 
+            {
+                "activity": "shot_animation", 
+                "cost": "", 
+                "extension": ".blend", 
+                "input": "make_anim_scene", 
+                "standart_time": "", 
+                "task_name": "make_camera", 
+                "task_type": "animation_shot", 
+                "tz": "www.lineyka.org.ru/home/blender_addon_for_artist_rus/blender-types-of-tasks-rus/blender-task-type-animation-shot-rus", 
+                "workroom": "919222102"
+            }, 
+            {
+                "activity": "shot_animation", 
+                "cost": "", 
+                "extension": ".blend", 
+                "input": "make_camera", 
+                "standart_time": "", 
+                "task_name": "shot_animation", 
+                "task_type": "animation_shot", 
+                "tz": "www.lineyka.org.ru/home/blender_addon_for_artist_rus/blender-types-of-tasks-rus/blender-task-type-animation-shot-rus", 
+                "workroom": "919222102"
+            }, 
+            {
+                "activity": "tech_anim", 
+                "cost": "", 
+                "extension": ".blend", 
+                "input": "shot_animation", 
+                "standart_time": "", 
+                "task_name": "tech anim", 
+                "task_type": "tech_anim", 
+                "tz": "www.lineyka.org.ru/home/blender_addon_for_artist_rus/blender-types-of-tasks-rus/blender-task-type-tech-anim-rus", 
+                "workroom": "919222102"
+            }, 
+            {
+                "activity": "render", 
+                "cost": "", 
+                "extension": ".blend", 
+                "input": "pre", 
+                "standart_time": "", 
+                "task_name": "make_render_scene", 
+                "task_type": "render", 
+                "tz": "www.lineyka.org.ru/home/blender_addon_for_artist_rus/blender-types-of-tasks-rus/blender-task-type-render-rus", 
+                "workroom": "985322514"
+            }, 
+            {
+                "activity": "render", 
+                "cost": "", 
+                "extension": ".blend", 
+                "input": "make_render_scene", 
+                "standart_time": "", 
+                "task_name": "render", 
+                "task_type": "render", 
+                "tz": "www.lineyka.org.ru/home/blender_addon_for_artist_rus/blender-types-of-tasks-rus/blender-task-type-render-rus", 
+                "workroom": "985322514"
+            }, 
+            {
+                "activity": "composition", 
+                "cost": "", 
+                "extension": ".blend", 
+                "input": "render", 
+                "standart_time": "", 
+                "task_name": "composition", 
+                "task_type": "composition", 
+                "tz": "www.lineyka.org.ru/home/blender_addon_for_artist_rus/blender-types-of-tasks-rus/blender-task-type-composition-rus", 
+                "workroom": "352039198"
+            }
+        ]
+    }, 
+    "Anim_shot_din": {
+        "asset_type": "shot_animation", 
+        "sets": [
+            {
+                "activity": "shot_animation", 
+                "cost": "", 
+                "extension": ".blend", 
+                "input": "pre", 
+                "standart_time": "", 
+                "task_name": "make_anim_scene", 
+                "task_type": "animation_shot", 
+                "tz": "www.lineyka.org.ru/home/blender_addon_for_artist_rus/blender-types-of-tasks-rus/blender-task-type-animation-shot-rus", 
+                "workroom": "607382019"
+            }, 
+            {
+                "activity": "shot_animation", 
+                "cost": "", 
+                "extension": ".blend", 
+                "input": "make_anim_scene", 
+                "standart_time": "", 
+                "task_name": "make camera", 
+                "task_type": "animation_shot", 
+                "tz": "www.lineyka.org.ru/home/blender_addon_for_artist_rus/blender-types-of-tasks-rus/blender-task-type-animation-shot-rus", 
+                "workroom": "607382019"
+            }, 
+            {
+                "activity": "shot_animation", 
+                "cost": "", 
+                "extension": ".blend", 
+                "input": "make camera", 
+                "standart_time": "", 
+                "task_name": "shot_animation", 
+                "task_type": "animation_shot", 
+                "tz": "www.lineyka.org.ru/home/blender_addon_for_artist_rus/blender-types-of-tasks-rus/blender-task-type-animation-shot-rus", 
+                "workroom": "919222102"
+            }, 
+            {
+                "activity": "tech_anim", 
+                "cost": "", 
+                "extension": ".blend", 
+                "input": "shot_animation", 
+                "standart_time": "", 
+                "task_name": "tech anim", 
+                "task_type": "tech_anim", 
+                "tz": "www.lineyka.org.ru/home/blender_addon_for_artist_rus/blender-types-of-tasks-rus/blender-task-type-tech-anim-rus", 
+                "workroom": "919222102"
+            }, 
+            {
+                "activity": "simulation_din", 
+                "cost": "", 
+                "extension": ".blend", 
+                "input": "tech anim", 
+                "standart_time": "", 
+                "task_name": "dinamica", 
+                "task_type": "simulation_din", 
+                "tz": "www.lineyka.org.ru/home/blender_addon_for_artist_rus/blender-types-of-tasks-rus/blender-task-type-simulation-din-rus", 
+                "workroom": "551988034"
+            }, 
+            {
+                "activity": "render", 
+                "cost": "", 
+                "extension": ".blend", 
+                "input": "pre", 
+                "standart_time": "", 
+                "task_name": "make_render_scene", 
+                "task_type": "render", 
+                "tz": "www.lineyka.org.ru/home/blender_addon_for_artist_rus/blender-types-of-tasks-rus/blender-task-type-render-rus", 
+                "workroom": "985322514"
+            }, 
+            {
+                "activity": "render", 
+                "cost": "", 
+                "extension": ".blend", 
+                "input": "make_render_scene", 
+                "standart_time": "", 
+                "task_name": "render", 
+                "task_type": "render", 
+                "tz": "www.lineyka.org.ru/home/blender_addon_for_artist_rus/blender-types-of-tasks-rus/blender-task-type-render-rus", 
+                "workroom": "985322514"
+            }, 
+            {
+                "activity": "composition", 
+                "cost": "", 
+                "extension": ".blend", 
+                "input": "render", 
+                "standart_time": "", 
+                "task_name": "composition", 
+                "task_type": "composition", 
+                "tz": "www.lineyka.org.ru/home/blender_addon_for_artist_rus/blender-types-of-tasks-rus/blender-task-type-composition-rus", 
+                "workroom": "352039198"
+            }
+        ]
+    }, 
+    "Char_sculpt": {
+        "asset_type": "char", 
+        "sets": [
+            {
+                "activity": "sketch", 
+                "cost": "", 
+                "extension": ".tiff", 
+                "input": "", 
+                "standart_time": "", 
+                "task_name": "sketch", 
+                "task_type": "sketch", 
+                "tz": "", 
+                "workroom": "545772999"
+            }, 
+            {
+                "activity": "sculpt", 
+                "cost": "", 
+                "extension": ".blend", 
+                "input": "sketch", 
+                "standart_time": "", 
+                "task_name": "sculpt", 
+                "task_type": "sculpt", 
+                "tz": "www.lineyka.org.ru/home/blender_addon_for_artist_rus/blender-types-of-tasks-rus/blender-task-type-sculpt-model-rus", 
+                "workroom": "97872941"
+            }, 
+            {
+                "activity": "model", 
+                "cost": "", 
+                "extension": ".blend", 
+                "input": "sculpt", 
+                "standart_time": "", 
+                "task_name": "retopo_UV", 
+                "task_type": "model", 
+                "tz": "www.lineyka.org.ru/home/blender_addon_for_artist_rus/blender-types-of-tasks-rus/blender-task-type-sculpt-model-rus", 
+                "workroom": "97872941"
+            }, 
+            {
+                "activity": "model", 
+                "cost": "", 
+                "extension": ".blend", 
+                "input": "retopo_UV", 
+                "standart_time": "", 
+                "task_name": "textures", 
+                "task_type": "textures", 
+                "tz": "www.lineyka.org.ru/home/blender_addon_for_artist_rus/blender-types-of-tasks-rus/blender-task-type-textures-rus", 
+                "workroom": "744358281"
+            }, 
+            {
+                "activity": "rig", 
+                "cost": "", 
+                "extension": ".blend", 
+                "input": "textures", 
+                "standart_time": "", 
+                "task_name": "rig", 
+                "task_type": "rig", 
+                "tz": "www.lineyka.org.ru/home/blender_addon_for_artist_rus/blender-types-of-tasks-rus/blender-task-type-rig", 
+                "workroom": "293305631"
+            }
+        ]
+    }, 
+    "Char_sculpt_din": {
+        "asset_type": "char", 
+        "sets": [
+            {
+                "activity": "sketch", 
+                "cost": "", 
+                "extension": ".tiff", 
+                "input": "", 
+                "standart_time": "", 
+                "task_name": "sketch", 
+                "task_type": "sketch", 
+                "tz": "", 
+                "workroom": "545772999"
+            }, 
+            {
+                "activity": "sculpt", 
+                "cost": "", 
+                "extension": ".blend", 
+                "input": "sketch", 
+                "standart_time": "", 
+                "task_name": "sculpt", 
+                "task_type": "sculpt", 
+                "tz": "www.lineyka.org.ru/home/blender_addon_for_artist_rus/blender-types-of-tasks-rus/blender-task-type-sculpt-model-rus", 
+                "workroom": "97872941"
+            }, 
+            {
+                "activity": "model", 
+                "cost": "", 
+                "extension": ".blend", 
+                "input": "sculpt", 
+                "standart_time": "", 
+                "task_name": "retopo_UV", 
+                "task_type": "model", 
+                "tz": "www.lineyka.org.ru/home/blender_addon_for_artist_rus/blender-types-of-tasks-rus/blender-task-type-sculpt-model-rus", 
+                "workroom": "97872941"
+            }, 
+            {
+                "activity": "model", 
+                "cost": "", 
+                "extension": ".blend", 
+                "input": "retopo_UV", 
+                "standart_time": "", 
+                "task_name": "textures", 
+                "task_type": "textures", 
+                "tz": "www.lineyka.org.ru/home/blender_addon_for_artist_rus/blender-types-of-tasks-rus/blender-task-type-textures-rus", 
+                "workroom": "744358281"
+            }, 
+            {
+                "activity": "rig", 
+                "cost": "", 
+                "extension": ".blend", 
+                "input": "textures", 
+                "standart_time": "", 
+                "task_name": "rig", 
+                "task_type": "rig", 
+                "tz": "www.lineyka.org.ru/home/blender_addon_for_artist_rus/blender-types-of-tasks-rus/blender-task-type-rig", 
+                "workroom": "293305631"
+            }, 
+            {
+                "activity": "rig", 
+                "cost": "", 
+                "extension": ".blend", 
+                "input": "rig", 
+                "standart_time": "", 
+                "task_name": "din_rig", 
+                "task_type": "rig", 
+                "tz": "www.lineyka.org.ru/home/blender_addon_for_artist_rus/blender-types-of-tasks-rus/blender-task-type-rig", 
+                "workroom": "293305631"
+            }
+        ]
+    }, 
+    "Char_simple": {
+        "asset_type": "char", 
+        "sets": [
+            {
+                "activity": "sketch", 
+                "cost": "", 
+                "extension": ".tiff", 
+                "input": "", 
+                "standart_time": "", 
+                "task_name": "sketch", 
+                "task_type": "sketch", 
+                "tz": "", 
+                "workroom": "545772999"
+            }, 
+            {
+                "activity": "model", 
+                "cost": "", 
+                "extension": ".blend", 
+                "input": "sketch", 
+                "standart_time": "", 
+                "task_name": "model_UV", 
+                "task_type": "model", 
+                "tz": "www.lineyka.org.ru/home/blender_addon_for_artist_rus/blender-types-of-tasks-rus/blender-task-type-sculpt-model-rus", 
+                "workroom": "97872941"
+            }, 
+            {
+                "activity": "model", 
+                "cost": "", 
+                "extension": ".blend", 
+                "input": "model_UV", 
+                "standart_time": "", 
+                "task_name": "textures", 
+                "task_type": "textures", 
+                "tz": "www.lineyka.org.ru/home/blender_addon_for_artist_rus/blender-types-of-tasks-rus/blender-task-type-textures-rus", 
+                "workroom": "744358281"
+            }, 
+            {
+                "activity": "rig", 
+                "cost": "", 
+                "extension": ".blend", 
+                "input": "textures", 
+                "standart_time": "", 
+                "task_name": "rig", 
+                "task_type": "rig", 
+                "tz": "www.lineyka.org.ru/home/blender_addon_for_artist_rus/blender-types-of-tasks-rus/blender-task-type-rig", 
+                "workroom": "293305631"
+            }
+        ]
+    }, 
+    "Char_simple_din": {
+        "asset_type": "char", 
+        "sets": [
+            {
+                "activity": "sketch", 
+                "cost": "", 
+                "extension": ".tiff", 
+                "input": "", 
+                "standart_time": "", 
+                "task_name": "sketch", 
+                "task_type": "sketch", 
+                "tz": "", 
+                "workroom": "545772999"
+            }, 
+            {
+                "activity": "model", 
+                "cost": "", 
+                "extension": ".blend", 
+                "input": "sketch", 
+                "standart_time": "", 
+                "task_name": "model", 
+                "task_type": "model", 
+                "tz": "www.lineyka.org.ru/home/blender_addon_for_artist_rus/blender-types-of-tasks-rus/blender-task-type-sculpt-model-rus", 
+                "workroom": "97872941"
+            }, 
+            {
+                "activity": "model", 
+                "cost": "", 
+                "extension": ".blend", 
+                "input": "model", 
+                "standart_time": "", 
+                "task_name": "textures", 
+                "task_type": "textures", 
+                "tz": "www.lineyka.org.ru/home/blender_addon_for_artist_rus/blender-types-of-tasks-rus/blender-task-type-textures-rus", 
+                "workroom": "744358281"
+            }, 
+            {
+                "activity": "rig", 
+                "cost": "", 
+                "extension": ".blend", 
+                "input": "textures", 
+                "standart_time": "", 
+                "task_name": "rig", 
+                "task_type": "rig", 
+                "tz": "www.lineyka.org.ru/home/blender_addon_for_artist_rus/blender-types-of-tasks-rus/blender-task-type-rig", 
+                "workroom": "293305631"
+            }, 
+            {
+                "activity": "din_rig", 
+                "cost": "", 
+                "extension": ".blend", 
+                "input": "rig", 
+                "standart_time": "", 
+                "task_name": "din_rig", 
+                "task_type": "rig", 
+                "tz": "www.lineyka.org.ru/home/blender_addon_for_artist_rus/blender-types-of-tasks-rus/blender-task-type-rig", 
+                "workroom": "293305631"
+            }
+        ]
+    }, 
+    "Film": {
+        "asset_type": "film", 
+        "sets": [
+            {
+                "activity": "animatic", 
+                "cost": "", 
+                "extension": ".blend", 
+                "input": "", 
+                "standart_time": "", 
+                "task_name": "scenario", 
+                "task_type": "animatic", 
+                "tz": "", 
+                "workroom": "841862381"
+            }, 
+            {
+                "activity": "animatic", 
+                "cost": "", 
+                "extension": ".blend", 
+                "input": "scenario", 
+                "standart_time": "", 
+                "task_name": "storyboard", 
+                "task_type": "animatic", 
+                "tz": "www.lineyka.org.ru/home/blender_addon_for_artist_rus/blender-types-of-tasks-rus/blender-task-type-animatic-rus", 
+                "workroom": "841862381"
+            }, 
+            {
+                "activity": "animatic", 
+                "cost": "", 
+                "extension": ".blend", 
+                "input": "storyboard", 
+                "standart_time": "", 
+                "task_name": "animatic", 
+                "task_type": "animatic", 
+                "tz": "www.lineyka.org.ru/home/blender_addon_for_artist_rus/blender-types-of-tasks-rus/blender-task-type-animatic-rus", 
+                "workroom": "841862381"
+            }, 
+            {
+                "activity": "film", 
+                "cost": "", 
+                "extension": ".blend", 
+                "input": "animatic", 
+                "standart_time": "", 
+                "task_name": "montag", 
+                "task_type": "film", 
+                "tz": "www.lineyka.org.ru/home/blender_addon_for_artist_rus/blender-types-of-tasks-rus/blender-task-type-film-rus", 
+                "workroom": "841862381"
+            }
+        ]
+    }, 
+    "Location": {
+        "asset_type": "location", 
+        "sets": [
+            {
+                "activity": "sketch", 
+                "cost": "", 
+                "extension": ".tiff", 
+                "input": "", 
+                "standart_time": "", 
+                "task_name": "sketch", 
+                "task_type": "sketch", 
+                "tz": "", 
+                "workroom": "545772999"
+            }, 
+            {
+                "activity": "specification", 
+                "cost": "", 
+                "extension": ".ods", 
+                "input": "sketch", 
+                "standart_time": "", 
+                "task_name": "specification", 
+                "task_type": "specification", 
+                "tz": "", 
+                "workroom": "841862381"
+            }, 
+            {
+                "activity": "location_anim", 
+                "cost": "", 
+                "extension": ".blend", 
+                "input": "pre", 
+                "standart_time": "", 
+                "task_name": "for_anim_shot", 
+                "task_type": "location", 
+                "tz": "www.lineyka.org.ru/home/blender_addon_for_artist_rus/blender-types-of-tasks-rus/blender-task-type-location-rus", 
+                "workroom": "607382019"
+            }, 
+            {
+                "activity": "location", 
+                "cost": "", 
+                "extension": ".blend", 
+                "input": "pre", 
+                "standart_time": "", 
+                "task_name": "full_location", 
+                "task_type": "location", 
+                "tz": "www.lineyka.org.ru/home/blender_addon_for_artist_rus/blender-types-of-tasks-rus/blender-task-type-location-rus", 
+                "workroom": "607382019"
+            }
+        ]
+    }, 
+    "Location_simple": {
+        "asset_type": "location", 
+        "sets": [
+            {
+                "activity": "sketch", 
+                "cost": "", 
+                "extension": ".tiff", 
+                "input": "", 
+                "standart_time": "", 
+                "task_name": "sketch", 
+                "task_type": "sketch", 
+                "tz": "", 
+                "workroom": "545772999"
+            }, 
+            {
+                "activity": "specification", 
+                "cost": "", 
+                "extension": ".ods", 
+                "input": "", 
+                "standart_time": "", 
+                "task_name": "specification", 
+                "task_type": "specification", 
+                "tz": "", 
+                "workroom": "841862381"
+            }, 
+            {
+                "activity": "location", 
+                "cost": "", 
+                "extension": ".blend", 
+                "input": "pre", 
+                "standart_time": "", 
+                "task_name": "full_location", 
+                "task_type": "location", 
+                "tz": "www.lineyka.org.ru/home/blender_addon_for_artist_rus/blender-types-of-tasks-rus/blender-task-type-location-rus", 
+                "workroom": "607382019"
+            }
+        ]
+    }, 
+    "Obj_sculpt": {
+        "asset_type": "obj", 
+        "sets": [
+            {
+                "activity": "sketch", 
+                "cost": "", 
+                "extension": ".tiff", 
+                "input": "", 
+                "standart_time": "", 
+                "task_name": "sketch", 
+                "task_type": "sketch", 
+                "tz": "", 
+                "workroom": "545772999"
+            }, 
+            {
+                "activity": "sculpt", 
+                "cost": "", 
+                "extension": ".blend", 
+                "input": "sketch", 
+                "standart_time": "", 
+                "task_name": "sculpting", 
+                "task_type": "sculpt", 
+                "tz": "www.lineyka.org.ru/home/blender_addon_for_artist_rus/blender-types-of-tasks-rus/blender-task-type-location-rus/home/blender_addon_for_artist_rus/blender-types-of-tasks-rus/blender-task-type-sculpt-model-rus", 
+                "workroom": "97872941"
+            }, 
+            {
+                "activity": "model", 
+                "cost": "", 
+                "extension": ".blend", 
+                "input": "sculpting", 
+                "standart_time": "", 
+                "task_name": "retopo_UV", 
+                "task_type": "model", 
+                "tz": "www.lineyka.org.ru/home/blender_addon_for_artist_rus/blender-types-of-tasks-rus/blender-task-type-location-rus/home/blender_addon_for_artist_rus/blender-types-of-tasks-rus/blender-task-type-sculpt-model-rus", 
+                "workroom": "97872941"
+            }, 
+            {
+                "activity": "model", 
+                "cost": "", 
+                "extension": ".blend", 
+                "input": "retopo_UV", 
+                "standart_time": "", 
+                "task_name": "texture", 
+                "task_type": "textures", 
+                "tz": "www.lineyka.org.ru/home/blender_addon_for_artist_rus/blender-types-of-tasks-rus/blender-task-type-location-rus/home/blender_addon_for_artist_rus/blender-types-of-tasks-rus/blender-task-type-textures-rus", 
+                "workroom": "744358281"
+            }
+        ]
+    }, 
+    "Obj_simple": {
+        "asset_type": "obj", 
+        "sets": [
+            {
+                "activity": "sketch", 
+                "cost": "", 
+                "extension": ".tiff", 
+                "input": "", 
+                "standart_time": "", 
+                "task_name": "sketch", 
+                "task_type": "sketch", 
+                "tz": "", 
+                "workroom": "545772999"
+            }, 
+            {
+                "activity": "model", 
+                "cost": "", 
+                "extension": ".blend", 
+                "input": "sketch", 
+                "standart_time": "", 
+                "task_name": "model_UV", 
+                "task_type": "model", 
+                "tz": "www.lineyka.org.ru/home/blender_addon_for_artist_rus/blender-types-of-tasks-rus/blender-task-type-location-rus/home/blender_addon_for_artist_rus/blender-types-of-tasks-rus/blender-task-type-sculpt-model-rus", 
+                "workroom": "97872941"
+            }, 
+            {
+                "activity": "model", 
+                "cost": "", 
+                "extension": ".blend", 
+                "input": "model_UV", 
+                "standart_time": "", 
+                "task_name": "textures", 
+                "task_type": "textures", 
+                "tz": "www.lineyka.org.ru/home/blender_addon_for_artist_rus/blender-types-of-tasks-rus/blender-task-type-location-rus/home/blender_addon_for_artist_rus/blender-types-of-tasks-rus/blender-task-type-textures-rus", 
+                "workroom": "744358281"
+            }
+        ]
+    }
+}
