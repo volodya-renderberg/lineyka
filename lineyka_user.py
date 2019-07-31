@@ -373,13 +373,13 @@ class MainWindow(QtGui.QMainWindow):
 			return
 		
 		# (3) change status in db
-		result = self.selected_task.change_work_statuses([(self.selected_task, 'checking')])
+		#result = self.selected_task.change_work_statuses([(self.selected_task, 'checking')])
+		result = self.selected_task.to_checking()
 		if not result[0]:
 			self.message(result[1], 2)
 			return
 		
 		# (4) change current status
-		self.selected_task.status = 'checking'
 		self.show_task_list(ask=False)
 		
 			

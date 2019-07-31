@@ -4731,6 +4731,7 @@ class task(studio):
 		if not b:
 			return(b, r)
 		else:
+			self.status = 'checking'
 			return(True, 'Ok!')
 	
 	# task_name (str) - имя задачи
