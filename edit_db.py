@@ -118,6 +118,7 @@ class studio:
 	'model',
 	# -- rig
 	'rig',
+	'test_animation', # анимация для проверки рига - активити test_animation
 	# -- location,
 	'specification',
 	'location',
@@ -178,6 +179,7 @@ class studio:
 	'activity': 'text',
 	'task_name': 'text',
 	'task_type': 'text',
+	'source': 'json',
 	'input': 'json',
 	'status': 'text',
 	'outsource': 'integer',
@@ -1456,6 +1458,7 @@ class asset(studio):
 		'din_rig':'din_rig',
 		'textures':'05_textures',
 		'cache':'cache',
+		'test_animation': 'test_animation', # тестовая анимация для проверки рига
 		},
 		'location' : {
 		'sketch':'sketch',
