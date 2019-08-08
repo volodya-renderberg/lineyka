@@ -2221,7 +2221,7 @@ class MainWindow(QtGui.QMainWindow):
 		elif item.column_name == 'task_type':
 			menu_items = self.db_set_of_tasks.task_types
 		elif item.column_name == 'activity':
-			list_activity = self.db_asset.ACTIVITY_FOLDER[self.selected_set_of_tasks.asset.type].keys()
+			list_activity = self.db_asset.ACTIVITY_FOLDER[self.selected_set_of_tasks.asset_type].keys()
 			list_activity.sort()
 			menu_items = list_activity
 		elif item.column_name == 'input':
