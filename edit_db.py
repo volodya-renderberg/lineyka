@@ -5349,8 +5349,9 @@ class log(studio):
 		pass
 		# 1 - тест обязательных полей: description, version, action
 		# 2 - чтение artist
-		# 3 - заполнение полей task_name, date_time, artist
-		# 4 - запись БД
+		# 3 - branch
+		# 4 - заполнение полей task_name, date_time, artist
+		# 5 - запись БД
 		
 		# (1)
 		for item in ["description", "version", "action"]:
@@ -5366,8 +5367,12 @@ class log(studio):
 			bool_, r_data = artist_ob.get_user()
 			if not bool_:
 				return(bool_, r_data)
+		
+		# (3)
+		if not logs_keys.get('branch'):
+			logs_keys['branch'] == 'master'
 
-		# (3)		
+		# (4)
 		# task_name
 		if not self.task.task_name:
 			return(False, 'in log.write_log() - value "self.task.task_name" not defined!')
@@ -5381,7 +5386,7 @@ class log(studio):
 		#
 		logs_keys['activity'] = self.task.activity
 		
-		# (4)
+		# (5)
 		table_name = '"%s:%s:logs"' % (self.task.asset.id, logs_keys['activity'])
 		read_ob = self.task.asset.project
 		#
@@ -5416,28 +5421,14 @@ class log(studio):
 		else:
 			where = False
 		bool_, r_data = database().read('project', read_ob, table_name, self.logs_keys, where=where, table_root=self.logs_db)
-		return(bool_, r_data)
+		if not bool_:
+			return(bool_, r_data)
+		branches = list()
+		for item in r_data:
+			branches.append(item['branch'])
+		branches = list(set(branches))
 		
-		'''
-		# read tasks
-		conn = sqlite3.connect(self.tasks_path, detect_types=sqlite3.PARSE_DECLTYPES|sqlite3.PARSE_COLNAMES)
-		conn.row_factory = sqlite3.Row
-		c = conn.cursor()
-		
-		# create string
-		table = '\"' + asset_id + ':' + activity + ':logs\"'
-		string = 'select * from ' + table
-		
-		rows = None
-		
-		try:
-			c.execute(string)
-			rows = c.fetchall()
-		except:
-			conn.close()
-			return(False, 'can_not_read_logs!')
-		conn.close()
-		'''
+		return(True, (r_data, branches))
 		
 	# читает только push логи
 	# преобразует datetime в строку
@@ -5447,9 +5438,9 @@ class log(studio):
 		pass
 		# get all logs
 		if not task_data:
-			bool_, logs_list = self.read_log(action='push')
+			bool_, r_data = self.read_log(action='push')
 			if not bool_:
-				return(False, logs_list)
+				return(False, r_data)
 		else:
 			# get asset/task
 			if task_data['asset_name'] != self.task.asset.name:
@@ -5462,18 +5453,17 @@ class log(studio):
 			# get log
 			log_new = log(task_ob)
 			# read log
-			bool_, logs_list = log_new.read_log(action='push')
+			bool_, r_data = log_new.read_log(action='push')
 			if not bool_:
-				return(False, logs_list)
-			
+				return(False, r_data)
 		
 		if time_to_str:
-			for row in logs_list:
+			for row in r_data[0]:
 				dt = row['date_time']
 				data = dt.strftime("%d-%m-%Y %H:%M:%S")
 				row['date_time'] = data
 				
-		return(True, logs_list)
+		return(True, r_data)
 	
 	# *** CAMERA LOGS ***
 	# artist_ob - (artist) - объект artist, его никнейм записывается в лог.
