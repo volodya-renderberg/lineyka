@@ -184,8 +184,11 @@ class studio:
 	'status': 'text',
 	'outsource': 'integer',
 	'artist': 'text',
+	'level': 'text',        # пользовательский уровень сложности задачи.
 	'planned_time': 'real',
-	'time': 'real',
+	'time':  'json',        # словарь: ключи - nik_name, значения - ссумарное время атриста по этой задаче (ед. измерения - секунда).
+	'full_time': 'real',    # ссумарное время всех атристов по этой задаче (ед. измерения - секунда).
+	'deadline': 'timestamp',# расчётная дата окончания работ
 	'start': 'timestamp',
 	'end': 'timestamp',
 	'price': 'real',
@@ -197,6 +200,7 @@ class studio:
 	'output': 'json',
 	'priority':'integer',
 	'extension': 'text',
+	'description': 'text',  # описание задачи
 	}
 	'''
 	workroom_keys = [
@@ -318,6 +322,16 @@ class studio:
 	'artist': 'text',
 	'description': 'text',
 	'branch' : 'text',
+	'time' : 'integer', # время затраченное на commit, ед. измерения секунда.
+	}
+
+	artists_logs_keys = {
+	'project_name': 'text',
+	'task_name': 'text',
+	'full_time': 'integer', # суммарное время затраченое артистом на задачу, ед. измерения секунда.
+	'price': 'real', 		# сумма начисленная за выполнение задачи. вносится по принятию задачи.
+	'start': 'timestamp', 	# дата-время создания записи, запись создаётся при первом open задачи.
+	'finish': 'timestamp',  # дата-время принятия задачи.
 	}
 	
 	init_folder = '.lineyka'
@@ -355,9 +369,12 @@ class studio:
 	# --- tasks
 	tasks_db = '.tasks.db'
 	tasks_t = 'tasks'
-	# --- logs
-	logs_db = tasks_db
+	# --- tasks logs
+	logs_db = '.tasks_logs.db'
 	logs_t = 'logs'
+	# --- artists logs
+	artists_logs_db = '.artists_logs.db'
+	# table_name = 'nik_name:log'
 	# --- chat
 	chats_db = '.chats.db'
 	# --- set_of_tasks
