@@ -81,7 +81,7 @@ class MainWindow(QtGui.QMainWindow):
 		self.db_list_of_assets = db.list_of_assets(self.db_group)
 		self.db_task = db.task(self.db_asset)
 		self.db_chat = db.chat(self.db_task)
-		#self.db_log = db.log()
+		self.db_log = db.log(self.db_task)
 		
 		# other moduls
 		#self.publish = lineyka_publish.publish()
@@ -6123,19 +6123,20 @@ class MainWindow(QtGui.QMainWindow):
 		
 		
 	def tm_look_version_file_ui(self):
-		item = self.myWidget.task_manager_table.currentItem()
-		self.current_task = item.task
+		#item = self.myWidget.task_manager_table.currentItem()
+		#self.current_task = item.task
 		
 		#get versions_list
-		result = self.db_log.get_push_logs(self.current_project, self.current_task)
+		self.db_log.task = self.selected_task
+		result = self.db_log.read_log()
 		if not result[0]:
-			G.versions_list = []
 			self.message('Not Versions of Activity!', 2)
 			return
 		else:
-			G.versions_list = result[1]
+			versions_list = result[1][0]
+			branches = result[1][1]
 			
-		print(len(G.versions_list))
+		print(len(versions_list))
 		
 		# make widjet
 		ui_path = self.select_from_list_dialog_path
@@ -6158,10 +6159,10 @@ class MainWindow(QtGui.QMainWindow):
 		# make table
 		headers = []
 		for key in self.db_log.logs_keys:
-			headers.append(key[0])
+			headers.append(key)
 		
 		window.select_from_list_data_list_table.setColumnCount(len(headers))
-		window.select_from_list_data_list_table.setRowCount(len(G.versions_list))
+		window.select_from_list_data_list_table.setRowCount(len(versions_list))
 		window.select_from_list_data_list_table.setHorizontalHeaderLabels(headers)
 		
 		# selection mode   
@@ -6170,15 +6171,19 @@ class MainWindow(QtGui.QMainWindow):
 		window.select_from_list_data_list_table.setSelectionMode(QtGui.QAbstractItemView.SingleSelection)
 		
 		# make tabel
-		for i,log in enumerate(G.versions_list):
-			#print(log)
+		for i,log in enumerate(versions_list):
+			print(log)
 			for j,key in enumerate(headers):
 				newItem = QtGui.QTableWidgetItem()
-				newItem.setText(log[key])
-				newItem.log = False
+				newItem.log = log
 								
-				if key == 'version':
-					newItem.log = log
+				if key == 'time':
+					if log.get(key):
+						newItem.setText(str(log.get(key)/3600))
+				elif key == 'date_time':
+					newItem.setText(log[key].strftime("%m/%d/%Y, %H:%M:%S"))
+				else:
+					newItem.setText(str(log[key]))
 					
 				window.select_from_list_data_list_table.setItem(i, j, newItem)
 				
@@ -6186,44 +6191,20 @@ class MainWindow(QtGui.QMainWindow):
 		
 		
 	def tm_look_version_file_action(self, window):
-		list_items = []
-		select_items = window.select_from_list_data_list_table.selectedItems()
-		for item in select_items:
-			if item.log:
-				list_items.append(item.log)
-				
-		if not list_items:
-			self.message('Not Selected Versions!', 2)
+		item = None
+		if window.select_from_list_data_list_table.selectedItems():
+			item = window.select_from_list_data_list_table.selectedItems()[0]
+		if not item:
+			self.message('No version selected!', 2)
 			return
 			
-		version = list_items[0]['version']
+		version = item.log['version']
 		
 		# get file_path
-		result = self.db_chat.get_version_file_path(self.current_project, self.current_task, version)
-		if not result[0]:
-			print("*"*50, result[1])
-			self.message('No read file path of this version! Look console', 2)
-			return(False, result[1])
-			
-		open_path = result[1]
-		
-		if not open_path:
-			return(False, 'Not Saved Version!')
-			
-		# get tmp_file_path
-		task_data = self.current_task
-		tmp_path = self.db_chat.tmp_folder
-		tmp_file_name = task_data['task_name'].replace(':','_', 2) + '_' + hex(random.randint(0, 1000000000)).replace('0x', '') + task_data['extension']
-		tmp_file_path = os.path.join(tmp_path, tmp_file_name)
-		
-		# copy to tmp
-		shutil.copyfile(open_path, tmp_file_path)
-				
-		# open file
-		soft = self.db_studio.soft_data[task_data['extension']]
-		#cmd = soft + " \"" + tmp_file_path + "\""
-		cmd = "\"" + soft + "\"  \"" + tmp_file_path + "\""
-		subprocess.Popen(cmd, shell = True)
+		b, r = self.selected_task.open_file( look=True, version=version)
+		if not b:
+			self.message(r, 2)
+			return
 
 		
 	# ---- accept task --------------

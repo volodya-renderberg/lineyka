@@ -574,7 +574,7 @@ class MainWindow(QtGui.QMainWindow):
 		window.show()
 	
 	def look_version_ui(self, look = True):
-		versions_list = self.get_versions_list()
+		versions_list, branches = self.get_versions_list()
 		if not versions_list:
 			self.message('No saved versions!', 2)
 			return
@@ -621,11 +621,14 @@ class MainWindow(QtGui.QMainWindow):
 			#print(log)
 			for j,key in enumerate(headers):
 				newItem = QtGui.QTableWidgetItem()
-				if key == 'date_time':
+				if key == 'time':
+					if log.get(key):
+						newItem.setText(str(log.get(key)/3600))
+				elif key == 'date_time':
 					newItem.setText(log[key].strftime("%m/%d/%Y, %H:%M:%S"))
 				else:
 					newItem.setText(log[key])
-				newItem.log = False
+				#newItem.log = False
 								
 				newItem.log = log
 					

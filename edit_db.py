@@ -5387,7 +5387,7 @@ class log(studio):
 		
 		# (3)
 		if not logs_keys.get('branch'):
-			logs_keys['branch'] == 'master'
+			logs_keys['branch'] = 'master'
 
 		# (4)
 		# task_name
