@@ -46,6 +46,7 @@ class studio:
 	# studio
 	studio_folder = False
 	tmp_folder = False
+	work_folder = False
 	convert_exe = False
 	studio_database = ['sqlite3', False]
 	init_path = False
@@ -414,6 +415,7 @@ class studio:
 			# make jason
 			d = {
 				'studio_folder': None,
+				'work_folder': None,
 				'convert_exe': None,
 				'tmp_folder': tempfile.gettempdir(),
 				'use_database': ['sqlite3', False],
@@ -500,11 +502,11 @@ class studio:
 			return(False, "****** to convert.exe path not Found!")
 		
 		home = os.path.expanduser('~')
-		init_path = os.path.join(home, self.init_folder, self.init_file).replace('\\','/')
+		init_path = NormPath(os.path.join(home, self.init_folder, self.init_file))
 		if not os.path.exists(init_path):
 			return(False, "****** init_path not Found!")
 		
-		# write studio path
+		# write path
 		try:
 			with open(init_path, 'r') as read:
 				data = json.load(read)
@@ -521,6 +523,36 @@ class studio:
 			return(False, "****** init file  can not be read")
 
 		self.convert_exe = path
+		
+		return True, 'Ok'
+	
+	@classmethod
+	def set_work_folder(self, path):
+		if not os.path.exists(path):
+			return(False, "****** to convert.exe path not Found!")
+		
+		home = os.path.expanduser('~')
+		init_path = NormPath(os.path.join(home, self.init_folder, self.init_file))
+		if not os.path.exists(init_path):
+			return(False, "****** init_path not Found!")
+		
+		# write path
+		try:
+			with open(init_path, 'r') as read:
+				data = json.load(read)
+				data['work_folder'] = NormPath(path)
+				read.close()
+		except:
+			return(False, "****** init file  can not be read")
+
+		try:
+			with open(init_path, 'w') as f:
+				jsn = json.dump(data, f, sort_keys=True, indent=4)
+				f.close()
+		except:
+			return(False, "****** init file  can not be read")
+
+		self.set_work_folder = path
 		
 		return True, 'Ok'
 		
@@ -591,6 +623,7 @@ class studio:
 			return(False, "****** init file  can not be read")
 		try:
 			self.studio_folder = data['studio_folder']
+			self.work_folder = data['work_folder']
 			self.convert_exe = data['convert_exe']
 			self.tmp_folder = data['tmp_folder']
 			self.use_database = data['use_database']

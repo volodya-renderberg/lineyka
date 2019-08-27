@@ -7002,14 +7002,27 @@ class MainWindow(QtGui.QMainWindow):
 		# -- final
 		frame.setLayout(h_layout)
 		layout.addWidget(frame)
-		
 		# pass button
 		button = QtGui.QPushButton(key, parent = self.setWindow.additional_frame)
 		button.setDefault(True)
 		button.setVisible(False)
 		layout.addWidget(button)
-		
+		# --
 		self.setWindow.additional_frame.setLayout(layout)
+		
+		# SET WORK FOLDER
+		main_frame = self.setWindow.main_frame
+		grid_layout = self.setWindow.gridLayout
+		#
+		label = QtGui.QLabel(parent = main_frame)
+		label.setText('Work Folder:')
+		grid_layout.addWidget(label, row=3, column=0)
+		#
+		self.wf_line = QtGui.QLineEdit(parent = main_frame)
+		grid_layout.addWidget(self.wf_line, row=3, column=1)
+		#
+		wf_button = QtGui.QPushButton('Set Work Folder', parent = main_frame)
+		grid_layout.addWidget(wf_button, row=3, column=2)
 
 		# fill field
 		data = self.db_studio.get_studio()
@@ -7017,6 +7030,7 @@ class MainWindow(QtGui.QMainWindow):
 			self.setWindow.set_studio_field.setText(str(self.db_studio.studio_folder))
 			self.setWindow.set_tmp_field.setText(str(self.db_studio.tmp_folder))
 			self.setWindow.set_convert_exe_field.setText(str(self.db_studio.convert_exe))
+			self.wf_line.setText(str(self.db_studio.work_folder))
 	
 		else:
 			self.setWindow.set_studio_field.setText('set studio_folder')
@@ -7038,11 +7052,12 @@ class MainWindow(QtGui.QMainWindow):
 		self.setWindow.set_studio_button.clicked.connect(self.set_studio_action)
 		self.setWindow.set_tmp_button.clicked.connect(self.set_tmp_path_action)
 		self.setWindow.set_convert_button.clicked.connect(self.set_convert_path_action)
+		wf_button.clicked.connect(self.set_work_folder_actions)
 		
 		self.setWindow.rejected.connect(self.launcher)
 
 		print('set studio ui')
-    
+
 	def set_studio_action(self):
 		# get path
 		home = os.path.expanduser('~')
@@ -7142,6 +7157,21 @@ class MainWindow(QtGui.QMainWindow):
 		# finish
 		self.message('Data saved!', 1)
 		print('set convert.exe path')
+		
+	def set_work_folder_actions(self):
+		# get path
+		home = os.path.expanduser('~')
+		folder = QtGui.QFileDialog.getExistingDirectory(self, dir = home)
+		print(folder)
+		#
+		if folder:
+			self.wf_line.setText(folder)
+			# set studio path
+			result = self.db_studio.set_work_folder(folder)
+			if not result[0]:
+				self.message(result[1], 2)
+		# finish
+		print('set work_folder path')
 		
 	def set_exe_path(self, line, key):
 		# get path
