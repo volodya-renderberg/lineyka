@@ -498,8 +498,8 @@ class studio:
 	
 	@classmethod
 	def set_convert_exe_path(self, path):
-		if not os.path.exists(path):
-			return(False, "****** to convert.exe path not Found!")
+		#if not os.path.exists(path):
+			#return(False, "****** to convert.exe path not Found!")
 		
 		home = os.path.expanduser('~')
 		init_path = NormPath(os.path.join(home, self.init_folder, self.init_file))
@@ -529,7 +529,7 @@ class studio:
 	@classmethod
 	def set_work_folder(self, path):
 		if not os.path.exists(path):
-			return(False, "****** to convert.exe path not Found!")
+			return(False, 'The path "%s" - not Found!' % path)
 		
 		home = os.path.expanduser('~')
 		init_path = NormPath(os.path.join(home, self.init_folder, self.init_file))
@@ -552,7 +552,7 @@ class studio:
 		except:
 			return(False, "****** init file  can not be read")
 
-		self.set_work_folder = path
+		self.work_folder = path
 		
 		return True, 'Ok'
 		

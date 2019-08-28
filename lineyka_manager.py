@@ -7041,6 +7041,7 @@ class MainWindow(QtGui.QMainWindow):
 		self.setWindow.set_studio_field.returnPressed.connect(self.set_studio_action_from_line)
 		self.setWindow.set_tmp_field.returnPressed.connect(self.set_tmp_path_action_from_line)
 		self.setWindow.set_convert_exe_field.returnPressed.connect(self.set_convert_path_action_from_line)
+		self.wf_line.returnPressed.connect(self.set_the_work_folder_action_from_line)
 			
 		# set modal window
 		self.setWindow.setWindowModality(QtCore.Qt.WindowModal)
@@ -7052,7 +7053,7 @@ class MainWindow(QtGui.QMainWindow):
 		self.setWindow.set_studio_button.clicked.connect(self.set_studio_action)
 		self.setWindow.set_tmp_button.clicked.connect(self.set_tmp_path_action)
 		self.setWindow.set_convert_button.clicked.connect(self.set_convert_path_action)
-		wf_button.clicked.connect(self.set_work_folder_actions)
+		wf_button.clicked.connect(self.set_the_work_folder_action)
 		
 		self.setWindow.rejected.connect(self.launcher)
 
@@ -7146,23 +7147,27 @@ class MainWindow(QtGui.QMainWindow):
 		pass
 		path = self.setWindow.set_convert_exe_field.text()
 		
-		if os.path.exists(path):
-			result = self.db_studio.set_convert_exe_path(path)
-			if not result[0]:
-				self.message(result[1], 2)
-		else:
-			self.message('This path is not found!', 2)
-			return
+		result = self.db_studio.set_convert_exe_path(path)
+		if not result[0]:
+			self.message(result[1], 2)
+		
+		#if os.path.exists(path):
+			#result = self.db_studio.set_convert_exe_path(path)
+			#if not result[0]:
+				#self.message(result[1], 2)
+		#else:
+			#self.message('This path is not found!', 2)
+			#return
       
 		# finish
 		self.message('Data saved!', 1)
 		print('set convert.exe path')
 		
-	def set_work_folder_actions(self):
+	def set_the_work_folder_action(self):
 		# get path
 		home = os.path.expanduser('~')
 		folder = QtGui.QFileDialog.getExistingDirectory(self, dir = home)
-		print(folder)
+		#print(folder)
 		#
 		if folder:
 			self.wf_line.setText(folder)
@@ -7171,6 +7176,21 @@ class MainWindow(QtGui.QMainWindow):
 			if not result[0]:
 				self.message(result[1], 2)
 		# finish
+		print('set work_folder path')
+		
+	def set_the_work_folder_action_from_line(self):
+		# get path
+		folder = self.wf_line.text()
+		#
+		if folder:
+			self.wf_line.setText(folder)
+			# set studio path
+			result = self.db_studio.set_work_folder(folder)
+			if not result[0]:
+				self.message(result[1], 2)
+				return
+		# finish
+		self.message('Data saved!', 1)
 		print('set work_folder path')
 		
 	def set_exe_path(self, line, key):
