@@ -2732,6 +2732,28 @@ class task(studio):
 	'''
 	# **************************** Task() File Path ************************************************
 	
+	# task должен быть инициализирован
+	def commit_get_new_file_path(self): # v2
+		pass
+		# work folder
+		if not self.work_folder:
+			return(False, 'Working directory not specified!')
+		elif not os.path.exists(self.work_folder):
+			return(False, 'The path "%s" to working directory does not exist!' % self.work_folder)
+		
+		# path to activity
+		activity_path = NormPath(os.path.join(self.work_folder, self.task.asset.project.name, 'assets', self.task.asset.type, self.task.asset.name, self.task.activity))
+		if not os.path.exists(activity_path):
+			return(False, 'No versions found!')
+	
+		# read logs
+		log_ob = log(self)
+		b, r = log_ob.read_log(action='commit')
+		if not b:
+			return(False, r)
+			
+		
+	
 	# asset - должен быит инициализирован
 	# task_data (dict) - требуется если не инициализирован task
 	def get_final_file_path(self, task_data=False): # v2
@@ -5389,7 +5411,7 @@ class log(studio):
 		self.camera_log_file_name = 'camera_logs.json'
 		self.playblast_log_file_name = 'playblast_logs.json'
 		
-		self.log_actions = ['push', 'publish', 'open', 'report','recast' , 'change_artist', 'close', 'done', 'return_a_job', 'send_to_outsource', 'load_from_outsource']
+		self.log_actions = ['pull', 'commit', 'push', 'publish', 'open', 'report','recast' , 'change_artist', 'close', 'done', 'return_a_job', 'send_to_outsource', 'load_from_outsource']
 	
 	# запись лога для задачи
 	# self.task - должен быть инициализирован
