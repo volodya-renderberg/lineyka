@@ -2756,21 +2756,31 @@ class task(studio):
 	
 	# asset - должен быит инициализирован
 	# task_data (dict) - требуется если не инициализирован task
-	def get_final_file_path(self, task_data=False): # v2
-		asset_path = self.asset.path
-		if not task_data:
-			asset_type = self.asset.type
-			activity = self.activity
-			asset = self.asset.name
-			extension = self.extension
+	def get_final_file_path(self, current_artist=False): # v2
+		pass
+	
+		# artist
+		if not current_artist:
+			current_artist = artist()
+			b, r = current_artist.get_user()
+			if not b:
+				return(b,r)
+			
+		if current_artist.outsource:
+			pass
+			# Выбор последней по дате версии между последним коммитом и последним пулом.
+			# Возможно нумерация пулов и комитов должна быть общая.
+			# Нумерация коммитов непрерывная по номеру версии в логе.
+			# Возврат: путь, номер версии (вместо пути к ассету)
+		
 		else:
-			asset_type = task_data['asset_type']
-			activity = task_data['activity']
-			asset = task_data['asset_name']
-			extension = task_data['extension']
-            
-		folder_name = self.asset.ACTIVITY_FOLDER[asset_type][activity]
-		activity_path = NormPath(os.path.join(asset_path, folder_name))
+			pass
+			# Выбор последней по дате версии между последним коммитом и последним пушем.
+			# Возврат: путь, номер версии (вместо пути к ассету)
+	
+		# old
+		'''
+		activity_path = NormPath(os.path.join(self.asset.path, self.activity))
 		
 		if not os.path.exists(activity_path):
 			try:
@@ -2784,33 +2794,25 @@ class task(studio):
 		folders = []
 		
 		if len(folders_16)==0:
-			return(True, None, asset_path)
+			return(True, None, self.asset.path)
 		
 		# - 16 to 10
 		for obj_ in folders_16:
 			folders.append(int(obj_, 16))
-		'''
-		for obj_ in folders_16:
-			if int(obj_, 16) == max(folders):
-				final_file = os.path.join(activity_path, obj_, (task_data['asset'] + task_data['extension']))
-				break
-		if os.path.exists(final_file):
-			return(True, final_file, asset_path)
-		else:
-			return(True, None, asset_path)
-		'''
+		
 		i = max(folders)
 		while i > -1:
 			hex_ = hex(i).replace('0x', '')
 			num = 4 - len(hex_)
 			hex_num = '0'*num + hex_
 			
-			final_file = NormPath(os.path.join(activity_path, hex_num, '%s%s' % (asset, extension)))
+			final_file = NormPath(os.path.join(activity_path, hex_num, '%s%s' % (self.asset.name, self.extension)))
 			if os.path.exists(final_file):
-				return(True, final_file, asset_path)
+				return(True, final_file, self.asset.path)
 			i = i-1
 		
-		return(True, None, asset_path)
+		return(True, None, self.asset.path)
+		'''
 	
 	# asset - должен быит инициализирован
 	# task_data (dict) - требуется если не инициализирован task
