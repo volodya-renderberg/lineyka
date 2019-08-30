@@ -322,7 +322,8 @@ class studio:
 	'action': 'text',
 	'artist': 'text',
 	'description': 'text',
-	'branch' : 'text',
+	'source': 'json', # для push - версия коммита источника (в случае sketch - список версий по всем веткам, порядок совпадает с порядком записи веток в branch), для publish - версия push источника.
+	'branch' : 'json', # ветка - в случае push, publish для sketch - списки веток.
 	'time' : 'integer', # время затраченное на commit, ед. измерения секунда.
 	}
 
@@ -975,7 +976,7 @@ class database():
 		conn.close()
 		return(True, 'Ok!')
 	
-	# where - 1) строка условия, 2) словарь по keys, 3) False - значит выделяется всё.
+	# where - 1) строка условия, 2) словарь по keys, может иметь ключ условия - 'condition' значения из [or, end] 3) False - значит выделяется всё.
 	# columns - False - означает все столбцы если не False - то список столбцов.
 	#@print_args
 	def __sqlite3_read(self, level, read_ob, table_name, keys, columns, where, table_root):
@@ -996,11 +997,26 @@ class database():
 				com = '%s WHERE %s' % (com, where)
 			elif where.__class__.__name__ == 'dict':
 				were_string = ''
-				for i, key in enumerate(where):
-					if i == 0:
-						were_string = were_string + '"%s" = "%s"' % (key, where.get(key))
-					else:
-						were_string = were_string + ', "%s" = "%s"' % (key, where.get(key))
+				i=0
+				if not where.get('condition'):
+					for key in where:
+						if i == 0:
+							were_string = were_string + '"%s" = "%s"' % (key, where.get(key))
+						else:
+							were_string = were_string + ', "%s" = "%s"' % (key, where.get(key))
+						i=i+1
+				else:
+					var = where['condition'].upper()
+					for key in where:
+						if key == 'condition':
+							continue
+						for item in where[key]:
+							if i == 0:
+								were_string = were_string + '"%s" = "%s"' % (key, item)
+							else:
+								were_string = were_string + '%s "%s" = "%s"' % (var, key, item)
+							i=i+1
+						break
 				com = '%s WHERE %s' % (com, were_string)
 		# connect
 		# -- db_path
@@ -2748,7 +2764,7 @@ class task(studio):
 	
 		# read logs
 		log_ob = log(self)
-		b, r = log_ob.read_log(action='commit')
+		b, r = log_ob.read_log(action='commit', 'pull')
 		if not b:
 			return(False, r)
 			
@@ -2758,13 +2774,17 @@ class task(studio):
 	# task_data (dict) - требуется если не инициализирован task
 	def get_final_file_path(self, current_artist=False): # v2
 		pass
-	
 		# artist
 		if not current_artist:
 			current_artist = artist()
 			b, r = current_artist.get_user()
 			if not b:
 				return(b,r)
+		# work folder
+		if not self.work_folder:
+			return(False, 'Working directory not specified!')
+		elif not os.path.exists(self.work_folder):
+			return(False, 'The path "%s" to working directory does not exist!' % self.work_folder)
 			
 		if current_artist.outsource:
 			pass
@@ -2777,6 +2797,32 @@ class task(studio):
 			pass
 			# Выбор последней по дате версии между последним коммитом и последним пушем.
 			# Возврат: путь, номер версии (вместо пути к ассету)
+			# 1 - чтение лога ('commit', 'push')
+			# 2 - если последний action - commit - то работаем с ним
+			# 3 - если последняя запись push - и версия коммита пуша есть на сервере - то коммит версия пуша, иначе пуш версия.
+						
+			# (1)
+			b, r = log(self).read_log(action=['commit', 'push'])
+			if not b:
+				return(b, r)
+			log_list = r[0]
+			
+			# (2)
+			if log_list[-1:]['action'] == 'commit':
+				activity_path = NormPath(os.path.join(self.work_folder, self.task.asset.project.name, 'assets', self.task.asset.name, self.task.activity))
+				if not os.path.exists(activity_path):
+					return(False, 'the path of activity "%s" not found' % activity_path)
+				#
+				version_path = NormPath(os.path.join(activity_path, log_list[-1:]['version'], '%s%s' % (self.task.asset.name, self.task.extension)))
+				if not os.path.exists(version_path):
+					return(False, 'the path of version "%s" not found' % version_path)
+				else:
+					return(True, (version_path, log_list[-1:]['version']))
+			# (3)
+			elif log_list[-1:]['action'] == 'push':
+				for i in range(2, num(log_list)+1):
+					pass
+			
 	
 		# old
 		'''
@@ -5472,7 +5518,7 @@ class log(studio):
 	
 	# запись лога задачи
 	# self.task - должен быть инициализирован
-	# action (bool / str) если False - то возврат для всех action
+	# action (bool / str/ list) если False - то возврат для всех action, если list - то будет использован оператор where or - возврат по всем экшенам
 	def read_log(self, action=False): # v2
 		pass
 		# 1 - проверка инициализации ассета.
@@ -5483,15 +5529,18 @@ class log(studio):
 		if not self.task.task_name:
 			return(False, 'in log.write_log() - value "self.task.task_name" not defined!')
 		
-		# (2)
-		if action and not action in self.log_actions:
-			return(False, 'in log.read_log() - wrong "action" - "%s"!' % action)
+		## (2)
+		#if action and not action in self.log_actions:
+			#return(False, 'in log.read_log() - wrong "action" - "%s"!' % action)
 		
 		# (3)
 		table_name = '"%s:%s:logs"' % (self.task.asset.id, self.task.activity)
 		read_ob = self.task.asset.project
 		if action:
-			where = {'action': action}
+			if isinstance(action, str):
+				where = {'action': action}
+			elif isinstance(action, list):
+				where = {'action': action, 'condition': 'or'}
 		else:
 			where = False
 		bool_, r_data = database().read('project', read_ob, table_name, self.logs_keys, where=where, table_root=self.logs_db)
