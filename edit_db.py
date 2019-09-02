@@ -499,6 +499,7 @@ class studio:
 	
 	@classmethod
 	def set_convert_exe_path(self, path):
+		pass
 		#if not os.path.exists(path):
 			#return(False, "****** to convert.exe path not Found!")
 		
@@ -556,6 +557,25 @@ class studio:
 		self.work_folder = path
 		
 		return True, 'Ok'
+	
+	# шаблонный путь к файлу или активити в рабочей директории
+	# c_task  (task) - задача, для которой ищется файл
+	# version (bool / int / str) - номер версии или False -в этом случае возврат только пути до активити.
+	def template_get_work_path(self, c_task, version=False):
+		pass
+		# exists work folder
+		if not self.work_folder:
+			return(False, 'Working directory not specified!')
+		elif not os.path.exists(self.work_folder):
+			return(False, 'The path "%s" to working directory does not exist!' % self.work_folder)
+		
+		if version:
+			# file path
+			str_version = '{:04d}'.format(int(version))
+			return NormPath(os.path.join(self.work_folder, c_task.asset.project.name, 'assets', c_task.asset.name, c_task.activity, str_version, '%s%s' % (c_task.asset.name, c_task.extension)))
+		else:
+			# activity path
+			return NormPath(os.path.join(self.work_folder, c_task.asset.project.name, 'assets', c_task.asset.name, c_task.activity)
 		
 	def set_share_dir(self, path):
 		if not os.path.exists(path):
@@ -588,6 +608,7 @@ class studio:
 		return True, 'Ok'
 		
 	def get_share_dir(self):
+		pass
 		# get lineyka_init.json
 		home = os.path.expanduser('~')	
 		init_path = os.path.join(home, self.init_folder, self.init_file).replace('\\','/')
@@ -2764,68 +2785,80 @@ class task(studio):
 	
 		# read logs
 		log_ob = log(self)
-		b, r = log_ob.read_log(action='commit', 'pull')
+		b, r = log_ob.read_log(action=['commit', 'pull'])
 		if not b:
 			return(False, r)
 			
-		
-	
-	# asset - должен быит инициализирован
-	# task_data (dict) - требуется если не инициализирован task
-	def get_final_file_path(self, current_artist=False): # v2
+	# task - должен быит инициализирован
+	def get_final_work_file_path(self, current_artist=False): # v2
 		pass
-		# artist
+		# 0 - current_artist
+				
+		# (0) artist
 		if not current_artist:
 			current_artist = artist()
 			b, r = current_artist.get_user()
 			if not b:
 				return(b,r)
-		# work folder
-		if not self.work_folder:
-			return(False, 'Working directory not specified!')
-		elif not os.path.exists(self.work_folder):
-			return(False, 'The path "%s" to working directory does not exist!' % self.work_folder)
+		#
+		if not current_artist.outsource:
+			pass
+			# (1) загрузка push + commit + pull списков без учёта пользователя.
+			# (2) если последняя запись commit - то берём по этой версии.
+			# 	# если файл этой версии не в work директории данного пользователя, то будет предложено сделать push.
+			# (3) если последняя запись push:
+			#	# (4) не скетч - если commit версия этого push находится в work директории данного пользователя - то эта commit версия, 
+			#   # (5) иначе - push.
+			#   # (6) скетч
+			#   # (6.1) - выбираем последний номер версии из log.source
+			# return - (path, номер версии)
 			
-		if current_artist.outsource:
-			pass
-			# Выбор последней по дате версии между последним коммитом и последним пулом.
-			# Возможно нумерация пулов и комитов должна быть общая.
-			# Нумерация коммитов непрерывная по номеру версии в логе.
-			# Возврат: путь, номер версии (вместо пути к ассету)
-		
-		else:
-			pass
-			# Выбор последней по дате версии между последним коммитом и последним пушем.
-			# Возврат: путь, номер версии (вместо пути к ассету)
-			# 1 - чтение лога ('commit', 'push')
-			# 2 - если последний action - commit - то работаем с ним
-			# 3 - если последняя запись push - и версия коммита пуша есть на сервере - то коммит версия пуша, иначе пуш версия.
-						
 			# (1)
-			b, r = log(self).read_log(action=['commit', 'push'])
+			b, r = log(self).read_log(action=['commit', 'push', 'pull'])
 			if not b:
 				return(b, r)
 			log_list = r[0]
+			end_log = log_list[-1:]
 			
 			# (2)
-			if log_list[-1:]['action'] == 'commit':
-				activity_path = NormPath(os.path.join(self.work_folder, self.task.asset.project.name, 'assets', self.task.asset.name, self.task.activity))
-				if not os.path.exists(activity_path):
-					return(False, 'the path of activity "%s" not found' % activity_path)
-				#
-				version_path = NormPath(os.path.join(activity_path, log_list[-1:]['version'], '%s%s' % (self.task.asset.name, self.task.extension)))
+			activity_path = NormPath(os.path.join(self.work_folder, self.asset.project.name, 'assets', self.asset.name, self.activity))
+			if end_log['action'] == 'commit' or end_log['action'] == 'pull':
+				version_path = NormPath(os.path.join(activity_path, end_log['version'], '%s%s' % (self.asset.name, self.extension)))
 				if not os.path.exists(version_path):
-					return(False, 'the path of version "%s" not found' % version_path)
+					return(False, 'the latest "%s" version is not in your working directory, this user: "%s" needs to "push"' % (end_log['action'], end_log['artist']))
 				else:
-					return(True, (version_path, log_list[-1:]['version']))
+					return(True, (version_path, end_log['version']))
 			# (3)
-			elif log_list[-1:]['action'] == 'push':
-				for i in range(2, num(log_list)+1):
+			elif end_log['action'] == 'push':
+				if self.task_type != 'sketch':
 					pass
-			
+					# (4)
+					version_path = NormPath(os.path.join(activity_path, end_log['source'], '%s%s' % (self.asset.name, self.extension)))
+					if os.path.exists(version_path):
+						return(True, (version_path, end_log['version']))
+					# (5)
+					else:
+						push_version_path = NormPath(os.path.join(self.asset.path, self.activity, end_log['version'], '%s%s' % (self.asset.name, self.extension)))
+						if not os.path.exists(push_version_path):
+							return(False, 'Path of the push version "%s" not found!')
+						else:
+							return(True, (push_version_path, end_log['version']))
+				# (6) sketch
+				else:
+					# (6.1)
+					version = int(end_log['source'][0])
+					for v in end_log['source']:
+						if int(v)>version:
+							version=v
+					# (6.2)
+					version_path = self.template_get_work_path(self, version=version)
+		#
+		else:
+			pass # outsource
 	
-		# old
-		'''
+	# task - должен быит инициализирован
+	def get_final_file_path(self, current_artist=False): # v2
+		pass
 		activity_path = NormPath(os.path.join(self.asset.path, self.activity))
 		
 		if not os.path.exists(activity_path):
@@ -2858,7 +2891,6 @@ class task(studio):
 			i = i-1
 		
 		return(True, None, self.asset.path)
-		'''
 	
 	# asset - должен быит инициализирован
 	# task_data (dict) - требуется если не инициализирован task
