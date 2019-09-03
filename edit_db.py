@@ -576,6 +576,18 @@ class studio:
 		else:
 			# activity path
 			return NormPath(os.path.join(self.work_folder, c_task.asset.project.name, 'assets', c_task.asset.name, c_task.activity)
+
+	# шаблонный путь к файлу или активити push версии на сервере студии.
+	# c_task  (task) - задача, для которой ищется файл
+	# version (bool / int / str) - номер версии или False -в этом случае возврат только пути до активити.
+    def template_get_push_path(self, c_task, version=False):
+		pass
+		
+		if version:
+			str_version = '{:04d}'.format(int(version))
+			return NormPath(os.path.join(c_task.asset.path, c_task.activity, str_version, '%s%s' % (c_task.asset.name, c_task.extension)))
+		else:
+			return NormPath(os.path.join(c_task.asset.path, c_task.activity))
 		
 	def set_share_dir(self, path):
 		if not os.path.exists(path):
@@ -2811,6 +2823,8 @@ class task(studio):
 			#   # (5) иначе - push.
 			#   # (6) скетч
 			#   # (6.1) - выбираем последний номер версии из log.source
+			#   # (6.2) - если данный файл есть в рабочей директории данного пользователя - то это он
+			#   # (6.3) - если его нет - то предлагается сделать pull
 			# return - (path, номер версии)
 			
 			# (1)
@@ -2819,11 +2833,9 @@ class task(studio):
 				return(b, r)
 			log_list = r[0]
 			end_log = log_list[-1:]
-			
 			# (2)
-			activity_path = NormPath(os.path.join(self.work_folder, self.asset.project.name, 'assets', self.asset.name, self.activity))
-			if end_log['action'] == 'commit' or end_log['action'] == 'pull':
-				version_path = NormPath(os.path.join(activity_path, end_log['version'], '%s%s' % (self.asset.name, self.extension)))
+			if end_log['action'] in ['commit','pull']:
+				version_path = self.template_get_work_path(self, version=end_log['version'])
 				if not os.path.exists(version_path):
 					return(False, 'the latest "%s" version is not in your working directory, this user: "%s" needs to "push"' % (end_log['action'], end_log['artist']))
 				else:
@@ -2833,12 +2845,12 @@ class task(studio):
 				if self.task_type != 'sketch':
 					pass
 					# (4)
-					version_path = NormPath(os.path.join(activity_path, end_log['source'], '%s%s' % (self.asset.name, self.extension)))
+					version_path = self.template_get_work_path(self, version=end_log['source'])
 					if os.path.exists(version_path):
 						return(True, (version_path, end_log['version']))
 					# (5)
 					else:
-						push_version_path = NormPath(os.path.join(self.asset.path, self.activity, end_log['version'], '%s%s' % (self.asset.name, self.extension)))
+						push_version_path = template_get_push_path(self, end_log['version'])
 						if not os.path.exists(push_version_path):
 							return(False, 'Path of the push version "%s" not found!')
 						else:
@@ -2852,9 +2864,62 @@ class task(studio):
 							version=v
 					# (6.2)
 					version_path = self.template_get_work_path(self, version=version)
+					if os.path.exists(version_path):
+						return(True, (version_path, version))
+					else:
+						# (6.3)
+						return(False, 'Need to execute the "Pull"!')
 		#
 		else:
 			pass # outsource
+			# 7 - загрузка списков commit + push + pull данного артиста.
+			# 8 - если последняя запись commit или pull - то эта версия.
+			# 8.1 - если файл отсутствует в рабочей директории - то предложение сделать push тем артистом, кто делал последний коммит или пул.
+			# 9 - если последняя запись push
+			# 9.1 - если не скетч - проверка наличия исходника пуша в ворк директории
+			# 9.2 - если исходника пуша нет в ворк директории - предлагается чтобы менеджер сделал выгрузку пуш версии в облако и потом сделать пул.
+			# 10 - если скетч - получаем последнюю версию рабочего файла исходника - если он есть в рабочей директории - то это он
+			# 10.1 - если его нет - то предлагается чтобы менеджер сделал выгрузку пуш версии в облако и потом сделать пул.
+			
+			# (7)
+			b, r = log(self).read_log(action=['commit', 'push', 'pull'])
+			if not b:
+				return(b, r)
+			log_list = r[0]
+			
+			# (8)
+			end_log = log_list[-1:]
+			if end_log['action'] in ['commit','pull']:
+				version_path = self.template_get_work_path(self, version=end_log['version'])
+				if os.path.exists(version_path):
+					return(True, (version_path, end_log['version']))
+				# (8.1)
+				else:
+					return(False, 'the latest "%s" version is not in your working directory,\nthis user: "%s" needs to "push"' % (end_log['action'], end_log['artist']))
+			# (9)
+			elif end_log['action'] == 'push':
+				# (9.1)
+				if self.task_type != 'sketch':
+					version_path = self.template_get_work_path(self, version=end_log['source'])
+					if os.path.exists(version_path):
+						return(True, (version_path, end_log['source']))
+					else:
+						# (9.2)
+						return(False, 'the source of the "push" version "%s" is not in your working directory.\nAsk the manager to upload the latest version to the cloud,\n and make "pull."' % end_log['version'])
+				else:
+					# (10)
+					version = int(end_log['source'][0])
+					for v in end_log['source']:
+						if int(v)>version:
+							version=v
+					version_path = self.template_get_work_path(self, version=version)
+					if os.path.exists(version_path):
+						return(True, (version_path, version))
+					else:
+						# (10.1)
+						return(False, 'the source of the "push" version "%s" is not in your working directory.\nAsk the manager to upload the latest version to the cloud,\n and make "pull."' % end_log['version'])
+						
+					
 	
 	# task - должен быит инициализирован
 	def get_final_file_path(self, current_artist=False): # v2
