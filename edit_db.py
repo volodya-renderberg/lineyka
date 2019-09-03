@@ -575,12 +575,12 @@ class studio:
 			return NormPath(os.path.join(self.work_folder, c_task.asset.project.name, 'assets', c_task.asset.name, c_task.activity, str_version, '%s%s' % (c_task.asset.name, c_task.extension)))
 		else:
 			# activity path
-			return NormPath(os.path.join(self.work_folder, c_task.asset.project.name, 'assets', c_task.asset.name, c_task.activity)
+			return NormPath(os.path.join(self.work_folder, c_task.asset.project.name, 'assets', c_task.asset.name, c_task.activity))
 
 	# шаблонный путь к файлу или активити push версии на сервере студии.
 	# c_task  (task) - задача, для которой ищется файл
 	# version (bool / int / str) - номер версии или False -в этом случае возврат только пути до активити.
-    def template_get_push_path(self, c_task, version=False):
+	def template_get_push_path(self, c_task, version=False):
 		pass
 		
 		if version:
