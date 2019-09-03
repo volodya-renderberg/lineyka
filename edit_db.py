@@ -2918,8 +2918,11 @@ class task(studio):
 					else:
 						# (10.1)
 						return(False, 'the source of the "push" version "%s" is not in your working directory.\nAsk the manager to upload the latest version to the cloud,\n and make "pull."' % end_log['version'])
-						
-					
+	
+	# обёртка на studio.template_get_work_path()
+	# получение шаблонного пути версии данной задачи
+	def get_version_work_file_path(self, version):
+		return(self.template_get_work_path(self, version))
 	
 	# task - должен быит инициализирован
 	def get_final_file_path(self, current_artist=False): # v2
