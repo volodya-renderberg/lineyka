@@ -582,12 +582,20 @@ class studio:
 	# version (bool / int / str) - номер версии или False -в этом случае возврат только пути до активити.
 	def template_get_push_path(self, c_task, version=False):
 		pass
-		
-		if version:
+		if c_task.task_type == 'sketch':
 			str_version = '{:04d}'.format(int(version))
-			return NormPath(os.path.join(c_task.asset.path, c_task.activity, str_version, '%s%s' % (c_task.asset.name, c_task.extension)))
+			version_dir_path =  NormPath(os.path.join(c_task.asset.path, c_task.activity, str_version))
+			if not os.path.exists(version_dir_path):
+				return(False, 'activity version directory does not exist "%s"' % version_dir_path)
+			files = list()
+			for f in os.listdir(version_dir_path):
+				if f.isfile
 		else:
-			return NormPath(os.path.join(c_task.asset.path, c_task.activity))
+			if version:
+				str_version = '{:04d}'.format(int(version))
+				return NormPath(os.path.join(c_task.asset.path, c_task.activity, str_version, '%s%s' % (c_task.asset.name, c_task.extension)))
+			else:
+				return NormPath(os.path.join(c_task.asset.path, c_task.activity))
 		
 	def set_share_dir(self, path):
 		if not os.path.exists(path):
@@ -2781,26 +2789,6 @@ class task(studio):
 	'''
 	# **************************** Task() File Path ************************************************
 	
-	# task должен быть инициализирован
-	def commit_get_new_file_path(self): # v2
-		pass
-		# work folder
-		if not self.work_folder:
-			return(False, 'Working directory not specified!')
-		elif not os.path.exists(self.work_folder):
-			return(False, 'The path "%s" to working directory does not exist!' % self.work_folder)
-		
-		# path to activity
-		activity_path = NormPath(os.path.join(self.work_folder, self.task.asset.project.name, 'assets', self.task.asset.type, self.task.asset.name, self.task.activity))
-		if not os.path.exists(activity_path):
-			return(False, 'No versions found!')
-	
-		# read logs
-		log_ob = log(self)
-		b, r = log_ob.read_log(action=['commit', 'pull'])
-		if not b:
-			return(False, r)
-			
 	# task - должен быит инициализирован
 	def get_final_work_file_path(self, current_artist=False): # v2
 		pass
@@ -2922,7 +2910,55 @@ class task(studio):
 	# обёртка на studio.template_get_work_path()
 	# получение шаблонного пути версии данной задачи
 	def get_version_work_file_path(self, version):
-		return(self.template_get_work_path(self, version))
+		b, r = self.template_get_work_path(self, version)
+		if not b:
+			return(b, r)
+		else:
+			if not os.path.exists(r[0])
+				return(False, 'The path "%s" not exists!' % r[0])
+			else:
+				return(True, r[0])
+			
+	# путь к последней существующей пуш версии на сервере.
+	def get_final_push_file_path(self, current_artist=False):
+		pass
+		# 0 - current_artist
+		# 1 - тест на аутсорс
+		# 2 - чтение пуш лога
+		# 3 - получение путей
+				
+		# (0) artist
+		if not current_artist:
+			current_artist = artist()
+			b, r = current_artist.get_user()
+			if not b:
+				return(b,r)
+		
+		# (1)
+		if current_artist.outsource:
+			return(False, 'This function is not available on outsourcing!')
+		
+		# (2)
+		b, r = log(self).read_log(action='push')
+		if not b:
+			return(b, r)
+		log_list = r[0]
+		end_log = log_list[-1:]
+		
+		# (3)
+		if self.task_type == 'sketch':
+			r_data = dict()
+		else:
+			r_data= False
+		
+		if end_log:
+			if self.task_type == 'sketch':
+				pass
+			else:
+				pass
+		
+		return(True, r_data)
+		
 	
 	# task - должен быит инициализирован
 	def get_final_file_path(self, current_artist=False): # v2
