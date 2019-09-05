@@ -587,7 +587,7 @@ class studio:
 	# version (bool / int / str) - номер версии или False -в этом случае возврат только пути до активити.
 	# branches (bool / list) - список веток из которых делался push - для task_type = sketch
 	# look (bool) - рассматривается только при task_type = sketch, если False - то используется c_task.extension, если True - то используется studio.look_extension (список путей для просмотра)
-	# return (True, path или path_list) или (False, comment)
+	# return (True, path или path_dict - ключи имена веток) или (False, comment)
 	def template_get_push_path(self, c_task, version=False, branches=False, look=False): # v2
 		pass
 		# 1 - task_type = sketch
@@ -612,13 +612,13 @@ class studio:
 				if not isinstance(branches, list):
 					return(False, 'Branch data type should be a "list" and not a "%s"' % branches.__class__.__name__)
 				# (1.3)
-				path_list = list()
+				path_dict = dict()
 				for branch in branches:
 					if look:
-						path_list.append(NormPath(os.path.join(c_task.asset.path, c_task.activity, str_version, '%s#%s%s' % (c_task.asset.name, branch, self.look_extension))))
+						path_dict[branch] = NormPath(os.path.join(c_task.asset.path, c_task.activity, str_version, '%s#%s%s' % (c_task.asset.name, branch, self.look_extension)))
 					else:
-						path_list.append(NormPath(os.path.join(c_task.asset.path, c_task.activity, str_version, '%s#%s%s' % (c_task.asset.name, branch, c_task.extension))))
-				return(True, path_list)
+						path_dict[branch] = NormPath(os.path.join(c_task.asset.path, c_task.activity, str_version, '%s#%s%s' % (c_task.asset.name, branch, c_task.extension)))
+				return(True, path_dict)
 				
 			else:
 				return (True, NormPath(os.path.join(c_task.asset.path, c_task.activity)))
@@ -2877,7 +2877,7 @@ class task(studio):
 						return(True, (version_path, end_log['version']))
 					# (5)
 					else:
-						push_version_path = template_get_push_path(self, end_log['version'])
+						push_version_path = self.template_get_push_path(self, end_log['version'])
 						if not os.path.exists(push_version_path):
 							return(False, 'Path of the push version "%s" not found!')
 						else:
@@ -2959,10 +2959,10 @@ class task(studio):
 				return(True, r[0])
 			
 	# путь к последней существующей пуш версии на сервере.
-	def get_final_push_file_path(self, current_artist=False):
+	def get_final_push_file_path(self, current_artist=False, look=False):
 		pass
 		# 0 - current_artist
-		# 1 - тест на аутсорс
+		# 1 - игнор аутсорс
 		# 2 - чтение пуш лога
 		# 3 - получение путей
 				
@@ -2992,9 +2992,12 @@ class task(studio):
 		
 		if end_log:
 			if self.task_type == 'sketch':
-				pass
+				b, r = self.template_get_push_path(self, version=end_log['version'], branches=self.branch, look=look)
 			else:
-				pass
+				b, r = self.template_get_push_path(self, version=end_log['version'])
+			if not b:
+				return(b,r)
+			r_data = r
 		
 		return(True, r_data)
 		
