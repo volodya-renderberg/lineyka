@@ -72,7 +72,8 @@ class studio:
 		'extension',
 		]
 	}
-	
+	look_extension = '.png'
+	preview_extension = '.png'
 	publish_folder_name = 'publish'
 	
 	soft_data = None
@@ -570,32 +571,70 @@ class studio:
 			return(False, 'The path "%s" to working directory does not exist!' % self.work_folder)
 		
 		if version:
+			# test version
+			try:
+				str_version = '{:04d}'.format(int(version))
+			except:
+				return (False, 'Wrong version format "%s"' %  str(version))
 			# file path
-			str_version = '{:04d}'.format(int(version))
-			return NormPath(os.path.join(self.work_folder, c_task.asset.project.name, 'assets', c_task.asset.name, c_task.activity, str_version, '%s%s' % (c_task.asset.name, c_task.extension)))
+			return (True, NormPath(os.path.join(self.work_folder, c_task.asset.project.name, 'assets', c_task.asset.name, c_task.activity, str_version, '%s%s' % (c_task.asset.name, c_task.extension))))
 		else:
 			# activity path
-			return NormPath(os.path.join(self.work_folder, c_task.asset.project.name, 'assets', c_task.asset.name, c_task.activity))
+			return (True, NormPath(os.path.join(self.work_folder, c_task.asset.project.name, 'assets', c_task.asset.name, c_task.activity)))
 
 	# шаблонный путь к файлу или активити push версии на сервере студии.
-	# c_task  (task) - задача, для которой ищется файл
+	# c_task  (task) - задача, для которой ищется путь к файлам
 	# version (bool / int / str) - номер версии или False -в этом случае возврат только пути до активити.
-	def template_get_push_path(self, c_task, version=False):
+	# branches (bool / list) - список веток из которых делался push - для task_type = sketch
+	# look (bool) - рассматривается только при task_type = sketch, если False - то используется c_task.extension, если True - то используется studio.look_extension (список путей для просмотра)
+	# return (True, path или path_list) или (False, comment)
+	def template_get_push_path(self, c_task, version=False, branches=False, look=False): # v2
 		pass
+		# 1 - task_type = sketch
+		# 1.1 - преобразование version
+		# 1.2 - branches - тест типа данных
+		# 1.3 - получение списка путей
+		# 2 - не sketch
+		# 2.1 - преобразование version
+		# 2.2 - путь до файла
+		# 2.3 - путь до активити
+		
+		# (1)
 		if c_task.task_type == 'sketch':
-			str_version = '{:04d}'.format(int(version))
-			version_dir_path =  NormPath(os.path.join(c_task.asset.path, c_task.activity, str_version))
-			if not os.path.exists(version_dir_path):
-				return(False, 'activity version directory does not exist "%s"' % version_dir_path)
-			files = list()
-			for f in os.listdir(version_dir_path):
-				if f.isfile
+			#
+			if version:
+				# ( 1.1)
+				try:
+					str_version = '{:04d}'.format(int(version))
+				except:
+					return (False, 'Wrong version format "%s"' %  str(version))
+				# (1.2)
+				if not isinstance(branches, list):
+					return(False, 'Branch data type should be a "list" and not a "%s"' % branches.__class__.__name__)
+				# (1.3)
+				path_list = list()
+				for branch in branches:
+					if look:
+						path_list.append(NormPath(os.path.join(c_task.asset.path, c_task.activity, str_version, '%s#%s%s' % (c_task.asset.name, branch, self.look_extension))))
+					else:
+						path_list.append(NormPath(os.path.join(c_task.asset.path, c_task.activity, str_version, '%s#%s%s' % (c_task.asset.name, branch, c_task.extension))))
+				return(True, path_list)
+				
+			else:
+				return (True, NormPath(os.path.join(c_task.asset.path, c_task.activity)))
+		# (2)
 		else:
 			if version:
-				str_version = '{:04d}'.format(int(version))
-				return NormPath(os.path.join(c_task.asset.path, c_task.activity, str_version, '%s%s' % (c_task.asset.name, c_task.extension)))
+				# ( 2.1)
+				try:
+					str_version = '{:04d}'.format(int(version))
+				except:
+					return (False, 'Wrong version format "%s"' %  str(version))
+				# (2.2)
+				return (True, NormPath(os.path.join(c_task.asset.path, c_task.activity, str_version, '%s%s' % (c_task.asset.name, c_task.extension))))
 			else:
-				return NormPath(os.path.join(c_task.asset.path, c_task.activity))
+				# (2.3)
+				return (True, NormPath(os.path.join(c_task.asset.path, c_task.activity)))
 		
 	def set_share_dir(self, path):
 		if not os.path.exists(path):
@@ -2914,7 +2953,7 @@ class task(studio):
 		if not b:
 			return(b, r)
 		else:
-			if not os.path.exists(r[0])
+			if not os.path.exists(r[0]):
 				return(False, 'The path "%s" not exists!' % r[0])
 			else:
 				return(True, r[0])
