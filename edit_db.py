@@ -2989,17 +2989,20 @@ class task(studio):
 			r_data = dict()
 		else:
 			r_data= False
+		version=False
 		
+		#
 		if end_log:
+			version = end_log['version']
 			if self.task_type == 'sketch':
-				b, r = self.template_get_push_path(self, version=end_log['version'], branches=self.branch, look=look)
+				b, r = self.template_get_push_path(self, version=version, branches=self.branch, look=look)
 			else:
-				b, r = self.template_get_push_path(self, version=end_log['version'])
+				b, r = self.template_get_push_path(self, version=version)
 			if not b:
 				return(b,r)
 			r_data = r
 		
-		return(True, r_data)
+		return(True, (r_data, version))
 		
 	
 	# task - должен быит инициализирован
