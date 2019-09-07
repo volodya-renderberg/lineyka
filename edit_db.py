@@ -2828,7 +2828,12 @@ class task(studio):
 	'''
 	# **************************** Task() File Path ************************************************
 	
+	# чтение путей
+	
 	# task - должен быит инициализирован
+	# путь к последней возможной версии для взятия в работу
+	# current_artist (artist) - текущий пользователь, если не передавать, будет сделано get_user
+	# return - (True, (path, version)) или (False, comment)
 	def get_final_work_file_path(self, current_artist=False): # v2
 		pass
 		# 0 - current_artist
@@ -2948,6 +2953,8 @@ class task(studio):
 	
 	# обёртка на studio.template_get_work_path()
 	# получение шаблонного пути версии данной задачи
+	# version (int / str) - номер версии
+	# return - (True, path) - или (false, comment)
 	def get_version_work_file_path(self, version):
 		b, r = self.template_get_work_path(self, version)
 		if not b:
@@ -2959,6 +2966,9 @@ class task(studio):
 				return(True, r[0])
 			
 	# путь к последней существующей пуш версии на локальном сервере.
+	# current_artist (artist) - текущий пользователь, если не передавать, будет сделано get_user
+	# look (bool) - нужен для sketch - если True - то формат файла для просмотра - studio.look_extension (.png)
+	# return для sketch - (True, ({словарь - ключ branch: значение path}, version)) для остальных - (True, (path, version)) - или (false, comment)
 	def get_final_push_file_path(self, current_artist=False, look=False):
 		pass
 		# 0 - current_artist
@@ -3005,6 +3015,10 @@ class task(studio):
 		return(True, (r_data, version))
 		
 	# путь к указанной пуш версии на локальном сервере.
+	# version (int / str) - номер версии
+	# current_artist (artist) - текущий пользователь, если не передавать, будет сделано get_user
+	# look (bool) - нужен для sketch - если True - то формат файла для просмотра - studio.look_extension (.png)
+	# return для sketch - (True, {словарь - ключ branch: значение path}) для остальных - (True, path) - или (false, comment)
 	def get_version_push_file_path(self, vesion, current_artist=False, look=False):
 		pass
 		pass
@@ -3042,6 +3056,34 @@ class task(studio):
 		
 		return(True, r_data)
 	
+	# Пути до новых файлов
+	
+	# создание пути для новой commit или pull версии файла.
+	# return - (True, (path, version)) или (False, comment)
+	def get_new_work_file_path(self):
+		pass
+		# 1 - чтение commit + pull логов
+		# 2 - новый номер версии
+		# 3 - шаблонный путь
+	
+		# (1)
+		b, r = log(self).read_log(action=['commit', 'pull'])
+		if not b:
+			return(b, r)
+		log_list = r[0]
+		
+		# (2)
+		end_log = log_list[-1:]
+		version = int(end_log['version']) + 1
+		
+		# (3)
+		b, r = self.template_get_work_path(self, version)
+		if not b:
+			return(b, r)
+		else:
+			return(False, (r, version))
+	
+	# old
 	
 	# task - должен быть инициализирован
 	def get_final_file_path(self, current_artist=False): # v2
