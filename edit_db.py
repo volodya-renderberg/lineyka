@@ -2958,7 +2958,7 @@ class task(studio):
 			else:
 				return(True, r[0])
 			
-	# путь к последней существующей пуш версии на сервере.
+	# путь к последней существующей пуш версии на локальном сервере.
 	def get_final_push_file_path(self, current_artist=False, look=False):
 		pass
 		# 0 - current_artist
@@ -3004,8 +3004,46 @@ class task(studio):
 		
 		return(True, (r_data, version))
 		
+	# путь к указанной пуш версии на локальном сервере.
+	def get_version_push_file_path(self, vesion, current_artist=False, look=False):
+		pass
+		pass
+		# 0 - current_artist
+		# 1 - игнор аутсорс
+		# 2 - получение путей
+		
+		# (0) artist
+		if not current_artist:
+			current_artist = artist()
+			b, r = current_artist.get_user()
+			if not b:
+				return(b,r)
+		
+		# (1)
+		if current_artist.outsource:
+			return(False, 'This function is not available on outsourcing!')
+		
+		# (2)
+		if self.task_type == 'sketch':
+			r_data = dict()
+		else:
+			r_data= False
+		version=False
+		
+		#
+		if end_log:
+			if self.task_type == 'sketch':
+				b, r = self.template_get_push_path(self, version=version, branches=self.branch, look=look)
+			else:
+				b, r = self.template_get_push_path(self, version=version)
+			if not b:
+				return(b,r)
+			r_data = r
+		
+		return(True, r_data)
 	
-	# task - должен быит инициализирован
+	
+	# task - должен быть инициализирован
 	def get_final_file_path(self, current_artist=False): # v2
 		pass
 		activity_path = NormPath(os.path.join(self.asset.path, self.activity))
