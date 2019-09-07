@@ -3083,6 +3083,50 @@ class task(studio):
 		else:
 			return(False, (r, version))
 	
+	# push последней или указанной work версии
+	def get_new_push_file_path(self, version=False, current_artist=False):
+		pass
+		# 0 - test artist
+		# 1 - чтение commit + pull логов
+		# 2 - новый номер версии
+		# 3 - шаблонный путь для sketch
+		# 4 - для не скетч
+		# 4.1 - путь к источнику
+		# 4.2 - путь последнего push
+		# 4.3 - проверка на совпадение версии коммита в последнем пуше с версией источника.
+	
+		# (0) artist
+		if not current_artist:
+			current_artist = artist()
+			b, r = current_artist.get_user()
+			if not b:
+				return(b,r)
+		#
+		if current_artist.outsource:
+			return(False, 'This function is not available on outsourcing!')
+	
+		# (1)
+		b, r = log(self).read_log(action=['push'])
+		if not b:
+			return(b, r)
+		log_list = r[0]
+		
+		# (2)
+		end_log = log_list[-1:]
+		version = int(end_log['version']) + 1
+		
+		if self.task_type=='sketch':
+			pass
+			#(3)
+		else:
+			pass
+			# (4)
+			b, r = self.template_get_work_path(self, version)
+			if not b:
+				return(b, r)
+			else:
+				return(False, (r, version))
+	
 	# old
 	
 	# task - должен быть инициализирован
