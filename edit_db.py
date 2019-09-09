@@ -2871,7 +2871,7 @@ class task(studio):
 			if not b:
 				return(b, r)
 			log_list = r[0]
-			end_log = log_list[-1:]
+			end_log = log_list[-1:][0]
 			# (2)
 			if end_log['action'] in ['commit','pull']:
 				version_path = self.template_get_work_path(self, version=end_log['version'])
@@ -2927,7 +2927,7 @@ class task(studio):
 			log_list = r[0]
 			
 			# (8)
-			end_log = log_list[-1:]
+			end_log = log_list[-1:][0]
 			if end_log['action'] in ['commit','pull']:
 				version_path = self.template_get_work_path(self, version=end_log['version'])
 				if os.path.exists(version_path):
@@ -2999,7 +2999,7 @@ class task(studio):
 		if not b:
 			return(b, r)
 		log_list = r[0]
-		end_log = log_list[-1:]
+		end_log = log_list[-1:][0]
 		
 		# (3)
 		if self.task_type == 'sketch':
@@ -3080,7 +3080,7 @@ class task(studio):
 		log_list = r[0]
 		
 		# (2)
-		end_log = log_list[-1:]
+		end_log = log_list[-1:][0]
 		version = int(end_log['version']) + 1
 		
 		# (3)
@@ -3091,12 +3091,15 @@ class task(studio):
 			return(False, (r, version))
 	
 	# push последней или указанной work версии
+	# version (bool/ str / int) - версия коммит источника для push (не для sketch)
+	# current_artist (artist) - текущий пользователь, если не передавать, будет сделано get_user
 	def get_new_push_file_path(self, version=False, current_artist=False):
 		pass
 		# 0 - test artist
 		# 1 - чтение push лога
 		# 2 - новый номер версии
 		# 3 - шаблонный путь для sketch
+		# 3.1 - пути к источникам (для каждой ветки)
 		# 4 - для не скетч
 		# 4.1 - путь к источнику
 		# 4.2 - проверка на совпадение версии коммита в последнем пуше с версией источника.
@@ -3119,34 +3122,58 @@ class task(studio):
 		log_list = r[0]
 		
 		# (2)
-		end_push_log = log_list[-1:]
+		end_push_log = log_list[-1:][0]
 		new_version = int(end_push_log['version']) + 1
 		
 		# (3)
 		if self.task_type=='sketch':
 			pass
 			#(3.1)
-		
+			b, r = log(self).read_log(action=['commit', 'pull'])
+			if not b:
+				return(b, r)
+			work_log_list = r[0]
+			# -- clean branches
+			branches = list()
+			for branch in r[1]:
+				if not '#' in branch:
+					branches.append(branch)
+			# -- get source path
+			source_path = dict()
+			for branch in branches:
+				for i in range(0, len(work_log_list)):
+					log=work_log_list[-(i+1):][0]
+					if log['branch']!=branch:
+						continue
+					b,r = self.get_version_work_file_path(log['version'])
+					if not b:
+						return(b, r)
+					source_path[branch] = r
 		# (4)	
 		else:
 			pass
 			# (4.1)
 			if version:
+				b, r = self.template_version_num(version)
+				if not b:
+					return(b, r)
+				else:
+					version=r
 				b, r = self.get_version_work_file_path(version)
 				if not b:
 					return(b, r)
-				source_path = r[0]
+				source_path = r
 				source_version = version
 			else:
 				b, r = log(self).read_log(action=['commit', 'pull'])
 				if not b:
 					return(b, r)
 				work_log_list = r[0]
-				end_work_log = work_log_list[-1:]
+				end_work_log = work_log_list[-1:][0]
 				b, r = self.get_version_work_file_path(end_work_log['version'])
 				if not b:
 					return(b, r)
-				source_path = r[0]
+				source_path = r
 				source_version = end_work_log['version']
 			# (4.2)
 			b, str_source_version = self.template_version_num(source_version)
@@ -3155,11 +3182,11 @@ class task(studio):
 			if str_source_version == end_push_log['source']:
 				return(False, 'This commit version "%s" matches the latest push version!' % str_source_version)
 			# (4.3)
-			b, r = self.template_get_work_path(self, new_version)
+			b, r = self.template_get_push_path(self, new_version)
 			if not b:
 				return(b, r)
 			else:
-				return(False, (r, new_version))
+				return(False, ((source_path, r), new_version))
 	
 	# old
 	
