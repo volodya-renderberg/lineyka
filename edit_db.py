@@ -559,6 +559,15 @@ class studio:
 		
 		return True, 'Ok'
 	
+	# преобразование версии к строке нужного формата.
+	# version (int / str)
+	def template_version_num(self, version):
+		try:
+			str_version = '{:04d}'.format(int(version))
+			return(True, str_version)
+		except:
+			return (False, 'Wrong version format "%s"' %  str(version))
+	
 	# шаблонный путь к файлу или активити в рабочей директории
 	# c_task  (task) - задача, для которой ищется файл
 	# version (bool / int / str) - номер версии или False -в этом случае возврат только пути до активити.
@@ -572,10 +581,9 @@ class studio:
 		
 		if version:
 			# test version
-			try:
-				str_version = '{:04d}'.format(int(version))
-			except:
-				return (False, 'Wrong version format "%s"' %  str(version))
+			b, str_version = self.template_version_num(version)
+			if not b:
+				return (b, str_version)
 			# file path
 			return (True, NormPath(os.path.join(self.work_folder, c_task.asset.project.name, 'assets', c_task.asset.name, c_task.activity, str_version, '%s%s' % (c_task.asset.name, c_task.extension))))
 		else:
@@ -604,10 +612,9 @@ class studio:
 			#
 			if version:
 				# ( 1.1)
-				try:
-					str_version = '{:04d}'.format(int(version))
-				except:
-					return (False, 'Wrong version format "%s"' %  str(version))
+				b, str_version = self.template_version_num(version)
+				if not b:
+					return (b, str_version)
 				# (1.2)
 				if not isinstance(branches, list):
 					return(False, 'Branch data type should be a "list" and not a "%s"' % branches.__class__.__name__)
@@ -3087,13 +3094,13 @@ class task(studio):
 	def get_new_push_file_path(self, version=False, current_artist=False):
 		pass
 		# 0 - test artist
-		# 1 - чтение commit + pull логов
+		# 1 - чтение push лога
 		# 2 - новый номер версии
 		# 3 - шаблонный путь для sketch
 		# 4 - для не скетч
 		# 4.1 - путь к источнику
-		# 4.2 - путь последнего push
-		# 4.3 - проверка на совпадение версии коммита в последнем пуше с версией источника.
+		# 4.2 - проверка на совпадение версии коммита в последнем пуше с версией источника.
+		# 4.3 - путь до нового push
 	
 		# (0) artist
 		if not current_artist:
@@ -3112,20 +3119,47 @@ class task(studio):
 		log_list = r[0]
 		
 		# (2)
-		end_log = log_list[-1:]
-		version = int(end_log['version']) + 1
+		end_push_log = log_list[-1:]
+		new_version = int(end_push_log['version']) + 1
 		
+		# (3)
 		if self.task_type=='sketch':
 			pass
-			#(3)
+			#(3.1)
+		
+		# (4)	
 		else:
 			pass
-			# (4)
-			b, r = self.template_get_work_path(self, version)
+			# (4.1)
+			if version:
+				b, r = self.get_version_work_file_path(version)
+				if not b:
+					return(b, r)
+				source_path = r[0]
+				source_version = version
+			else:
+				b, r = log(self).read_log(action=['commit', 'pull'])
+				if not b:
+					return(b, r)
+				work_log_list = r[0]
+				end_work_log = work_log_list[-1:]
+				b, r = self.get_version_work_file_path(end_work_log['version'])
+				if not b:
+					return(b, r)
+				source_path = r[0]
+				source_version = end_work_log['version']
+			# (4.2)
+			b, str_source_version = self.template_version_num(source_version)
+			if not b:
+				return (b, str_source_version)
+			if str_source_version == end_push_log['source']:
+				return(False, 'This commit version "%s" matches the latest push version!' % str_source_version)
+			# (4.3)
+			b, r = self.template_get_work_path(self, new_version)
 			if not b:
 				return(b, r)
 			else:
-				return(False, (r, version))
+				return(False, (r, new_version))
 	
 	# old
 	
