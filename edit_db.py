@@ -3101,6 +3101,7 @@ class task(studio):
 		# 3 - шаблонный путь для sketch
 		# 3.1 - пути к источникам (для каждой ветки)
 		# 3.2 - проверка на совпадение версий коммитов в последнем пуше с версиями источника.
+		# 3.3 - составление новых push путей.
 		# 4 - для не скетч
 		# 4.1 - путь к источнику
 		# 4.2 - проверка на совпадение версии коммита в последнем пуше с версией источника.
@@ -3162,7 +3163,23 @@ class task(studio):
 						overlap.append(False)
 				if not False in overlap:
 					return(False, 'Latest commit version matches the latest push version!')
-		# (4)	
+			# (3.3)
+			b ,r = self.template_get_push_path(self, version=new_version, branches=branches, look=False)
+			if not b:
+				return(b, r)
+			push_path = r
+			b ,r = self.template_get_push_path(self, version=new_version, branches=branches, look=True)
+			if not b:
+				return(b, r)
+			look_path = r
+			#
+			r_data = dict()
+			r_data['source_path']=source_path
+			r_data['source_versions']=source_versions
+			r_data['push_path']=push_path
+			r_data['look_path']=look_path
+			return(True, (r_data, new_version))
+		# (4)
 		else:
 			pass
 			# (4.1)
@@ -3195,11 +3212,11 @@ class task(studio):
 			if str_source_version == end_push_log['source']:
 				return(False, 'This commit version "%s" matches the latest push version!' % str_source_version)
 			# (4.3)
-			b, r = self.template_get_push_path(self, new_version)
+			b, r = self.template_get_push_path(self, version=new_version)
 			if not b:
 				return(b, r)
 			else:
-				return(False, ((source_path, r), new_version))
+				return(True, ((source_path, r), new_version))
 	
 	# old
 	
