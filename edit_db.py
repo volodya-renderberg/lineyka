@@ -3100,6 +3100,7 @@ class task(studio):
 		# 2 - новый номер версии
 		# 3 - шаблонный путь для sketch
 		# 3.1 - пути к источникам (для каждой ветки)
+		# 3.2 - проверка на совпадение версий коммитов в последнем пуше с версиями источника.
 		# 4 - для не скетч
 		# 4.1 - путь к источнику
 		# 4.2 - проверка на совпадение версии коммита в последнем пуше с версией источника.
@@ -3128,7 +3129,7 @@ class task(studio):
 		# (3)
 		if self.task_type=='sketch':
 			pass
-			#(3.1)
+			# (3.1)
 			b, r = log(self).read_log(action=['commit', 'pull'])
 			if not b:
 				return(b, r)
@@ -3140,6 +3141,7 @@ class task(studio):
 					branches.append(branch)
 			# -- get source path
 			source_path = dict()
+			source_versions = dict()
 			for branch in branches:
 				for i in range(0, len(work_log_list)):
 					log=work_log_list[-(i+1):][0]
@@ -3149,6 +3151,17 @@ class task(studio):
 					if not b:
 						return(b, r)
 					source_path[branch] = r
+					source_versions[branch] = log['version']
+			# (3.2)
+			if sorted(end_push_log['branch'])==sorted(branches):
+				overlap = list()
+				for i , branch in enumerate(end_push_log['branch']):
+					if end_push_log['source'][i] == source_versions[branch]:
+						overlap.append(True)
+					else:
+						overlap.append(False)
+				if not False in overlap:
+					return(False, 'Latest commit version matches the latest push version!')
 		# (4)	
 		else:
 			pass
