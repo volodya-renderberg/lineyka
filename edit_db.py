@@ -2974,9 +2974,8 @@ class task(studio):
 			
 	# путь к последней существующей пуш версии на локальном сервере.
 	# current_artist (artist) - текущий пользователь, если не передавать, будет сделано get_user
-	# look (bool) - нужен для sketch - если True - то формат файла для просмотра - studio.look_extension (.png)
-	# return для sketch - (True, ({словарь - ключ branch: значение path}, version)) для остальных - (True, (path, version)) - или (false, comment)
-	def get_final_push_file_path(self, current_artist=False, look=False):
+	# return для sketch - (True, ({словарь - ключ branch: значение словарь - ключи push_path, look_path}, version)) для остальных - (True, (path, version)) - или (false, comment)
+	def get_final_push_file_path(self, current_artist=False):
 		pass
 		# 0 - current_artist
 		# 1 - игнор аутсорс
@@ -3012,26 +3011,41 @@ class task(studio):
 		if end_log:
 			version = end_log['version']
 			if self.task_type == 'sketch':
-				b, r = self.template_get_push_path(self, version=version, branches=self.branch, look=look)
+				pass
+				# -- push path
+				b, r = self.template_get_push_path(self, version=version, branches=end_log['branch'], look=False)
+				#
+				if not b:
+					return(b,r)
+				#
+				for branch in end_log['branch']:
+                    r_data[branch] = {'push_path': r[branch]}
+				# -- look path
+				b, r = self.template_get_push_path(self, version=version, branches=end_log['branch'], look=True)
+				#
+				if not b:
+					return(b,r)
+				#
+				for branch in end_log['branch']:
+                    r_data[branch] = {'look_path': r[branch]}
 			else:
 				b, r = self.template_get_push_path(self, version=version)
-			if not b:
-				return(b,r)
-			r_data = r
+				if not b:
+					return(b,r)
+				r_data = r
 		
 		return(True, (r_data, version))
 		
 	# путь к указанной пуш версии на локальном сервере.
 	# version (int / str) - номер версии
 	# current_artist (artist) - текущий пользователь, если не передавать, будет сделано get_user
-	# look (bool) - нужен для sketch - если True - то формат файла для просмотра - studio.look_extension (.png)
-	# return для sketch - (True, {словарь - ключ branch: значение path}) для остальных - (True, path) - или (false, comment)
-	def get_version_push_file_path(self, vesion, current_artist=False, look=False):
-		pass
+	# return для sketch - (True, {словарь - ключ branch: значение словарь - ключи push_path, look_path}) для остальных - (True, path) - или (false, comment)
+	def get_version_push_file_path(self, version, current_artist=False):
 		pass
 		# 0 - current_artist
 		# 1 - игнор аутсорс
-		# 2 - получение путей
+		# 2 - получение push лога этой версии
+		# 3 - получение путей
 		
 		# (0) artist
 		if not current_artist:
@@ -3045,18 +3059,43 @@ class task(studio):
 			return(False, 'This function is not available on outsourcing!')
 		
 		# (2)
+		b, r = log(self).read_log(action='push')
+		if not b:
+			return(b, r)
+		version_log = False
+		for item in r[0]: # r[0] - это лог лист
+			if int(item['version']) == int(version):
+				version_log = item
+		if not version_log:
+			return(False, 'The log of this version "%s" was not found' % version)
+		
+		# (3)
 		if self.task_type == 'sketch':
 			r_data = dict()
 		else:
 			r_data= False
-		version=False
 		
 		#
-		if end_log:
-			if self.task_type == 'sketch':
-				b, r = self.template_get_push_path(self, version=version, branches=self.branch, look=look)
-			else:
-				b, r = self.template_get_push_path(self, version=version)
+		if self.task_type == 'sketch':
+			pass
+			# -- push path
+			b, r_push = self.template_get_push_path(self, version=version, branches=version_log['branch'], look=False)
+			#
+			if not b:
+				return(b,r_push)
+			# -- look path
+			b, r_look = self.template_get_push_path(self, version=version, branches=version_log['branch'], look=True)
+			#
+			if not b:
+				return(b,r_look)
+			#
+			for branch in version_log['branch']:
+				branch_dict = dict()
+				branch_dict['push_path'] = r_push[branch]
+				branch_dict['look_path'] = r_look[branch]
+				r_data[branch] = branch_dict
+		else:
+			b, r = self.template_get_push_path(self, version=version)
 			if not b:
 				return(b,r)
 			r_data = r
