@@ -593,11 +593,11 @@ class studio:
 			return (True, NormPath(os.path.join(self.work_folder, c_task.asset.project.name, 'assets', c_task.asset.name, c_task.activity)))
 
 	# шаблонный путь к файлу или активити push версии на сервере студии.
-	# c_task  (task) - задача, для которой ищется путь к файлам
+	# c_task  (task) - задача, для которой ищется путь к файлам.
 	# version (bool / int / str) - номер версии или False -в этом случае возврат только пути до активити.
-	# branches (bool / list) - список веток из которых делался push - для task_type = sketch
-	# look (bool) - рассматривается только при task_type = sketch, если False - то используется c_task.extension, если True - то используется studio.look_extension (список путей для просмотра)
-	# return (True, path или path_dict - ключи имена веток) или (False, comment)
+	# branches (bool / list) - список веток из которых делался push - для task_type = sketch.
+	# look (bool) - рассматривается только при task_type = sketch, если False - то используется c_task.extension, если True - то используется studio.look_extension (список путей для просмотра).
+	# return (True, path или path_dict - ключи имена веток) или (False, comment).
 	def template_get_push_path(self, c_task, version=False, branches=False, look=False): # v2
 		pass
 		# 1 - task_type = sketch
@@ -644,6 +644,15 @@ class studio:
 			else:
 				# (2.3)
 				return (True, NormPath(os.path.join(c_task.asset.path, c_task.activity)))
+	
+	# шаблонный путь до паблиш файлов.
+	# c_task  (task) - задача, для которой ищется путь к файлам.
+	# version (bool / int / str) - номер версии или False,если False - то путь до финальной версии, которая сверху версий (в паблиш/активити).
+	# branches (bool / list) - список веток из которых делался publish - для task_type = sketch.
+	# look (bool) - рассматривается только при task_type = sketch, если False - то используется c_task.extension, если True - то используется studio.look_extension (список путей для просмотра).
+	# return (True, path или path_dict - ключи имена веток) или (False, comment).
+	def template_get_publish_path(self, c_task, version=False, branches=False, look=False): # v2
+		pass		
 		
 	def set_share_dir(self, path):
 		if not os.path.exists(path):
@@ -2837,7 +2846,7 @@ class task(studio):
 	'''
 	# **************************** Task() File Path ************************************************
 	
-	# чтение путей new
+	# Work пути
 	
 	# task - должен быит инициализирован
 	# путь к последней возможной версии для взятия в работу
@@ -2973,6 +2982,33 @@ class task(studio):
 				return(False, 'The path "%s" not exists!' % r[0])
 			else:
 				return(True, r[0])
+
+	# создание пути для новой commit или pull версии файла.
+	# return - (True, (path, version)) или (False, comment)
+	def get_new_work_file_path(self):
+		pass
+		# 1 - чтение commit + pull логов
+		# 2 - новый номер версии
+		# 3 - шаблонный путь
+	
+		# (1)
+		b, r = log(self).read_log(action=['commit', 'pull'])
+		if not b:
+			return(b, r)
+		log_list = r[0]
+		
+		# (2)
+		end_log = log_list[-1:][0]
+		version = int(end_log['version']) + 1
+		
+		# (3)
+		b, r = self.template_get_work_path(self, version)
+		if not b:
+			return(b, r)
+		else:
+			return(False, (r, version))
+		
+	# Push пути
 			
 	# путь к последней существующей пуш версии на локальном сервере.
 	# current_artist (artist) - текущий пользователь, если не передавать, будет сделано get_user
@@ -3111,33 +3147,6 @@ class task(studio):
 		
 		return(True, r_data)
 	
-	# Пути до новых файлов
-	
-	# создание пути для новой commit или pull версии файла.
-	# return - (True, (path, version)) или (False, comment)
-	def get_new_work_file_path(self):
-		pass
-		# 1 - чтение commit + pull логов
-		# 2 - новый номер версии
-		# 3 - шаблонный путь
-	
-		# (1)
-		b, r = log(self).read_log(action=['commit', 'pull'])
-		if not b:
-			return(b, r)
-		log_list = r[0]
-		
-		# (2)
-		end_log = log_list[-1:][0]
-		version = int(end_log['version']) + 1
-		
-		# (3)
-		b, r = self.template_get_work_path(self, version)
-		if not b:
-			return(b, r)
-		else:
-			return(False, (r, version))
-	
 	# push последней или указанной work версии
 	# version (bool/ str / int) - версия коммит источника для push (не для sketch)
 	# current_artist (artist) - текущий пользователь, если не передавать, будет сделано get_user
@@ -3266,6 +3275,17 @@ class task(studio):
 				return(b, r)
 			else:
 				return(True, ((source_path, r), new_version))
+	
+	# Publish пути
+	
+	def get_version_publish_file_path(self, version):
+		pass
+	
+	def get_final_publish_file_path(self):
+		pass
+	
+	def get_new_publish_file_path(self):
+		pass
 	
 	# old
 	
