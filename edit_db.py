@@ -2976,7 +2976,7 @@ class task(studio):
 			
 	# путь к последней существующей пуш версии на локальном сервере.
 	# current_artist (artist) - текущий пользователь, если не передавать, будет сделано get_user
-	# return для sketch - (True, ({словарь - ключ branch: значение словарь - ключи push_path, look_path}, version)) для остальных - (True, (path, version)) - или (false, comment)
+	# return для sketch - (True, ({словарь - ключи: типы путей "look_path" или "push_path": значение словарь - пути по веткам}, version)) для остальных - (True, (path, version)) - или (false, comment)
 	def get_final_push_file_path(self, current_artist=False):
 		pass
 		# 0 - current_artist
@@ -3017,6 +3017,12 @@ class task(studio):
 				if not b:
 					return(b,r_look)
 				#
+				r_data['push_path'] = r_push
+				if self.task_type == 'sketch':
+					r_data['look_path'] = r_look
+				else:
+					r_data['look_path'] = r_push
+				'''
 				for branch in end_log['branch']:
 					branch_dict = dict()
 					branch_dict['push_path'] = r_push[branch]
@@ -3025,6 +3031,7 @@ class task(studio):
 					else:
 						branch_dict['look_path'] = r_push[branch]
 					r_data[branch] = branch_dict
+				'''
 			else:
 				b, r = self.template_get_push_path(self, version=version)
 				if not b:
@@ -3038,7 +3045,7 @@ class task(studio):
 	# путь к указанной пуш версии на локальном сервере.
 	# version (int / str) - номер версии
 	# current_artist (artist) - текущий пользователь, если не передавать, будет сделано get_user
-	# return для sketch - (True, {словарь - ключ branch: значение словарь - ключи push_path, look_path}) для остальных - (True, path) - или (false, comment)
+	# return для sketch - (True, {словарь - ключи: типы путей "look_path" или "push_path": значение словарь - пути по веткам}) для остальных - (True, path) - или (false, comment)
 	def get_version_push_file_path(self, version, current_artist=False):
 		pass
 		# 0 - current_artist
@@ -3081,6 +3088,12 @@ class task(studio):
 			if not b:
 				return(b,r_look)
 			#
+			r_data['push_path'] = r_push
+			if self.task_type == 'sketch':
+				r_data['look_path'] = r_look
+			else:
+				r_data['look_path'] = r_push
+			'''
 			for branch in version_log['branch']:
 				branch_dict = dict()
 				branch_dict['push_path'] = r_push[branch]
@@ -3089,6 +3102,7 @@ class task(studio):
 				else:
 					branch_dict['look_path'] = r_push[branch]
 				r_data[branch] = branch_dict
+			'''
 		else:
 			b, r = self.template_get_push_path(self, version=version)
 			if not b:
