@@ -135,6 +135,8 @@ class studio:
 	'composition',
 	]
 	
+	multi_publish_task_types = ['sketch']
+	
 	service_tasks = [
 	'all',
 	'pre',
@@ -3001,38 +3003,35 @@ class task(studio):
 		end_log = log_list[-1:][0]
 		
 		# (3)
-		if self.task_type == 'sketch':
-			r_data = dict()
-		else:
-			r_data= False
-		version=False
-		
-		#
 		if end_log:
 			version = end_log['version']
-			if self.task_type == 'sketch':
+			if self.task_type in self.multi_publish_task_types:
 				pass
+				r_data = dict()
 				# -- push path
-				b, r = self.template_get_push_path(self, version=version, branches=end_log['branch'], look=False)
-				#
+				b, r_push = self.template_get_push_path(self, version=version, branches=end_log['branch'], look=False)
 				if not b:
-					return(b,r)
-				#
-				for branch in end_log['branch']:
-                    r_data[branch] = {'push_path': r[branch]}
+					return(b,r_push)
 				# -- look path
-				b, r = self.template_get_push_path(self, version=version, branches=end_log['branch'], look=True)
-				#
+				b, r_look = self.template_get_push_path(self, version=version, branches=end_log['branch'], look=True)
 				if not b:
-					return(b,r)
+					return(b,r_look)
 				#
 				for branch in end_log['branch']:
-                    r_data[branch] = {'look_path': r[branch]}
+					branch_dict = dict()
+					branch_dict['push_path'] = r_push[branch]
+					if self.task_type == 'sketch':
+						branch_dict['look_path'] = r_look[branch]
+					else:
+						branch_dict['look_path'] = r_push[branch]
+					r_data[branch] = branch_dict
 			else:
 				b, r = self.template_get_push_path(self, version=version)
 				if not b:
 					return(b,r)
 				r_data = r
+		else:
+			return(False, 'Push version missing!')
 		
 		return(True, (r_data, version))
 		
@@ -3067,32 +3066,28 @@ class task(studio):
 			if int(item['version']) == int(version):
 				version_log = item
 		if not version_log:
-			return(False, 'The log of this version "%s" was not found' % version)
+			return(False, 'The push log of this version "%s" was not found' % version)
 		
 		# (3)
-		if self.task_type == 'sketch':
-			r_data = dict()
-		else:
-			r_data= False
-		
-		#
-		if self.task_type == 'sketch':
+		if self.task_type in self.multi_publish_task_types:
 			pass
+			r_data = dict()
 			# -- push path
 			b, r_push = self.template_get_push_path(self, version=version, branches=version_log['branch'], look=False)
-			#
 			if not b:
 				return(b,r_push)
 			# -- look path
 			b, r_look = self.template_get_push_path(self, version=version, branches=version_log['branch'], look=True)
-			#
 			if not b:
 				return(b,r_look)
 			#
 			for branch in version_log['branch']:
 				branch_dict = dict()
 				branch_dict['push_path'] = r_push[branch]
-				branch_dict['look_path'] = r_look[branch]
+				if self.task_type == 'sketch':
+					branch_dict['look_path'] = r_look[branch]
+				else:
+					branch_dict['look_path'] = r_push[branch]
 				r_data[branch] = branch_dict
 		else:
 			b, r = self.template_get_push_path(self, version=version)
