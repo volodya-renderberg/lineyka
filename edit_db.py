@@ -2837,7 +2837,7 @@ class task(studio):
 	'''
 	# **************************** Task() File Path ************************************************
 	
-	# чтение путей
+	# чтение путей new
 	
 	# task - должен быит инициализирован
 	# путь к последней возможной версии для взятия в работу
@@ -3141,6 +3141,7 @@ class task(studio):
 	# push последней или указанной work версии
 	# version (bool/ str / int) - версия коммит источника для push (не для sketch)
 	# current_artist (artist) - текущий пользователь, если не передавать, будет сделано get_user
+	# return для скетч - (True, ({словарь с ключами: source_path, source_versions, push_path, look_path - значения словари по веткам}, version) для остальных (True, ((source_path, new_path), version))
 	def get_new_push_file_path(self, version=False, current_artist=False):
 		pass
 		# 0 - test artist
@@ -3176,7 +3177,7 @@ class task(studio):
 		new_version = int(end_push_log['version']) + 1
 		
 		# (3)
-		if self.task_type=='sketch':
+		if self.task_type in self.multi_publish_task_types:
 			pass
 			# (3.1)
 			b, r = log(self).read_log(action=['commit', 'pull'])
