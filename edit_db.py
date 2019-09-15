@@ -651,8 +651,26 @@ class studio:
 	# branches (bool / list) - список веток из которых делался publish - для task_type = sketch.
 	# look (bool) - рассматривается только при task_type = sketch, если False - то используется c_task.extension, если True - то используется studio.look_extension (список путей для просмотра).
 	# return (True, path или path_dict - ключи имена веток) или (False, comment).
-	def template_get_publish_path(self, c_task, version=False, branches=False, look=False): # v2
-		pass		
+	def _template_get_publish_path(self, c_task, version=False, branches=False, look=False): # v2
+		pass
+		# 1 - 
+		
+		if version:
+			#
+			b, str_version = self.template_version_num(version)
+			if not b:
+				return (b, str_version)
+			#
+			if c_task.task_type in self.multi_publish_task_types:
+				pass
+			else:
+				path = os.path.join(c_task.asset.path, self.publish_folder_name, c_task.activity, str_version, '%s%s' % (c_task.asset.name, c_task.extension))
+				return (True, NormPath(path))
+		else:
+			if c_task.task_type in self.multi_publish_task_types:
+				pass
+			else:
+				return (True, NormPath(os.path.join(c_task.asset.path, self.publish_folder_name, c_task.activity, '%s%s' % (c_task.asset.name, c_task.extension))))
 		
 	def set_share_dir(self, path):
 		if not os.path.exists(path):
