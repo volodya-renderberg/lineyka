@@ -662,13 +662,27 @@ class studio:
 				return (b, str_version)
 			#
 			if c_task.task_type in self.multi_publish_task_types:
-				pass
+				path_dict = dict()
+				for branch in branches:
+					if look:
+						path = os.path.join(c_task.asset.path, self.publish_folder_name, c_task.activity, str_version, '%s%s' % (c_task.asset.name, self.look_extension))
+					else:
+						path = os.path.join(c_task.asset.path, self.publish_folder_name, c_task.activity, str_version, '%s%s' % (c_task.asset.name, c_task.extension))
+					path_dict[branch] = NormPath(path)
+				return(True, path_dict)
 			else:
 				path = os.path.join(c_task.asset.path, self.publish_folder_name, c_task.activity, str_version, '%s%s' % (c_task.asset.name, c_task.extension))
 				return (True, NormPath(path))
 		else:
 			if c_task.task_type in self.multi_publish_task_types:
-				pass
+				path_dict = dict()
+				for branch in branches:
+					if look:
+						path = os.path.join(c_task.asset.path, self.publish_folder_name, c_task.activity, '%s%s' % (c_task.asset.name, self.look_extension))
+					else:
+						path = os.path.join(c_task.asset.path, self.publish_folder_name, c_task.activity, '%s%s' % (c_task.asset.name, c_task.extension))
+					path_dict[branch] = NormPath(path)
+				return(True, path_dict)
 			else:
 				return (True, NormPath(os.path.join(c_task.asset.path, self.publish_folder_name, c_task.activity, '%s%s' % (c_task.asset.name, c_task.extension))))
 		
