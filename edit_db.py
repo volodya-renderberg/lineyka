@@ -563,7 +563,7 @@ class studio:
 	
 	# преобразование версии к строке нужного формата.
 	# version (int / str)
-	def template_version_num(self, version):
+	def _template_version_num(self, version):
 		try:
 			str_version = '{:04d}'.format(int(version))
 			return(True, str_version)
@@ -573,7 +573,7 @@ class studio:
 	# шаблонный путь к файлу или активити в рабочей директории
 	# c_task  (task) - задача, для которой ищется файл
 	# version (bool / int / str) - номер версии или False -в этом случае возврат только пути до активити.
-	def template_get_work_path(self, c_task, version=False):
+	def _template_get_work_path(self, c_task, version=False):
 		pass
 		# exists work folder
 		if not self.work_folder:
@@ -583,7 +583,7 @@ class studio:
 		
 		if version:
 			# test version
-			b, str_version = self.template_version_num(version)
+			b, str_version = self._template_version_num(version)
 			if not b:
 				return (b, str_version)
 			# file path
@@ -598,7 +598,7 @@ class studio:
 	# branches (bool / list) - список веток из которых делался push - для task_type = sketch.
 	# look (bool) - рассматривается только при task_type = sketch, если False - то используется c_task.extension, если True - то используется studio.look_extension (список путей для просмотра).
 	# return (True, path или path_dict - ключи имена веток) или (False, comment).
-	def template_get_push_path(self, c_task, version=False, branches=False, look=False): # v2
+	def _template_get_push_path(self, c_task, version=False, branches=False, look=False): # v2
 		pass
 		# 1 - task_type = sketch
 		# 1.1 - преобразование version
@@ -614,7 +614,7 @@ class studio:
 			#
 			if version:
 				# ( 1.1)
-				b, str_version = self.template_version_num(version)
+				b, str_version = self._template_version_num(version)
 				if not b:
 					return (b, str_version)
 				# (1.2)
@@ -657,7 +657,7 @@ class studio:
 		
 		if version:
 			#
-			b, str_version = self.template_version_num(version)
+			b, str_version = self._template_version_num(version)
 			if not b:
 				return (b, str_version)
 			#
@@ -2917,7 +2917,7 @@ class task(studio):
 			end_log = log_list[-1:][0]
 			# (2)
 			if end_log['action'] in ['commit','pull']:
-				version_path = self.template_get_work_path(self, version=end_log['version'])
+				version_path = self._template_get_work_path(self, version=end_log['version'])
 				if not os.path.exists(version_path):
 					return(False, 'the latest "%s" version is not in your working directory, this user: "%s" needs to "push"' % (end_log['action'], end_log['artist']))
 				else:
@@ -2927,12 +2927,12 @@ class task(studio):
 				if self.task_type != 'sketch':
 					pass
 					# (4)
-					version_path = self.template_get_work_path(self, version=end_log['source'])
+					version_path = self._template_get_work_path(self, version=end_log['source'])
 					if os.path.exists(version_path):
 						return(True, (version_path, end_log['version']))
 					# (5)
 					else:
-						push_version_path = self.template_get_push_path(self, end_log['version'])
+						push_version_path = self._template_get_push_path(self, end_log['version'])
 						if not os.path.exists(push_version_path):
 							return(False, 'Path of the push version "%s" not found!')
 						else:
@@ -2945,7 +2945,7 @@ class task(studio):
 						if int(v)>version:
 							version=v
 					# (6.2)
-					version_path = self.template_get_work_path(self, version=version)
+					version_path = self._template_get_work_path(self, version=version)
 					if os.path.exists(version_path):
 						return(True, (version_path, version))
 					else:
@@ -2972,7 +2972,7 @@ class task(studio):
 			# (8)
 			end_log = log_list[-1:][0]
 			if end_log['action'] in ['commit','pull']:
-				version_path = self.template_get_work_path(self, version=end_log['version'])
+				version_path = self._template_get_work_path(self, version=end_log['version'])
 				if os.path.exists(version_path):
 					return(True, (version_path, end_log['version']))
 				# (8.1)
@@ -2982,7 +2982,7 @@ class task(studio):
 			elif end_log['action'] == 'push':
 				# (9.1)
 				if self.task_type != 'sketch':
-					version_path = self.template_get_work_path(self, version=end_log['source'])
+					version_path = self._template_get_work_path(self, version=end_log['source'])
 					if os.path.exists(version_path):
 						return(True, (version_path, end_log['source']))
 					else:
@@ -2994,19 +2994,19 @@ class task(studio):
 					for v in end_log['source']:
 						if int(v)>version:
 							version=v
-					version_path = self.template_get_work_path(self, version=version)
+					version_path = self._template_get_work_path(self, version=version)
 					if os.path.exists(version_path):
 						return(True, (version_path, version))
 					else:
 						# (10.1)
 						return(False, 'the source of the "push" version "%s" is not in your working directory.\nAsk the manager to upload the latest version to the cloud,\n and make "pull."' % end_log['version'])
 	
-	# обёртка на studio.template_get_work_path()
+	# обёртка на studio._template_get_work_path()
 	# получение шаблонного пути версии данной задачи
 	# version (int / str) - номер версии
 	# return - (True, path) - или (false, comment)
 	def get_version_work_file_path(self, version):
-		b, r = self.template_get_work_path(self, version)
+		b, r = self._template_get_work_path(self, version)
 		if not b:
 			return(b, r)
 		else:
@@ -3034,7 +3034,7 @@ class task(studio):
 		version = int(end_log['version']) + 1
 		
 		# (3)
-		b, r = self.template_get_work_path(self, version)
+		b, r = self._template_get_work_path(self, version)
 		if not b:
 			return(b, r)
 		else:
@@ -3077,11 +3077,11 @@ class task(studio):
 				pass
 				r_data = dict()
 				# -- push path
-				b, r_push = self.template_get_push_path(self, version=version, branches=end_log['branch'], look=False)
+				b, r_push = self._template_get_push_path(self, version=version, branches=end_log['branch'], look=False)
 				if not b:
 					return(b,r_push)
 				# -- look path
-				b, r_look = self.template_get_push_path(self, version=version, branches=end_log['branch'], look=True)
+				b, r_look = self._template_get_push_path(self, version=version, branches=end_log['branch'], look=True)
 				if not b:
 					return(b,r_look)
 				#
@@ -3101,7 +3101,7 @@ class task(studio):
 					r_data[branch] = branch_dict
 				'''
 			else:
-				b, r = self.template_get_push_path(self, version=version)
+				b, r = self._template_get_push_path(self, version=version)
 				if not b:
 					return(b,r)
 				r_data = r
@@ -3148,11 +3148,11 @@ class task(studio):
 			pass
 			r_data = dict()
 			# -- push path
-			b, r_push = self.template_get_push_path(self, version=version, branches=version_log['branch'], look=False)
+			b, r_push = self._template_get_push_path(self, version=version, branches=version_log['branch'], look=False)
 			if not b:
 				return(b,r_push)
 			# -- look path
-			b, r_look = self.template_get_push_path(self, version=version, branches=version_log['branch'], look=True)
+			b, r_look = self._template_get_push_path(self, version=version, branches=version_log['branch'], look=True)
 			if not b:
 				return(b,r_look)
 			#
@@ -3172,7 +3172,7 @@ class task(studio):
 				r_data[branch] = branch_dict
 			'''
 		else:
-			b, r = self.template_get_push_path(self, version=version)
+			b, r = self._template_get_push_path(self, version=version)
 			if not b:
 				return(b,r)
 			r_data = r
@@ -3254,11 +3254,11 @@ class task(studio):
 				if not False in overlap:
 					return(False, 'Latest commit version matches the latest push version!')
 			# (3.3)
-			b ,r = self.template_get_push_path(self, version=new_version, branches=branches, look=False)
+			b ,r = self._template_get_push_path(self, version=new_version, branches=branches, look=False)
 			if not b:
 				return(b, r)
 			push_path = r
-			b ,r = self.template_get_push_path(self, version=new_version, branches=branches, look=True)
+			b ,r = self._template_get_push_path(self, version=new_version, branches=branches, look=True)
 			if not b:
 				return(b, r)
 			look_path = r
@@ -3274,7 +3274,7 @@ class task(studio):
 			pass
 			# (4.1)
 			if version:
-				b, r = self.template_version_num(version)
+				b, r = self._template_version_num(version)
 				if not b:
 					return(b, r)
 				else:
@@ -3296,13 +3296,13 @@ class task(studio):
 				source_path = r
 				source_version = end_work_log['version']
 			# (4.2)
-			b, str_source_version = self.template_version_num(source_version)
+			b, str_source_version = self._template_version_num(source_version)
 			if not b:
 				return (b, str_source_version)
 			if str_source_version == end_push_log['source']:
 				return(False, 'This commit version "%s" matches the latest push version!' % str_source_version)
 			# (4.3)
-			b, r = self.template_get_push_path(self, version=new_version)
+			b, r = self._template_get_push_path(self, version=new_version)
 			if not b:
 				return(b, r)
 			else:
