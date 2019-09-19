@@ -3309,15 +3309,80 @@ class task(studio):
 				return(True, ((source_path, r), new_version))
 	
 	# Publish пути
-	
+	# version (int / str) - номер publish версии
+	# return (True, path или dict(пути по веткам)) или (False, comment)
 	def get_version_publish_file_path(self, version):
 		pass
+		if self.task_type in self.multi_publish_task_types:
+			pass
+			b, r = self._template_get_publish_path(self, version)
+			return(b, r)
+		else:
+			pass
+			b, r = self._template_get_publish_path(self, version)
+			if not b:
+				return(b, r)
+			else:
+				if not os.path.exists(r):
+					return(False, 'The path "%s" not exists!' % r)
+				else:
+					return(b, r)
 	
 	def get_final_publish_file_path(self):
 		pass
+		if self.task_type in self.multi_publish_task_types:
+			pass
+			b, r = self._template_get_publish_path(self)
+			return(b, r)
+		else:
+			pass
+			b, r = self._template_get_publish_path(self)
+			if not b:
+				return(b, r)
+			else:
+				if not os.path.exists(r):
+					return(False, 'The path "%s" not exists!' % r)
+				else:
+					return(b, r)
 	
 	def get_new_publish_file_path(self):
 		pass
+		# 1 - read the final publish log, get final publish version
+		# 2 - get template path
+		
+		# (1)
+		b, r = log(self).read_log(action='publish')
+		if not b:
+			return(b, r)
+		
+		if r[0]:
+			end_log = r[0][-1:][0]
+			version = int(end_log['version']) + 1
+		else:
+			version=0
+		
+		# (2)
+		if self.task_type in self.multi_publish_task_types:
+			pass
+			b, r_top = self._template_get_publish_path(self)
+			if not b:
+				return(b, r_top)
+			b, r_version = self._template_get_publish_path(self, version)
+			if not b:
+				return(b, r_version)
+			#
+			return(True, ({'top_path': r_top, 'version_path': r_path}, version))
+		else:
+			pass
+			b, r_top = self._template_get_publish_path(self)
+			if not b:
+				return(b, r_top)
+			b, r_version = self._template_get_publish_path(self, version)
+			if not b:
+				return(b, r_version)
+			#
+			return(True, ({'top_path': r_top, 'version_path': r_path}, version))
+				
 	
 	# old
 	
