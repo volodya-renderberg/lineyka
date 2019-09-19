@@ -6979,7 +6979,7 @@ class MainWindow(QtGui.QMainWindow):
 	# *********************** SETTING ****************************************************
     
 	def help_user_manual(self):
-		webbrowser.open_new_tab('http://www.lineyka.org.ru/')
+		webbrowser.open_new_tab('http://www.lineyka.org.ru/support')
 		#print("go to user manual!")
 
 	def set_studio_ui(self):
