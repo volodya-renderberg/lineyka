@@ -3328,6 +3328,8 @@ class task(studio):
 				else:
 					return(b, r)
 	
+	# пути к top версии паблиш файлов
+	# return (True, path или dict(пути по веткам)) или (False, comment)
 	def get_final_publish_file_path(self):
 		pass
 		if self.task_type in self.multi_publish_task_types:
@@ -3345,6 +3347,8 @@ class task(studio):
 				else:
 					return(b, r)
 	
+	# пути для новых паблиш файлов: и top и версию
+	# return: (true, (dict_path, version)) или (False, comment), структура dict_path: ключи - 'top_path', 'version_path', значения - пути или словари путей по веткам.
 	def get_new_publish_file_path(self):
 		pass
 		# 1 - read the final publish log, get final publish version
@@ -3371,7 +3375,7 @@ class task(studio):
 			if not b:
 				return(b, r_version)
 			#
-			return(True, ({'top_path': r_top, 'version_path': r_path}, version))
+			return(True, ({'top_path': r_top, 'version_path': r_version}, version))
 		else:
 			pass
 			b, r_top = self._template_get_publish_path(self)
@@ -3381,7 +3385,7 @@ class task(studio):
 			if not b:
 				return(b, r_version)
 			#
-			return(True, ({'top_path': r_top, 'version_path': r_path}, version))
+			return(True, ({'top_path': r_top, 'version_path': r_version}, version))
 				
 	
 	# old
