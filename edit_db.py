@@ -890,6 +890,7 @@ class database():
 	# table_root - assets, chats - те случаи когда имя файла ДБ не соответствует имени таблицы, если есть table_root - имя файла ДБ будет определяться по нему.
 	# table_root - может быть как именем таблицы - например: assets, так и именем файла - .assets.db
 	def get(self, level, read_ob, table_name, com, table_root=False):
+        pass
 		# get use_db
 		attr = self.use_db_attr.get(level)
 		if not attr:
@@ -904,6 +905,7 @@ class database():
 	
 	# table_root - может быть как именем таблицы - например: assets, так и именем файла - .assets.db
 	def set_db(self, level, read_ob, table_name, com, data_com=False, table_root=False):
+        pass
 		# get use_db
 		attr = self.use_db_attr.get(level)
 		if not attr:
@@ -1151,8 +1153,6 @@ class database():
 		# connect
 		# -- db_path
 		db_path = self.__get_db_path(level, read_ob, table_name, table_root)
-		if not db_path:
-			return(False, 'No path to database!')
 		# -- connect
 		try:
 			conn = sqlite3.connect(db_path, detect_types=sqlite3.PARSE_DECLTYPES|sqlite3.PARSE_COLNAMES)
@@ -1163,14 +1163,18 @@ class database():
 			print('#'*3, 'db_path:', db_path)
 			print('#'*3, e)
 			return(False, 'Exception in database.__sqlite3_read, please look the terminal!')
+        
+        # -- exists table_name
+        res = c.execute("SELECT name FROM sqlite_master WHERE type='table';")
+        tables = list()
+        for item in res:
+            tables.append(item[0])
+        if not table_name in tables:
+            conn.close()
+            return(True, list())
+        
+        # -- execute
 		try:
-			'''
-			#test_com = "SELECT name FROM sqlite_master WHERE type='table' AND name='%s'" % table_name
-			#c.execute(test_com)
-			c.execute("SELECT rowid FROM components WHERE name = '?'", (table_name,))
-			if c.fetchone():
-				c.execute(com)
-			'''
 			c.execute(com)
 		except Exception as e:
 			conn.close()
@@ -1229,8 +1233,8 @@ class database():
 		# connect
 		# -- db_path
 		db_path = self.__get_db_path(level, read_ob, table_name, table_root)
-		if not db_path:
-			return(False, 'No path to database!')
+		#if not db_path:
+			#return(False, 'No path to database!')
 		# -- connect
 		conn = sqlite3.connect(db_path, detect_types=sqlite3.PARSE_DECLTYPES|sqlite3.PARSE_COLNAMES)
 		conn.row_factory = sqlite3.Row
@@ -1268,7 +1272,7 @@ class database():
 		#db_path
 		db_path = self.__get_db_path(level, read_ob, table_name, table_root)
 		if not db_path:
-			return(False, 'No path to database!')
+			return(True, list())
 		#print('__sqlite3_get()', db_path, os.path.exists(db_path))
 		
 		try:
@@ -1276,6 +1280,17 @@ class database():
 			conn = sqlite3.connect(db_path, detect_types=sqlite3.PARSE_DECLTYPES|sqlite3.PARSE_COLNAMES)
 			conn.row_factory = sqlite3.Row
 			c = conn.cursor()
+			
+			# -- exists table_name
+			res = c.execute("SELECT name FROM sqlite_master WHERE type='table';")
+			tables = list()
+			for item in res:
+				tables.append(item[0])
+			if not table_name in tables:
+				conn.close()
+				return(True, list())
+			
+			# -- execute
 			c.execute(com)
 			data = []
 			for row in c.fetchall():
@@ -1296,8 +1311,8 @@ class database():
 	def __sqlite3_set(self, level, read_ob, table_name, com, data_com, table_root):
 		#db_path
 		db_path = self.__get_db_path(level, read_ob, table_name, table_root)
-		if not db_path:
-			return(False, 'No path to database!')
+		#if not db_path:
+			#return(False, 'No path to database!')
 		#print('__sqlite3_get()', db_path, os.path.exists(db_path))
 		
 		try:
