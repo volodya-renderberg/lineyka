@@ -890,7 +890,7 @@ class database():
 	# table_root - assets, chats - те случаи когда имя файла ДБ не соответствует имени таблицы, если есть table_root - имя файла ДБ будет определяться по нему.
 	# table_root - может быть как именем таблицы - например: assets, так и именем файла - .assets.db
 	def get(self, level, read_ob, table_name, com, table_root=False):
-        pass
+		pass
 		# get use_db
 		attr = self.use_db_attr.get(level)
 		if not attr:
@@ -905,7 +905,7 @@ class database():
 	
 	# table_root - может быть как именем таблицы - например: assets, так и именем файла - .assets.db
 	def set_db(self, level, read_ob, table_name, com, data_com=False, table_root=False):
-        pass
+		pass
 		# get use_db
 		attr = self.use_db_attr.get(level)
 		if not attr:
@@ -1164,16 +1164,16 @@ class database():
 			print('#'*3, e)
 			return(False, 'Exception in database.__sqlite3_read, please look the terminal!')
         
-        # -- exists table_name
-        res = c.execute("SELECT name FROM sqlite_master WHERE type='table';")
-        tables = list()
-        for item in res:
-            tables.append(item[0])
-        if not table_name in tables:
-            conn.close()
-            return(True, list())
+		# -- exists table_name
+		res = c.execute("SELECT name FROM sqlite_master WHERE type='table';")
+		tables = list()
+		for item in res:
+			tables.append(item[0])
+		if not table_name in tables:
+			conn.close()
+			return(True, list())
         
-        # -- execute
+		# -- execute
 		try:
 			c.execute(com)
 		except Exception as e:
@@ -2537,7 +2537,7 @@ class task(studio):
 		# get keys
 		b, r = self._read_task(task_name)
 		if not b:
-			return(bool_, r)
+			return(b, r)
 		
 		return(self.init_by_keys(r[0], new=new, new_asset=r[1]))
 		
@@ -3042,11 +3042,14 @@ class task(studio):
 		b, r = log(self).read_log(action=['commit', 'pull'])
 		if not b:
 			return(b, r)
-		log_list = r[0]
 		
 		# (2)
-		end_log = log_list[-1:][0]
-		version = int(end_log['version']) + 1
+		if r:
+			log_list = r[0]
+			end_log = log_list[-1:][0]
+			version = int(end_log['version']) + 1
+		else:
+			version = 0
 		
 		# (3)
 		b, r = self._template_get_work_path(self, version)
