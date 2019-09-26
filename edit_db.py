@@ -577,7 +577,7 @@ class studio:
 		pass
 		# exists work folder
 		if not self.work_folder:
-			return(False, 'Working directory not specified!')
+			return(False, 'Working directory not defined!')
 		elif not os.path.exists(self.work_folder):
 			return(False, 'The path "%s" to working directory does not exist!' % self.work_folder)
 		
@@ -2901,7 +2901,7 @@ class task(studio):
 	# task - должен быит инициализирован
 	# путь к последней возможной версии для взятия в работу
 	# current_artist (artist) - текущий пользователь, если не передавать, будет сделано get_user
-	# return - (True, (path, version)) или (False, comment)
+	# return - (True, (path, version)) или (False, comment) если нет ни одного лога return - (True, ('',''))
 	def get_final_work_file_path(self, current_artist=False): # v2
 		pass
 		# 0 - current_artist
@@ -2932,6 +2932,10 @@ class task(studio):
 			if not b:
 				return(b, r)
 			log_list = r[0]
+			#
+			if not log_list:
+				return(True, ('',''))
+            #
 			end_log = log_list[-1:][0]
 			# (2)
 			if end_log['action'] in ['commit','pull']:
@@ -2986,6 +2990,9 @@ class task(studio):
 			if not b:
 				return(b, r)
 			log_list = r[0]
+			#
+			if not log_list:
+				return(True, ('',''))
 			
 			# (8)
 			end_log = log_list[-1:][0]
@@ -3555,6 +3562,62 @@ class task(studio):
 			return(False, 'Publish/File Not Found!')
 			
 		return(True, file_path)
+	
+	# запись новой рабочей версии в work директорию
+	# work_path (str) - путь к текущему рабочему файлу
+	# return (True, path - путь до сохранённого файла) или (False, comment)
+	def commit(self, work_path, description, branch=False, artist_ob=False):
+		pass
+		# 0 - input data
+		# 1 - get save_path
+		# 2 - make dirs
+		# 3 - copy file
+		# 4 - write log
+		
+		# (0)
+		if not description:
+			return(False, 'No description!')
+		if not branch:
+			branch = 'master'
+		
+		# (1)
+		b, r = self.get_new_work_file_path()
+		if not b:
+			return(b, r)
+		save_path = r[0]
+		version = r[1]
+		
+		# (2)
+		version_dir_path = os.path.dirname(save_path)
+		if not os.path.exists(version_dir_path):
+			os.makedirs(version_dir_path)
+		
+		# (3)
+		# (3.1)
+		if not os.path.exists(work_path):
+			return('The source path "%s" not exists!' % work_path)
+		# (3.2)
+		try:
+			extension = '.%s' % work_path.split('.')[-1:][0]
+		except:
+			return(False, 'Source file "%s" missing extension' % work_path)
+		# (3.3)
+		if extension != self.extension:
+			return(False, 'Source file extension(%s) does not match task extension(%s)' % (extension, self.extension))
+		# (3.4)
+		shutil.copyfile(work_path, save_path)
+		
+		# (4)
+		logs_keys = {
+		'action': 'commit',
+		'description': description,
+		'branch': branch,
+		'version': version,
+		}
+		#
+		result = log(self).write_log(logs_keys,  artist_ob=artist_ob)
+		if not result[0]:
+			return(False, result[1])
 	
 	# откроет файл в приложении - согласно расширению.
 	# look (bool) - если True - то статусы меняться не будут, если False - то статусы меняться будут.
