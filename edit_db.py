@@ -3048,7 +3048,7 @@ class task(studio):
 			return(b, r)
 		
 		# (2)
-		if r:
+		if r[0]:
 			log_list = r[0]
 			end_log = log_list[-1:][0]
 			version = int(end_log['version']) + 1
