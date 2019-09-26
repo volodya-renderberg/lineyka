@@ -1166,11 +1166,15 @@ class database():
         
 		# -- exists table_name
 		res = c.execute("SELECT name FROM sqlite_master WHERE type='table';")
-		tables = list()
+		tables = []
 		for item in res:
+			#print(item[0], item[0].__class__.__name__)
+			#print(table_name, table_name.__class__.__name__)
+			#print(item[0] == table_name)
 			tables.append(item[0])
-		if not table_name in tables:
+		if not table_name.replace('"', '') in tables:
 			conn.close()
+			#print('not %s in %s' % (table_name, str(tables)))
 			return(True, list())
         
 		# -- execute
@@ -1286,7 +1290,7 @@ class database():
 			tables = list()
 			for item in res:
 				tables.append(item[0])
-			if not table_name in tables:
+			if not table_name.replace('"', '') in tables:
 				conn.close()
 				return(True, list())
 			
