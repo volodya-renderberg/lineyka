@@ -635,10 +635,9 @@ class studio:
 		else:
 			if version:
 				# ( 2.1)
-				try:
-					str_version = '{:04d}'.format(int(version))
-				except:
-					return (False, 'Wrong version format "%s"' %  str(version))
+				b, str_version = self._template_version_num(version)
+				if not b:
+					return (b, str_version)
 				# (2.2)
 				return (True, NormPath(os.path.join(c_task.asset.path, c_task.activity, str_version, '%s%s' % (c_task.asset.name, c_task.extension))))
 			else:
@@ -3053,10 +3052,12 @@ class task(studio):
 			end_log = log_list[-1:][0]
 			version = int(end_log['version']) + 1
 		else:
-			version = 0
+			b, version = self._template_version_num(0)
+			if not b:
+				return(b, version)
 		
 		# (3)
-		b, r = self._template_get_work_path(self, version)
+		b, r = self._template_get_work_path(self, version=version)
 		if not b:
 			return(b, r)
 		else:
