@@ -3573,6 +3573,9 @@ class task(studio):
 	
 	# запись новой рабочей версии в work директорию
 	# work_path (str) - путь к текущему рабочему файлу
+	# description (unicode) - коммент
+	# branch (unicode) - наименование ветки, если не передавать - то master
+	# artist_ob (artist) - если не передовать, то будет выполнен get_user()
 	# return (True, path - путь до сохранённого файла) или (False, comment)
 	def commit(self, work_path, description, branch=False, artist_ob=False):
 		pass
