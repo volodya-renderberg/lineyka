@@ -3068,7 +3068,7 @@ class task(studio):
 		if not b:
 			return(b, r)
 		else:
-			return(False, (r, version))
+			return(True, (r, version))
 		
 	# Push пути
 			
@@ -3563,6 +3563,14 @@ class task(studio):
 			
 		return(True, file_path)
 	
+	# вызов одноимённого хука
+	def pre_commit(self, work_path, save_path):
+		return(True, 'Ok!')
+
+	# вызов одноимённого хука
+	def post_commit(self, work_path, save_path):
+		return(True, 'Ok!')
+	
 	# запись новой рабочей версии в work директорию
 	# work_path (str) - путь к текущему рабочему файлу
 	# return (True, path - путь до сохранённого файла) или (False, comment)
@@ -3571,8 +3579,10 @@ class task(studio):
 		# 0 - input data
 		# 1 - get save_path
 		# 2 - make dirs
-		# 3 - copy file
-		# 4 - write log
+		# 3 - pre_commit
+		# 4 - copy file
+		# 5 - write log
+		# 6 - post_commit
 		
 		# (0)
 		if not description:
@@ -3591,23 +3601,28 @@ class task(studio):
 		version_dir_path = os.path.dirname(save_path)
 		if not os.path.exists(version_dir_path):
 			os.makedirs(version_dir_path)
-		
+			
 		# (3)
-		# (3.1)
+		b, r = self.pre_commit(work_path, save_path)
+		if not b:
+			return(b, r)
+		
+		# (4)
+		# (4.1)
 		if not os.path.exists(work_path):
 			return('The source path "%s" not exists!' % work_path)
-		# (3.2)
+		# (4.2)
 		try:
 			extension = '.%s' % work_path.split('.')[-1:][0]
 		except:
 			return(False, 'Source file "%s" missing extension' % work_path)
-		# (3.3)
+		# (4.3)
 		if extension != self.extension:
 			return(False, 'Source file extension(%s) does not match task extension(%s)' % (extension, self.extension))
-		# (3.4)
+		# (4.4)
 		shutil.copyfile(work_path, save_path)
 		
-		# (4)
+		# (5)
 		logs_keys = {
 		'action': 'commit',
 		'description': description,
@@ -3618,6 +3633,13 @@ class task(studio):
 		result = log(self).write_log(logs_keys,  artist_ob=artist_ob)
 		if not result[0]:
 			return(False, result[1])
+		
+		# (6)
+		b, r = self.post_commit(work_path, save_path)
+		if not b:
+			return(b, r)
+		
+		return(True, save_path)
 	
 	# откроет файл в приложении - согласно расширению.
 	# look (bool) - если True - то статусы меняться не будут, если False - то статусы меняться будут.
