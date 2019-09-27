@@ -3564,11 +3564,11 @@ class task(studio):
 		return(True, file_path)
 	
 	# вызов одноимённого хука
-	def pre_commit(self, work_path, save_path):
+	def _pre_commit(self, work_path, save_path):
 		return(True, 'Ok!')
 
 	# вызов одноимённого хука
-	def post_commit(self, work_path, save_path):
+	def _post_commit(self, work_path, save_path):
 		return(True, 'Ok!')
 	
 	# запись новой рабочей версии в work директорию
@@ -3606,7 +3606,7 @@ class task(studio):
 			os.makedirs(version_dir_path)
 			
 		# (3)
-		b, r = self.pre_commit(work_path, save_path)
+		b, r = self._pre_commit(work_path, save_path)
 		if not b:
 			return(b, r)
 		
@@ -3638,7 +3638,7 @@ class task(studio):
 			return(False, result[1])
 		
 		# (6)
-		b, r = self.post_commit(work_path, save_path)
+		b, r = self._post_commit(work_path, save_path)
 		if not b:
 			return(b, r)
 		
