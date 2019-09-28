@@ -327,7 +327,7 @@ class studio:
 	'description': 'text',
 	'source': 'json', # для push - версия коммита источника (в случае sketch - список версий по всем веткам, порядок совпадает с порядком записи веток в branch), для publish - версия push источника.
 	'branch' : 'json', # ветка - в случае push, publish для sketch - списки веток.
-	'time' : 'integer', # время затраченное на commit, ед. измерения секунда.
+	'time' : 'timestamp', # время затраченное на commit, ед. измерения секунда.
 	}
 
 	artists_logs_keys = {
@@ -3634,11 +3634,18 @@ class task(studio):
 		shutil.copyfile(work_path, save_path)
 		
 		# (5)
+		# (5.0)
+		commit_time = datetime.datetime.now()
+		delta = commit_time - self.open_time
+		self.open_time = commit_time
+		
+		# (5.1)
 		logs_keys = {
 		'action': 'commit',
 		'description': description,
 		'branch': branch,
 		'version': version,
+		'time', delta,
 		}
 		#
 		result = log(self).write_log(logs_keys,  artist_ob=artist_ob)
@@ -3772,6 +3779,9 @@ class task(studio):
 				return(False, 'No application found for this extension "%s"' % task_ob.extension)
 			cmd = '"%s" "%s"' % (soft, tmp_file_path)
 			subprocess.Popen(cmd, shell = True)
+			
+		# (4) time log
+		self.open_time = datetime.datetime.now()
 		
 		return(True, tmp_file_path)
 	
