@@ -6168,7 +6168,7 @@ class log(studio):
 		pass
 		# 1 - тест обязательных полей: description, version, action
 		# 2 - чтение artist
-		# 3 - branch
+		# 3 - branch, version
 		# 4 - заполнение полей task_name, date_time, artist
 		# 5 - запись БД
 		
@@ -6190,6 +6190,11 @@ class log(studio):
 		# (3)
 		if not logs_keys.get('branch'):
 			logs_keys['branch'] = 'master'
+		b, r = self._template_version_num(logs_keys['version'])
+		if not b:
+			return(b, r)
+		else:
+			logs_keys['version']=r
 
 		# (4)
 		# task_name
