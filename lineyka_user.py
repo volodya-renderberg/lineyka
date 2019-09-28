@@ -431,7 +431,13 @@ class MainWindow(QtGui.QMainWindow):
 		# (0) ****** Get Description
 		description = window.new_dialog_name.text()
 		if not description:
-			self.message('Not Comment!', 2)
+			self.message('No Description!', 2)
+			return
+		
+		# get branch name
+		branch = window.branch_name.text().replace(' ', '_')
+		if branch and len(branch)<3:
+			self.message('Shot branch name (need minimum 3 char)', 2)
 			return
 		
 		if not os.path.exists(self.current_file):
@@ -448,7 +454,7 @@ class MainWindow(QtGui.QMainWindow):
 		
 		# PUSH
 		#b,r = self.selected_task.push_file(description, self.current_file, current_artist=self.db_artist)
-		b,r = self.selected_task.commit(self.current_file, description, artist_ob=self.db_artist)
+		b,r = self.selected_task.commit(self.current_file, description, branch=branch, artist_ob=self.db_artist)
 		if not b:
 			self.message(r, 2)
 			self.close_window(window)
@@ -554,7 +560,8 @@ class MainWindow(QtGui.QMainWindow):
 			return
 		
 		# make widjet
-		ui_path = self.new_dialog_path
+		#ui_path = self.new_dialog_path
+		ui_path = self.new_dialog_2_path
 		# widget
 		loader = QtUiTools.QUiLoader()
 		file = QtCore.QFile(ui_path)
@@ -567,13 +574,23 @@ class MainWindow(QtGui.QMainWindow):
 		window.setAttribute(QtCore.Qt.WA_DeleteOnClose, True)
 		
 		# edit Widget
+		# new
+		#window.new_dialog_combo_box.addItems(self.selected_task.branches)
+		window.new_dialog_label_2.setText('Branch:')
+		window.new_dialog_combo_box.setVisible(False)
+		#
+		window.branch_name = QtGui.QLineEdit()
+		window.horizontalLayout_3.addWidget(window.branch_name)
+		window.branch_name.setContextMenuPolicy( QtCore.Qt.ActionsContextMenu )
+		for branch in self.selected_task.branches:
+			add_branch_action = QtGui.QAction( branch, window)
+			add_branch_action.triggered.connect(partial(self._fill_qline_edit, branch, window.branch_name))
+			window.branch_name.addAction( add_branch_action )
+		# old	
 		window.setWindowTitle('Commit description')
 		window.new_dialog_label.setText('Description:')
 		window.new_dialog_cancel.clicked.connect(partial(self.close_window, window))
 		window.new_dialog_ok.clicked.connect(partial(self.commit_action, window))
-		# new
-		combo = QtGui.QComboBox()
-		window.verticalLayout.addWidget(combo)
 		
 		window.show()
 	
@@ -977,6 +994,9 @@ class MainWindow(QtGui.QMainWindow):
 		print('user registration action')
     
 	#*********************** UTILITS *******************************************
+	def _fill_qline_edit(self, text_data, widget):
+		widget.setText(text_data)
+		
 	def get_versions_list(self, action = ('commit', 'pull')):
 		self.db_log.task = self.selected_task
 		b, r = self.db_log.read_log(action = action)
