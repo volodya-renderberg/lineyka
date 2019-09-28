@@ -122,8 +122,7 @@ class MainWindow(QtGui.QMainWindow):
 		self.myWidget.open_from_input_button_2.clicked.connect(self.open_input_action)
 		self.myWidget.open_from_file_button.clicked.connect(self.open_from_file_action)
 		
-		self.myWidget.push_button.clicked.connect(self.commit_comment_ui)
-		self.myWidget.push_button.setText('commit')
+		self.myWidget.commit_button.clicked.connect(self.commit_comment_ui)
 		self.myWidget.report_button.clicked.connect(self.report_action)
 		self.myWidget.show_task_list_button.clicked.connect(partial(self.show_task_list, ask=True))
 		
@@ -568,10 +567,13 @@ class MainWindow(QtGui.QMainWindow):
 		window.setAttribute(QtCore.Qt.WA_DeleteOnClose, True)
 		
 		# edit Widget
-		window.setWindowTitle('Push Comment')
-		window.new_dialog_label.setText('comment:')
+		window.setWindowTitle('Commit description')
+		window.new_dialog_label.setText('Description:')
 		window.new_dialog_cancel.clicked.connect(partial(self.close_window, window))
 		window.new_dialog_ok.clicked.connect(partial(self.commit_action, window))
+		# new
+		combo = QtGui.QComboBox()
+		window.verticalLayout.addWidget(combo)
 		
 		window.show()
 	
