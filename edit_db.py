@@ -2512,6 +2512,7 @@ class asset(studio):
 class task(studio):
 	'''
 	'''
+	branches = list()
 	
 	def __init__(self, asset_ob):
 		if not isinstance(asset_ob, asset):
@@ -2532,6 +2533,10 @@ class task(studio):
 		#self.publish = lineyka_publish.publish()
 		
 		self.publish = publish(NormPath) # ??????? как всегда под вопросом
+		
+	@classmethod
+	def _set_branches(self, branches):
+		self.branches = branches
 		
 	# инициализация по имени
 	# new (bool) - если True - то возвращается новый инициализированный объект класса task, если False - то инициализируется текущий объект
@@ -6244,6 +6249,9 @@ class log(studio):
 		for item in r_data:
 			branches.append(item['branch'])
 		branches = list(set(branches))
+		
+		# fill branches
+		self.task._set_branches(branches)
 		
 		return(True, (r_data, branches))
 		
