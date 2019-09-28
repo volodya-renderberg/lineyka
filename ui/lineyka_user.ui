@@ -205,7 +205,7 @@
          <property name="maximumSize">
           <size>
            <width>16777215</width>
-           <height>146</height>
+           <height>166</height>
           </size>
          </property>
          <property name="frameShape">
@@ -216,6 +216,13 @@
          </property>
          <layout class="QGridLayout" name="gridLayout_2">
           <item row="2" column="0">
+           <widget class="QPushButton" name="commit_button">
+            <property name="text">
+             <string>Commit</string>
+            </property>
+           </widget>
+          </item>
+		  <item row="3" column="0">
            <widget class="QPushButton" name="push_button">
             <property name="text">
              <string>Push</string>
@@ -243,7 +250,7 @@
             </property>
            </widget>
           </item>
-          <item row="3" column="0">
+          <item row="4" column="0">
            <widget class="QPushButton" name="report_button">
             <property name="text">
              <string>Send To Report</string>
