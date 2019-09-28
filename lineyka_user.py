@@ -122,7 +122,8 @@ class MainWindow(QtGui.QMainWindow):
 		self.myWidget.open_from_input_button_2.clicked.connect(self.open_input_action)
 		self.myWidget.open_from_file_button.clicked.connect(self.open_from_file_action)
 		
-		self.myWidget.push_button.clicked.connect(self.push_comment_ui)
+		self.myWidget.push_button.clicked.connect(self.commit_comment_ui)
+		self.myWidget.push_button.setText('commit')
 		self.myWidget.report_button.clicked.connect(self.report_action)
 		self.myWidget.show_task_list_button.clicked.connect(partial(self.show_task_list, ask=True))
 		
@@ -425,7 +426,7 @@ class MainWindow(QtGui.QMainWindow):
 			
 		self.close_window(window)
 		
-	def push_action(self, window):
+	def commit_action(self, window):
 		pass
 	
 		# (0) ****** Get Description
@@ -447,7 +448,8 @@ class MainWindow(QtGui.QMainWindow):
 				return
 		
 		# PUSH
-		b,r = self.selected_task.push_file(description, self.current_file, current_artist=self.db_artist)
+		#b,r = self.selected_task.push_file(description, self.current_file, current_artist=self.db_artist)
+		b,r = self.selected_task.commit(self.current_file, description, artist_ob=self.db_artist)
 		if not b:
 			self.message(r, 2)
 			self.close_window(window)
@@ -545,7 +547,7 @@ class MainWindow(QtGui.QMainWindow):
 	
 	# *********************** Panels *****************************************************
 	
-	def push_comment_ui(self):
+	def commit_comment_ui(self):
 		pass
 		# ask
 		ask = self.message(('You save the file?'), 0)
@@ -569,7 +571,7 @@ class MainWindow(QtGui.QMainWindow):
 		window.setWindowTitle('Push Comment')
 		window.new_dialog_label.setText('comment:')
 		window.new_dialog_cancel.clicked.connect(partial(self.close_window, window))
-		window.new_dialog_ok.clicked.connect(partial(self.push_action, window))
+		window.new_dialog_ok.clicked.connect(partial(self.commit_action, window))
 		
 		window.show()
 	
@@ -973,7 +975,7 @@ class MainWindow(QtGui.QMainWindow):
 		print('user registration action')
     
 	#*********************** UTILITS *******************************************
-	def get_versions_list(self, action = 'push'):
+	def get_versions_list(self, action = ('commit', 'pull')):
 		self.db_log.task = self.selected_task
 		b, r = self.db_log.read_log(action = action)
 		

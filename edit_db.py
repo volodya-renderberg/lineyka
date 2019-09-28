@@ -581,7 +581,7 @@ class studio:
 		elif not os.path.exists(self.work_folder):
 			return(False, 'The path "%s" to working directory does not exist!' % self.work_folder)
 		
-		if version:
+		if version or version==0:
 			# test version
 			b, str_version = self._template_version_num(version)
 			if not b:
@@ -2939,7 +2939,9 @@ class task(studio):
 			end_log = log_list[-1:][0]
 			# (2)
 			if end_log['action'] in ['commit','pull']:
-				version_path = self._template_get_work_path(self, version=end_log['version'])
+				b, version_path = self._template_get_work_path(self, version=end_log['version'])
+				if not b:
+					return(b, version_path)
 				if not os.path.exists(version_path):
 					return(False, 'the latest "%s" version is not in your working directory, this user: "%s" needs to "push"' % (end_log['action'], end_log['artist']))
 				else:
@@ -3035,10 +3037,11 @@ class task(studio):
 		if not b:
 			return(b, r)
 		else:
-			if not os.path.exists(r[0]):
-				return(False, 'The path "%s" not exists!' % r[0])
+			#print(r)
+			if not os.path.exists(r):
+				return(False, 'The path "%s" not exists!' % r)
 			else:
-				return(True, r[0])
+				return(True, r)
 
 	# создание пути для новой commit или pull версии файла.
 	# return - (True, (path, version)) или (False, comment)
@@ -3707,12 +3710,23 @@ class task(studio):
 		
 		if not open_path:
 			if version:
-				result = task_ob.get_version_file_path(version)
+				#result = task_ob.get_version_file_path(version)
+				b, r = task_ob.get_version_work_file_path(version)
+				if not b:
+					return(b, r)
+				else:
+					open_path = r
+					#print('*** %s %s' % (version, open_path))
 			else:
-				result = task_ob.get_final_file_path()
-			if not result[0]:
-				return(False, result[1])
-			open_path = result[1]
+				#result = task_ob.get_final_file_path()
+				b, r = task_ob.get_final_work_file_path()
+				if not b:
+					return(b, r)
+				else:
+					open_path = r[0]
+			#if not result[0]:
+				#return(False, result[1])
+			#open_path = result[1]
 		
 			if not open_path:
 				'''
@@ -3741,6 +3755,9 @@ class task(studio):
 		tmp_file_name = '%s_%s%s' % (task_ob.task_name.replace(':','_', 2), hex(random.randint(0, 1000000000)).replace('0x', ''), task_ob.extension)
 		tmp_file_path = os.path.join(self.tmp_folder, tmp_file_name)
 		# copy file to tmp
+		#print(open_path)
+		#print(tmp_file_path)
+		#return(True, 'Ok')
 		shutil.copyfile(open_path, tmp_file_path)
 		
 		# (3) open file
@@ -6216,7 +6233,7 @@ class log(studio):
 		if action:
 			if isinstance(action, str):
 				where = {'action': action}
-			elif isinstance(action, list):
+			elif isinstance(action, list) or isinstance(action, tuple):
 				where = {'action': action, 'condition': 'or'}
 		else:
 			where = False
