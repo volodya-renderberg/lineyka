@@ -1134,7 +1134,7 @@ class database():
 						if i == 0:
 							were_string = were_string + '"%s" = "%s"' % (key, where.get(key))
 						else:
-							were_string = were_string + ', "%s" = "%s"' % (key, where.get(key))
+							were_string = were_string + 'AND "%s" = "%s"' % (key, where.get(key))
 						i=i+1
 				else:
 					var = where['condition'].upper()
@@ -3742,9 +3742,13 @@ class task(studio):
 			self.open_time = datetime.datetime.now()
 			# start
 			if not self.start:
+				# task.start
 				b, r = self.changes_without_a_change_of_status('start', self.open_time)
 				if not b:
 					return(b, r)
+				self.start = self.open_time
+				# artist_log - start
+				log(self).artist_start_log(artist_ob=current_artist)
 		
 		# (2) ope path
 		task_ob = self
@@ -6210,7 +6214,7 @@ class log(studio):
 	# запись лога для задачи
 	# self.task - должен быть инициализирован
 	# logs_keys (dict) - словарь по studio.logs_keys - обязательные ключи: description, version, action
-	# artist (bool/artist) - если False - значит создаётся новый объект artist и определяется текущий пользователь.
+	# artist_ob (bool/artist) - если False - значит создаётся новый объект artist и определяется текущий пользователь.
 	def write_log(self, logs_keys, artist_ob=False): # v2 - процедура бывшая notes_log 
 		pass
 		# 1 - тест обязательных полей: description, version, action
@@ -6306,7 +6310,7 @@ class log(studio):
 		self.task._set_branches(branches)
 		
 		return(True, (r_data, branches))
-		
+	
 	# читает только push логи
 	# преобразует datetime в строку
 	# task_data (bool/dict) - если False - значит читается self.task
@@ -6341,6 +6345,86 @@ class log(studio):
 				row['date_time'] = data
 				
 		return(True, r_data)
+	
+	# *** ARTIST LOGS ***
+	
+	# создание лога артиста по данной задаче.
+	# artist_ob (bool/artist) - если False - значит создаётся новый объект artist и определяется текущий пользователь.
+	# return - (True, 'ok!') или (False, comment)
+	def artist_start_log(self, artist_ob=False):
+		pass
+		# 1 - input data
+		# 2 - read log 
+		# 3 - write log
+		
+		# (1)
+		if not artist_ob:
+			artist_ob = artist()
+			b, r = artist_ob.get_user()
+			if not b:
+				return(b, r)
+			
+		# (2)
+		b, r = self.artist_read_log()
+		if not b:
+			return(b, r)
+		if r:
+			return(True, 'log allready exists!')
+		
+		# (3)
+		if self.task.start:
+			start_time = self.task.start
+		else:
+			start_time = datetime.datetime.now()
+		write_data = {
+			'project_name': self.task.asset.project.name,
+			'task_name': self.task.task_name,
+			'start': start_time,
+			}
+		table_name = '%s_tasks_logs' % artist_ob.nik_name
+		print('*** %s' % table_name)
+		b, r = database().insert('studio', self, table_name, self.artists_logs_keys, write_data, self.artists_logs_db)
+		if not b:
+			return(b, r)
+		
+		return(True, 'Ok!')
+	
+	# чтение логов артиста
+	# all (bool) - если True - то все логи этого артиста, если False - То только по этой задаче.
+	# artist_ob (bool/artist) - если False - значит создаётся новый объект artist и определяется текущий пользователь.
+	# return:
+	#	all=True - (True, [список логов - словари])
+	#	all=False - (True, {log})
+	#	или (False, coment)
+	def artist_read_log(self, all=False, artist_ob=False):
+		pass
+		# 1 - input data
+		# 2 - read log
+		
+		# (1)
+		if not artist_ob:
+			artist_ob = artist()
+			bool_, r_data = artist_ob.get_user()
+			if not bool_:
+				return(bool_, r_data)
+			
+		# (2)
+		if all:
+			where=False
+		else:
+			where = {'project_name': self.task.asset.project.name, 'task_name': self.task.task_name}
+		b,r = database().read('studio', self, '%s_tasks_logs' % artist_ob.nik_name, self.artists_logs_keys, where=where, table_root=self.artists_logs_db)
+		if not b:
+			return(b, r)
+		if all:
+			return(b, r)
+		elif r:
+			return(b, r[0])
+		else:
+			return(b, dict())		
+	
+	def artist_write_log(self, artist_ob=False):
+		pass
 	
 	# *** CAMERA LOGS ***
 	# artist_ob - (artist) - объект artist, его никнейм записывается в лог.
