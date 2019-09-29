@@ -6465,6 +6465,44 @@ class log(studio):
 		
 		return(True, 'Ok!')
 	
+	# добавление временик full_time
+	# time (float) - время затраченное на commit (секунды)
+	# artist_ob (bool/artist) - если False - значит создаётся новый объект artist и определяется текущий пользователь.
+	# return - (True, 'ok!') или (False, comment)
+	def artist_add_full_time(self, time, artist_ob=False):
+		pass
+		# 1 - input data
+		# 2 - read log + added time
+		# 3 - write log
+		
+		# (1)
+		if not isinstance(time, float) and not isinstance(time, int):
+			return(False, 'time - wrong type - "%s", need "float" or "int"' % time.__class__.__name__)
+		if not artist_ob:
+			artist_ob = artist()
+			bool_, r_data = artist_ob.get_user()
+			if not bool_:
+				return(bool_, r_data)
+		# (2)
+		b, r = self.artist_read_log()
+		if not b:
+			return(b, r)
+		if not r:
+			return(False, 'The artist`s log no exists!')
+		#
+		if r['full_time']:
+			update_data = {'full_time' : (r['full_time'] + time)}
+		else:
+			update_data = {'full_time' : time}
+		where = {'project_name': self.task.asset.project.name, 'task_name': self.task.task_name}
+		table_name = '%s_tasks_logs' % artist_ob.nik_name
+		b, r = database().update('studio', self, table_name, self.artists_logs_keys, update_data, where=where, table_root=self.artists_logs_db)
+		if not b:
+			return(b, r)
+		
+		return(True, 'Ok!')
+		
+	
 	# *** CAMERA LOGS ***
 	# artist_ob - (artist) - объект artist, его никнейм записывается в лог.
 	# description (str) - комментарий
