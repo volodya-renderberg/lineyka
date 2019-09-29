@@ -3677,7 +3677,9 @@ class task(studio):
 		if not b:
 			return(b, r)
 		# (5.5)
-		pass
+		b, r = log(self).artist_add_full_time(delta_seconds)
+		if not b:
+			return(b, r)
 		
 		# (6)
 		b, r = self._post_commit(work_path, save_path)
