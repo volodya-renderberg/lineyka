@@ -379,7 +379,7 @@ class studio:
 	logs_t = 'logs'
 	# --- artists logs
 	artists_logs_db = '.artists_logs.db'
-	# table_name = 'nik_name:log'
+	# table_name = 'nik_name_tasks_logs'
 	# --- chat
 	chats_db = '.chats.db'
 	# --- set_of_tasks
@@ -1038,7 +1038,7 @@ class database():
 				if i==0:
 					where_data = '%s = ?' % key
 				else:
-					where_data = where_data + ', %s = ?' % key
+					where_data = where_data + 'AND %s = ?' % key
 				data_com.append(where[key])
 		# com
 		com = 'UPDATE %s SET %s WHERE %s' % (table_name, set_data, where_data)
@@ -6382,8 +6382,7 @@ class log(studio):
 			'start': start_time,
 			}
 		table_name = '%s_tasks_logs' % artist_ob.nik_name
-		print('*** %s' % table_name)
-		b, r = database().insert('studio', self, table_name, self.artists_logs_keys, write_data, self.artists_logs_db)
+		b, r = database().insert('studio', self, table_name, self.artists_logs_keys, write_data, table_root=self.artists_logs_db)
 		if not b:
 			return(b, r)
 		
@@ -6423,8 +6422,48 @@ class log(studio):
 		else:
 			return(b, dict())		
 	
-	def artist_write_log(self, artist_ob=False):
+	# внесение изменений в лог артиста по задаче (кроме параметров из no_editable_keys)
+	# keys (dict) - словарь данных на замену по ключам artists_logs_keys
+	# artist_ob (bool/artist) - если False - значит создаётся новый объект artist и определяется текущий пользователь.
+	# return - (True, 'ok!') или (False, comment)
+	def artist_write_log(self, keys, artist_ob=False):
 		pass
+		# 1 - input data
+		# 2 - read log
+		# 3 - write log
+		
+		no_editable_keys = ['project_name', 'task_name', 'start']
+		
+		# (1)
+		if not artist_ob:
+			artist_ob = artist()
+			bool_, r_data = artist_ob.get_user()
+			if not bool_:
+				return(bool_, r_data)
+		# (2)
+		b, r = self.artist_read_log()
+		if not b:
+			return(b, r)
+		if not r:
+			return(False, 'The artist`s log no exists!')
+		
+		update_data=dict()
+		for key in keys:
+			if key in no_editable_keys:
+				continue
+			else:
+				update_data[key]=keys[key]
+		#
+		if not update_data:
+			return(False, 'No found data to update! (%s)' % str(keys))
+				
+		where = {'project_name': self.task.asset.project.name, 'task_name': self.task.task_name}
+		table_name = '%s_tasks_logs' % artist_ob.nik_name
+		b, r = database().update('studio', self, table_name, self.artists_logs_keys, update_data, where=where, table_root=self.artists_logs_db)
+		if not b:
+			return(b, r)
+		
+		return(True, 'Ok!')
 	
 	# *** CAMERA LOGS ***
 	# artist_ob - (artist) - объект artist, его никнейм записывается в лог.
