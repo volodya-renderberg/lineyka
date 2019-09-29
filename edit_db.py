@@ -327,7 +327,7 @@ class studio:
 	'description': 'text',
 	'source': 'json', # для push - версия коммита источника (в случае sketch - список версий по всем веткам, порядок совпадает с порядком записи веток в branch), для publish - версия push источника.
 	'branch' : 'json', # ветка - в случае push, publish для sketch - списки веток.
-	'time' : 'timestamp', # время затраченное на commit, ед. измерения секунда.
+	'time' : 'real', # время затраченное на commit, ед. измерения секунда.
 	}
 
 	artists_logs_keys = {
@@ -3600,6 +3600,11 @@ class task(studio):
 			return(False, 'No description!')
 		if not branch:
 			branch = 'master'
+		if not artist_ob:
+			artist_ob = artist()
+			bool_, r_data = artist_ob.get_user()
+			if not bool_:
+				return(bool_, r_data)
 		
 		# (1)
 		b, r = self.get_new_work_file_path()
@@ -3640,17 +3645,39 @@ class task(studio):
 		self.open_time = commit_time
 		
 		# (5.1)
+		delta_seconds = float(delta.total_seconds())
 		logs_keys = {
 		'action': 'commit',
 		'description': description,
 		'branch': branch,
 		'version': version,
-		'time', delta,
+		'time': delta_seconds,
 		}
-		#
+		# (5.2)
 		result = log(self).write_log(logs_keys,  artist_ob=artist_ob)
 		if not result[0]:
 			return(False, result[1])
+		# (5.3)
+		if not self.time:
+			self.time = {artist_ob.nik_name:delta_seconds}
+		elif not artist_ob.nik_name in self.time:
+			self.time[artist_ob.nik_name] = delta_seconds
+		else:
+			old_time = self.time[artist_ob.nik_name]
+			self.time[artist_ob.nik_name] = old_time + delta_seconds
+		b, r = self.changes_without_a_change_of_status('time', self.time)
+		if not b:
+			return(b, r)
+		# (5.4)
+		if not self.full_time:
+			self.full_time = delta_seconds
+		else:
+			self.full_time = self.full_time + delta_seconds
+		b, r = self.changes_without_a_change_of_status('full_time', self.full_time)
+		if not b:
+			return(b, r)
+		# (5.5)
+		pass
 		
 		# (6)
 		b, r = self._post_commit(work_path, save_path)
@@ -3711,6 +3738,13 @@ class task(studio):
 					bool_, return_data = database().update('project', read_ob, table_name, self.tasks_keys, update_data, where, table_root=self.tasks_db)
 					if not bool_:
 						return(bool_, return_data)
+			# (1.1) time log
+			self.open_time = datetime.datetime.now()
+			# start
+			if not self.start:
+				b, r = self.changes_without_a_change_of_status('start', self.open_time)
+				if not b:
+					return(b, r)
 		
 		# (2) ope path
 		task_ob = self
@@ -3780,9 +3814,6 @@ class task(studio):
 			cmd = '"%s" "%s"' % (soft, tmp_file_path)
 			subprocess.Popen(cmd, shell = True)
 			
-		# (4) time log
-		self.open_time = datetime.datetime.now()
-		
 		return(True, tmp_file_path)
 	
 	# локальная запись новой рабочей версии файла
@@ -4860,8 +4891,14 @@ class task(studio):
 		'season',
 		'price',
 		'specification',
-		#'workroom',
-		'extension'
+		'extension',
+		'start',
+		'end',
+		'time',
+		'full_time',
+		'deadline',
+		'planned_time',
+		'level',
 		]
 		if not key in changes_keys:
 			return(False, 'This key invalid! You can only edit keys from this list: %s' % json.dumps(changes_keys))

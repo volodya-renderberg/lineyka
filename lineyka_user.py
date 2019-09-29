@@ -997,7 +997,7 @@ class MainWindow(QtGui.QMainWindow):
 	def _fill_qline_edit(self, text_data, widget):
 		widget.setText(text_data)
 		
-	def get_versions_list(self, action = ('commit', 'pull')):
+	def get_versions_list(self, action = ['commit', 'pull']):
 		self.db_log.task = self.selected_task
 		b, r = self.db_log.read_log(action = action)
 		
