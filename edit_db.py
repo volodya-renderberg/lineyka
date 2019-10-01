@@ -3344,7 +3344,7 @@ class task(studio):
 			if not b:
 				return(b, r)
 			else:
-				return(True, ((source_path, r), new_version))
+				return(True, (source_path, str_source_version, r, new_version))
 	
 	# Publish пути
 	# version (int / str) - номер publish версии
@@ -3579,7 +3579,7 @@ class task(studio):
 	def _post_commit(self, work_path, save_path):
 		return(True, 'Ok!')
 	
-	# запись новой рабочей версии в work директорию
+	# запись новой рабочей версии в work директорию. заполнение task.time, task.full_time, artist_log.full_time.
 	# work_path (str) - путь к текущему рабочему файлу
 	# description (unicode) - коммент
 	# branch (unicode) - наименование ветки, если не передавать - то master
@@ -3688,7 +3688,7 @@ class task(studio):
 		
 		return(True, save_path)
 	
-	# откроет файл в приложении - согласно расширению.
+	# откроет файл в приложении - согласно расширению. заполнение: task.open_time, task.start; выполнение log.artist_start_log(), 
 	# look (bool) - если True - то статусы меняться не будут, если False - то статусы меняться будут.
 	# current_artist (artist) - если не передавать, то в случае look=False - будет выполняться get_user() - лишнее обращение к БД.
 	# tasks (dict) - словарь задачь данного артиста по именам. - нужен для случая когда look=False, при отсутствии будет считан - лишнее обращение к БД.
@@ -3821,6 +3821,10 @@ class task(studio):
 			subprocess.Popen(cmd, shell = True)
 			
 		return(True, tmp_file_path)
+	
+	def push(self, version=False):
+		pass
+		
 	
 	# локальная запись новой рабочей версии файла
 	# description (str) - комментарий к версии
