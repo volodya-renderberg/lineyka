@@ -72,7 +72,7 @@ class studio:
 		'extension',
 		]
 	}
-	look_extension = '.png'
+	look_extension = '.jpg'
 	preview_extension = '.png'
 	publish_folder_name = 'publish'
 	
@@ -3258,6 +3258,9 @@ class task(studio):
 		else:
 			end_push_log = dict()
 			new_version = 0
+		b, str_new_version = self._template_version_num(new_version)
+		if not b:
+			return(b, str_new_version)
 		
 		# (3)
 		if self.task_type in self.multi_publish_task_types:
@@ -3311,7 +3314,7 @@ class task(studio):
 			r_data['source_versions']=source_versions
 			r_data['push_path']=push_path
 			r_data['look_path']=look_path
-			return(True, (r_data, new_version))
+			return(True, (r_data, str_new_version))
 		# (4)
 		else:
 			pass
@@ -3349,7 +3352,7 @@ class task(studio):
 			if not b:
 				return(b, r)
 			else:
-				return(True, (source_path, str_source_version, r, new_version))
+				return(True, (source_path, str_source_version, r, str_new_version))
 	
 	# Publish пути
 	# version (int / str) - номер publish версии
@@ -3829,20 +3832,24 @@ class task(studio):
 	
 	# make version of push at server of studio.
 	# version (str/int) - версия которая пушится, не имеет смысла для мультипуша (sketch) там только из последней версии.
-	def push(self, version=False, current_artist=False):
+	def push(self, description, version=False, current_artist=False):
 		pass
 		# 0 - input data
 		# 0.1 - получение путей 
 		# 1 - studio
 		# 2 - sketch
+		# 2.0 - создание директории версии
 		# 2.1 - копирование файлов
-		# 2.2 - лог
+		# 2.2 - лук версия
+		# 2.3 - запись лога
 		# 3 - не sketch
 		# 4 - аутсорс
 		# 5 - sketch
 		# 6 - не sketch
 		
 		# (0)
+		if not description:
+			return(False, 'Missing description!')
 		if not current_artist:
 			current_artist = artist()
 			b, r = current_artist.get_user()
@@ -3852,14 +3859,53 @@ class task(studio):
 		b, r = self.get_new_push_file_path(version=version, current_artist=current_artist)
 		if not b:
 			return(b, r)
+		#
 		for k in r[0]:
 			print('*** %s - %s' % (k, str(r[0][k])))
+		print(r[1])
 		
 		# (1)
 		if not current_artist.outsource:
 			# (2)
 			if self.task_type in self.multi_publish_task_types:
 				pass
+				branches = list()
+				source_versions = list()
+				for branch in r[0]['source_path']:
+					pass
+					# (2.0)
+					source_path = r[0]['source_path'][branch]
+					push_path = r[0]['push_path'][branch]
+					look_path = r[0]['look_path'][branch]
+					version_dir_path = os.path.dirname(push_path)
+					print(version_dir_path)
+					if not os.path.exists(version_dir_path):
+						os.makedirs(version_dir_path)
+					# (2.1)
+					shutil.copyfile(source_path, push_path)
+					# (2.2)
+					cmd = '%s %s %s' % (os.path.normpath(self.convert_exe), push_path, look_path)
+					cmd2 = '\"%s\" \"%s\" \"%s\"' % (os.path.normpath(self.convert_exe), push_path, look_path)
+					try:
+						os.system(cmd)
+					except Exception as e:
+						print(e)
+						try:
+							os.system(cmd2)
+						except Exception as e:
+							print(e)
+					branches.append(branch)
+					source_versions.append(r[0]['source_versions'][branch])
+				# (2.3)
+				log_data = dict()
+				log_data['branch'] = branches
+				log_data['source'] = source_versions
+				log_data['action'] = 'push'
+				log_data['description'] = description
+				log_data['version'] = r[1]
+				b, r = log(self).write_log(log_data, artist_ob=current_artist)
+				if not b:
+					return(b,r)
 				
 			# (3)
 			else:
