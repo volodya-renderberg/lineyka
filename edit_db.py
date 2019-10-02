@@ -612,7 +612,7 @@ class studio:
 		# (1)
 		if c_task.task_type == 'sketch':
 			#
-			if version:
+			if not version is False:
 				# ( 1.1)
 				b, str_version = self._template_version_num(version)
 				if not b:
@@ -3252,8 +3252,12 @@ class task(studio):
 		log_list = r[0]
 		
 		# (2)
-		end_push_log = log_list[-1:][0]
-		new_version = int(end_push_log['version']) + 1
+		if log_list:
+			end_push_log = log_list[-1:][0]
+			new_version = int(end_push_log['version']) + 1
+		else:
+			end_push_log = dict()
+			new_version = 0
 		
 		# (3)
 		if self.task_type in self.multi_publish_task_types:
@@ -3273,24 +3277,25 @@ class task(studio):
 			source_versions = dict()
 			for branch in branches:
 				for i in range(0, len(work_log_list)):
-					log=work_log_list[-(i+1):][0]
-					if log['branch']!=branch:
+					log_=work_log_list[-(i+1):][0]
+					if log_['branch']!=branch:
 						continue
-					b,r = self.get_version_work_file_path(log['version'])
+					b,r = self.get_version_work_file_path(log_['version'])
 					if not b:
 						return(b, r)
 					source_path[branch] = r
-					source_versions[branch] = log['version']
+					source_versions[branch] = log_['version']
 			# (3.2)
-			if sorted(end_push_log['branch'])==sorted(branches):
-				overlap = list()
-				for i , branch in enumerate(end_push_log['branch']):
-					if end_push_log['source'][i] == source_versions[branch]:
-						overlap.append(True)
-					else:
-						overlap.append(False)
-				if not False in overlap:
-					return(False, 'Latest commit version matches the latest push version!')
+			if end_push_log:
+				if sorted(end_push_log['branch'])==sorted(branches):
+					overlap = list()
+					for i , branch in enumerate(end_push_log['branch']):
+						if end_push_log['source'][i] == source_versions[branch]:
+							overlap.append(True)
+						else:
+							overlap.append(False)
+					if not False in overlap:
+						return(False, 'Latest commit version matches the latest push version!')
 			# (3.3)
 			b ,r = self._template_get_push_path(self, version=new_version, branches=branches, look=False)
 			if not b:
@@ -3822,9 +3827,53 @@ class task(studio):
 			
 		return(True, tmp_file_path)
 	
-	def push(self, version=False):
+	# make version of push at server of studio.
+	# version (str/int) - версия которая пушится, не имеет смысла для мультипуша (sketch) там только из последней версии.
+	def push(self, version=False, current_artist=False):
 		pass
+		# 0 - input data
+		# 0.1 - получение путей 
+		# 1 - studio
+		# 2 - sketch
+		# 2.1 - копирование файлов
+		# 2.2 - лог
+		# 3 - не sketch
+		# 4 - аутсорс
+		# 5 - sketch
+		# 6 - не sketch
 		
+		# (0)
+		if not current_artist:
+			current_artist = artist()
+			b, r = current_artist.get_user()
+			if not b:
+				return(b,r)
+		# (0.1)
+		b, r = self.get_new_push_file_path(version=version, current_artist=current_artist)
+		if not b:
+			return(b, r)
+		for k in r[0]:
+			print('*** %s - %s' % (k, str(r[0][k])))
+		
+		# (1)
+		if not current_artist.outsource:
+			# (2)
+			if self.task_type in self.multi_publish_task_types:
+				pass
+				
+			# (3)
+			else:
+				pass
+		# (4)
+		else:
+			# (5)
+			if self.task_type in self.multi_publish_task_types:
+				pass
+			# (6)
+			else:
+				pass
+		
+		return(True, 'Ok!')
 	
 	# локальная запись новой рабочей версии файла
 	# description (str) - комментарий к версии

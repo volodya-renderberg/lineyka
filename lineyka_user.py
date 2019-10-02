@@ -123,6 +123,7 @@ class MainWindow(QtGui.QMainWindow):
 		self.myWidget.open_from_file_button.clicked.connect(self.open_from_file_action)
 		
 		self.myWidget.commit_button.clicked.connect(self.commit_comment_ui)
+		self.myWidget.push_button.clicked.connect(self.push_comment_ui)
 		self.myWidget.report_button.clicked.connect(self.report_action)
 		self.myWidget.show_task_list_button.clicked.connect(partial(self.show_task_list, ask=True))
 		
@@ -593,6 +594,15 @@ class MainWindow(QtGui.QMainWindow):
 		window.new_dialog_ok.clicked.connect(partial(self.commit_action, window))
 		
 		window.show()
+		
+	def push_comment_ui(self):
+		pass
+		# ask
+		ask = self.message(('You are sure?'), 0)
+		if not ask:
+			return
+		
+		self.selected_task.push(current_artist=self.db_artist)
 	
 	def look_version_ui(self, look = True):
 		versions_list, branches = self.get_versions_list()
