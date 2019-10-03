@@ -3906,7 +3906,6 @@ class task(studio):
 				b, r = log(self).write_log(log_data, artist_ob=current_artist)
 				if not b:
 					return(b,r)
-				
 			# (3)
 			else:
 				pass
@@ -6404,7 +6403,11 @@ class log(studio):
 			return(bool_, r_data)
 		branches = list()
 		for item in r_data:
-			branches.append(item['branch'])
+			branch = item['branch']
+			if isinstance(branch, str) or isinstance(branch, unicode):
+				branches.append(branch)
+			elif isinstance(branch, list):
+				branches.extend(branch)
 		branches = list(set(branches))
 		
 		# fill branches
