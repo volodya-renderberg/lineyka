@@ -3226,6 +3226,7 @@ class task(studio):
 		# 0 - test artist
 		# 1 - чтение push лога
 		# 2 - новый номер версии
+		# 2.0 - чтение pull-commit лога
 		# 3 - шаблонный путь для sketch
 		# 3.1 - пути к источникам (для каждой ветки)
 		# 3.2 - проверка на совпадение версий коммитов в последнем пуше с версиями источника.
@@ -3262,14 +3263,19 @@ class task(studio):
 		if not b:
 			return(b, str_new_version)
 		
+		# (2.0)
+		b, r = log(self).read_log(action=['commit', 'pull'])
+		if not b:
+			return(b, r)
+		work_log_list = r[0]
+		#
+		if not work_log_list:
+			return(False, 'Not "commit" or "pull" version!')
+		
 		# (3)
 		if self.task_type in self.multi_publish_task_types:
 			pass
 			# (3.1)
-			b, r = log(self).read_log(action=['commit', 'pull'])
-			if not b:
-				return(b, r)
-			work_log_list = r[0]
 			# -- clean branches
 			branches = list()
 			for branch in r[1]:
@@ -3331,10 +3337,6 @@ class task(studio):
 				source_path = r
 				source_version = version
 			else:
-				b, r = log(self).read_log(action=['commit', 'pull'])
-				if not b:
-					return(b, r)
-				work_log_list = r[0]
 				end_work_log = work_log_list[-1:][0]
 				b, r = self.get_version_work_file_path(end_work_log['version'])
 				if not b:
@@ -3352,7 +3354,7 @@ class task(studio):
 			if not b:
 				return(b, r)
 			else:
-				return(True, (source_path, str_source_version, r, str_new_version))
+				return(True, (source_path, str_source_version, end_work_log['branch'], r, str_new_version))
 	
 	# Publish пути
 	# version (int / str) - номер publish версии
@@ -3860,9 +3862,9 @@ class task(studio):
 		if not b:
 			return(b, r)
 		#
-		for k in r[0]:
-			print('*** %s - %s' % (k, str(r[0][k])))
-		print(r[1])
+		#for k in r[0]:
+			#print('*** %s - %s' % (k, str(r[0][k])))
+		#print(r[1])
 		
 		# (1)
 		if not current_artist.outsource:
@@ -3878,7 +3880,7 @@ class task(studio):
 					push_path = r[0]['push_path'][branch]
 					look_path = r[0]['look_path'][branch]
 					version_dir_path = os.path.dirname(push_path)
-					print(version_dir_path)
+					#print(version_dir_path)
 					if not os.path.exists(version_dir_path):
 						os.makedirs(version_dir_path)
 					# (2.1)
@@ -3909,6 +3911,28 @@ class task(studio):
 			# (3)
 			else:
 				pass
+				# (3.0)
+				source_path = r[0]
+				source_version = r[1]
+				source_branch = r[2]
+				push_path = r[3]
+				new_version = r[4]
+				version_dir_path = os.path.dirname(push_path)
+				if not os.path.exists(version_dir_path):
+					os.makedirs(version_dir_path)
+				# (3.1)
+				shutil.copyfile(source_path, push_path)
+				# (3.3)
+				log_data = dict()
+				log_data['branch'] = source_branch
+				log_data['source'] = source_version
+				log_data['action'] = 'push'
+				log_data['description'] = description
+				log_data['version'] = new_version
+				b, r = log(self).write_log(log_data, artist_ob=current_artist)
+				if not b:
+					return(b,r)
+				
 		# (4)
 		else:
 			# (5)
