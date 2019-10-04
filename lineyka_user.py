@@ -124,6 +124,7 @@ class MainWindow(QtGui.QMainWindow):
 		
 		self.myWidget.commit_button.clicked.connect(self.commit_comment_ui)
 		self.myWidget.push_button.clicked.connect(self.push_comment_ui)
+		self.myWidget.push_button_2.clicked.connect(self.push_comment_ui)
 		self.myWidget.report_button.clicked.connect(self.report_action)
 		self.myWidget.show_task_list_button.clicked.connect(partial(self.show_task_list, ask=True))
 		
@@ -621,8 +622,8 @@ class MainWindow(QtGui.QMainWindow):
 			return
 		
 		# make widjet
-		ui_path = self.new_dialog_path
-		#ui_path = self.new_dialog_2_path
+		#ui_path = self.new_dialog_path
+		ui_path = self.new_dialog_2_path
 		# widget
 		loader = QtUiTools.QUiLoader()
 		file = QtCore.QFile(ui_path)
