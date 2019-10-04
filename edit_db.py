@@ -6402,10 +6402,11 @@ class log(studio):
 			
 		return(True, 'ok')
 	
-	# запись лога задачи
+	# запись лога задачи, заполнение атрибута класса task.branches
 	# self.task - должен быть инициализирован
 	# action (bool / str/ list) если False - то возврат для всех action, если list - то будет использован оператор where or - возврат по всем экшенам
-	def read_log(self, action=False): # v2
+	# branch (bool / str / unicode) - фильтр по веткам
+	def read_log(self, action=False, branch=False): # v2
 		pass
 		# 1 - проверка инициализации ассета.
 		# 2 - проверка action
@@ -6433,18 +6434,22 @@ class log(studio):
 		if not bool_:
 			return(bool_, r_data)
 		branches = list()
+		final_r_data = list()
 		for item in r_data:
-			branch = item['branch']
-			if isinstance(branch, str) or isinstance(branch, unicode):
-				branches.append(branch)
-			elif isinstance(branch, list):
-				branches.extend(branch)
+			branch_ = item['branch']
+			if isinstance(branch_, str) or isinstance(branch_, unicode):
+				branches.append(branch_)
+			elif isinstance(branch_, list):
+				branches.extend(branch_)
+			if branch and (isinstance(branch_, str) or isinstance(branch_, unicode)) and branch_ !=branch:
+				continue
+			final_r_data.append(item)
 		branches = list(set(branches))
 		
 		# fill branches
 		self.task._set_branches(branches)
 		
-		return(True, (r_data, branches))
+		return(True, (final_r_data, branches))
 	
 	# читает только push логи
 	# преобразует datetime в строку

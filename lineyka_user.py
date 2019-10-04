@@ -737,14 +737,15 @@ class MainWindow(QtGui.QMainWindow):
 			
 		self.close_window(window)
 	
-	def look_version_ui(self, look = True):
-		versions_list, branches = self.get_versions_list()
+	def look_version_ui(self, look = True, branch=False):
+		versions_list, branches = self.get_versions_list(branch=branch)
 		if not versions_list:
 			self.message('No saved versions!', 2)
 			return
 		
 		# make widjet
-		ui_path = self.select_from_list_dialog_path
+		#ui_path = self.select_from_list_dialog_path
+		ui_path = self.select_from_list_dialog_combobox_path
 		# widget
 		loader = QtUiTools.QUiLoader()
 		file = QtCore.QFile(ui_path)
@@ -758,6 +759,11 @@ class MainWindow(QtGui.QMainWindow):
 		
 		# edit Widget
 		window.select_from_list_cansel_button.clicked.connect(partial(self.close_window, window))
+		branches.insert(0, 'Choice branch')
+		window.dialog_comboBox_1.addItems(branches)
+		if branch:
+			window.dialog_comboBox_1.setCurrentIndex(branches.index(branch))
+		window.dialog_comboBox_1.activated[str].connect(partial(self.look_version_ui_with_branch, window, look))
 		if look:
 			window.setWindowTitle('Look Version')
 			window.select_from_list_apply_button.clicked.connect(partial(self.look_version_action, window))
@@ -787,7 +793,7 @@ class MainWindow(QtGui.QMainWindow):
 				newItem = QtGui.QTableWidgetItem()
 				if key == 'time':
 					if log.get(key):
-						newItem.setText(str(log.get(key)/3600))
+						newItem.setText(str(round(log.get(key)/3600, 2)))
 				elif key == 'date_time':
 					newItem.setText(log[key].strftime("%m/%d/%Y, %H:%M:%S"))
 				else:
@@ -799,6 +805,16 @@ class MainWindow(QtGui.QMainWindow):
 				window.select_from_list_data_list_table.setItem(i, j, newItem)
 				
 		window.show()
+		
+	def look_version_ui_with_branch(self, *args):
+		window, look, branch = args
+		#print(window, look, branch)
+		#branch = window.dialog_comboBox_1.currentText()
+		self.close_window(window)
+		if branch == 'Choice branch':
+			self.look_version_ui(look = look)
+		else:
+			self.look_version_ui(look = look, branch=branch)
 		
 		
 	# *********************** CHAT *******************************************************
@@ -1140,10 +1156,9 @@ class MainWindow(QtGui.QMainWindow):
 	def _fill_qline_edit(self, text_data, widget):
 		widget.setText(text_data)
 		
-	def get_versions_list(self, action = ['commit', 'pull']):
+	def get_versions_list(self, action = ['commit', 'pull'], branch=False):
 		self.db_log.task = self.selected_task
-		b, r = self.db_log.read_log(action = action)
-		
+		b, r = self.db_log.read_log(action = action, branch=branch)
 		if not b:
 			return(None)
 		else:
