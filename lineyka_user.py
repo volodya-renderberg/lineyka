@@ -97,6 +97,7 @@ class MainWindow(QtGui.QMainWindow):
 		self.myWidget.chek_list_radio_button.setText('Check List')
 		self.myWidget.tz_button.setText('Specification')
 		self.myWidget.tz_button_2.setText('Specification')
+		self.myWidget.current_file.setTextInteractionFlags(QtCore.Qt.TextSelectableByMouse)
 		
 		# radio_button connect
 		self.myWidget.chek_list_radio_button.clicked.connect(partial(self.load_task_list_table, get_project = True, action = 'check_list'))
@@ -622,8 +623,10 @@ class MainWindow(QtGui.QMainWindow):
 			return
 		
 		# make widjet
-		#ui_path = self.new_dialog_path
-		ui_path = self.new_dialog_2_path
+		if self.selected_task.task_type in self.db_studio.multi_publish_task_types:
+			ui_path = self.new_dialog_path
+		else:
+			ui_path = self.new_dialog_2_path
 		# widget
 		loader = QtUiTools.QUiLoader()
 		file = QtCore.QFile(ui_path)
@@ -635,13 +638,98 @@ class MainWindow(QtGui.QMainWindow):
 		window.setWindowModality(QtCore.Qt.WindowModal)
 		window.setAttribute(QtCore.Qt.WA_DeleteOnClose, True)
 		
-		# old	
+		# edit widget new
+		if not self.selected_task.task_type in self.db_studio.multi_publish_task_types:
+			window.new_dialog_label_2.setText('Push of version:') # latest
+			window.new_dialog_combo_box.setVisible(False)
+			#
+			window.push_version = QtGui.QLabel()
+			window.push_version.setText('latest')
+			window.horizontalLayout_3.addWidget(window.push_version)
+			#
+			window.version_button = QtGui.QPushButton()
+			window.version_button.setText('Choice Version')
+			window.horizontalLayout_3.addWidget(window.version_button)
+			window.version_button.clicked.connect(partial(self.push_select_the_version, window))
+		
+		# edit widget old	
 		window.setWindowTitle('Push description')
 		window.new_dialog_label.setText('Description:')
 		window.new_dialog_cancel.clicked.connect(partial(self.close_window, window))
 		window.new_dialog_ok.clicked.connect(partial(self.push_action, window))
 		
 		window.show()
+		
+	def push_select_the_version(self, push_window):
+		pass
+		# get versions
+		versions_list, branches = self.get_versions_list()
+		if not versions_list:
+			self.message('No saved versions!', 2)
+			return
+	
+		# make widjet
+		ui_path = self.select_from_list_dialog_path
+		# widget
+		loader = QtUiTools.QUiLoader()
+		file = QtCore.QFile(ui_path)
+		#file.open(QtCore.QFile.ReadOnly)
+		window = self.lookVersionDialog = loader.load(file, self)
+		file.close()
+		
+		# set modal window
+		window.setWindowModality(QtCore.Qt.WindowModal)
+		window.setAttribute(QtCore.Qt.WA_DeleteOnClose, True)
+		
+		# edit window
+		window.setWindowTitle('Choice of Commit version to Push')
+		window.select_from_list_cansel_button.clicked.connect(partial(self.close_window, window))
+		window.select_from_list_apply_button.clicked.connect(partial(self.push_choice_commit_version, window, push_window))
+		
+		# make table
+		headers = []
+		for key in self.db_log.logs_keys:
+			headers.append(key)
+		
+		window.select_from_list_data_list_table.setColumnCount(len(headers))
+		window.select_from_list_data_list_table.setRowCount(len(versions_list))
+		window.select_from_list_data_list_table.setHorizontalHeaderLabels(headers)
+		
+		# selection mode   
+		window.select_from_list_data_list_table.setSortingEnabled(True)
+		window.select_from_list_data_list_table.setSelectionBehavior(QtGui.QAbstractItemView.SelectRows)
+		window.select_from_list_data_list_table.setSelectionMode(QtGui.QAbstractItemView.SingleSelection)
+		
+		# make tabel
+		for i,log in enumerate(versions_list):
+			#print(log)
+			for j,key in enumerate(headers):
+				newItem = QtGui.QTableWidgetItem()
+				if key == 'time':
+					if log.get(key):
+						newItem.setText(str(round(log.get(key)/3600, 2)))
+				elif key == 'date_time':
+					newItem.setText(log[key].strftime("%m/%d/%Y, %H:%M:%S"))
+				else:
+					newItem.setText(log[key])
+				#newItem.log = False
+								
+				newItem.log = log
+					
+				window.select_from_list_data_list_table.setItem(i, j, newItem)
+		
+		window.show()
+		
+	def push_choice_commit_version(self, window, push_window):
+		pass
+		selected_log = window.select_from_list_data_list_table.currentItem().log
+		if not selected_log:
+			self.message('No selected version!', 2)
+			return
+		#
+		push_window.push_version.setText(selected_log['version'])
+			
+		self.close_window(window)
 	
 	def look_version_ui(self, look = True):
 		versions_list, branches = self.get_versions_list()
