@@ -2976,7 +2976,10 @@ class task(studio):
 						if int(v)>version:
 							version=v
 					# (6.2)
-					version_path = self._template_get_work_path(self, version=version)
+					b, version_path = self._template_get_work_path(self, version=version)
+					if not b:
+						return(b, version_path)
+					#
 					if os.path.exists(version_path):
 						return(True, (version_path, version))
 					else:
@@ -3873,6 +3876,7 @@ class task(studio):
 				pass
 				branches = list()
 				source_versions = list()
+				new_version = r[1]
 				for branch in r[0]['source_path']:
 					pass
 					# (2.0)
@@ -3943,7 +3947,7 @@ class task(studio):
 			else:
 				pass
 		
-		return(True, 'Ok!')
+		return(True, 'Created a new push version: %s!' % new_version)
 	
 	# локальная запись новой рабочей версии файла
 	# description (str) - комментарий к версии

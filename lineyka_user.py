@@ -472,6 +472,24 @@ class MainWindow(QtGui.QMainWindow):
 		# close window
 		self.close_window(window)
 		
+	def push_action(self, window):
+		pass
+	
+		# (0) ****** Get Description
+		description = window.new_dialog_name.text()
+		if not description:
+			self.message('No Description!', 2)
+			return
+	
+		b, r = self.selected_task.push(description, current_artist=self.db_artist)
+		if not b:
+			self.message(r, 2)
+		else:
+			self.message(r, 1)
+		
+		# close window
+		self.close_window(window)
+		
 	def open_action(self, input_task = False, open_path = None):
 		pass
 		
@@ -602,9 +620,27 @@ class MainWindow(QtGui.QMainWindow):
 		if not ask:
 			return
 		
-		b, r = self.selected_task.push('my description', current_artist=self.db_artist)
-		if not b:
-			self.message(r, 2)
+		# make widjet
+		ui_path = self.new_dialog_path
+		#ui_path = self.new_dialog_2_path
+		# widget
+		loader = QtUiTools.QUiLoader()
+		file = QtCore.QFile(ui_path)
+		#file.open(QtCore.QFile.ReadOnly)
+		window = self.lookVersionDialog = loader.load(file, self)
+		file.close()
+		
+		# set modal window
+		window.setWindowModality(QtCore.Qt.WindowModal)
+		window.setAttribute(QtCore.Qt.WA_DeleteOnClose, True)
+		
+		# old	
+		window.setWindowTitle('Push description')
+		window.new_dialog_label.setText('Description:')
+		window.new_dialog_cancel.clicked.connect(partial(self.close_window, window))
+		window.new_dialog_ok.clicked.connect(partial(self.push_action, window))
+		
+		window.show()
 	
 	def look_version_ui(self, look = True):
 		versions_list, branches = self.get_versions_list()
