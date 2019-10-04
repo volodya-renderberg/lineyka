@@ -3276,6 +3276,7 @@ class task(studio):
 		#
 		if not work_log_list:
 			return(False, 'Not "commit" or "pull" version!')
+		end_work_log = work_log_list[-1:][0]
 		
 		# (3)
 		if self.task_type in self.multi_publish_task_types:
@@ -3342,7 +3343,7 @@ class task(studio):
 				source_path = r
 				source_version = version
 			else:
-				end_work_log = work_log_list[-1:][0]
+				#end_work_log = work_log_list[-1:][0]
 				b, r = self.get_version_work_file_path(end_work_log['version'])
 				if not b:
 					return(b, r)
@@ -3837,6 +3838,7 @@ class task(studio):
 	
 	# make version of push at server of studio.
 	# version (str/int) - версия которая пушится, не имеет смысла для мультипуша (sketch) там только из последней версии.
+	# return (True, message) или (False, message)
 	def push(self, description, version=False, current_artist=False):
 		pass
 		# 0 - input data
@@ -3947,7 +3949,7 @@ class task(studio):
 			else:
 				pass
 		
-		return(True, 'Created a new push version: %s!' % new_version)
+		return(True, 'Created a new Push version: %s!' % new_version)
 	
 	# локальная запись новой рабочей версии файла
 	# description (str) - комментарий к версии

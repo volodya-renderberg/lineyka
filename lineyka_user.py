@@ -482,8 +482,14 @@ class MainWindow(QtGui.QMainWindow):
 		if not description:
 			self.message('No Description!', 2)
 			return
-	
-		b, r = self.selected_task.push(description, current_artist=self.db_artist)
+		
+		# get version
+		version = window.push_version.text()
+		if version == 'latest':
+			b, r = self.selected_task.push(description, current_artist=self.db_artist)
+		else:
+			b, r = self.selected_task.push(description, version=version, current_artist=self.db_artist)
+		
 		if not b:
 			self.message(r, 2)
 		else:
@@ -576,7 +582,7 @@ class MainWindow(QtGui.QMainWindow):
 	def commit_comment_ui(self):
 		pass
 		# ask
-		ask = self.message(('You save the file?'), 0)
+		ask = self.message(('Did you save the file?'), 0)
 		if not ask:
 			return
 		
