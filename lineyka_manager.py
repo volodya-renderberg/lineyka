@@ -6093,34 +6093,11 @@ class MainWindow(QtGui.QMainWindow):
 	# ---- look file ----------------
 	def tm_look_file_action(self):
 		pass
-				
-		result = self.selected_task.get_final_file_path()
-		if not result[0]:
-			return(False, result[1])
-		
-		open_path = result[1]
-				
-		if not open_path:
-			self.message('Not Saved Version!', 2)
-			return(False, 'Not Saved Version!')
-		
-		# get tmp_file_path
-		tmp_path = self.selected_task.tmp_folder
-		tmp_file_name = self.selected_task.task_name.replace(':','_', 2) + '_' + hex(random.randint(0, 1000000000)).replace('0x', '') + self.selected_task.extension
-		tmp_file_path = os.path.join(tmp_path, tmp_file_name)
-		
-		# copy to tmp
-		shutil.copyfile(open_path, tmp_file_path)
-				
-		# open file
-		soft = self.db_studio.soft_data[self.selected_task.extension]
-		cmd = '"%s" "%s"' % (soft, tmp_file_path)
-		print(cmd)
-		print('$PATH:', os.environ['PATH'])
-		
-		subprocess.Popen(cmd, shell = True)
-		#os.system(cmd)
-		
+		#b, r = self.selected_task.open_file( look=True)
+		b, r = self.selected_task.look()
+		if not b:
+			self.message(r, 2)
+			return		
 		
 	def tm_look_version_file_ui(self):
 		#item = self.myWidget.task_manager_table.currentItem()

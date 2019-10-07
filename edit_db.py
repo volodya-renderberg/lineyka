@@ -2538,6 +2538,27 @@ class task(studio):
 	def _set_branches(self, branches):
 		self.branches = branches
 		
+	def run_file(self, path, viewer=False):
+		if viewer:
+			soft = {'linux':'xdg-open',
+				'linux2':'xdg-open',
+				'win32':'explorer',
+				'darwin':'open'}[sys.platform]
+			if soft:
+				subprocess.run([soft, path])
+				return(True, 'Ok!')
+			else:
+				return(False, 'System not defined!')
+		else:
+			soft = self.soft_data.get(self.extension)
+			if not soft:
+				return(False, 'No application found for this extension "%s"' % self.extension)
+			try:
+				subprocess.run([soft, path])
+			except:
+				subprocess.call([soft, path])
+			return(True, 'Ok!')
+		
 	# инициализация по имени
 	# new (bool) - если True - то возвращается новый инициализированный объект класса task, если False - то инициализируется текущий объект
 	def init(self, task_name, new = True):
@@ -3701,6 +3722,62 @@ class task(studio):
 			return(b, r)
 		
 		return(True, save_path)
+	
+	# look какой-либо версии файла для менеджеров (push, publish версии).
+	# action (str) - экшен из [push, publish]
+	# version (bool / str / int) - версия, если False - то открывается последняя.
+	# launch (bool) - False - возвращает только путь, иначе запуск редактором по расширению (для не скетч).
+	# -- note -- для скетч - запуска не делается - возвращаются пути.
+	# return (True, path) или (False, comment)
+	def look(self, action='push', version=False, launch=True):
+		pass
+		# 1 - чтение лога, получение пути
+		# 2 - получение версии
+		# 3 - получение пути / запуск
+		
+		# (1)
+		b, r = log(self).read_log(action=action)
+		if not b:
+			return(b , r)
+		
+		if not r[0]:
+			return(False, 'No saved versions!')
+		
+		# (2)
+		if version:
+			pass
+		else:
+			pass
+			end_log = r[0][-1:][0]
+			version = end_log['version']
+		
+		# (3)
+		if action == 'push':
+			pass
+			b, r = self.get_version_push_file_path(version)
+			if not b:
+				return(b, r)
+		elif action == 'publish':
+			pass
+			b, r = self.get_version_publish_file_path(version)
+			if not b:
+				return(b, r)
+		
+		# (4)
+		if self.task_type in self.multi_publish_task_types:
+			pass
+			return(True, r)
+		else:
+			pass
+			path = r
+			if launch:
+				b, r = self.run_file(path)
+				if not b:
+					return(b, r)
+				else:
+					return(True, path)
+			else:
+				return(True, path)
 	
 	# откроет файл в приложении - согласно расширению. заполнение: task.open_time, task.start; выполнение log.artist_start_log(), 
 	# look (bool) - если True - то статусы меняться не будут, если False - то статусы меняться будут.
