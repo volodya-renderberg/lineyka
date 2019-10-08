@@ -3161,7 +3161,10 @@ class task(studio):
 		if not b:
 			return(b, r)
 		log_list = r[0]
-		end_log = log_list[-1:][0]
+		if log_list:
+			end_log = log_list[-1:][0]
+		else:
+			return(False, 'Push versions not found!')
 		
 		# (3)
 		if end_log:
@@ -3760,51 +3763,40 @@ class task(studio):
 	# return (True, path) или (False, comment)
 	def look(self, action='push', version=False, launch=True):
 		pass
-		# 1 - чтение лога, получение пути
-		# 2 - получение версии
-		# 3 - получение пути / запуск
+		# 1 - получение пути / запуск
+		# 2 - открытие или возврат пути
 		
 		# (1)
-		b, r = log(self).read_log(action=action)
-		if not b:
-			return(b , r)
-		
-		if not r[0]:
-			return(False, 'No saved versions!')
-		
-		# (2)
-		if version:
-			pass
-		else:
-			pass
-			end_log = r[0][-1:][0]
-			version = end_log['version']
-		
-		# (3)
 		if action == 'push':
 			pass
-			b, r = self.get_version_push_file_path(version)
+			if version:
+				b, r = self.get_version_push_file_path(version)
+			else:
+				b, r = self.get_final_push_file_path()
 			if not b:
 				return(b, r)
 		elif action == 'publish':
 			pass
-			b, r = self.get_version_publish_file_path(version)
+			if version:
+				b, r = self.get_version_publish_file_path(version)
+			else:
+				b, r = self.get_final_publish_file_path()
 			if not b:
 				return(b, r)
 		
-		# (4)
-		if self.task_type in self.multi_publish_task_types:
+		# (2)
+		if self.task_type in self.multi_publish_task_types or not launch:
 			pass
 			return(True, r)
 		else:
 			pass
-			path = r
-			if launch:
-				b, r = self.run_file(path)
-				if not b:
-					return(b, r)
-				else:
-					return(True, path)
+			if version:
+				path = r
+			else:
+				path = r[0]
+			b, r = self.run_file(path)
+			if not b:
+				return(b, r)
 			else:
 				return(True, path)
 	
