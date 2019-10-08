@@ -2,6 +2,7 @@
 # -*- coding: utf-8 -*-
 
 import os
+#import sys
 import platform
 import json
 import sqlite3
@@ -2538,26 +2539,54 @@ class task(studio):
 	def _set_branches(self, branches):
 		self.branches = branches
 		
+	# запуск файлов редакторами или вьювером, создание tmp копии файла.
+	# path (str) - путь до оригинального файла.
+	# viewer (bool) - если True - открытие вьювером по оригинальному пути.
+	# -- если False - открытие редактором tmp копии файла.
 	def run_file(self, path, viewer=False):
 		if viewer:
-			soft = {'linux':'xdg-open',
-				'linux2':'xdg-open',
-				'win32':'explorer',
-				'darwin':'open'}[sys.platform]
+			soft = {'Linux':'xdg-open',
+				'Windows':'explorer',
+				'Darwin':'open'}[platform.system()]
 			if soft:
-				subprocess.run([soft, path])
-				return(True, 'Ok!')
+				# run from tmp_path
+				try:
+					subprocess.run([soft, path])
+				except Exception as e:
+					print('*'*5)
+					print(e)
+					try:
+						subprocess.call([soft, path])
+					except Exception as e:
+						return(False, str(e))
 			else:
 				return(False, 'System not defined!')
 		else:
+			# get soft
 			soft = self.soft_data.get(self.extension)
 			if not soft:
 				return(False, 'No application found for this extension "%s"' % self.extension)
+			
+			# get tmp_path
+			if not os.path.exists(self.tmp_folder):
+				return(False, 'Tmp directory is not defined!')
+			new_name = '%s_%s%s' % (os.path.basename(path).split('.')[0], uuid.uuid4().hex, self.extension)
+			tmp_path = NormPath(os.path.join(self.tmp_folder, new_name))
+			
+			# copy to tmp_path
+			shutil.copyfile(path, tmp_path)
+			
+			# run from tmp_path
 			try:
-				subprocess.run([soft, path])
-			except:
-				subprocess.call([soft, path])
-			return(True, 'Ok!')
+				subprocess.run([soft, tmp_path])
+			except Exception as e:
+				print('*'*5)
+				print(e)
+				try:
+					subprocess.call([soft, tmp_path])
+				except Exception as e:
+					return(False, str(e))
+			return(True, tmp_path)
 		
 	# инициализация по имени
 	# new (bool) - если True - то возвращается новый инициализированный объект класса task, если False - то инициализируется текущий объект
