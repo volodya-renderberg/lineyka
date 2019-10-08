@@ -6091,13 +6091,66 @@ class MainWindow(QtGui.QMainWindow):
 		
 		
 	# ---- look file ----------------
-	def tm_look_file_action(self):
+	def tm_look_file_action(self, action='push', version=False):
 		pass
 		#b, r = self.selected_task.open_file( look=True)
-		b, r = self.selected_task.look()
+		b, r = self.selected_task.look(action=action, version=version)
 		if not b:
 			self.message(r, 2)
-			return		
+			return
+		
+		# multi_publish_task_types
+		if not self.selected_task.task_type in self.selected_task.multi_publish_task_types:
+			return
+		
+		# make widjet
+		ui_path = self.select_from_list_dialog_path
+		# widget
+		loader = QtUiTools.QUiLoader()
+		file = QtCore.QFile(ui_path)
+		#file.open(QtCore.QFile.ReadOnly)
+		window = self.lookVersionDialog = loader.load(file, self)
+		file.close()
+		
+		# set modal window
+		window.setWindowModality(QtCore.Qt.WindowModal)
+		window.setAttribute(QtCore.Qt.WA_DeleteOnClose, True)
+		
+		# edit Widget
+		window.select_from_list_cansel_button.clicked.connect(partial(self.close_window, window))
+		window.setWindowTitle('Look Branches')
+		
+		# make table
+		headers = ['Branch']
+		look_dict = r[0]['look_path']
+		push_dict = r[0]['push_path']
+		
+		window.select_from_list_data_list_table.setColumnCount(len(headers))
+		window.select_from_list_data_list_table.setRowCount(len(look_dict))
+		window.select_from_list_data_list_table.setHorizontalHeaderLabels(headers)
+		
+		# selection mode   
+		window.select_from_list_data_list_table.setSortingEnabled(True)
+		window.select_from_list_data_list_table.setSelectionBehavior(QtGui.QAbstractItemView.SelectRows)
+		window.select_from_list_data_list_table.setSelectionMode(QtGui.QAbstractItemView.SingleSelection)
+		
+		# make tabel
+		for i,key in enumerate(look_dict):
+			for j,key in enumerate(headers):
+				newItem = QtGui.QTableWidgetItem()
+				newItem.path = ()
+								
+				if key == 'time':
+					if log.get(key):
+						newItem.setText(str(log.get(key)/3600))
+				elif key == 'date_time':
+					newItem.setText(log[key].strftime("%m/%d/%Y, %H:%M:%S"))
+				else:
+					newItem.setText(str(log[key]))
+					
+				window.select_from_list_data_list_table.setItem(i, j, newItem)
+				
+		window.show()
 		
 	def tm_look_version_file_ui(self):
 		#item = self.myWidget.task_manager_table.currentItem()
