@@ -3726,6 +3726,7 @@ class task(studio):
 						subprocess.call([soft, path])
 					except Exception as e:
 						return(False, str(e))
+				return(True, path)
 			else:
 				return(False, 'System not defined!')
 		else:
