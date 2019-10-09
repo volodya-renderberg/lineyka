@@ -659,7 +659,7 @@
                  <item row="1" column="0">
                   <widget class="QPushButton" name="tz_button">
                    <property name="text">
-                    <string>Tz</string>
+                    <string>Description</string>
                    </property>
                   </widget>
                  </item>
@@ -690,6 +690,13 @@
                <widget class="QPushButton" name="to_rework_button">
                 <property name="text">
                  <string>To Rework</string>
+                </property>
+               </widget>
+              </item>
+			  <item>
+               <widget class="QPushButton" name="publish_button">
+                <property name="text">
+                 <string>Publish</string>
                 </property>
                </widget>
               </item>
