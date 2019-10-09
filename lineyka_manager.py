@@ -6103,13 +6103,22 @@ class MainWindow(QtGui.QMainWindow):
 		if not self.selected_task.task_type in self.selected_task.multi_publish_task_types:
 			return
 		
+		# *************** viewers methods ******************
 		def to_viewer(window):
-			path = window.select_from_list_data_list_table.currentItem().path['viewer_path']
+			item = window.select_from_list_data_list_table.currentItem()
+			if not item:
+				self.message('No branch selected!', 2)
+				return
+			path = item.path['viewer_path']
 			b,r = self.selected_task.run_file(path, viewer=True)
 			if not b:
 				self.message(r, 2)
 		def to_editor(window):
-			path = window.select_from_list_data_list_table.currentItem().path['editor_path']
+			item = window.select_from_list_data_list_table.currentItem()
+			if not item:
+				self.message('No branch selected!', 2)
+				return
+			path = item.path['editor_path']
 			b,r = self.selected_task.run_file(path, viewer=False)
 			if not b:
 				self.message(r, 2)
@@ -6138,11 +6147,15 @@ class MainWindow(QtGui.QMainWindow):
 		
 		# make table
 		headers = ['Branch']
-		viewer_dict = r[0]['look_path']
+		if version:
+			data=r
+		else:
+			data=r[0]
+		viewer_dict = data['look_path']
 		if action=='push':
-			editor_dict = r[0]['push_path']
+			editor_dict = data['push_path']
 		elif action=='publish':
-			editor_dict = r[0]['publish_path']
+			editor_dict = data['publish_path']
 		
 		window.select_from_list_data_list_table.setColumnCount(len(headers))
 		window.select_from_list_data_list_table.setRowCount(len(viewer_dict))
@@ -6171,9 +6184,9 @@ class MainWindow(QtGui.QMainWindow):
 		
 		#get versions_list
 		self.db_log.task = self.selected_task
-		result = self.db_log.read_log()
-		if not result[0]:
-			self.message('Not Versions of Activity!', 2)
+		result = self.db_log.read_log(action='push')
+		if not result[0] or not result[1][0]:
+			self.message('Push versions not Found!', 2)
 			return
 		else:
 			versions_list = result[1][0]
@@ -6244,10 +6257,13 @@ class MainWindow(QtGui.QMainWindow):
 		version = item.log['version']
 		
 		# get file_path
+		self.tm_look_file_action(version=version)
+		'''
 		b, r = self.selected_task.open_file( look=True, version=version)
 		if not b:
 			self.message(r, 2)
 			return
+		'''
 
 		
 	# ---- accept task --------------
