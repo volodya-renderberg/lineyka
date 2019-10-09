@@ -3295,7 +3295,7 @@ class task(studio):
 			source_path = dict()
 			source_versions = dict()
 			for branch in branches:
-				for i in range(0, len(work_log_list)):
+				for i in sorted(range(0, len(work_log_list)), reverse=True):
 					log_=work_log_list[-(i+1):][0]
 					if log_['branch']!=branch:
 						continue
@@ -3309,6 +3309,7 @@ class task(studio):
 				if sorted(end_push_log['branch'])==sorted(branches):
 					overlap = list()
 					for i , branch in enumerate(end_push_log['branch']):
+						#print('*'*5, end_push_log['source'][i], source_versions[branch])
 						if end_push_log['source'][i] == source_versions[branch]:
 							overlap.append(True)
 						else:
