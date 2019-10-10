@@ -3369,13 +3369,24 @@ class task(studio):
 	
 	# Publish пути
 	# version (int / str) - номер publish версии
+	# branches (bool / list) - список веток данного паблиша, для мультипаблиша.
 	# return (True, path или dict(пути по веткам)) или (False, comment)
 	def get_version_publish_file_path(self, version, branches=False):
 		pass
 		if self.task_type in self.multi_publish_task_types:
 			pass
-			b, r = self._template_get_publish_path(self, version)
-			return(b, r)
+			r_dict = dict()
+			#
+			b, publish_path = self._template_get_publish_path(self, version=version, branches=branches)
+			if not b:
+				return(b, publish_path)
+			r_dict['publish_path'] = publish_path
+			#
+			b, look_path = self._template_get_publish_path(self, version=version, branches=branches, look=True)
+			if not b:
+				return(b, look_path)
+			r_dict['look_path'] = look_path
+			return(True, r_dict)
 		else:
 			pass
 			b, r = self._template_get_publish_path(self, version)
@@ -3389,12 +3400,36 @@ class task(studio):
 	
 	# пути к top версии паблиш файлов
 	# return (True, path или dict(пути по веткам)) или (False, comment)
-	def get_final_publish_file_path(self, branches=False):
+	def get_final_publish_file_path(self):
 		pass
+		# 1 - read the final publish log, get final publish version
+		# 2 - get template path
+		
+		# (1)
+		b, publish_logs = log(self).read_log(action='publish')
+		if not b:
+			return(b, publish_logs)
+		
+		if publish_logs[0]:
+			end_log = publish_logs[0][-1:][0]
+		else:
+			return(False, 'No exists push version!')
+		
+		# (2)
 		if self.task_type in self.multi_publish_task_types:
 			pass
-			b, r = self._template_get_publish_path(self)
-			return(b, r)
+			branches = end_log['branch']
+			r_dict = dict()
+			#
+			b, publish_path = self._template_get_publish_path(self, branches=branches)
+			return(b, publish_path)
+			r_dict['publish_path'] = publish_path
+			#
+			b, look_path = self._template_get_publish_path(self, branches=branches, look=True)
+			return(b, look_path)
+			r_dict['look_path'] = look_path
+			#
+			return(True, (r_dict, end_log['version']))
 		else:
 			pass
 			b, r = self._template_get_publish_path(self)
@@ -3404,7 +3439,7 @@ class task(studio):
 				if not os.path.exists(r):
 					return(False, 'The path "%s" not exists!' % r)
 				else:
-					return(b, r)
+					return(b, (r, end_log['version']))
 	
 	# пути для новых паблиш файлов: и top и версию
 	# branches (list) - список запушенных или запаблишенных веток исходника
@@ -3414,7 +3449,8 @@ class task(studio):
 		pass
 		# 1 - read the final publish log, get final publish version
 		# 2 - получение branches и путей исходника.
-		# 3 - get template path
+		# 3 - соурс пути
+		# 4 - новые пути
 		
 		# (1)
 		b, publish_logs = log(self).read_log(action='publish')
@@ -3441,6 +3477,7 @@ class task(studio):
 			if republish:
 				pass
 				if publish_logs[0]:
+					#
 					for log_ in publish_logs[0]:
 						if int(log_['version']) == int(source_version):
 							branches = log_['branch']
@@ -3455,7 +3492,7 @@ class task(studio):
 					return(b, push_logs)
 				#
 				if push_logs[0]:
-					if source_version:
+					if not source_version is False and not source_version is None:
 						for log_ in push_logs[0]:
 							if int(log_['version']) == int(source_version):
 								branches = log_['branch']
@@ -3470,8 +3507,29 @@ class task(studio):
 				return(False, 'No exists source (push or pulish version)!')
 			if not source:
 				return(False, 'No exists source (push or pulish version)!')
-		
+			
 		# (3)
+		source_look_path = False
+		source_path = False
+		if republish:
+			b, sourse_path = self.get_version_publish_file_path(source_version, branches=branches)
+			if not b:
+				return(b, sourse_path)
+			if self.task_type in self.multi_publish_task_types:
+				source_look_path = sourse_path['look_path']
+				source_path = sourse_path['publish_path']
+		else:
+			if not source_version is False and not source_version is None:
+				b, sourse_path = self.get_version_push_file_path(source_version)
+			else:
+				b, s_path = self.get_final_push_file_path()
+				sourse_path = s_path[0]
+			if not b:
+				return(b, s_path)
+			if self.task_type in self.multi_publish_task_types:
+				source_look_path = sourse_path['look_path']
+				source_path = sourse_path['push_path']
+		# (4)
 		if self.task_type in self.multi_publish_task_types:
 			pass
 			#
@@ -3491,7 +3549,7 @@ class task(studio):
 			if not b:
 				return(b, look_version)
 			#
-			return(True, ({'top_path': r_top, 'top_look_path': look_top, 'version_path': r_version, 'version_look_path': look_version}, version, branches, source))
+			return(True, ({'top_path': r_top, 'top_look_path': look_top, 'version_path': r_version, 'version_look_path': look_version, 'source_look_path':source_look_path, 'source_path':source_path}, version, branches, source))
 		else:
 			pass
 			b, r_top = self._template_get_publish_path(self)
@@ -3501,7 +3559,7 @@ class task(studio):
 			if not b:
 				return(b, r_version)
 			#
-			return(True, ({'top_path': r_top, 'version_path': r_version}, version, source))
+			return(True, ({'top_path': r_top, 'version_path': r_version, 'source_path': source_path}, version, source))
 	
 	# old
 	
