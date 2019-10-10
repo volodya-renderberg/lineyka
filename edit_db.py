@@ -648,14 +648,14 @@ class studio:
 	# шаблонный путь до паблиш файлов.
 	# c_task  (task) - задача, для которой ищется путь к файлам.
 	# version (bool / int / str) - номер версии или False,если False - то путь до финальной версии, которая сверху версий (в паблиш/активити).
-	# branches (bool / list) - список веток из которых делался publish - для task_type = sketch.
+	# branches (bool / list) - список веток из которых делался push или publish (в случае репаблиша) - для task_type = sketch.
 	# look (bool) - рассматривается только при task_type = sketch, если False - то используется c_task.extension, если True - то используется studio.look_extension (список путей для просмотра).
 	# return (True, path или path_dict - ключи имена веток) или (False, comment).
-	def _template_get_publish_path(self, c_task, version=False, branches=False, look=False): # v2
+	def _template_get_publish_path(self, c_task, version=False, branches=list(), look=False): # v2
 		pass
 		# 1 - 
 		
-		if version:
+		if not version is False and not version is None:
 			#
 			b, str_version = self._template_version_num(version)
 			if not b:
@@ -665,9 +665,9 @@ class studio:
 				path_dict = dict()
 				for branch in branches:
 					if look:
-						path = os.path.join(c_task.asset.path, self.publish_folder_name, c_task.activity, str_version, '%s%s' % (c_task.asset.name, self.look_extension))
+						path = os.path.join(c_task.asset.path, self.publish_folder_name, c_task.activity, str_version, '%s#%s%s' % (c_task.asset.name, branch, self.look_extension))
 					else:
-						path = os.path.join(c_task.asset.path, self.publish_folder_name, c_task.activity, str_version, '%s%s' % (c_task.asset.name, c_task.extension))
+						path = os.path.join(c_task.asset.path, self.publish_folder_name, c_task.activity, str_version, '%s#%s%s' % (c_task.asset.name, branch, c_task.extension))
 					path_dict[branch] = NormPath(path)
 				return(True, path_dict)
 			else:
@@ -678,9 +678,9 @@ class studio:
 				path_dict = dict()
 				for branch in branches:
 					if look:
-						path = os.path.join(c_task.asset.path, self.publish_folder_name, c_task.activity, '%s%s' % (c_task.asset.name, self.look_extension))
+						path = os.path.join(c_task.asset.path, self.publish_folder_name, c_task.activity, '%s#%s%s' % (c_task.asset.name, branch, self.look_extension))
 					else:
-						path = os.path.join(c_task.asset.path, self.publish_folder_name, c_task.activity, '%s%s' % (c_task.asset.name, c_task.extension))
+						path = os.path.join(c_task.asset.path, self.publish_folder_name, c_task.activity, '%s#%s%s' % (c_task.asset.name, branch, c_task.extension))
 					path_dict[branch] = NormPath(path)
 				return(True, path_dict)
 			else:
@@ -3370,7 +3370,7 @@ class task(studio):
 	# Publish пути
 	# version (int / str) - номер publish версии
 	# return (True, path или dict(пути по веткам)) или (False, comment)
-	def get_version_publish_file_path(self, version):
+	def get_version_publish_file_path(self, version, branches=False):
 		pass
 		if self.task_type in self.multi_publish_task_types:
 			pass
@@ -3389,7 +3389,7 @@ class task(studio):
 	
 	# пути к top версии паблиш файлов
 	# return (True, path или dict(пути по веткам)) или (False, comment)
-	def get_final_publish_file_path(self):
+	def get_final_publish_file_path(self, branches=False):
 		pass
 		if self.task_type in self.multi_publish_task_types:
 			pass
@@ -3407,34 +3407,91 @@ class task(studio):
 					return(b, r)
 	
 	# пути для новых паблиш файлов: и top и версию
+	# branches (list) - список запушенных или запаблишенных веток исходника
+	# source_version (bool / str) - версия исходника (пуш, паблиш) если False - последняя версия.
 	# return: (true, (dict_path, version)) или (False, comment), структура dict_path: ключи - 'top_path', 'version_path', значения - пути или словари путей по веткам.
-	def get_new_publish_file_path(self):
+	def get_new_publish_file_path(self, republish=False, source_log=False, source_version=False):
 		pass
 		# 1 - read the final publish log, get final publish version
-		# 2 - get template path
+		# 2 - получение branches и путей исходника.
+		# 3 - get template path
 		
 		# (1)
-		b, r = log(self).read_log(action='publish')
+		b, publish_logs = log(self).read_log(action='publish')
 		if not b:
-			return(b, r)
+			return(b, publish_logs)
 		
-		if r[0]:
-			end_log = r[0][-1:][0]
+		if publish_logs[0]:
+			end_log = publish_logs[0][-1:][0]
 			version = int(end_log['version']) + 1
 		else:
 			version=0
-		
+			
 		# (2)
+		# -- branches - получаем не разделяя тип задачи, он в любом случае будет.
+		if source_log:
+			branches = source_log['branch']
+			if republish:
+				source = source_log['source']
+			else:
+				source = source_log['version']
+		else:
+			branches = list()
+			source = str()
+			if republish:
+				pass
+				if publish_logs[0]:
+					for log_ in publish_logs[0]:
+						if int(log_['version']) == int(source_version):
+							branches = log_['branch']
+							source = log_['source']
+				else:
+					return(False, 'No exists pulish version!')
+			else:
+				pass
+				# -- read push logs
+				b, push_logs = log(self).read_log(action='push')
+				if not b:
+					return(b, push_logs)
+				#
+				if push_logs[0]:
+					if source_version:
+						for log_ in push_logs[0]:
+							if int(log_['version']) == int(source_version):
+								branches = log_['branch']
+								source = log_['source']
+					else:
+						branches = push_logs[0][-1:][0]['branch']
+						source = push_logs[0][-1:][0]['source']
+				else:
+					return(False, 'No exists push version!')
+			#
+			if self.task_type in self.multi_publish_task_types and not branches:
+				return(False, 'No exists source (push or pulish version)!')
+			if not source:
+				return(False, 'No exists source (push or pulish version)!')
+		
+		# (3)
 		if self.task_type in self.multi_publish_task_types:
 			pass
-			b, r_top = self._template_get_publish_path(self)
+			#
+			b, r_top = self._template_get_publish_path(self, branches=branches)
 			if not b:
 				return(b, r_top)
-			b, r_version = self._template_get_publish_path(self, version)
+			#
+			b, look_top = self._template_get_publish_path(self, branches=branches, look=True)
+			if not b:
+				return(b, look_top)
+			#
+			b, r_version = self._template_get_publish_path(self, version, branches=branches)
 			if not b:
 				return(b, r_version)
 			#
-			return(True, ({'top_path': r_top, 'version_path': r_version}, version))
+			b, look_version = self._template_get_publish_path(self, version, branches=branches, look=True)
+			if not b:
+				return(b, look_version)
+			#
+			return(True, ({'top_path': r_top, 'top_look_path': look_top, 'version_path': r_version, 'version_look_path': look_version}, version, branches, source))
 		else:
 			pass
 			b, r_top = self._template_get_publish_path(self)
@@ -3444,8 +3501,7 @@ class task(studio):
 			if not b:
 				return(b, r_version)
 			#
-			return(True, ({'top_path': r_top, 'version_path': r_version}, version))
-				
+			return(True, ({'top_path': r_top, 'version_path': r_version}, version, source))
 	
 	# old
 	
@@ -3936,6 +3992,14 @@ class task(studio):
 			
 		return(True, tmp_file_path)
 	
+	# вызов одноимённого хука
+	def _pre_push(self):
+		return(True, 'Ok!')
+
+	# вызов одноимённого хука
+	def _post_push(self):
+		return(True, 'Ok!')
+	
 	# make version of push at server of studio.
 	# version (str/int) - версия которая пушится, не имеет смысла для мультипуша (sketch) там только из последней версии.
 	# return (True, message) или (False, message)
@@ -3972,6 +4036,10 @@ class task(studio):
 		#print(r[1])
 		
 		# (1)
+		b,r = self._pre_push()
+		if not b:
+			return(b, r)
+		
 		if not current_artist.outsource:
 			# (2)
 			if self.task_type in self.multi_publish_task_types:
@@ -4048,9 +4116,58 @@ class task(studio):
 			# (6)
 			else:
 				pass
+			
+		b,r = self._post_push()
+		if not b:
+			return(b, r)
 		
 		return(True, 'Created a new Push version: %s!' % new_version)
 	
+	# вызов одноимённого хука
+	def _pre_publish(self):
+		return(True, 'Ok!')
+
+	# вызов одноимённого хука
+	def _post_publish(self):
+		return(True, 'Ok!')
+	
+	# паблиш, перекладывание файлов
+	# description (str) - не обязательный параметр, при отсутствии составляется автоматически - техническое описание: что, откуда, куда.
+	# version (int, str) - пуш версия, если False - то последняя
+	# source_version (int, str) - версия паблиша при репаблише.
+	# current_artist (artist) - если не передавать, то будет выполняться get_user() - лишнее обращение к БД.
+	def publish(self, description=False, version=False, source_version=False, current_artist=False):
+		pass
+		# 0 - input data
+		# 1 - republish
+		# 2 - publish из версии
+		# 3 - publish последней версии
+		
+		# (0)
+		# --
+		if not current_artist:
+			current_artist = artist()
+			b, r = current_artist.get_user()
+			if not b:
+				return(b,r)
+		# --
+		if current_artist.outsource:
+			return(False, 'This procedure is not performed on outsourcing!')
+		
+		# (1)
+		if source_version:
+			pass
+		else:
+			# (2)
+			if version:
+				pass
+			# (3)
+			else:
+				pass
+				b,r = self.get_final_publish_file_path()
+				if not b:
+					return(b, r)
+		
 	# локальная запись новой рабочей версии файла
 	# description (str) - комментарий к версии
 	# current_file (unicode/str) - текущее местоположение рабочего файла (как правило в темп)
