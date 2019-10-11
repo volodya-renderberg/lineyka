@@ -3477,6 +3477,7 @@ class task(studio):
 		# 4 - новые пути
 		
 		# (1)
+		old_source = False
 		b, publish_logs = log(self).read_log(action='publish')
 		if not b:
 			return(b, publish_logs)
@@ -3484,6 +3485,7 @@ class task(studio):
 		if publish_logs[0]:
 			end_log = publish_logs[0][-1:][0]
 			version = int(end_log['version']) + 1
+			old_source = int(end_log['source'])
 		else:
 			version=0
 			
@@ -3534,6 +3536,9 @@ class task(studio):
 				return(False, 'No exists source (push or pulish version)!')
 			if source is False or source is None:
 				return(False, 'No exists source (push or pulish version)!')
+			
+		if old_source==int(source):
+			return(False, 'Source of past publishers coincides with new source of publishers!')
 			
 		# (3)
 		source_look_path = False
@@ -4206,7 +4211,7 @@ class task(studio):
 		if not b:
 			return(b, r_data)
 		
-		return(True, 'Created a new Push version: %s!' % new_version)
+		return(True, 'Created a new Push version with number: %s' % new_version)
 	
 	# вызов одноимённого хука
 	def _pre_publish(self):
@@ -4249,8 +4254,8 @@ class task(studio):
 		if not b:
 			return(b, r)
 		
-		for i in r:
-			print(i)
+		#for i in r:
+			#print(i)
 			
 		# (1.1)
 		if not description:
@@ -4265,16 +4270,61 @@ class task(studio):
 		pass
 		
 		# (2)
-		b, r = self._pre_publish()
+		b, r_data = self._pre_publish()
 		if not b:
-			return(b, r)
+			return(b, r_data)
 		
 		# (3)
+		# (3.1)
+		pass
+		if self.task_type in self.multi_publish_task_types:
+			publish_dir = os.path.dirname(r[0]['top_path'][r[0]['top_path'].keys()[0]])
+		else:
+			publish_dir = os.path.dirname(r[0]['top_path'])
+		#
+		if os.path.exists(publish_dir):
+			for name in os.listdir(publish_dir):
+				path_file = os.path.join(publish_dir, name)
+				if os.path.isfile(path_file):
+					os.remove(path_file)
+		
+		# (3.2)
+		# -- mk dir
+		version_dir = os.path.dirname(r[0]['version_path'][r[0]['version_path'].keys()[0]])
+		if not os.path.exists(version_dir):
+			os.makedirs(version_dir)
+		# -- copy files
+		if self.task_type in self.multi_publish_task_types:
+			for branch in r[0]['source_path']:
+				shutil.copyfile(r[0]['source_path'][branch], r[0]['top_path'][branch])
+				shutil.copyfile(r[0]['source_path'][branch], r[0]['version_path'][branch])
+				shutil.copyfile(r[0]['source_look_path'][branch], r[0]['top_look_path'][branch])
+				shutil.copyfile(r[0]['source_look_path'][branch], r[0]['version_look_path'][branch])
+		else:
+			shutil.copyfile(r[0]['source_path'], r[0]['top_path'])
+			shutil.copyfile(r[0]['source_path'], r[0]['version_path'])
+			
+		# (3.3)
+		# -- write log
+		new_log_keys = dict()
+		new_log_keys['action'] = 'publish'
+		new_log_keys['version'] = r[1]
+		new_log_keys['description']=description
+		if self.task_type in self.multi_publish_task_types:
+			new_log_keys['branch']=r[3]
+		new_log_keys['source']=r[2]
+		#print(new_log_keys)
+		
+		b, r_data = log(self).write_log(new_log_keys, artist_ob=current_artist)
+		if not b:
+			return(b, r_data)
 		
 		# (4)
-		b, r = self._post_publish()
+		b, r_data = self._post_publish()
 		if not b:
-			return(b, r)
+			return(b, r_data)
+		
+		return(True, 'Created a new Publish version with number: %s' % r[1])
 		
 	# локальная запись новой рабочей версии файла
 	# description (str) - комментарий к версии
@@ -6681,7 +6731,7 @@ class log(studio):
 		
 		# (1)
 		for item in ["description", "version", "action"]:
-			if not logs_keys.get(item):
+			if logs_keys.get(item) is False or logs_keys.get(item) is None:
 				return(False, 'in log.write_log() - no "%s" submitted!' % item)
 		
 		if not logs_keys['action'] in self.log_actions:
