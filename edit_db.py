@@ -3536,7 +3536,7 @@ class task(studio):
 		source_look_path = False
 		source_path = False
 		if republish:
-			b, sourse_path = self.get_version_publish_file_path(source_version, branches=branches)
+			b, sourse_path = self.get_version_publish_file_path(version=source_version, branches=branches)
 			if not b:
 				return(b, sourse_path)
 			if self.task_type in self.multi_publish_task_types:
@@ -3918,7 +3918,7 @@ class task(studio):
 		elif action == 'publish':
 			pass
 			if version:
-				b, r = self.get_version_publish_file_path(version)
+				b, r = self.get_version_publish_file_path(version=version)
 			else:
 				b, r = self.get_final_publish_file_path()
 			if not b:
