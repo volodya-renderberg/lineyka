@@ -3573,7 +3573,7 @@ class task(studio):
 			if not b:
 				return(b, look_version)
 			#
-			return(True, ({'top_path': r_top, 'top_look_path': look_top, 'version_path': r_version, 'version_look_path': look_version, 'source_look_path':source_look_path, 'source_path':source_path}, version, branches, source))
+			return(True, ({'top_path': r_top, 'top_look_path': look_top, 'version_path': r_version, 'version_look_path': look_version, 'source_look_path':source_look_path, 'source_path':source_path}, version, source, branches))
 		else:
 			pass
 			b, r_top = self._template_get_publish_path(self)
@@ -4221,7 +4221,7 @@ class task(studio):
 	def publish(self, description=False, republish=False, source_version=False, source_log=False, current_artist=False):
 		pass
 		# 0 - input data
-		# 0.3 - description
+		# 0.3 - сосотавление description
 		# 1 - получение путей
 		# 2 - pre_publish
 		# 3 - publish
@@ -4242,7 +4242,12 @@ class task(studio):
 		# (0.3)
           
         # (1)
-        b, r = self.get_new_publish_file_path()
+        b, r = self.get_new_publish_file_path(republish=republish, source_version=source_version, source_log=source_log)
+        if not b:
+          return(b, r)
+        
+        # --
+        pass
 		
 		# (2)
 		b, r = self._pre_publish()
