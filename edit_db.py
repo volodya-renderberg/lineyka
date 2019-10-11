@@ -3370,9 +3370,32 @@ class task(studio):
 	# Publish пути
 	# version (int / str) - номер publish версии
 	# branches (bool / list) - список веток данного паблиша, для мультипаблиша.
+	# version_log (bool / dict) - словарь лога данной версии, если его передавать, то branches и version не имеют смысла.
 	# return (True, path или dict(пути по веткам)) или (False, comment)
-	def get_version_publish_file_path(self, version, branches=False):
+	def get_version_publish_file_path(self, version=False, branches=False, version_log=False):
 		pass
+		# (1)
+		if version_log:
+			version = version_log['version']
+			branches = version_log['branch']
+		elif (version is False or version is None):
+			return(False, 'No version specified!')
+		else:
+			if not branches:
+				b, publish_logs = log(self).read_log(action='publish')
+				if not b:
+					return(b, publish_logs)
+				#
+				if not publish_logs[0]:
+					return(False, 'No exists publish version!')
+				#
+				for log_ in publish_logs[0]:
+					if int(log_['version']) == int(version):
+						branches = log_['branch']
+				if not branches:
+					return(False, 'No exists publish version - "%s" !' % version)
+	
+		# (2)
 		if self.task_type in self.multi_publish_task_types:
 			pass
 			r_dict = dict()
@@ -3413,7 +3436,7 @@ class task(studio):
 		if publish_logs[0]:
 			end_log = publish_logs[0][-1:][0]
 		else:
-			return(False, 'No exists push version!')
+			return(False, 'No exists publish version!')
 		
 		# (2)
 		if self.task_type in self.multi_publish_task_types:
@@ -3442,9 +3465,10 @@ class task(studio):
 					return(b, (r, end_log['version']))
 	
 	# пути для новых паблиш файлов: и top и версию
-	# branches (list) - список запушенных или запаблишенных веток исходника
+	# republish (bool) - репаблиш или нет.
+	# source_log (bool / dict) - лог источника для паблиша (push или publish), при наличие этого лога версия source_version передавать не имеет смысла.
 	# source_version (bool / str) - версия исходника (пуш, паблиш) если False - последняя версия.
-	# return: (true, (dict_path, version)) или (False, comment), структура dict_path: ключи - 'top_path', 'version_path', значения - пути или словари путей по веткам.
+	# return: (true, (dict_path, version)) или (False, comment), структура dict_path: ключи - 'top_path', 'version_path', 'top_look_path', 'version_look_path', 'source_look_path', 'source_path'   значения - пути или словари путей по веткам.
 	def get_new_publish_file_path(self, republish=False, source_log=False, source_version=False):
 		pass
 		# 1 - read the final publish log, get final publish version
@@ -4189,42 +4213,48 @@ class task(studio):
 	def _post_publish(self):
 		return(True, 'Ok!')
 	
-	# паблиш, перекладывание файлов
+	# паблиш: перекладывание файлов, запись лога.
 	# description (str) - не обязательный параметр, при отсутствии составляется автоматически - техническое описание: что, откуда, куда.
-	# version (int, str) - пуш версия, если False - то последняя
-	# source_version (int, str) - версия паблиша при репаблише.
+	# source_version (int, str) - версия push или publish при репаблише, если False при паблише - то паблиш из последней пуш версии.
+	# source_log (bool / dict) - лог версии источника, при его наличии source_version не имеет смысла.
 	# current_artist (artist) - если не передавать, то будет выполняться get_user() - лишнее обращение к БД.
-	def publish(self, description=False, version=False, source_version=False, current_artist=False):
+	def publish(self, description=False, republish=False, source_version=False, source_log=False, current_artist=False):
 		pass
 		# 0 - input data
-		# 1 - republish
-		# 2 - publish из версии
-		# 3 - publish последней версии
+		# 0.3 - description
+		# 1 - получение путей
+		# 2 - pre_publish
+		# 3 - publish
+		# 3.1 - удаление прошлой top версии
+		# 4 - post_publish
 		
 		# (0)
-		# --
+		# (0.1)
 		if not current_artist:
 			current_artist = artist()
 			b, r = current_artist.get_user()
 			if not b:
 				return(b,r)
-		# --
+		# (0.2)
 		if current_artist.outsource:
 			return(False, 'This procedure is not performed on outsourcing!')
 		
-		# (1)
-		if source_version:
-			pass
-		else:
-			# (2)
-			if version:
-				pass
-			# (3)
-			else:
-				pass
-				b,r = self.get_final_publish_file_path()
-				if not b:
-					return(b, r)
+		# (0.3)
+          
+        # (1)
+        b, r = self.get_new_publish_file_path()
+		
+		# (2)
+		b, r = self._pre_publish()
+		if not b:
+			return(b, r)
+		
+		# (3)
+		
+		# (4)
+		b, r = self._post_publish()
+		if not b:
+			return(b, r)
 		
 	# локальная запись новой рабочей версии файла
 	# description (str) - комментарий к версии
