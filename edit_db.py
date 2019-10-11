@@ -3491,6 +3491,7 @@ class task(studio):
 		# -- branches - получаем не разделяя тип задачи, он в любом случае будет.
 		if source_log:
 			branches = source_log['branch']
+			source_version = source_log['version']
 			if republish:
 				source = source_log['source']
 			else:
@@ -3506,6 +3507,7 @@ class task(studio):
 						if int(log_['version']) == int(source_version):
 							branches = log_['branch']
 							source = log_['source']
+							#source = source_version
 				else:
 					return(False, 'No exists pulish version!')
 			else:
@@ -3520,16 +3522,17 @@ class task(studio):
 						for log_ in push_logs[0]:
 							if int(log_['version']) == int(source_version):
 								branches = log_['branch']
-								source = log_['source']
+								#source = log_['source']
+								source = source_version
 					else:
 						branches = push_logs[0][-1:][0]['branch']
-						source = push_logs[0][-1:][0]['source']
+						source = push_logs[0][-1:][0]['version']
 				else:
 					return(False, 'No exists push version!')
 			#
 			if self.task_type in self.multi_publish_task_types and not branches:
 				return(False, 'No exists source (push or pulish version)!')
-			if not source:
+			if source is False or source is None:
 				return(False, 'No exists source (push or pulish version)!')
 			
 		# (3)
@@ -4118,9 +4121,9 @@ class task(studio):
 		#print(r[1])
 		
 		# (1)
-		b,r = self._pre_push()
+		b,r_data = self._pre_push()
 		if not b:
-			return(b, r)
+			return(b, r_data)
 		
 		if not current_artist.outsource:
 			# (2)
@@ -4199,9 +4202,9 @@ class task(studio):
 			else:
 				pass
 			
-		b,r = self._post_push()
+		b,r_data = self._post_push()
 		if not b:
-			return(b, r)
+			return(b, r_data)
 		
 		return(True, 'Created a new Push version: %s!' % new_version)
 	
@@ -4218,14 +4221,16 @@ class task(studio):
 	# source_version (int, str) - версия push или publish при репаблише, если False при паблише - то паблиш из последней пуш версии.
 	# source_log (bool / dict) - лог версии источника, при его наличии source_version не имеет смысла.
 	# current_artist (artist) - если не передавать, то будет выполняться get_user() - лишнее обращение к БД.
-	def publish(self, description=False, republish=False, source_version=False, source_log=False, current_artist=False):
+	def publish_task(self, description=False, republish=False, source_version=False, source_log=False, current_artist=False):
 		pass
 		# 0 - input data
-		# 0.3 - сосотавление description
 		# 1 - получение путей
+		# 1.1 - сосотавление description
 		# 2 - pre_publish
 		# 3 - publish
 		# 3.1 - удаление прошлой top версии
+		# 3.2 - копирование файлов
+		# 3,3 - запись лога
 		# 4 - post_publish
 		
 		# (0)
@@ -4239,15 +4244,25 @@ class task(studio):
 		if current_artist.outsource:
 			return(False, 'This procedure is not performed on outsourcing!')
 		
-		# (0.3)
-          
-        # (1)
-        b, r = self.get_new_publish_file_path(republish=republish, source_version=source_version, source_log=source_log)
-        if not b:
-          return(b, r)
-        
-        # --
-        pass
+		# (1)
+		b, r = self.get_new_publish_file_path(republish=republish, source_version=source_version, source_log=source_log)
+		if not b:
+			return(b, r)
+		
+		for i in r:
+			print(i)
+			
+		# (1.1)
+		if not description:
+			if republish:
+				description = 'republish from %s' % str(r[2])
+			else:
+				description = 'publish from %s' % str(r[2])
+		
+		print(description)
+		
+		# --
+		pass
 		
 		# (2)
 		b, r = self._pre_publish()
