@@ -3544,23 +3544,23 @@ class task(studio):
 		source_look_path = False
 		source_path = False
 		if republish:
-			b, sourse_path = self.get_version_publish_file_path(version=source_version, branches=branches)
+			b, source_path = self.get_version_publish_file_path(version=source_version, branches=branches)
 			if not b:
-				return(b, sourse_path)
+				return(b, source_path)
 			if self.task_type in self.multi_publish_task_types:
-				source_look_path = sourse_path['look_path']
-				source_path = sourse_path['publish_path']
+				source_look_path = source_path['look_path']
+				source_path = source_path['publish_path']
 		else:
 			if not source_version is False and not source_version is None:
-				b, sourse_path = self.get_version_push_file_path(source_version)
+				b, source_path = self.get_version_push_file_path(source_version)
 			else:
-				b, s_path = self.get_final_push_file_path()
-				sourse_path = s_path[0]
+				b, source_path = self.get_final_push_file_path()
+				source_path = source_path[0]
 			if not b:
-				return(b, s_path)
+				return(b, source_path)
 			if self.task_type in self.multi_publish_task_types:
-				source_look_path = sourse_path['look_path']
-				source_path = sourse_path['push_path']
+				source_look_path = source_path['look_path']
+				source_path = source_path['push_path']
 		# (4)
 		if self.task_type in self.multi_publish_task_types:
 			pass
@@ -4290,7 +4290,10 @@ class task(studio):
 		
 		# (3.2)
 		# -- mk dir
-		version_dir = os.path.dirname(r[0]['version_path'][r[0]['version_path'].keys()[0]])
+		if self.task_type in self.multi_publish_task_types:
+			version_dir = os.path.dirname(r[0]['version_path'][r[0]['version_path'].keys()[0]])
+		else:
+			version_dir = os.path.dirname(r[0]['version_path'])
 		if not os.path.exists(version_dir):
 			os.makedirs(version_dir)
 		# -- copy files
@@ -4301,6 +4304,8 @@ class task(studio):
 				shutil.copyfile(r[0]['source_look_path'][branch], r[0]['top_look_path'][branch])
 				shutil.copyfile(r[0]['source_look_path'][branch], r[0]['version_look_path'][branch])
 		else:
+			#print(r[0])
+			#return(0,'epte!')
 			shutil.copyfile(r[0]['source_path'], r[0]['top_path'])
 			shutil.copyfile(r[0]['source_path'], r[0]['version_path'])
 			

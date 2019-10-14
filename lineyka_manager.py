@@ -5185,6 +5185,9 @@ class MainWindow(QtGui.QMainWindow):
 		self.myWidget.chat_button.setMinimumHeight(50)
 		self.myWidget.tz_button.clicked.connect(self.tm_tz)
 		self.myWidget.tz_button.setMinimumHeight(50)
+		#
+		self.myWidget.publish_button.clicked.connect(self.tm_publish_action)
+		#
 		self.myWidget.assept_button.clicked.connect(self.tm_accept_task_action)
 		self.myWidget.close_task_button.clicked.connect(self.tm_close_task_action)
 		self.myWidget.to_rework_button.clicked.connect(self.tm_rework_action)
@@ -6265,6 +6268,19 @@ class MainWindow(QtGui.QMainWindow):
 			return
 		'''
 
+	def tm_publish_action(self):
+		pass
+		# change task
+		ask = self.message(('Do you want to publish the task: "%s" ?') % self.selected_task.task_name, 0)
+		if not ask:
+			return
+		
+		b, r = self.selected_task.publish_task(current_artist=self.artist)
+		if not b:
+			ask = self.message(r, 2)
+		else:
+			ask = self.message(r, 1)
+		
 		
 	# ---- accept task --------------
 	def tm_accept_task_action(self): # v2 не ткстилось с контентом
