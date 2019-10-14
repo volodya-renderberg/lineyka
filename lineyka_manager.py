@@ -5197,6 +5197,7 @@ class MainWindow(QtGui.QMainWindow):
 		self.myWidget.look_version_file_button.clicked.connect(self.tm_look_version_file_ui)
 		self.myWidget.look_publish_version_button.clicked.connect(partial(self.tm_look_version_file_ui, action='publish'))
 		self.myWidget.publish_version_button.clicked.connect(partial(self.tm_publish_version_ui, republish=False))
+		self.myWidget.republish_button.clicked.connect(partial(self.tm_publish_version_ui, republish=True))
 		self.myWidget.add_task_button.clicked.connect(self.tm_add_task_ui)
 		self.myWidget.add_task_button.setText('Add Single Task')
 		self.myWidget.edit_readers_button.clicked.connect(self.tm_edit_readers_ui)
@@ -6371,6 +6372,8 @@ class MainWindow(QtGui.QMainWindow):
 			ask = self.message(r, 2)
 		else:
 			ask = self.message(r, 1)
+			if window:
+				self.close_window(window)
 		
 	# ---- accept task --------------
 	def tm_accept_task_action(self): # v2 не ткстилось с контентом
