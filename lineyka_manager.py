@@ -5196,6 +5196,7 @@ class MainWindow(QtGui.QMainWindow):
 		self.myWidget.look_publish_button.clicked.connect(partial(self.tm_look_file_action, action='publish'))
 		self.myWidget.look_version_file_button.clicked.connect(self.tm_look_version_file_ui)
 		self.myWidget.look_publish_version_button.clicked.connect(partial(self.tm_look_version_file_ui, action='publish'))
+		self.myWidget.publish_version_button.clicked.connect(partial(self.tm_publish_version_ui, republish=False))
 		self.myWidget.add_task_button.clicked.connect(self.tm_add_task_ui)
 		self.myWidget.add_task_button.setText('Add Single Task')
 		self.myWidget.edit_readers_button.clicked.connect(self.tm_edit_readers_ui)
@@ -6184,6 +6185,7 @@ class MainWindow(QtGui.QMainWindow):
 		window.show()
 		
 	def tm_look_version_file_ui(self, action='push'):
+		pass
 		#item = self.myWidget.task_manager_table.currentItem()
 		#self.current_task = item.task
 		
@@ -6197,7 +6199,7 @@ class MainWindow(QtGui.QMainWindow):
 			versions_list = result[1][0]
 			branches = result[1][1]
 			
-		print(len(versions_list))
+		#print(len(versions_list))
 		
 		# make widjet
 		ui_path = self.select_from_list_dialog_path
@@ -6253,8 +6255,81 @@ class MainWindow(QtGui.QMainWindow):
 				
 		window.show()
 		
+	
+	def tm_publish_version_ui(self, republish=False):
+		pass
+		#get versions_list
+		self.db_log.task = self.selected_task
+		if republish:
+			action='publish'
+		else:
+			action='push'
+		result = self.db_log.read_log(action=action)
+		if not result[0] or not result[1][0]:
+			self.message('Push versions not Found!', 2)
+			return
+		else:
+			versions_list = result[1][0]
+			branches = result[1][1]
+			
+		#print(len(versions_list))
 		
+		# make widjet
+		ui_path = self.select_from_list_dialog_path
+		# widget
+		loader = QtUiTools.QUiLoader()
+		file = QtCore.QFile(ui_path)
+		#file.open(QtCore.QFile.ReadOnly)
+		window = self.lookVersionDialog = loader.load(file, self)
+		file.close()
+		
+		# set modal window
+		window.setWindowModality(QtCore.Qt.WindowModal)
+		window.setAttribute(QtCore.Qt.WA_DeleteOnClose, True)
+		
+		# edit Widget
+		window.select_from_list_cansel_button.clicked.connect(partial(self.close_window, window))
+		if republish:
+			window.setWindowTitle('Republish Version')
+		else:
+			window.setWindowTitle('Publish Version')
+		window.select_from_list_apply_button.clicked.connect(partial(self.tm_publish_action, window=window, republish=republish))
+				
+		# make table
+		headers = []
+		for key in self.db_log.logs_keys:
+			headers.append(key)
+		
+		window.select_from_list_data_list_table.setColumnCount(len(headers))
+		window.select_from_list_data_list_table.setRowCount(len(versions_list))
+		window.select_from_list_data_list_table.setHorizontalHeaderLabels(headers)
+		
+		# selection mode   
+		window.select_from_list_data_list_table.setSortingEnabled(True)
+		window.select_from_list_data_list_table.setSelectionBehavior(QtGui.QAbstractItemView.SelectRows)
+		window.select_from_list_data_list_table.setSelectionMode(QtGui.QAbstractItemView.SingleSelection)
+		
+		# make tabel
+		for i,log in enumerate(versions_list):
+			print(log)
+			for j,key in enumerate(headers):
+				newItem = QtGui.QTableWidgetItem()
+				newItem.log = log
+								
+				if key == 'time':
+					if log.get(key):
+						newItem.setText(str(log.get(key)/3600))
+				elif key == 'date_time':
+					newItem.setText(log[key].strftime("%m/%d/%Y, %H:%M:%S"))
+				else:
+					newItem.setText(str(log[key]))
+					
+				window.select_from_list_data_list_table.setItem(i, j, newItem)
+				
+		window.show()
+	
 	def tm_look_version_file_action(self, window, action):
+		pass
 		item = None
 		if window.select_from_list_data_list_table.selectedItems():
 			item = window.select_from_list_data_list_table.selectedItems()[0]
@@ -6273,19 +6348,29 @@ class MainWindow(QtGui.QMainWindow):
 			return
 		'''
 
-	def tm_publish_action(self):
+	def tm_publish_action(self, window=False, republish=False, source_log=False):
 		pass
 		# change task
-		ask = self.message(('Do you want to publish the task: "%s" ?') % self.selected_task.task_name, 0)
-		if not ask:
-			return
+		if not window and not source_log:
+			ask = self.message(('Do you want to publish the task: "%s" ?') % self.selected_task.task_name, 0)
+			if not ask:
+				return
+		elif window and not source_log:
+			pass
+			# get source log
+			item = None
+			if window.select_from_list_data_list_table.selectedItems():
+				item = window.select_from_list_data_list_table.selectedItems()[0]
+			if not item:
+				self.message('No version selected!', 2)
+				return
+			source_log=item.log
 		
-		b, r = self.selected_task.publish_task(current_artist=self.artist)
+		b, r = self.selected_task.publish_task(source_log=source_log, republish=republish, current_artist=self.artist)
 		if not b:
 			ask = self.message(r, 2)
 		else:
 			ask = self.message(r, 1)
-		
 		
 	# ---- accept task --------------
 	def tm_accept_task_action(self): # v2 не ткстилось с контентом
