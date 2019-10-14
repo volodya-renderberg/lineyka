@@ -5193,7 +5193,9 @@ class MainWindow(QtGui.QMainWindow):
 		self.myWidget.to_rework_button.clicked.connect(self.tm_rework_action)
 		self.myWidget.return_a_job_button.clicked.connect(self.tm_return_a_job_action)
 		self.myWidget.look_file_button.clicked.connect(self.tm_look_file_action)
+		self.myWidget.look_publish_button.clicked.connect(partial(self.tm_look_file_action, action='publish'))
 		self.myWidget.look_version_file_button.clicked.connect(self.tm_look_version_file_ui)
+		self.myWidget.look_publish_version_button.clicked.connect(partial(self.tm_look_version_file_ui, action='publish'))
 		self.myWidget.add_task_button.clicked.connect(self.tm_add_task_ui)
 		self.myWidget.add_task_button.setText('Add Single Task')
 		self.myWidget.edit_readers_button.clicked.connect(self.tm_edit_readers_ui)
@@ -6181,13 +6183,13 @@ class MainWindow(QtGui.QMainWindow):
 				
 		window.show()
 		
-	def tm_look_version_file_ui(self):
+	def tm_look_version_file_ui(self, action='push'):
 		#item = self.myWidget.task_manager_table.currentItem()
 		#self.current_task = item.task
 		
 		#get versions_list
 		self.db_log.task = self.selected_task
-		result = self.db_log.read_log(action='push')
+		result = self.db_log.read_log(action=action)
 		if not result[0] or not result[1][0]:
 			self.message('Push versions not Found!', 2)
 			return
@@ -6212,8 +6214,11 @@ class MainWindow(QtGui.QMainWindow):
 		
 		# edit Widget
 		window.select_from_list_cansel_button.clicked.connect(partial(self.close_window, window))
-		window.setWindowTitle('Look Version')
-		window.select_from_list_apply_button.clicked.connect(partial(self.tm_look_version_file_action, window))
+		if action=='push':
+			window.setWindowTitle('Look Version')
+		else:
+			window.setWindowTitle('Look Publish Version')
+		window.select_from_list_apply_button.clicked.connect(partial(self.tm_look_version_file_action, window, action))
 				
 		# make table
 		headers = []
@@ -6249,7 +6254,7 @@ class MainWindow(QtGui.QMainWindow):
 		window.show()
 		
 		
-	def tm_look_version_file_action(self, window):
+	def tm_look_version_file_action(self, window, action):
 		item = None
 		if window.select_from_list_data_list_table.selectedItems():
 			item = window.select_from_list_data_list_table.selectedItems()[0]
@@ -6260,7 +6265,7 @@ class MainWindow(QtGui.QMainWindow):
 		version = item.log['version']
 		
 		# get file_path
-		self.tm_look_file_action(version=version)
+		self.tm_look_file_action(action=action, version=version)
 		'''
 		b, r = self.selected_task.open_file( look=True, version=version)
 		if not b:
