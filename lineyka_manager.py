@@ -5712,32 +5712,32 @@ class MainWindow(QtGui.QMainWindow):
 			
 			# -- ACCEPT button
 			if self.selected_task.status in self.db_studio.working_statuses or self.selected_task.status == 'checking':
-				self.myWidget.assept_button.setVisible(True)
+				self.myWidget.assept_button.setEnabled(True)
 			else:
-				self.myWidget.assept_button.setVisible(False)
+				self.myWidget.assept_button.setEnabled(False)
 			# -- SEND TO AUTSOURCE button
 			if self.selected_task.status == 'ready_to_send':
-				self.myWidget.send_to_outsource_button.setVisible(True)
+				self.myWidget.send_to_outsource_button.setEnabled(True)
 			else:
-				self.myWidget.send_to_outsource_button.setVisible(False)
+				self.myWidget.send_to_outsource_button.setEnabled(False)
 			
 			# -- TO REWORK button
 			if self.selected_task.status == 'checking':
-				self.myWidget.to_rework_button.setVisible(True)
+				self.myWidget.to_rework_button.setEnabled(True)
 			else:
-				self.myWidget.to_rework_button.setVisible(False)
+				self.myWidget.to_rework_button.setEnabled(False)
 				
 			# -- CLOSE button
 			if not self.selected_task.status in self.db_studio.end_statuses:
-				self.myWidget.close_task_button.setVisible(True)
+				self.myWidget.close_task_button.setEnabled(True)
 			else:
-				self.myWidget.close_task_button.setVisible(False)
+				self.myWidget.close_task_button.setEnabled(False)
 			
 			# -- RETURN A JOB button
 			if self.selected_task.status in self.db_studio.end_statuses:
-				self.myWidget.return_a_job_button.setVisible(True)
+				self.myWidget.return_a_job_button.setEnabled(True)
 			else:
-				self.myWidget.return_a_job_button.setVisible(False)
+				self.myWidget.return_a_job_button.setEnabled(False)
 			
 		else:
 			self.myWidget.button_area.setVisible(False)
