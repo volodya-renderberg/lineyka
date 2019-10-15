@@ -6194,7 +6194,10 @@ class MainWindow(QtGui.QMainWindow):
 		self.db_log.task = self.selected_task
 		result = self.db_log.read_log(action=action)
 		if not result[0] or not result[1][0]:
-			self.message('Push versions not Found!', 2)
+			if action=='push':
+				self.message('Push versions not Found!', 2)
+			elif action=='publish':
+				self.message('Publish versions not Found!', 2)
 			return
 		else:
 			versions_list = result[1][0]
@@ -6218,7 +6221,7 @@ class MainWindow(QtGui.QMainWindow):
 		# edit Widget
 		window.select_from_list_cansel_button.clicked.connect(partial(self.close_window, window))
 		if action=='push':
-			window.setWindowTitle('Look Version')
+			window.setWindowTitle('Look Push Version')
 		else:
 			window.setWindowTitle('Look Publish Version')
 		window.select_from_list_apply_button.clicked.connect(partial(self.tm_look_version_file_action, window, action))
@@ -6267,7 +6270,10 @@ class MainWindow(QtGui.QMainWindow):
 			action='push'
 		result = self.db_log.read_log(action=action)
 		if not result[0] or not result[1][0]:
-			self.message('Push versions not Found!', 2)
+			if action=='push':
+				self.message('Push versions not Found!', 2)
+			elif action=='publish':
+				self.message('Publish versions not Found!', 2)
 			return
 		else:
 			versions_list = result[1][0]
@@ -6291,9 +6297,9 @@ class MainWindow(QtGui.QMainWindow):
 		# edit Widget
 		window.select_from_list_cansel_button.clicked.connect(partial(self.close_window, window))
 		if republish:
-			window.setWindowTitle('Republish Version')
+			window.setWindowTitle('Republish of publish Version')
 		else:
-			window.setWindowTitle('Publish Version')
+			window.setWindowTitle('Publish of push Version')
 		window.select_from_list_apply_button.clicked.connect(partial(self.tm_publish_action, window=window, republish=republish))
 				
 		# make table
