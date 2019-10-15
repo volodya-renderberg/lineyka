@@ -3537,7 +3537,8 @@ class task(studio):
 			if source is False or source is None:
 				return(False, 'No exists source (push or pulish version)!')
 			
-		if old_source==int(source):
+		if not old_source is False and old_source==int(source):
+			print('source: %s, old_source: %s' % (str(source), str(old_source)))
 			return(False, 'Source of past publishers coincides with new source of publishers!')
 			
 		# (3)
