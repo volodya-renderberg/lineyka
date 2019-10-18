@@ -768,28 +768,35 @@
                 </property>
                </widget>
               </item>
-              <item row="0" column="1">
+			  <item row="0" column="1">
+               <widget class="QPushButton" name="load_from_outsource">
+                <property name="text">
+                 <string>Load From Outsource</string>
+                </property>
+               </widget>
+              </item>
+              <item row="1" column="0">
                <widget class="QPushButton" name="to_rework_button">
                 <property name="text">
                  <string>To Rework</string>
                 </property>
                </widget>
               </item>
-              <item row="1" column="0">
+              <item row="1" column="1">
                <widget class="QPushButton" name="assept_button">
                 <property name="text">
                  <string>Accept</string>
                 </property>
                </widget>
               </item>
-              <item row="1" column="1">
+              <item row="2" column="0">
                <widget class="QPushButton" name="close_task_button">
                 <property name="text">
                  <string>Close</string>
                 </property>
                </widget>
               </item>
-              <item row="2" column="0">
+              <item row="2" column="1">
                <widget class="QPushButton" name="return_a_job_button">
                 <property name="text">
                  <string>Return a job</string>

@@ -5727,6 +5727,7 @@ class MainWindow(QtGui.QMainWindow):
 				self.myWidget.send_to_outsource_button.setEnabled(True)
 			else:
 				self.myWidget.send_to_outsource_button.setEnabled(False)
+			self.myWidget.load_from_outsource.setEnabled(False)
 			
 			# -- TO REWORK button
 			if self.selected_task.status == 'checking':
