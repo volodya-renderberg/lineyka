@@ -6155,9 +6155,11 @@ class MainWindow(QtGui.QMainWindow):
 		
 		# make table
 		headers = ['Branch']
-		if version:
+		if not version is False:
 			data=r
 		else:
+			print(r)
+			#data=r
 			data=r[0]
 		viewer_dict = data['look_path']
 		if action=='push':
