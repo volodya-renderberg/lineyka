@@ -3445,11 +3445,13 @@ class task(studio):
 			r_dict = dict()
 			#
 			b, publish_path = self._template_get_publish_path(self, branches=branches)
-			return(b, publish_path)
+			if not b:
+				return(b, publish_path)
 			r_dict['publish_path'] = publish_path
 			#
 			b, look_path = self._template_get_publish_path(self, branches=branches, look=True)
-			return(b, look_path)
+			if not b:
+				return(b, look_path)
 			r_dict['look_path'] = look_path
 			#
 			return(True, (r_dict, end_log['version']))
@@ -3918,7 +3920,7 @@ class task(studio):
 		# (1)
 		if action == 'push':
 			pass
-			if version:
+			if not version is False:
 				b, r = self.get_version_push_file_path(version)
 			else:
 				b, r = self.get_final_push_file_path()
@@ -3926,7 +3928,7 @@ class task(studio):
 				return(b, r)
 		elif action == 'publish':
 			pass
-			if version:
+			if not version is False:
 				b, r = self.get_version_publish_file_path(version=version)
 			else:
 				b, r = self.get_final_publish_file_path()
@@ -3939,7 +3941,7 @@ class task(studio):
 			return(True, r)
 		else:
 			pass
-			if version:
+			if not version is False:
 				path = r
 			else:
 				path = r[0]
