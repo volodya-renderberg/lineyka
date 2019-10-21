@@ -639,7 +639,7 @@
                  <item row="0" column="1">
                   <widget class="QPushButton" name="look_version_file_button">
                    <property name="text">
-                    <string>Look version</string>
+                    <string>Look push version</string>
                    </property>
                   </widget>
                  </item>
@@ -652,7 +652,7 @@
                     </size>
                    </property>
                    <property name="text">
-                    <string>Look</string>
+                    <string>Look push</string>
                    </property>
                   </widget>
                  </item>
