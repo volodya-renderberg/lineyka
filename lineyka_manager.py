@@ -28,6 +28,7 @@ class MainWindow(QtGui.QMainWindow):
 	def __init__(self, parent = None):
 		pass
 		# get Path
+		root_dir = os.path.dirname(db.__file__)
 		path = os.path.dirname(ui.__file__)
 		self.lineyka_path = os.path.dirname(path)
 		self.main_window_path = os.path.join(path, "lineyka_manager.ui")
@@ -185,6 +186,9 @@ class MainWindow(QtGui.QMainWindow):
 		
 		# ---- TASKS MANAGER ----------------------------
 		self.preparation_to_task_manager()
+		
+		# -----STILE-------
+		self.setStyleSheet(open(os.path.join(root_dir,'darkorange.qss')).read())
 		
 								
 	# ******************* STUDIO EDITOR ************************************************
