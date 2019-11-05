@@ -25,6 +25,7 @@ class G(object):
 class MainWindow(QtGui.QMainWindow):
 	def __init__(self, parent = None):
 		# moduls
+		root_dir = os.path.dirname(db.__file__)
 		self.db_studio = db.studio
 		self.studio = self.db_studio()
 		self.db_artist = db.artist() # по совместительству текущий а`ртист
@@ -144,6 +145,9 @@ class MainWindow(QtGui.QMainWindow):
 		
 		self.load_project_list()
 		self.load_nik_name()
+		
+		# -----STILE-------
+		self.setStyleSheet(open(os.path.join(root_dir,'darkorange.qss')).read())
 						
 	# *********************** Task List **************************************************
 	def show_task_list(self, ask=False):
