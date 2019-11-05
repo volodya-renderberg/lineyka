@@ -457,3 +457,9 @@ QCheckBox::indicator:disabled, QRadioButton::indicator:disabled
 {
     border: 1px solid #444;
 }
+
+QFrame, QLabel {
+    border: 0px;
+    padding: 1px;
+    margin: 1px;
+}
