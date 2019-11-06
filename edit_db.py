@@ -1396,7 +1396,7 @@ class project(studio):
 			return(False, "This project name already exists!")
 		
 		# project_name, get project_path
-		if not project_path and name == '':
+		if not project_path and not name:
 			return(False, 'No options!')
 			
 		elif not project_path:
@@ -1404,20 +1404,18 @@ class project(studio):
 			try:
 				os.mkdir(project_path)
 			except:
-				return(False, ('Failed to create folder: ' + project_path))
+				return(False, ('Failed to create folder: %s' % project_path))
 			
 		elif name == '':
 			if not os.path.exists(project_path):
 				return(False, ('Project Path: \"%s\" Not Found!' % project_path))
 			name = os.path.basename(project_path)
-			
-		self.name = name
-		path = project_path
-			
-		if not os.path.exists(path):
-			text = '****** studio.project.add_project() -> %s not found' % path
+		
+		if not os.path.exists(project_path):
+			text = '****** studio.project.add_project() -> %s not found' % project_path
 			return False, text
 		else:
+			self.name = name
 			self.path = path
 		
 		# read data
@@ -1430,7 +1428,7 @@ class project(studio):
 			self.project_database = data['project_database']
 			self.fps = data['fps']
 			self.units = data['units']
-			#self.name = data['name']
+			self.name = data['name']
 		
 		#
 		self.list_of_assets_path = NormPath(os.path.join(self.path, self.list_of_assets_name))
