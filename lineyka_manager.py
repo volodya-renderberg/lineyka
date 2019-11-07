@@ -5200,6 +5200,7 @@ class MainWindow(QtGui.QMainWindow):
 		#
 		self.myWidget.publish_button.clicked.connect(self.tm_publish_action)
 		#
+		self.myWidget.look_task_logs.clicked.connect(self.tm_look_task_logs_ui)
 		self.myWidget.assept_button.clicked.connect(self.tm_accept_task_action)
 		self.myWidget.close_task_button.clicked.connect(self.tm_close_task_action)
 		self.myWidget.to_rework_button.clicked.connect(self.tm_rework_action)
@@ -5216,6 +5217,27 @@ class MainWindow(QtGui.QMainWindow):
 		
 		# fill projects list
 		self.tm_fill_project_list()
+		
+	# task_ob (task) - если не передавать - то использует selected_task
+	def tm_look_task_logs_ui(self, task_ob=False):
+		pass
+		# make widjet
+		ui_path = self.select_from_list_dialog_3button_path
+		# widget
+		loader = QtUiTools.QUiLoader()
+		file = QtCore.QFile(ui_path)
+		#file.open(QtCore.QFile.ReadOnly)
+		window = self.lookVersionDialog = loader.load(file, self)
+		file.close()
+		
+		# set modal window
+		window.setWindowModality(QtCore.Qt.WindowModal)
+		window.setAttribute(QtCore.Qt.WA_DeleteOnClose, True)
+		
+		# edit Widget
+		window.select_from_list_cansel_button.clicked.connect(partial(self.close_window, window))
+		
+		window.show()
 		
 	def chat_ui(self):
 		self.chat_status = 'manager'
