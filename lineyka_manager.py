@@ -48,6 +48,7 @@ class MainWindow(QtGui.QMainWindow):
 		self.select_from_list_dialog_combobox_line_path = os.path.join(path, "select_from_list_dialog_combobox_line.ui")
 		self.select_from_list_dialog_3button_path = os.path.join(path, "select_from_list_dialog_3_button.ui")
 		self.select_from_check_button_dialog_path = os.path.join(path, "select_from_check_button_dialog.ui")
+		self.select_from_list_dialog_3combobox_path = os.path.join(path, "select_from_list_dialog_3combobox.ui")
 		
 		# -- chat path
 		self.chat_main_path = os.path.join(path, "chat_dialog.ui")
@@ -5221,8 +5222,12 @@ class MainWindow(QtGui.QMainWindow):
 	# task_ob (task) - если не передавать - то использует selected_task
 	def tm_look_task_logs_ui(self, task_ob=False):
 		pass
+		#
+		if not task_ob:
+			task_ob = self.selected_task
+	
 		# make widjet
-		ui_path = self.select_from_list_dialog_3button_path
+		ui_path = self.select_from_list_dialog_3combobox_path
 		# widget
 		loader = QtUiTools.QUiLoader()
 		file = QtCore.QFile(ui_path)
@@ -5230,14 +5235,113 @@ class MainWindow(QtGui.QMainWindow):
 		window = self.lookVersionDialog = loader.load(file, self)
 		file.close()
 		
+		# set window texts
+		window.setWindowTitle('Logs of Task: %s' % task_ob.task_name)
+		window.select_from_list_cansel_button.setText('Close')
+		window.label_1.setText('For all time')
+		window.dialog_comboBox_1.addItems(['For all time'])
+		window.dialog_comboBox_2.addItems(['All Artists'])
+		window.dialog_comboBox_3.addItems(['All Actions']+ sorted(self.db_log.log_actions))
+		
 		# set modal window
 		window.setWindowModality(QtCore.Qt.WindowModal)
 		window.setAttribute(QtCore.Qt.WA_DeleteOnClose, True)
 		
 		# edit Widget
 		window.select_from_list_cansel_button.clicked.connect(partial(self.close_window, window))
+		window.dialog_comboBox_3.activated.connect(partial(self.tm_look_task_logs_fill_table, window))
+		window.dialog_comboBox_2.activated.connect(partial(self.tm_look_task_logs_fill_table, window))
+		window.select_from_list_apply_button.setVisible(False)
 		
 		window.show()
+		
+		# read_log
+		self.db_log.task = task_ob
+		b, r_data = self.db_log.read_log()
+		if not b:
+			self.message(r_data, 2)
+			return
+		self.selected_task_logs = r_data[0]
+		# fill table
+		self.tm_look_task_logs_fill_table(window)
+		
+	def tm_look_task_logs_fill_table(self, window, delta_time=False):
+		pass
+		table = window.select_from_list_data_list_table
+		# clear table
+		self.clear_table(table=table)
+		
+		# filters
+		fin_logs = list()
+		artists = list()
+		for log in self.selected_task_logs:
+			artists.append(log['artist'])
+			action = window.dialog_comboBox_3.currentText()
+			artist = window.dialog_comboBox_2.currentText()
+			if action in self.db_log.log_actions:
+				if action != log['action']:
+					continue
+				else:
+					fin_logs.append(log)
+			elif artist != 'All Artists':
+				if artist != log['artist']:
+					continue
+				else:
+					fin_logs.append(log)
+			else:
+				fin_logs.append(log)
+		
+		# fill table
+		headers = self.db_log.logs_keys.keys()
+		num_column = len(headers)
+		num_row = len(fin_logs)
+		
+		table.setColumnCount(num_column)
+		table.setRowCount(num_row)
+		table.setHorizontalHeaderLabels(headers)
+		
+		table.setSelectionBehavior(QtGui.QAbstractItemView.SelectRows)
+		table.setSelectionMode(QtGui.QAbstractItemView.SingleSelection)
+		
+		all_time = 0
+		
+		for i, log in enumerate(fin_logs):
+			pass
+			for j,header in enumerate(headers):
+				newItem = QtGui.QTableWidgetItem()
+				# content item
+				if header == 'date_time':
+					newItem.setText(log[header].strftime("%m/%d/%Y, %H:%M:%S"))
+				elif header == 'time':
+					if log[header]:
+						time = log[header]/3600
+					else:
+						time=0
+					all_time = all_time + time
+					newItem.setText('%s h' % str(time))
+				else:
+					newItem.setText(str(log[header]))
+				
+				# item
+				if header == 'artist':
+					color = QtGui.QColor(self.artist_color)
+					brush = QtGui.QBrush(color)
+					newItem.setBackground(brush)
+					#
+					table.setItem(i, j, newItem)
+				else:
+					table.setItem(i, j, newItem)
+					
+		table.resizeRowsToContents()
+		table.resizeColumnsToContents()
+		
+		# edit window
+		if not delta_time:
+			window.label_1.setText('%s (%s h)' % (window.dialog_comboBox_1.currentText(), round(all_time, 2)))
+		window.dialog_comboBox_2.clear()
+		artist_items = ['All Artists']+ sorted(list(set(artists)))
+		window.dialog_comboBox_2.addItems(artist_items)
+		window.dialog_comboBox_2.setCurrentIndex(artist_items.index(artist))
 		
 	def chat_ui(self):
 		self.chat_status = 'manager'
