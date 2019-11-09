@@ -5270,6 +5270,9 @@ class MainWindow(QtGui.QMainWindow):
 		table = window.select_from_list_data_list_table
 		# clear table
 		self.clear_table(table=table)
+		if not self.selected_task_logs:
+			self.message('Logs not found!', 1)
+			return
 		
 		# filters
 		fin_logs = list()
