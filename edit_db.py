@@ -1401,11 +1401,11 @@ class project(studio):
 			
 		elif not project_path:
 			project_path = os.path.join(self.studio_folder, name)
+			#self.path=project_path
 			try:
 				os.mkdir(project_path)
 			except:
 				return(False, ('Failed to create folder: %s' % project_path))
-			
 		elif name == '':
 			if not os.path.exists(project_path):
 				return(False, ('Project Path: \"%s\" Not Found!' % project_path))
@@ -1416,10 +1416,11 @@ class project(studio):
 			return False, text
 		else:
 			self.name = name
-			self.path = path
+			self.path = project_path
 		
 		# read data
 		data = self._read_settings()
+		#print(data)
 		if not data:
 			self.project_database = ['sqlite3', False] # новый проект в начале всегда sqlite3, чтобы сработало всё в database
 			self.fps = 24
@@ -1429,6 +1430,9 @@ class project(studio):
 			self.fps = data['fps']
 			self.units = data['units']
 			self.name = data['name']
+			
+		#print(self.name, self.path, self.fps)
+		#return
 		
 		#
 		self.list_of_assets_path = NormPath(os.path.join(self.path, self.list_of_assets_name))
