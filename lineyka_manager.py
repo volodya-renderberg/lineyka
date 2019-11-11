@@ -12,6 +12,7 @@ import json
 import random
 import subprocess
 import uuid
+import datetime
 
 # from lineyka 
 import ui
@@ -5219,6 +5220,34 @@ class MainWindow(QtGui.QMainWindow):
 		# fill projects list
 		self.tm_fill_project_list()
 		
+	def tm_choice_dates(self, window, fn, current_item):
+		pass
+	
+		if current_item != 'Choice dates':
+			fn(window)
+			return
+	
+		self.ChoiceDateDialog = QtGui.QDialog(self)
+		self.ChoiceDateDialog.setModal(True)
+		self.ChoiceDateDialog.setWindowTitle('Choice Dates')
+		
+		# add widget
+		v_layout = QtGui.QVBoxLayout()
+		#
+		date_start = QtGui.QDateEdit(datetime.date.today() - datetime.timedelta(days=7))
+		date_start.calendarWidget()
+		v_layout.addWidget(date_start)
+		#
+		date_end = QtGui.QDateEdit(datetime.date.today())
+		v_layout.addWidget(date_end)
+		#
+		close_button = QtGui.QPushButton('Close')
+		close_button.clicked.connect(partial(self.close_window, self.ChoiceDateDialog))
+		v_layout.addWidget(close_button)
+		self.ChoiceDateDialog.setLayout(v_layout)
+		
+		self.ChoiceDateDialog.show()
+		
 	# task_ob (task) - если не передавать - то использует selected_task
 	def tm_look_task_logs_ui(self, task_ob=False):
 		pass
@@ -5239,7 +5268,7 @@ class MainWindow(QtGui.QMainWindow):
 		window.setWindowTitle('Logs of Task: %s' % task_ob.task_name)
 		window.select_from_list_cansel_button.setText('Close')
 		window.label_1.setText('For all time')
-		window.dialog_comboBox_1.addItems(['For all time'])
+		window.dialog_comboBox_1.addItems(['For all time', 'Choice dates'])
 		window.dialog_comboBox_2.addItems(['All Artists'])
 		window.dialog_comboBox_3.addItems(['All Actions']+ sorted(self.db_log.log_actions))
 		window.dialog_comboBox_4.addItems(['All Tasks'])
@@ -5250,6 +5279,7 @@ class MainWindow(QtGui.QMainWindow):
 		
 		# edit Widget
 		window.select_from_list_cansel_button.clicked.connect(partial(self.close_window, window))
+		window.dialog_comboBox_1.activated[str].connect(partial(self.tm_choice_dates, window, self.tm_look_task_logs_fill_table))
 		window.dialog_comboBox_3.activated.connect(partial(self.tm_look_task_logs_fill_table, window))
 		window.dialog_comboBox_2.activated.connect(partial(self.tm_look_task_logs_fill_table, window))
 		window.dialog_comboBox_4.activated.connect(partial(self.tm_look_task_logs_fill_table, window))
