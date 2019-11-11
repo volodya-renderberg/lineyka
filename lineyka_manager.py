@@ -48,7 +48,7 @@ class MainWindow(QtGui.QMainWindow):
 		self.select_from_list_dialog_combobox_line_path = os.path.join(path, "select_from_list_dialog_combobox_line.ui")
 		self.select_from_list_dialog_3button_path = os.path.join(path, "select_from_list_dialog_3_button.ui")
 		self.select_from_check_button_dialog_path = os.path.join(path, "select_from_check_button_dialog.ui")
-		self.select_from_list_dialog_3combobox_path = os.path.join(path, "select_from_list_dialog_3combobox.ui")
+		self.select_from_list_dialog_4combobox_path = os.path.join(path, "select_from_list_dialog_4combobox.ui")
 		
 		# -- chat path
 		self.chat_main_path = os.path.join(path, "chat_dialog.ui")
@@ -5227,7 +5227,7 @@ class MainWindow(QtGui.QMainWindow):
 			task_ob = self.selected_task
 	
 		# make widjet
-		ui_path = self.select_from_list_dialog_3combobox_path
+		ui_path = self.select_from_list_dialog_4combobox_path
 		# widget
 		loader = QtUiTools.QUiLoader()
 		file = QtCore.QFile(ui_path)
@@ -5242,6 +5242,7 @@ class MainWindow(QtGui.QMainWindow):
 		window.dialog_comboBox_1.addItems(['For all time'])
 		window.dialog_comboBox_2.addItems(['All Artists'])
 		window.dialog_comboBox_3.addItems(['All Actions']+ sorted(self.db_log.log_actions))
+		window.dialog_comboBox_4.addItems(['All Tasks'])
 		
 		# set modal window
 		window.setWindowModality(QtCore.Qt.WindowModal)
@@ -5251,6 +5252,7 @@ class MainWindow(QtGui.QMainWindow):
 		window.select_from_list_cansel_button.clicked.connect(partial(self.close_window, window))
 		window.dialog_comboBox_3.activated.connect(partial(self.tm_look_task_logs_fill_table, window))
 		window.dialog_comboBox_2.activated.connect(partial(self.tm_look_task_logs_fill_table, window))
+		window.dialog_comboBox_4.activated.connect(partial(self.tm_look_task_logs_fill_table, window))
 		window.select_from_list_apply_button.setVisible(False)
 		
 		window.show()
@@ -5277,20 +5279,20 @@ class MainWindow(QtGui.QMainWindow):
 		# filters
 		fin_logs = list()
 		artists = list()
+		tasks = list()
 		for log in self.selected_task_logs:
 			artists.append(log['artist'])
+			tasks.append(log['task_name'])
 			action = window.dialog_comboBox_3.currentText()
 			artist = window.dialog_comboBox_2.currentText()
-			if action in self.db_log.log_actions:
-				if action != log['action']:
-					continue
-				else:
-					fin_logs.append(log)
-			elif artist != 'All Artists':
-				if artist != log['artist']:
-					continue
-				else:
-					fin_logs.append(log)
+			task_name = window.dialog_comboBox_4.currentText()
+			#
+			if action in self.db_log.log_actions and action != log['action']:
+				continue
+			elif artist != 'All Artists' and artist != log['artist']:
+				continue
+			elif task_name != 'All Tasks' and task_name != log['task_name']:
+				continue
 			else:
 				fin_logs.append(log)
 		
@@ -5341,10 +5343,16 @@ class MainWindow(QtGui.QMainWindow):
 		# edit window
 		if not delta_time:
 			window.label_1.setText('%s (%s h)' % (window.dialog_comboBox_1.currentText(), round(all_time, 2)))
+		#
 		window.dialog_comboBox_2.clear()
 		artist_items = ['All Artists']+ sorted(list(set(artists)))
 		window.dialog_comboBox_2.addItems(artist_items)
 		window.dialog_comboBox_2.setCurrentIndex(artist_items.index(artist))
+		#
+		window.dialog_comboBox_4.clear()
+		tasks_items = ['All Tasks']+ sorted(list(set(tasks)))
+		window.dialog_comboBox_4.addItems(tasks_items)
+		window.dialog_comboBox_4.setCurrentIndex(tasks_items.index(task_name))
 		
 	def chat_ui(self):
 		self.chat_status = 'manager'

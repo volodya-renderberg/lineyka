@@ -35,6 +35,9 @@
 		<item>
 			<widget class="QComboBox" name="dialog_comboBox_3"/>
 		</item>
+		<item>
+			<widget class="QComboBox" name="dialog_comboBox_4"/>
+		</item>
 	</layout>
 	</widget>
    </item>

@@ -6787,7 +6787,7 @@ class log(studio):
 			
 		return(True, 'ok')
 	
-	# запись лога задачи, заполнение атрибута класса task.branches
+	# чтение лога задачи, заполнение атрибута класса task.branches
 	# self.task - должен быть инициализирован
 	# action (bool / str/ list) если False - то возврат для всех action, если list - то будет использован оператор where or - возврат по всем экшенам
 	# branch (bool / str / unicode) - фильтр по веткам
