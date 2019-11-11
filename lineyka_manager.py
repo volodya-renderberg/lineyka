@@ -5235,10 +5235,12 @@ class MainWindow(QtGui.QMainWindow):
 		v_layout = QtGui.QVBoxLayout()
 		#
 		date_start = QtGui.QDateEdit(datetime.date.today() - datetime.timedelta(days=7))
-		date_start.calendarWidget()
+		date_start.setCalendarPopup(True)
+		#date_start.calendarWidget().installEventFilter(self)
 		v_layout.addWidget(date_start)
 		#
 		date_end = QtGui.QDateEdit(datetime.date.today())
+		date_end.setCalendarPopup(True)
 		v_layout.addWidget(date_end)
 		#
 		close_button = QtGui.QPushButton('Close')
