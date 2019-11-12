@@ -112,6 +112,8 @@ class MainWindow(QtGui.QMainWindow):
 		self.selected_task = None # выбранный так в таблице в task editor
 		self.current_artists_dict = None # словарь артистов по именам, полученный парсером по отделам.
 		#self.current_readers_dict = None # словарь ридеров (артисты) по именам - получаемый при назанчении ридеров в tm_ - не нужен теперь это self.selected_task.readers
+		self.date_start = None # временной диапазон, для различных целей, определяется в tm_choice_dates()
+		self.date_end = None # временной диапазон, для различных целей, определяется в tm_choice_dates()
 		
 		# CONSTANTS
 		self.SEASON_COLUMNS = ['name', 'status']
@@ -5217,11 +5219,16 @@ class MainWindow(QtGui.QMainWindow):
 		self.myWidget.add_task_button.setText('Add Single Task')
 		self.myWidget.edit_readers_button.clicked.connect(self.tm_edit_readers_ui)
 		
+		# new attributes
+		self.date_choice_variants = ['For all time', 'last 7 days', 'last 30 days']
+		
 		# fill projects list
 		self.tm_fill_project_list()
 		
 	def tm_choice_dates(self, window, fn, current_item):
 		pass
+		def run_function(self):
+			pass
 	
 		if current_item != 'Choice dates':
 			fn(window)
@@ -5270,7 +5277,7 @@ class MainWindow(QtGui.QMainWindow):
 		window.setWindowTitle('Logs of Task: %s' % task_ob.task_name)
 		window.select_from_list_cansel_button.setText('Close')
 		window.label_1.setText('For all time')
-		window.dialog_comboBox_1.addItems(['For all time', 'Choice dates'])
+		window.dialog_comboBox_1.addItems(self.date_choice_variants + ['Choice dates'])
 		window.dialog_comboBox_2.addItems(['All Artists'])
 		window.dialog_comboBox_3.addItems(['All Actions']+ sorted(self.db_log.log_actions))
 		window.dialog_comboBox_4.addItems(['All Tasks'])
@@ -5299,8 +5306,21 @@ class MainWindow(QtGui.QMainWindow):
 		# fill table
 		self.tm_look_task_logs_fill_table(window)
 		
-	def tm_look_task_logs_fill_table(self, window, delta_time=False):
+	def tm_look_task_logs_fill_table(self, window, *args):
 		pass
+		#
+		def get_start_end_dates(date_mode):
+			if date_mode==self.date_choice_variants[1]:
+				start_date = datetime.date.today() - datetime.timedelta(days=7)
+				end_date = datetime.date.today()
+			elif date_mode==self.date_choice_variants[2]:
+				start_date = datetime.date.today() - datetime.timedelta(days=30)
+				end_date = datetime.date.today()
+			elif date_mode=='Choice dates':
+				start_date = self.date_start
+				end_date = self.date_end
+			return(start_date, end_date)
+	
 		table = window.select_from_list_data_list_table
 		# clear table
 		self.clear_table(table=table)
@@ -5315,6 +5335,7 @@ class MainWindow(QtGui.QMainWindow):
 		for log in self.selected_task_logs:
 			artists.append(log['artist'])
 			tasks.append(log['task_name'])
+			date_mode = window.dialog_comboBox_1.currentText()
 			action = window.dialog_comboBox_3.currentText()
 			artist = window.dialog_comboBox_2.currentText()
 			task_name = window.dialog_comboBox_4.currentText()
@@ -5325,6 +5346,13 @@ class MainWindow(QtGui.QMainWindow):
 				continue
 			elif task_name != 'All Tasks' and task_name != log['task_name']:
 				continue
+			elif date_mode != self.date_choice_variants[0]:
+				start_date, end_date = get_start_end_dates(date_mode)
+				print(not start_date <= log['date_time'].date() <= end_date)
+				if not start_date <= log['date_time'].date() <= end_date:
+					continue
+				else:
+					fin_logs.append(log)
 			else:
 				fin_logs.append(log)
 		
@@ -5373,8 +5401,10 @@ class MainWindow(QtGui.QMainWindow):
 		table.resizeColumnsToContents()
 		
 		# edit window
-		if not delta_time:
+		if window.dialog_comboBox_1.currentText() in self.date_choice_variants:
 			window.label_1.setText('%s (%s h)' % (window.dialog_comboBox_1.currentText(), round(all_time, 2)))
+		else:
+			window.label_1.setText('from %s to %s (%s h)' % (self.date_start, self.date_end, round(all_time, 2)))
 		#
 		window.dialog_comboBox_2.clear()
 		artist_items = ['All Artists']+ sorted(list(set(artists)))
