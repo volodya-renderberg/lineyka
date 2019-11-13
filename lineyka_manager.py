@@ -352,10 +352,14 @@ class MainWindow(QtGui.QMainWindow):
 		item = table.selectedItems()[0]
 		#print(item.column_name)
 		menu = QtGui.QMenu(table)
-		menu_items = ['Edit Artist Data']
+		menu_items = ['Edit Artist Data', 'Look Logs']
 		for label in menu_items:
-			action = menu.addAction(label)
-			action.triggered.connect(partial(self._artist_editor_context_menu_action, label, item))
+			if label == menu_items[0]:
+				action = menu.addAction(label)
+				action.triggered.connect(partial(self._artist_editor_context_menu_action, label, item))
+			elif label == menu_items[1]:
+				action = menu.addAction(label)
+				action.triggered.connect(partial(self.artist_look_logs_ui))
 		menu.exec_(QtGui.QCursor.pos())
 	
 	def _artist_editor_context_menu_action(self, label, item):
@@ -729,6 +733,183 @@ class MainWindow(QtGui.QMainWindow):
 		home = os.path.expanduser('~')
 		folder = QtGui.QFileDialog.getExistingDirectory(self, home)
 		field.setText(str(folder))
+		
+	# ------------------ Time Logs --------------------------------------
+	
+	# task_ob (task) - если не передавать - то использует selected_task
+	def artist_look_logs_ui(self, artist=False):
+		pass
+		if not artist:
+			current_item = self.myWidget.studio_editor_table.currentItem()
+			if not current_item:
+				self.message('Not Selected Artists!', 2)
+				return
+			self.selected_artist = current_item.artist
+		else:
+			self.selected_artist = artist
+	
+		# make widjet
+		ui_path = self.select_from_list_dialog_4combobox_path
+		# widget
+		loader = QtUiTools.QUiLoader()
+		file = QtCore.QFile(ui_path)
+		#file.open(QtCore.QFile.ReadOnly)
+		window = self.lookVersionDialog = loader.load(file, self)
+		file.close()
+		
+		# set window texts
+		window.setWindowTitle('Logs of: %s' % self.selected_artist.nik_name)
+		window.select_from_list_cansel_button.setText('Close')
+		window.label_1.setText('For all time')
+		window.dialog_comboBox_1.addItems(self.date_choice_variants + ['Choice dates'])
+		window.dialog_comboBox_2.addItems(['All Projects'])
+		window.dialog_comboBox_3.addItems(['Start', 'Finish'])
+		window.dialog_comboBox_4.addItems(['All Tasks'])
+		
+		# set modal window
+		window.setWindowModality(QtCore.Qt.WindowModal)
+		window.setAttribute(QtCore.Qt.WA_DeleteOnClose, True)
+		
+		# edit Widget
+		window.select_from_list_cansel_button.clicked.connect(partial(self.close_window, window))
+		window.dialog_comboBox_1.activated[str].connect(partial(self.tm_choice_dates, window, self.artist_look_logs_fill_table))
+		window.dialog_comboBox_3.activated.connect(partial(self.artist_look_logs_fill_table, window))
+		window.dialog_comboBox_2.activated.connect(partial(self.artist_look_logs_fill_table, window))
+		window.dialog_comboBox_4.activated.connect(partial(self.artist_look_logs_fill_table, window))
+		window.select_from_list_apply_button.setVisible(False)
+		
+		window.show()
+		
+		# read_log
+		b, r_data = self.db_log.artist_read_log(all=True, artist_ob=self.selected_artist)
+		if not b:
+			self.message(r_data, 2)
+			return
+		self.selected_artist_logs = r_data
+		# fill table
+		self.artist_look_logs_fill_table(window)
+		
+	def artist_look_logs_fill_table(self, window, *args):
+		pass
+		#
+		def get_start_end_dates(date_mode):
+			if date_mode==self.date_choice_variants[1]:
+				start_date = datetime.date.today() - datetime.timedelta(days=7)
+				end_date = datetime.date.today()
+			elif date_mode==self.date_choice_variants[2]:
+				start_date = datetime.date.today() - datetime.timedelta(days=30)
+				end_date = datetime.date.today()
+			elif date_mode=='Choice dates':
+				start_date = self.date_start
+				end_date = self.date_end
+			return(start_date, end_date)
+	
+		table = window.select_from_list_data_list_table
+		# clear table
+		self.clear_table(table=table)
+		if not self.selected_artist_logs:
+			self.message('Logs not found!', 1)
+			return
+		
+		# filters
+		fin_logs = list()
+		tasks = list()
+		projects = list()
+		for log in self.selected_artist_logs:
+			projects.append(log['project_name'])
+			tasks.append(log['task_name'])
+			date_mode = window.dialog_comboBox_1.currentText()
+			project = window.dialog_comboBox_2.currentText()
+			task_name = window.dialog_comboBox_4.currentText()
+			#
+			if project != 'All Projects' and project != log['project_name']:
+				continue
+			elif task_name != 'All Tasks' and task_name != log['task_name']:
+				continue
+			elif date_mode != self.date_choice_variants[0]:
+				start_date, end_date = get_start_end_dates(date_mode)
+				#
+				if not log[window.dialog_comboBox_3.currentText().lower()]:
+					continue
+				elif not start_date <= log[window.dialog_comboBox_3.currentText().lower()].date() <= end_date:
+					continue
+				else:
+					fin_logs.append(log)
+			elif date_mode == self.date_choice_variants[0]:
+				if not log[window.dialog_comboBox_3.currentText().lower()]:
+					continue
+				else:
+					fin_logs.append(log)
+			else:
+				fin_logs.append(log)
+		
+		# fill table
+		headers = self.db_log.artists_logs_keys.keys()
+		num_column = len(headers)
+		num_row = len(fin_logs)
+		
+		table.setColumnCount(num_column)
+		table.setRowCount(num_row)
+		table.setHorizontalHeaderLabels(headers)
+		
+		table.setSelectionBehavior(QtGui.QAbstractItemView.SelectRows)
+		table.setSelectionMode(QtGui.QAbstractItemView.SingleSelection)
+		
+		all_time = 0
+		all_cost = 0
+		
+		for i, log in enumerate(fin_logs):
+			pass
+			for j,header in enumerate(headers):
+				newItem = QtGui.QTableWidgetItem()
+				# content item
+				if header == 'start' or header == 'finish':
+					if log[header]:
+						newItem.setText(log[header].strftime("%m/%d/%Y, %H:%M:%S"))
+					else:
+						newItem.setText('')
+				elif header == 'full_time':
+					if log[header]:
+						time = log[header]/3600
+					else:
+						time=0
+					all_time = all_time + time
+					newItem.setText('%s h' % str(round(time, 2)))
+				elif header == 'price':
+					if log[header]:
+						all_cost += log[header]
+					newItem.setText(str(log[header]))
+				else:
+					newItem.setText(str(log[header]))
+				
+				# item
+				if False:
+					color = QtGui.QColor(self.artist_color)
+					brush = QtGui.QBrush(color)
+					newItem.setBackground(brush)
+					#
+					table.setItem(i, j, newItem)
+				else:
+					table.setItem(i, j, newItem)
+					
+		table.resizeRowsToContents()
+		table.resizeColumnsToContents()
+		
+		# edit window
+		if window.dialog_comboBox_1.currentText() in self.date_choice_variants:
+			window.label_1.setText('%s (%s h, %s $)' % (window.dialog_comboBox_1.currentText(), round(all_time, 2), all_cost))
+		else:
+			window.label_1.setText('from %s to %s (%s h, %s $)' % (self.date_start, self.date_end, round(all_time, 2), all_cost))
+		#
+		window.dialog_comboBox_2.clear()
+		project_items = ['All Projects']+ sorted(list(set(projects)))
+		window.dialog_comboBox_2.addItems(project_items)
+		window.dialog_comboBox_2.setCurrentIndex(project_items.index(project))
+		#
+		window.dialog_comboBox_4.clear()
+		tasks_items = ['All Tasks']+ sorted(list(set(tasks)))
+		window.dialog_comboBox_4.addItems(tasks_items)
+		window.dialog_comboBox_4.setCurrentIndex(tasks_items.index(task_name))
 	
 	
 	
@@ -5225,6 +5406,8 @@ class MainWindow(QtGui.QMainWindow):
 		# fill projects list
 		self.tm_fill_project_list()
 		
+	# предполагается запуск из Combobox
+	# current_item - это строка передаваемая из combobox.activated[str]
 	def tm_choice_dates(self, window, fn, current_item):
 		pass
 		def run_function():
