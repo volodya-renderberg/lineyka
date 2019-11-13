@@ -5254,13 +5254,17 @@ class MainWindow(QtGui.QMainWindow):
 		date_end.setCalendarPopup(True)
 		v_layout.addWidget(date_end)
 		#
-		close_button = QtGui.QPushButton('Close')
+		frame = QtGui.QFrame()
+		v_layout.addWidget(frame)
+		h_layout = QtGui.QHBoxLayout(frame)
+		#
+		close_button = QtGui.QPushButton('Cancel')
 		close_button.clicked.connect(partial(self.close_window, self.ChoiceDateDialog))
-		v_layout.addWidget(close_button)
+		h_layout.addWidget(close_button)
 		#
 		ok_button = QtGui.QPushButton('Ok')
 		ok_button.clicked.connect(partial(run_function))
-		v_layout.addWidget(ok_button)
+		h_layout.addWidget(ok_button)
 		#
 		self.ChoiceDateDialog.setLayout(v_layout)
 		
