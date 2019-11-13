@@ -5227,8 +5227,12 @@ class MainWindow(QtGui.QMainWindow):
 		
 	def tm_choice_dates(self, window, fn, current_item):
 		pass
-		def run_function(self):
+		def run_function():
 			pass
+			self.date_start = date_start.date().toPython()
+			self.date_end = date_end.date().toPython()
+			self.close_window(self.ChoiceDateDialog)
+			fn(window)
 	
 		if current_item != 'Choice dates':
 			fn(window)
@@ -5253,6 +5257,11 @@ class MainWindow(QtGui.QMainWindow):
 		close_button = QtGui.QPushButton('Close')
 		close_button.clicked.connect(partial(self.close_window, self.ChoiceDateDialog))
 		v_layout.addWidget(close_button)
+		#
+		ok_button = QtGui.QPushButton('Ok')
+		ok_button.clicked.connect(partial(run_function))
+		v_layout.addWidget(ok_button)
+		#
 		self.ChoiceDateDialog.setLayout(v_layout)
 		
 		self.ChoiceDateDialog.show()
