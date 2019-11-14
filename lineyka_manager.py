@@ -237,7 +237,14 @@ class MainWindow(QtGui.QMainWindow):
 			pass
 		self.myWidget.studio_butt_3.clicked.connect(self.edit_artist_ui)
 		# 4
-		self.myWidget.studio_butt_4.setVisible(False)
+		self.myWidget.studio_butt_4.setVisible(True)
+		self.myWidget.studio_butt_4.setText('Look Logs')
+		try:
+			self.myWidget.studio_butt_4.clicked.disconnect()
+		except:
+			pass
+		self.myWidget.studio_butt_4.clicked.connect(self.artist_look_logs_ui)
+		#self.myWidget.studio_butt_4.setVisible(False)
 		self.myWidget.studio_butt_5.setVisible(False)
 		self.myWidget.studio_butt_6.setVisible(False)
 		self.myWidget.studio_butt_7.setVisible(False)
