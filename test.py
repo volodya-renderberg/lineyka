@@ -45,18 +45,18 @@ def make_studio():
 	# props
 	# -- group
 	group = db.group(project)
-	print(group.create({'name':'props', 'type':'obj'}))
+	print(group.create({'name':'props', 'type':'object'}))
 	props = group.init('props')
 	
 	# -- asset
 	asset = db.asset(project)
 	# -- topor
 	keys = {'name':'topor', 'set_of_tasks':'Obj_simple', 'group':props.id}
-	print(asset.create('obj', [keys]))
+	print(asset.create('object', [keys]))
 	topor = asset.init('topor')
 	# -- vedro
 	keys = {'name':'vedro', 'set_of_tasks':'Obj_simple', 'group':props.id}
-	print(asset.create('obj', [keys]))
+	print(asset.create('object', [keys]))
 	vedro = asset.init('vedro')
 	# -- task
 	tasks = [db.task(topor), db.task(vedro)]

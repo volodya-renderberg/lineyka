@@ -144,15 +144,9 @@ class studio:
 	]
 	
 	asset_types = [
-	#'animatic',
-	'obj',
-	'char',
+	'object',
 	'location',
 	'shot_animation',
-	#'camera',
-	#'shot_render',
-	#'shot_composition',
-	#'light',
 	'film'
 	]
 	
@@ -170,6 +164,7 @@ class studio:
 	'group': 'text',
 	#'path': 'text', # каждый раз определяется при инициализации.
 	'type': 'text',
+	'loading_type': 'text',
 	'season': 'text',
 	'priority': 'integer',
 	'description': 'text',
@@ -1649,39 +1644,33 @@ class asset(studio):
 		self.ACTIVITY_FOLDER = {
 		#'animatic' : {
 		'film':{
-		'storyboard':'storyboard',
-		'specification':'specification',
-		'animatic':'animatic',
-		'film':'film'
+			'storyboard':'storyboard',
+			'specification':'specification',
+			'animatic':'animatic',
+			'film':'film'
 		},
-		'obj':{
-		'sketch':'sketch',
-		'sculpt':'sculpt',
-		'model':'03_model',
-		'textures':'05_textures'
-		},
-		'char':{
-		'sketch':'sketch',
-		'face_blend':'10_face_blend',
-		'sculpt':'sculpt',
-		'model':'03_model',
-		'rig':'08_rig',
-		#'rig_face':'09_rig_face',
-		#'rig_face_crowd':'09_rig_face_crowd',
-		#'rig_hik':'08_rig_hik',
-		#'rig_hik_face':'09_ri_hik_face',
-		#'rig_low':'08_rig_low',
-		'def_rig':'def_rig',
-		'din_rig':'din_rig',
-		'textures':'05_textures',
-		'cache':'cache',
-		'test_animation': 'test_animation', # тестовая анимация для проверки рига
+		'object':{
+			'sketch':'sketch',
+			'face_blend':'10_face_blend',
+			'sculpt':'sculpt',
+			'model':'03_model',
+			'rig':'08_rig',
+			#'rig_face':'09_rig_face',
+			#'rig_face_crowd':'09_rig_face_crowd',
+			#'rig_hik':'08_rig_hik',
+			#'rig_hik_face':'09_ri_hik_face',
+			#'rig_low':'08_rig_low',
+			'def_rig':'def_rig',
+			'din_rig':'din_rig',
+			'textures':'05_textures',
+			'cache':'cache',
+			'test_animation': 'test_animation', # тестовая анимация для проверки рига
 		},
 		'location' : {
-		'sketch':'sketch',
-		'specification':'specification',
-		'location_anim':'location_anim',
-		'location':'location'
+			'sketch':'sketch',
+			'specification':'specification',
+			'location_anim':'location_anim',
+			'location':'location'
 		},
 		'shot_animation' : {
 			'animatic':'animatic',
@@ -1701,7 +1690,6 @@ class asset(studio):
 		'shot_render' : {'shot_render':'shot_render'},
 		'shot_composition' : {'shot_composition':'shot_composition'},
 		'light' : {'light':'light'},
-		#'film' : {'film':'film'},
 		}
 		
 		self.ADDITIONAL_FOLDERS = {
@@ -1711,10 +1699,9 @@ class asset(studio):
 		self.UNCHANGEABLE_KEYS = ['id', 'type', 'path']
 		#self.COPIED_ASSET = ['obj', 'char']
 		self.COPIED_ASSET = {
-			'obj':['obj', 'char'],
-			'char':['char', 'obj']
+			'object':['object'],
 			}
-		self.COPIED_WITH_TASK = ['obj', 'char']
+		self.COPIED_WITH_TASK = ['object']
 
 	# инициализация по имени
 	# заполнение полей по self.asset_keys
@@ -6286,7 +6273,8 @@ class task(studio):
 		
 		# (3)
 		final_tasks_list = []
-		types = {'obj':'model', 'char':'rig'}
+		#types = {'obj':'model', 'char':'rig'}
+		types = {'mesh':'model', 'group':'model',  'rig':'rig'}
 		for ast in asset_list:
 			if isinstance(ast, dict):
 				ast_ob = asset(self.asset.project)
@@ -6296,8 +6284,11 @@ class task(studio):
 			else:
 				continue
 			tsk_ob = task(ast_ob)
-			if task_data['asset_type'] in ['location', 'shot_animation'] and ast_ob.type in types:
-				activity = types[ast_ob.type]
+			#if task_data['asset_type'] in ['location', 'shot_animation'] and ast_ob.type in types:
+			if task_data['asset_type'] in ['location', 'shot_animation'] and ast_ob.type=='object':
+				pass
+				#activity = types[ast_ob.type]
+				activity = types[ast_ob.loading_type]
 				bool_, task_list = tsk_ob.get_list()
 				if not bool_:
 					return(bool_, task_list)
