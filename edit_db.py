@@ -8217,7 +8217,9 @@ class set_of_tasks(studio):
 		else:
 			return(True, 'Ok!')
 	
+	# name (str) - имя создаваемого сета
 	# asset_type (str) - тип ассета
+	# loading_type (str) - способ загрузки ассета object
 	# keys (list) список словарей по каждой задаче сета (по sets_keys)
 	# force (bool) - если False - то будет давать ошибку при совпадении имени, если True - то будет принудительно перименовывать подбирая номер
 	def create(self, name, asset_type, loading_type=False, keys = False, force=False): # v2
