@@ -28,7 +28,7 @@ def make_studio():
 	b, r = db.set_of_tasks().get_list(path = path)
 	if b:
 		for sett in r:		
-			db.set_of_tasks().create(sett.name, sett.asset_type, sett.sets)
+			db.set_of_tasks().create(sett.name, sett.asset_type, sett.loading_type, sett.sets)
 	
 	# workrooms
 	wr = db.workroom()
@@ -51,11 +51,11 @@ def make_studio():
 	# -- asset
 	asset = db.asset(project)
 	# -- topor
-	keys = {'name':'topor', 'set_of_tasks':'Obj_simple', 'group':props.id}
+	keys = {'name':'topor', 'set_of_tasks':'Props_simple', 'group':props.id}
 	print(asset.create('object', [keys]))
 	topor = asset.init('topor')
 	# -- vedro
-	keys = {'name':'vedro', 'set_of_tasks':'Obj_simple', 'group':props.id}
+	keys = {'name':'vedro', 'set_of_tasks':'Props_simple', 'group':props.id}
 	print(asset.create('object', [keys]))
 	vedro = asset.init('vedro')
 	# -- task

@@ -2086,7 +2086,7 @@ class MainWindow(QtGui.QMainWindow):
 		self.set_of_tasks_list = data_to_fill
 		
 		# get table data
-		columns = ('name', 'asset_type', 'edit_time')
+		columns = ('name', 'asset_type', 'loading_type',  'edit_time')
 		num_row = len(data_to_fill)
 		num_column = len(columns)
 		headers = columns
@@ -2104,7 +2104,10 @@ class MainWindow(QtGui.QMainWindow):
 				if key == 'edit_time':
 					newItem.setText(getattr(data, key).strftime("%d-%m-%Y %H:%M:%S"))
 				else:
-					newItem.setText(str(getattr(data, key)))
+					if not getattr(data, key):
+						newItem.setText('')
+					else:
+						newItem.setText(str(getattr(data, key)))
 				newItem.set_of_tasks = data
 				if key == 'name':
 					color = self.set_of_tasks_color
@@ -2131,7 +2134,7 @@ class MainWindow(QtGui.QMainWindow):
 		item = table.selectedItems()[0]
 		#print(item.column_name)
 		menu = QtGui.QMenu(table)
-		menu_items = ['Rename','Edit of Asset Type','Make Copy', 'Edit', 'Remove']
+		menu_items = ['Rename','Edit of Asset Type', 'Edit of Loading Type', 'Make Copy', 'Edit', 'Remove']
 		for label in menu_items:
 			action = menu.addAction(label)
 			action.triggered.connect(partial(self._set_of_tasks_context_menu_action, label, item))
@@ -2144,6 +2147,8 @@ class MainWindow(QtGui.QMainWindow):
 			self.rename_set_of_tasks_ui(False, set_of_tasks=item.set_of_tasks)
 		elif label=='Edit of Asset Type':
 			self.edit_asset_type_ui(False, set_of_tasks=item.set_of_tasks)
+		elif label=='Edit of Loading Type':
+			self.edit_loading_type_ui(False, set_of_tasks=item.set_of_tasks)
 		elif label=='Make Copy':
 			self.copy_set_of_tasks_ui(set_of_tasks=item.set_of_tasks)
 		elif label=='Edit':
@@ -2553,7 +2558,7 @@ class MainWindow(QtGui.QMainWindow):
 		window.select_from_list_data_list_table.setSelectionBehavior(QtGui.QAbstractItemView.SelectRows)
 		window.select_from_list_data_list_table.setSelectionMode(QtGui.QAbstractItemView.ExtendedSelection)
 		
-		columns = ['name','asset_type']
+		columns = ['name','asset_type', 'loading_type']
 		
 		# -- get table data
 		num_row = len(data)
@@ -2576,8 +2581,9 @@ class MainWindow(QtGui.QMainWindow):
 					brush = QtGui.QBrush(color)
 					newItem.setBackground(brush)
 					newItem.setText(set_ob.name)
-				elif key == 'asset_type':
-					newItem.setText(set_ob.asset_type)
+				#elif key == 'asset_type':
+				else:
+					newItem.setText(getattr(set_ob, key))
 					
 				newItem.set_of_tasks = set_ob
 	
@@ -2610,7 +2616,7 @@ class MainWindow(QtGui.QMainWindow):
 			pass
 		
 		for ob in data:
-			b, r = self.db_set_of_tasks.create(ob.name, ob.asset_type, keys=ob.sets, force=True)
+			b, r = self.db_set_of_tasks.create(ob.name, ob.asset_type, loading_type=ob.loading_type, keys=ob.sets, force=True)
 			if not b:
 				self.message(r, 3)
 		
@@ -2666,7 +2672,51 @@ class MainWindow(QtGui.QMainWindow):
 		window.setAttribute(QtCore.Qt.WA_DeleteOnClose, True)
 		
 		window.show()
+	
+	def edit_loading_type_ui(self, table, set_of_tasks=False):
+		pass
+		if not set_of_tasks:
+			#name = lists[0]
+			if not table.selectedItems():
+				self.message('Not Selected Set', 2)
+				return
+			current_set = table.selectedItems()[0].set_of_tasks
+		else:
+			current_set=set_of_tasks
 		
+		# widget
+		loader = QtUiTools.QUiLoader()
+		file = QtCore.QFile(self.combo_dialog_path)
+		#file.open(QtCore.QFile.ReadOnly)
+		window = self.setProjectDialog = loader.load(file, self)
+		file.close()
+		
+		# edit widget
+		#copy = db.studio()
+		window.setWindowTitle(('Edit of Loading Type: %s' % current_set.name))
+		window.combo_dialog_label.setText('New Loading Type:')
+		window.combo_dialog_combo_box.addItems(current_set.loading_types)
+		window.combo_dialog_cancel.clicked.connect(partial(self.close_window, window))
+		window.combo_dialog_ok.clicked.connect(partial(self.edit_loading_type_action, current_set, window))
+		
+		# set modal window
+		window.setWindowModality(QtCore.Qt.WindowModal)
+		window.setAttribute(QtCore.Qt.WA_DeleteOnClose, True)
+		
+		window.show()
+		print('edit loading type')
+		
+	def edit_loading_type_action(self, ob, window):
+		pass
+		#copy = db.set_of_tasks()
+		b, message = ob.edit_loading_type(window.combo_dialog_combo_box.currentText())
+		if not b:
+			self.message(message, 2)
+		
+		self.close_window(window)
+		self.reload_set_of_tasks_list()
+		print('edit loading type action')
+	
 	# table (QtGui.QTable / False) - если передаём set_of_tasks, то вместо table передаём False, он всё равно использоваться не будет
 	# set_of_tasks (set_of_tasks) - если False, то изменяемый объект будет доставаться из table.selectedItems.set_of_tasks
 	def edit_asset_type_ui(self, table, set_of_tasks=False):

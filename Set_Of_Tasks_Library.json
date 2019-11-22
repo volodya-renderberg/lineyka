@@ -1,6 +1,8 @@
 {
     "Anim_shot": {
         "asset_type": "shot_animation", 
+        "loading_type": null, 
+        "name": "Anim_shot", 
         "sets": [
             {
                 "activity": "shot_animation", 
@@ -83,6 +85,8 @@
     }, 
     "Anim_shot_din": {
         "asset_type": "shot_animation", 
+        "loading_type": null, 
+        "name": "Anim_shot_din", 
         "sets": [
             {
                 "activity": "shot_animation", 
@@ -175,7 +179,9 @@
         ]
     }, 
     "Char_sculpt": {
-        "asset_type": "char", 
+        "asset_type": "object", 
+        "loading_type": "rig", 
+        "name": "Char_sculpt", 
         "sets": [
             {
                 "activity": "sketch", 
@@ -235,7 +241,9 @@
         ]
     }, 
     "Char_sculpt_din": {
-        "asset_type": "char", 
+        "asset_type": "object", 
+        "loading_type": "rig", 
+        "name": "Char_sculpt_din", 
         "sets": [
             {
                 "activity": "sketch", 
@@ -306,7 +314,9 @@
         ]
     }, 
     "Char_simple": {
-        "asset_type": "char", 
+        "asset_type": "object", 
+        "loading_type": "rig", 
+        "name": "Char_simple", 
         "sets": [
             {
                 "activity": "sketch", 
@@ -355,7 +365,9 @@
         ]
     }, 
     "Char_simple_din": {
-        "asset_type": "char", 
+        "asset_type": "object", 
+        "loading_type": "rig", 
+        "name": "Char_simple_din", 
         "sets": [
             {
                 "activity": "sketch", 
@@ -416,6 +428,8 @@
     }, 
     "Film": {
         "asset_type": "film", 
+        "loading_type": null, 
+        "name": "Film", 
         "sets": [
             {
                 "activity": "animatic", 
@@ -465,6 +479,8 @@
     }, 
     "Location": {
         "asset_type": "location", 
+        "loading_type": null, 
+        "name": "Location", 
         "sets": [
             {
                 "activity": "sketch", 
@@ -514,6 +530,8 @@
     }, 
     "Location_simple": {
         "asset_type": "location", 
+        "loading_type": null, 
+        "name": "Location_simple", 
         "sets": [
             {
                 "activity": "sketch", 
@@ -550,8 +568,10 @@
             }
         ]
     }, 
-    "Obj_sculpt": {
-        "asset_type": "obj", 
+    "Props_sculpt": {
+        "asset_type": "object", 
+        "loading_type": "mesh", 
+        "name": "Props_sculpt", 
         "sets": [
             {
                 "activity": "sketch", 
@@ -599,8 +619,10 @@
             }
         ]
     }, 
-    "Obj_simple": {
-        "asset_type": "obj", 
+    "Props_simple": {
+        "asset_type": "object", 
+        "loading_type": "mesh", 
+        "name": "Props_simple", 
         "sets": [
             {
                 "activity": "sketch", 

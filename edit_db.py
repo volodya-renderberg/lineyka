@@ -164,7 +164,7 @@ class studio:
 	'group': 'text',
 	#'path': 'text', # каждый раз определяется при инициализации.
 	'type': 'text',
-	'loading_type': 'text',
+	'loading_type': 'text', # способ загрузки ассета object в анимационную сцену, значения из studio.loading_types
 	'season': 'text',
 	'priority': 'integer',
 	'description': 'text',
@@ -173,6 +173,8 @@ class studio:
 	'status': 'text',
 	'parent': 'json' # {'name':asset_name, 'id': asset_id} - возможно не нужно
 	}
+    
+	loading_types = ['mesh', 'group', 'rig']
 	
 	# constants (0 - 3 required parameters)
 	tasks_keys = {
@@ -8183,6 +8185,7 @@ class set_of_tasks(studio):
 		self.set_of_tasks_keys = {
 		'name':'text',
 		'asset_type': 'text',
+		'loading_type':'text',
 		'sets':'json',
 		'edit_time': 'timestamp',
 		}
@@ -8217,7 +8220,7 @@ class set_of_tasks(studio):
 	# asset_type (str) - тип ассета
 	# keys (list) список словарей по каждой задаче сета (по sets_keys)
 	# force (bool) - если False - то будет давать ошибку при совпадении имени, если True - то будет принудительно перименовывать подбирая номер
-	def create(self, name, asset_type, keys = False, force=False): # v2
+	def create(self, name, asset_type, loading_type=False, keys = False, force=False): # v2
 		pass
 		# 1 - тесты передаваемых имени и типа ассета
 		# 2 - чтение наборов на определение совпадения имени + создание нового имени при force=True
@@ -8253,6 +8256,10 @@ class set_of_tasks(studio):
 		data = {}
 		data['name'] = name
 		data['asset_type'] = asset_type
+		if loading_type:
+			data['loading_type'] = loading_type
+		else:
+			data['loading_type'] = ''
 		data['edit_time'] = datetime.datetime.now()
 		if keys:
 			data['sets'] = keys
@@ -8442,6 +8449,35 @@ class set_of_tasks(studio):
 		if not name:
 			self.asset_type = asset_type
 			self.edit_time = update_data['edit_time']
+			
+		return(True, 'ok')
+	
+	# только для ассетов "object" - редактирование параметра loading_type
+	# loading_type (str) - новый тип загрузки ассета
+	def edit_loading_type(self, loading_type): # v2
+		pass
+		# 1 - тест имени и типа
+		# 2 - перезапись БД
+		# 3 - перезапись полей текущего объекта
+	
+		# (1)
+		if not loading_type in self.loading_types:
+			return(False, 'Wrong loading type: "%s"' % loading_type)
+		elif self.asset_type != 'object':
+			return(False, 'This procedure can only be for an asset with an "object" type!')
+				
+		# (2)
+		table_name = self.set_of_tasks_t
+		keys = self.set_of_tasks_keys
+		update_data = {'loading_type': loading_type, 'edit_time':datetime.datetime.now()}
+		where = {'name': self.name}
+		bool_, r_data = database().update('studio', self, table_name, keys, update_data, where, table_root=self.set_of_tasks_db)
+		if not bool_:
+			return(False, r_data)
+		
+		# (3)
+		self.loading_type = loading_type
+		self.edit_time = update_data['edit_time']
 			
 		return(True, 'ok')
 	
