@@ -467,6 +467,20 @@
                 </property>
                </widget>
               </item>
+			  <item>
+               <widget class="QLabel" name="image_label">
+                <property name="text">
+                 <string>image</string>
+                </property>
+               </widget>
+              </item>
+              <item>
+               <widget class="QPushButton" name="make_preview_button">
+                <property name="text">
+                 <string>make preview</string>
+                </property>
+               </widget>
+              </item>
               <item>
                <widget class="QFrame" name="frame_7">
                 <property name="frameShape">
@@ -839,6 +853,7 @@
                 </property>
                </widget>
               </item>
+			  <!--
               <item>
                <widget class="QLabel" name="image_label">
                 <property name="text">
@@ -853,6 +868,7 @@
                 </property>
                </widget>
               </item>
+			  -->
               <item>
                <spacer name="verticalSpacer_3">
                 <property name="orientation">
