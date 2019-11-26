@@ -205,6 +205,40 @@ class MainWindow(QtGui.QMainWindow):
 								
 	# ******************* STUDIO EDITOR ************************************************
 	
+	def _edit_loading_type_ui(self, fn, table=False, task=False):
+		pass
+		if not table:
+			table = self.myWidget.studio_editor_table
+		#
+		if not table.selectedItems():
+			self.message('No asset selected!', 2)
+		if task:
+			self.selected_asset=table.selectedItems()[0].task.asset
+		else:
+			self.selected_asset=table.selectedItems()[0].asset
+		
+		# widget
+		loader = QtUiTools.QUiLoader()
+		file = QtCore.QFile(self.combo_dialog_path)
+		#file.open(QtCore.QFile.ReadOnly)
+		window = self.setProjectDialog = loader.load(file, self)
+		file.close()
+		
+		# edit widget
+		#copy = db.studio()
+		window.setWindowTitle(('Edit of Loading Type: %s' % self.selected_asset.name))
+		window.combo_dialog_label.setText('New Loading Type:')
+		window.combo_dialog_combo_box.addItems(self.selected_asset.loading_types)
+		window.combo_dialog_cancel.clicked.connect(partial(self.close_window, window))
+		window.combo_dialog_ok.clicked.connect(partial(fn, window))
+		
+		# set modal window
+		window.setWindowModality(QtCore.Qt.WindowModal)
+		window.setAttribute(QtCore.Qt.WA_DeleteOnClose, True)
+		
+		window.show()
+		print('edit loading type of asset "%s" ui' % self.selected_asset.name)
+	
 	# ******************* STUDIO EDITOR /// ARTIST EDITOR ****************************
 	def edit_ui_to_artist_editor(self):
 		pass
@@ -3520,7 +3554,10 @@ class MainWindow(QtGui.QMainWindow):
 		table = window.studio_editor_table
 		
 		# get project
-		self.asset_columns = ('icon', 'name', 'description', 'priority', 'type')
+		if self.selected_group.type == 'object':
+			self.asset_columns = ('icon', 'name', 'description', 'priority', 'type', 'loading_type')
+		else:
+			self.asset_columns = ('icon', 'name', 'description', 'priority', 'type')
 		
 		button01 = window.studio_butt_1
 		button02 = window.studio_butt_2
@@ -3697,6 +3734,8 @@ class MainWindow(QtGui.QMainWindow):
     
 		# fill table
 		for i, row in enumerate(assets_list):
+			pass
+			#print('**** %s' % row.loading_type)
 			#self.db_asset.init(row)
 			for j,key in enumerate(headers):
 				newItem = QtGui.QTableWidgetItem()
@@ -3733,7 +3772,12 @@ class MainWindow(QtGui.QMainWindow):
 					table.setCellWidget(i, j, label)
 				
 				else:
-					newItem.setText(getattr(row, key))
+					data = getattr(row, key)
+					if not data:
+						data=''
+					else:
+						data=str(data)
+					newItem.setText(data)
 					newItem.asset = row
 					table.setItem(i, j, newItem)
 					
@@ -3753,6 +3797,8 @@ class MainWindow(QtGui.QMainWindow):
 		menu = QtGui.QMenu(table)
 		if self.selected_group.type=='recycle_bin':
 				menu_items = ['Gange Group', 'Gange Description']
+		elif self.selected_group.type=='object':
+			menu_items = ['Gange Group', 'Gange Priority', 'Gange Description','Change Loading Type',  'Copy Asset', 'Remove Asset', 'To Task Manager']
 		else:
 			menu_items = ['Gange Group', 'Gange Priority', 'Gange Description', 'Copy Asset', 'Remove Asset', 'To Task Manager']
 		for label in menu_items:
@@ -3768,13 +3814,26 @@ class MainWindow(QtGui.QMainWindow):
 			self.change_asset_priority_ui()
 		elif label=='Gange Description':
 			self.change_asset_description_ui()
+		elif label=='Change Loading Type':
+			self._edit_loading_type_ui(self.asset_edit_loading_type_action, table=False)
 		elif label=='Copy Asset':
 			self.copy_asset_ui()
 		elif label=='Remove Asset':
 			self.remove_asset_action()
 		elif label=='To Task Manager':
 			self.asset_to_task_manager('from_asset_editor')
+			
+	def asset_edit_loading_type_action(self, window):
+		pass
+		#copy = db.set_of_tasks()
+		b, message = self.selected_asset.change_loading_type(window.combo_dialog_combo_box.currentText())
+		if not b:
+			self.message(message, 2)
 		
+		self.close_window(window)
+		self.reload_asset_list()
+		print('edit loading type action')
+	
 	def asset_to_task_manager(self, action):
 		pass
 		print(action)

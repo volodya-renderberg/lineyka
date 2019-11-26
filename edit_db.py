@@ -1797,6 +1797,11 @@ class asset(studio):
 			if keys['name'] in assets:
 				return(False, 'The name "%s" already exists!' % keys['name'])
 		# (6) create assets
+		b, r = set_of_tasks().get_dict_by_all_types()
+		if not b:
+			return(b, r)
+		else:
+			set_of_tasks_dict = r
 		for keys in list_keys:
 			# (6.1)
 			# test name
@@ -1806,10 +1811,12 @@ class asset(studio):
 			if not keys.get('group'):
 				return(False, 'In the asset "%s" does not specify a group!' % keys['name'])
 			# test season
+			'''
 			if asset_type in self.asset_types_with_season and not keys.get('season'):
 				return(False, 'In the asset "%s" does not specify a season' % keys['name'])
 			elif not asset_type in self.asset_types_with_season and not keys.get('season'):
 				keys['season'] = ''
+			'''
 			# (6.2) edit name
 			if asset_type in ['shot_animation']:
 				keys['name'] = keys['name'].replace(' ', '_')
@@ -1820,6 +1827,10 @@ class asset(studio):
 			keys['status'] = 'active'
 			if not keys.get('priority'):
 				keys['priority'] = 0
+			# -- loading_type
+			if keys['type']=='object' and keys.get('set_of_tasks'):
+				if set_of_tasks_dict.get('object') and keys.get('set_of_tasks') in set_of_tasks_dict['object']:
+					keys['loading_type'] = set_of_tasks_dict['object'][keys.get('set_of_tasks')].loading_type
 			
 			# (6.4) get id
 			keys['id'] = hex(random.randint(0, 1000000000)).replace('0x','')
@@ -1872,7 +1883,7 @@ class asset(studio):
 				'asset_id': keys['id'],
 				'asset_type': asset_type,
 				'task_name': (keys['name'] + ':final'),
-				'season': keys['season'],
+				#'season': keys['season'],
 				'status':'null',
 				'task_type':'service',
 				'input':[],
@@ -1884,7 +1895,7 @@ class asset(studio):
 				'asset_id': keys['id'],
 				'asset_type': asset_type,
 				'task_name': (keys['name'] + ':all_input'),
-				'season': keys['season'],
+				#'season': keys['season'],
 				'status':'done',
 				'task_type':'service',
 				'input':[],
@@ -1931,7 +1942,7 @@ class asset(studio):
 							'asset_id': keys['id'],
 							'asset_type': asset_type,
 							'task_name': task_['input'],
-							'season': keys['season'],
+							#'season': keys['season'],
 							'status':'done',
 							'task_type':'service',
 							'input':'',
@@ -1964,7 +1975,7 @@ class asset(studio):
 					#task_['asset_type'] = asset_type
 					
 					# season
-					task_['season'] = keys['season']
+					#task_['season'] = keys['season']
 					
 					# readers
 					task_['readers'] = {}
@@ -2479,6 +2490,27 @@ class asset(studio):
 			return(b, r)
 		
 		self.description = description
+		return(True, 'Ok!')
+	
+	# смена типа загрузки ассета, для типа object
+	# loading_type (str) - тип загрузки, значение из studio.loading_types
+	def change_loading_type(self, loading_type):
+		pass
+		if self.type not in ['object']:
+			return(False, 'For an asset with this type "%s", the "loading_type" parameter cannot be changed' % self.type)
+		if not loading_type in self.loading_types:
+			return(False, 'Wrong loading_type: "%s"' % loading_type)
+		#
+		where = {'name': self.name}
+		keys={'loading_type': loading_type}
+		
+		# update
+		table_name = self.type
+		b, r = database().update('project', self.project, table_name, self.asset_keys, keys, where, table_root=self.assets_db)
+		if not b:
+			return(b, r)
+		
+		self.loading_type = loading_type
 		return(True, 'Ok!')
 			
 	def rename_asset(self, asset_type, old_name, new_name): # v2 ???????? ассет нельзя переименовывать!!!!!!!!!!!!!!!!!
