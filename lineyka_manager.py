@@ -205,6 +205,7 @@ class MainWindow(QtGui.QMainWindow):
 								
 	# ******************* STUDIO EDITOR ************************************************
 	
+	# task (bool) - если тру, то ассет достаётся через задачу
 	def _edit_loading_type_ui(self, fn, table=False, task=False):
 		pass
 		if not table:
@@ -5479,6 +5480,12 @@ class MainWindow(QtGui.QMainWindow):
 		addgrup_action.triggered.connect(partial(self.tm_change_task_extension_ui))
 		self.myWidget.tm_data_label_7.addAction( addgrup_action )
 		
+		# LOADING TYPE
+		self.myWidget.tm_data_label_9.setContextMenuPolicy( QtCore.Qt.ActionsContextMenu )
+		addgrup_action = QtGui.QAction( 'change Loading Type', self.myWidget)
+		addgrup_action.triggered.connect(partial(self._edit_loading_type_ui, self.tm_change_loading_type, table=self.myWidget.task_manager_table, task=True)) #
+		self.myWidget.tm_data_label_9.addAction( addgrup_action )
+		
 		# LINK
 		self.myWidget.tm_data_label_8.setContextMenuPolicy( QtCore.Qt.ActionsContextMenu )
 		addgrup_action = QtGui.QAction( 'change Link', self.myWidget)
@@ -6239,6 +6246,15 @@ class MainWindow(QtGui.QMainWindow):
 		if self.selected_task:
 			# visible button frame
 			self.myWidget.button_area.setVisible(True)
+			
+			# -- Loading Type
+			if not self.selected_task.asset.type in ['object']:
+				self.myWidget.label_11.setVisible(False)
+				self.myWidget.tm_data_label_9.setVisible(False)
+			else:
+				self.myWidget.label_11.setVisible(True)
+				self.myWidget.tm_data_label_9.setVisible(True)
+				self.myWidget.tm_data_label_9.setText(self.selected_task.asset.loading_type)
 			
 			# -- ACCEPT button
 			if self.selected_task.status in self.db_studio.working_statuses or self.selected_task.status == 'checking':
@@ -7315,6 +7331,20 @@ class MainWindow(QtGui.QMainWindow):
 		item.setText(item_text)
 		
 		self.close_window(window)
+		
+	# ------- change Loading Type -------------------
+	
+	def tm_change_loading_type(self, window):
+		pass
+		#copy = db.set_of_tasks()
+		b, message = self.selected_task.asset.change_loading_type(window.combo_dialog_combo_box.currentText())
+		if not b:
+			self.message(message, 2)
+		
+		self.close_window(window)
+		self.myWidget.tm_data_label_9.setText(self.selected_task.asset.loading_type)
+		#self.reload_asset_list()
+		print('change loading type action')
 		
 	# ------- change TZ link ----------- self.new_dialog_path
 	def tm_change_tz_link_ui(self): # v2
