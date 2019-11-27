@@ -2021,7 +2021,7 @@ class asset(studio):
 			# path
 			keys['path'] = NormPath(os.path.join(self.project.path, self.project.folders['assets'],keys['type'], keys['name']))
 			#
-			make_assets[keys['name']] = keys
+			make_assets[keys['name']] = self.init_by_keys(keys)
 		
 		return(True, make_assets)
 	
@@ -2097,20 +2097,28 @@ class asset(studio):
 		
 		return(True, 'Ok!')
 	
+	# копируется инициализированный ассет
 	# self.project должен быть инициализирован
 	# new_group_name (str)
 	# new_asset_name (str)
 	# new_asset_type (str) из studio.asset_types
 	# set_of_tasks (str)
-	# data_of_source_asset (dict) - дата копируемого ассета, если False - то копируется инициализированный ассет.
-	def copy_of_asset(self, new_group_name, new_asset_name, new_asset_type, set_of_tasks, data_of_source_asset=False): # v2
+	def copy_of_asset(self, new_group_name, new_asset_name, new_asset_type, set_of_tasks): # v2
 		pass
-		# 1 приведение имени нового ассета к стандарту
-		# 2 получение id группы по имени
-		# 3 заполнение data_of_source_asset - по данным self, в случае если = False
-		# 4 составление словаря на создание ассета
-		# 5 создание ассета
-		# 6 копирование директорий
+		# 0 - test work_dir
+		# 1 - приведение имени нового ассета к стандарту
+		# 2 - получение id группы по имени
+		# 3 - заполнение словаря на создание ассета(new_keys) - по данным self и новым данным
+		# 4 - 
+		# 5 - создание ассета
+		# 6 - копирование директорий
+		# 6.1 - метадата
+		# 6.2 - рабочие активити
+		# 7 - copy preview images
+		
+		# (0)
+		if not self.work_folder:
+			return(False, 'Working directory not defined!')
         
 		# (1) edit name
 		if not new_asset_name:
@@ -2135,48 +2143,41 @@ class asset(studio):
 		new_group_id = result[1].id
 		
 		# (3)
-		if not data_of_source_asset:
-			data_of_source_asset={}
-			asset_list_keys = list(self.asset_keys.keys()) + ['path']
-			for key in asset_list_keys:
-				if key in dir(self):
-					data_of_source_asset[key] = getattr(self, key)
-				else:
-					data_of_source_asset[key] = None
-					
-		print(data_of_source_asset)
-		#return
+		new_keys={}
+		asset_list_keys = list(self.asset_keys.keys()) + ['path']
+		for key in asset_list_keys:
+			if key in dir(self):
+				new_keys[key] = getattr(self, key)
+			else:
+				new_keys[key] = None
+		#
+		new_keys['set_of_tasks'] = set_of_tasks
+		new_keys['type'] = new_asset_type
+		new_keys['group'] = new_group_id
+		new_keys['name'] = new_asset_name
+		new_keys['path'] = ''
+		#
+		list_keys = [new_keys]
 		
-		# (4) get list_keys
-		old_path = data_of_source_asset['path']
-		old_name = data_of_source_asset['name']
-		old_type = data_of_source_asset['type']
-		data_of_source_asset['set_of_tasks'] = set_of_tasks
-		data_of_source_asset['type'] = new_asset_type
-		data_of_source_asset['group'] = new_group_id
-		data_of_source_asset['name'] = new_asset_name
-		data_of_source_asset['path'] = ''
-		
-		list_keys = [data_of_source_asset]
-		
-		print(json.dumps(list_keys, sort_keys = True, indent = 4))
+		#print(json.dumps(list_keys, sort_keys = True, indent = 4))
 		
 		# (5) make asset
 		result = self.create(new_asset_type, list_keys)
 		if not result[0]:
 			return(False, result[1])
+		new_asset = result[1][new_asset_name]
 			
 		# (6) copy activity files
-		# -- copy meta data
-		new_asset_data = result[1][new_asset_name]
+		# (6.1) copy meta data
 		for key in self.ADDITIONAL_FOLDERS:
-			#print('*'*50)
-			#print('old_path', old_path)
-			src_activity_path = NormPath(os.path.join(old_path, self.ADDITIONAL_FOLDERS[key]))
-			dst_activity_path = NormPath(os.path.join(new_asset_data['path'], self.ADDITIONAL_FOLDERS[key]))
+			pass
+			#src_activity_path = NormPath(os.path.join(self.path, self.ADDITIONAL_FOLDERS[key]))
+			src_activity_path = NormPath(os.path.join(self.path, key))
+			#dst_activity_path = NormPath(os.path.join(new_asset.path, self.ADDITIONAL_FOLDERS[key]))
+			dst_activity_path = NormPath(os.path.join(new_asset.path, key))
 			for obj in os.listdir(src_activity_path):
 				src = NormPath(os.path.join(src_activity_path, obj))
-				dst = NormPath(os.path.join(dst_activity_path, obj.replace(old_name, new_asset_name))) # + replace name
+				dst = NormPath(os.path.join(dst_activity_path, obj.replace(self.name, new_asset_name))) # + replace name
 				#print('*'*50)
 				#print('src', src)
 				#print('dst', dst)
@@ -2185,68 +2186,57 @@ class asset(studio):
 				elif os.path.isdir(src):
 					shutil.copytree(src, dst)
 		
-		# -- copy activity version
-		old_activites = self.ACTIVITY_FOLDER[old_type]
-		activites = self.ACTIVITY_FOLDER[new_asset_type]
-		for key in activites:
-			# -- get activity dir
-			if not key in old_activites:
+		# (6.2) copy activity version
+		# -- get task_list of old asset
+		b, old_tasks = task(self).get_list()
+		if not b:
+			return(b, old_tasks)
+		# -- get task_list of new asset
+		b, new_tasks = task(new_asset).get_list()
+		if not b:
+			return(b, new_tasks)
+		#
+		used_activites = list()
+		#
+		for new_tsk in new_tasks:
+			pass
+			if new_tsk.activity in used_activites:
 				continue
-			src_activity_dir = NormPath(os.path.join(old_path, key))
-			
-			if not os.path.exists(src_activity_dir):
+			elif new_tsk.task_type=='service':
 				continue
-			
-			versions = os.listdir(src_activity_dir)
-			if not versions:
+			# -- get tasks
+			old_tsk=None
+			for old_tsk in old_tasks:
+				if old_tsk.activity == new_tsk.activity:
+					used_activites.append(new_tsk.activity)
+					break
+			if not old_tsk:
+				print('*** There is no task in the source asset with this activity: %s' % new_tsk.activity)
 				continue
-			
-			# exceptions ['textures','cache']
-			numbers = []
-			int_hex = {}
-			
-			if key == 'textures' or (key == 'cache' and new_asset_type == 'char'):
-				src_activity_path = src_activity_dir
-				dst_activity_path = NormPath(os.path.join(new_asset_data['path'], key))
-				if not os.path.exists(dst_activity_path):
-					os.mkdir(dst_activity_path)
-				
+			# -- get final push file path
+			b, r = old_tsk.get_final_push_file_path()
+			if not b:
+				print('### %s in %s' % (r, old_tsk.task_name))
+				#return(b,r)
+				continue
+			#
+			description = 'copy asset from "%s"' % self.name
+			#
+			if new_tsk.task_type in self.multi_publish_task_types:
+				for branch, source_path in r[0]['push_path'].items():
+					new_tsk.open_time = datetime.datetime.now()
+					new_tsk.commit(source_path, description, branch=branch)
+				new_tsk.push(description)
 			else:
-				#numbers = []
-				#int_hex = {}
-				for version in versions:
-					num = int(version, 16)
-					numbers.append(num)
-					int_hex[str(num)] = version
-				
-				# -- -- get version contents
-				while not os.listdir(os.path.join(src_activity_dir, int_hex[str(max(numbers))])):
-					numbers.remove(max(numbers))
-				
-				src_activity_path = NormPath(os.path.join(old_path, key, int_hex[str(max(numbers))]))
-				dst_activity_path = NormPath(os.path.join(new_asset_data['path'], key, '0000'))
-				
-				# -- -- make new dirs
-				if not os.path.exists(NormPath(os.path.join(new_asset_data['path'], key))):
-					os.mkdir(NormPath(os.path.join(new_asset_data['path'], key)))
-				if not os.path.exists(dst_activity_path):
-					os.mkdir(dst_activity_path)
-			
-			# -- -- copy content
-			for obj in os.listdir(src_activity_path):
-				src = NormPath(os.path.join(src_activity_path, obj))
-				dst = NormPath(os.path.join(dst_activity_path, obj.replace(old_name, new_asset_name)))
-				if os.path.isfile(src):
-					shutil.copyfile(src, dst)
-					#print(int_hex[str(max(numbers))], obj)
-				elif os.path.isdir(src):
-					shutil.copytree(src, dst)
-					#print(int_hex[str(max(numbers))], obj)
-		
+				source_path = r[0]
+				new_tsk.open_time = datetime.datetime.now()
+				new_tsk.commit(source_path, description)
+				new_tsk.push(description)
+
 		# (7) copy preview image
 		img_folder_path = NormPath(os.path.join(self.project.path, self.project.folders['preview_images']))
-		old_img_path = NormPath(os.path.join(img_folder_path, (old_name + self.preview_extension)))
-		old_img_icon_path = NormPath(os.path.join(img_folder_path, (old_name + '_icon%s' % self.preview_extension)))
+		old_img_path = NormPath(os.path.join(img_folder_path, (self.name + self.preview_extension)))
+		old_img_icon_path = NormPath(os.path.join(img_folder_path, (self.name + '_icon%s' % self.preview_extension)))
 		new_img_path = NormPath(os.path.join(img_folder_path, (new_asset_name + self.preview_extension)))
 		new_img_icon_path = NormPath(os.path.join(img_folder_path, (new_asset_name + '_icon%s' % self.preview_extension)))
 		
