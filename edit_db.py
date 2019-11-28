@@ -3770,8 +3770,8 @@ class task(studio):
 		pass
 		# 0 - input data
 		# 1 - get save_path
-		# 2 - make dirs
-		# 3 - pre_commit
+		# 2 - pre_commit
+		# 3 - make dirs
 		# 4 - copy file
 		# 5 - write log
 		# 6 - post_commit
@@ -3795,15 +3795,15 @@ class task(studio):
 		version = r[1]
 		
 		# (2)
-		version_dir_path = os.path.dirname(save_path)
-		if not os.path.exists(version_dir_path):
-			os.makedirs(version_dir_path)
-			
-		# (3)
 		b, r = self._pre_commit(work_path, save_path)
 		if not b:
 			return(b, r)
 		
+		# (3)
+		version_dir_path = os.path.dirname(save_path)
+		if not os.path.exists(version_dir_path):
+			os.makedirs(version_dir_path)
+			
 		# (4)
 		# (4.1)
 		if not os.path.exists(work_path):
