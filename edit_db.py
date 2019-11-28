@@ -5877,20 +5877,22 @@ class task(studio):
 	def accept_task(self): # v2
 		pass
 		# 1 - получение task_data,
-		# 2 - паблиш Хуки
-		# 3 - перезапись БД задачи
-		# 4 - изменение статусов исходящих задачь
+		# 2 - перезапись БД задачи
+		# 3 - изменение статусов исходящих задачь
+		# 4 - запись лога
 		# 5 - внесение изменений в объект если он инициализирован
 		
 		# (1)
-					
-		# (2) publish
+		
+		'''
+		# (-) publish
 		#result = lineyka_publish.publish().publish(project_name, task_data)
 		result = self.publish.publish(self) # ???????????????????????????????????????????????? переработать
 		if not result[0]:
 			return(False, result[1])
+		'''
 		
-		# (3)
+		# (2)
 		read_ob = self.asset.project
 		table_name = '"%s:%s"' % (self.asset.id, self.tasks_t)
 		keys = self.tasks_keys
@@ -5900,10 +5902,19 @@ class task(studio):
 		if not bool_:
 			return(bool_, r_data)
 		
-		# (4) change output statuses
+		# (3) change output statuses
 		result = self._this_change_to_end()
 		if not result[0]:
 			return(False, result[1])
+		
+		# (4)
+		log_keys = {
+		'description': 'accept',
+		'action': 'done',
+		}
+		b, r = log(self).write_log(log_keys)
+		if not b:
+			return(b, r)
 		
 		# (5)
 		self.status = 'done'
@@ -5916,20 +5927,16 @@ class task(studio):
 	def readers_accept_task(self, current_artist): # v2
 		pass
 		# 0 - проверка, чтобы current_artist был экземпляром класса artist
-		# 1 - получение task_data,
-		# 2 - изменения в readers, определение change_status
-		# 3 - паблиш Хуки
-		# 4 - запись изменений задачи в БД
-		# 5 - изменение статусов исходящих задачь
-		# 6 - внесение изменений в объект если он инициализирован
+		# 1 - изменения в readers, определение change_status
+		# 2 - запись лога
+		# 3 - accept_task()
+		# 4 - внесение изменений в объект.
 		
 		# (0)
 		if not isinstance(current_artist, artist):
 			return(False, 'in task.readers_accept_task() - "current_artist" must be an instance of "artist" class, and not "%s"' % current_artist.__class__.__name__)
 		
 		# (1)
-		
-		# (2)
 		change_status = True
 		readers = self.readers
 		if current_artist.nik_name in readers:
@@ -5944,13 +5951,29 @@ class task(studio):
 				change_status = False
 				break
 			
-		# (3) -- publish
+		# (2)
+		log_keys = {
+		'description': 'reader_accept',
+		'action': 'reader_accept',
+		}
+		b, r = log(self).write_log(log_keys)
+		if not b:
+			return(b, r)
+		
+		# (3)
+		if change_status:
+			b ,r = self.accept_task()
+			if not b:
+				return(b, r)
+		
+		# (-) -- publish
+		'''
 		if change_status:
 			result = self.publish.publish(self)
 			if not result[0]:
 				return(False, result[1])
-			
-		# (4)
+				
+		# (-)
 		read_ob = self.asset.project
 		table_name = '"%s:%s"' % (self.asset.id, self.tasks_t)
 		keys = self.tasks_keys
@@ -5963,14 +5986,14 @@ class task(studio):
 		if not bool_:
 			return(bool_, r_data)
 		
-		# (5) change output statuses
+		# (-) change output statuses
 		if change_status:
 			# -- change output statuses
 			result = self._this_change_to_end()
 			if not result[0]:
 				return(False, result[1])
-		
-		# (6)
+		'''
+		# (4)
 		self.readers = readers
 		if change_status:
 			self.status = 'done'
@@ -6777,7 +6800,22 @@ class log(studio):
 		self.camera_log_file_name = 'camera_logs.json'
 		self.playblast_log_file_name = 'playblast_logs.json'
 		
-		self.log_actions = ['pull', 'commit', 'push', 'publish', 'open', 'report','recast' , 'change_artist', 'close', 'done', 'return_a_job', 'send_to_outsource', 'load_from_outsource']
+		self.log_actions = [
+		'pull',
+		'commit',
+		'push',
+		'publish',
+		'open',
+		'report',
+		'recast',
+		'change_artist',
+		'close',
+		'done', # принятие задачи со всеми вытекающими
+		'reader_accept', # утверждение задачи одним из проверяющих, в процедуре task.readers_accept_task()
+		'return_a_job',
+		'send_to_outsource',
+		'load_from_outsource'
+		]
 	
 	# запись лога для задачи
 	# self.task - должен быть инициализирован
@@ -6799,7 +6837,7 @@ class log(studio):
 		if not logs_keys['action'] in self.log_actions:
 			return(False, 'in log.write_log() - wrong action - "%s"!' % logs_keys['action'])
 		#	
-		if not logs_keys['action'] in ['close', 'return_a_job', 'send_to_outsource', 'load_from_outsource', 'done', 'change_artist', 'recast', 'report', 'open']:
+		if not logs_keys['action'] in ['close', 'return_a_job', 'send_to_outsource', 'load_from_outsource', 'done', 'reader_accept', 'change_artist', 'recast', 'report', 'open']:
 			for item in ['version']:
 				if logs_keys.get(item) is False or logs_keys.get(item) is None:
 					return(False, 'in log.write_log() - no "%s" submitted!' % item)

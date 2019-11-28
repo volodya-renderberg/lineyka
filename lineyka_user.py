@@ -306,7 +306,8 @@ class MainWindow(QtGui.QMainWindow):
 		
 		
 	def fill_chek_panel(self, *args):
-		G.current_task = self.myWidget.task_list_table.currentItem().task
+		self.selected_task = self.myWidget.task_list_table.currentItem().task
+		
 		self.myWidget.distrib_frame.setVisible(True)
 		self.myWidget.work_frame.setVisible(False)
 		#self.fill_info_panel()
@@ -553,12 +554,8 @@ class MainWindow(QtGui.QMainWindow):
 			return
 		
 		# accept in .db
-		result = self.db_chat.rework_task(G.current_project, G.current_task, current_user = self.db_artist.nik_name)
+		result = self.selected_task.rework_task(self.db_artist)
 		if not result[0]:
-			if result[1] == 'not chat!':
-				self.message('no posts in the chat!', 2)
-				self.chat_ui()
-				return
 			self.message(result[1], 2)
 			return
 		
@@ -571,12 +568,10 @@ class MainWindow(QtGui.QMainWindow):
 			return
 		
 		# accept in .db
-		result = self.db_chat.readers_accept_task(G.current_project, G.current_task, self.db_artist.nik_name)
+		result = self.selected_task.readers_accept_task(self.db_artist)
 		if not result[0]:
 			self.message(result[1], 2)
 			return
-		
-		#self.message(str(result[1]), 1)
 		
 		# reload check_list
 		self.load_task_list_table(get_project = True, action = 'check_list')
