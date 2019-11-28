@@ -5983,7 +5983,8 @@ class task(studio):
 		# 1 - получение task_data
 		# 2 - запись изменений задачи в БД
 		# 3 - изменение статусов исходящих задачь
-		# 4 - внесение изменений в объект если он инициализирован
+		# 4 - запись лога
+		# 5 - внесение изменений в объект если он инициализирован
 		
 		# (1)
 						
@@ -6003,6 +6004,15 @@ class task(studio):
 			return(False, result[1])
 		
 		# (4)
+		log_keys = {
+		'description': 'close task',
+		'action': 'close',
+		}
+		b, r = log(self).write_log(log_keys)
+		if not b:
+			return(b, r)
+		
+		# (5)
 		self.status = 'close'
 			
 		return(True, 'Ok!')
@@ -6066,7 +6076,7 @@ class task(studio):
 		# 2 - чтение входящей задачи
 		# 3 - получение статуса на основе статуса входящей задачи.
 		# 4 - внесение изменений в БД
-		# 5 - внесение изменений в объект если он инициализирован
+		# 5 - запись лога
 		# 6 - изменение статусов исходящих задач
 		
 		# (2)
@@ -6090,7 +6100,14 @@ class task(studio):
 			return(bool_, r_data)
 		
 		# (5)
-				
+		log_keys = {
+		'description': 'return a job',
+		'action': 'return_a_job',
+		}
+		b, r = log(self).write_log(log_keys)
+		if not b:
+			return(b, r)
+		
 		# (6) change output statuses
 		result = self._this_change_from_end()
 		if not result[0]:
@@ -6750,17 +6767,33 @@ class log(studio):
 		pass
 		# 1 - тест обязательных полей: description, version, action
 		# 2 - чтение artist
-		# 3 - branch, version
+		# 3 -
 		# 4 - заполнение полей task_name, date_time, artist
 		# 5 - запись БД
 		
 		# (1)
-		for item in ["description", "version", "action"]:
+		for item in ["description", "action"]:
 			if logs_keys.get(item) is False or logs_keys.get(item) is None:
 				return(False, 'in log.write_log() - no "%s" submitted!' % item)
-		
+		#
 		if not logs_keys['action'] in self.log_actions:
 			return(False, 'in log.write_log() - wrong action - "%s"!' % logs_keys['action'])
+		#	
+		if not logs_keys['action'] in ['close', 'return_a_job', 'send_to_outsource', 'load_from_outsource', 'done', 'change_artist', 'recast', 'report', 'open']:
+			for item in ['version']:
+				if logs_keys.get(item) is False or logs_keys.get(item) is None:
+					return(False, 'in log.write_log() - no "%s" submitted!' % item)
+			#
+			b, r = self._template_version_num(logs_keys['version'])
+			if not b:
+				return(b, r)
+			else:
+				logs_keys['version']=r
+			#
+			if not logs_keys.get('branch'):
+				logs_keys['branch'] = 'master'
+		else:
+			pass
 		
 		# (2)
 		if not artist_ob:
@@ -6770,13 +6803,6 @@ class log(studio):
 				return(bool_, r_data)
 		
 		# (3)
-		if not logs_keys.get('branch'):
-			logs_keys['branch'] = 'master'
-		b, r = self._template_version_num(logs_keys['version'])
-		if not b:
-			return(b, r)
-		else:
-			logs_keys['version']=r
 
 		# (4)
 		# task_name

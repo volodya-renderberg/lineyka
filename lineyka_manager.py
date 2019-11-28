@@ -5704,7 +5704,10 @@ class MainWindow(QtGui.QMainWindow):
 					all_time = all_time + time
 					newItem.setText('%s h' % str(time))
 				else:
-					newItem.setText(str(log[header]))
+					to_string = log[header]
+					if to_string is False or to_string is None:
+						to_string=''
+					newItem.setText(str(to_string))
 				
 				# item
 				if header == 'artist':
