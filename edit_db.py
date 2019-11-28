@@ -6005,7 +6005,7 @@ class task(studio):
 		
 		# (4)
 		log_keys = {
-		'description': 'close task',
+		'description': 'close',
 		'action': 'close',
 		}
 		b, r = log(self).write_log(log_keys)
@@ -6025,7 +6025,8 @@ class task(studio):
 		# 1 - get exists chat
 		# 2 - edit readers
 		# 3 - write db
-		# 4 - edit self.status
+		# 4 - запись лога
+		# 5 - edit self.status
 		
 		# (1)
 		if current_user:
@@ -6065,6 +6066,15 @@ class task(studio):
 			return(bool_, r_data)
 		
 		# (4)
+		log_keys = {
+		'description': 'recast',
+		'action': 'recast',
+		}
+		b, r = log(self).write_log(log_keys)
+		if not b:
+			return(b, r)
+		
+		# (5)
 		self.status = 'recast'
 		
 		return(True, 'Ok!')
@@ -6148,6 +6158,16 @@ class task(studio):
 		if not b:
 			return(b, r)
 		else:
+			pass
+			#
+			log_keys = {
+			'description': 'report',
+			'action': 'report',
+			}
+			b, r = log(self).write_log(log_keys)
+			if not b:
+				return(b, r)
+			#
 			self.status = 'checking'
 			return(True, 'Ok!')
 	
