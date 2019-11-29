@@ -3757,9 +3757,18 @@ class MainWindow(QtGui.QMainWindow):
 			#self.db_asset.init(row)
 			for j,key in enumerate(headers):
 				newItem = QtGui.QTableWidgetItem()
+				# -- get final task
+				task_name = '%s:final' % row.name
+				self.db_task.asset = row
+				final_task = self.db_task.init(task_name)
+				
 				#newItem.setText(str(getattr(row, key)))
 				if key == 'name':
-					color = self.asset_color
+					if final_task.status in final_task.end_statuses:
+						rgb = final_task.color_status[final_task.status]
+						color =  QtGui.QColor(rgb[0]*255, rgb[1]*255, rgb[2]*255)
+					else:
+						color = self.asset_color
 					brush = QtGui.QBrush(color)
 					newItem.setBackground(brush)
 					#
