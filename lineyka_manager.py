@@ -75,6 +75,23 @@ class MainWindow(QtGui.QMainWindow):
 		#self.asset_color = QtGui.QColor(255, 218, 160)
 		self.asset_color = QtGui.QColor(166, 125, 61)
 		self.stop_color = QtGui.QColor(142, 160, 193)
+		#
+		self.conformity_colors = {
+		'pull':self.project_color,
+		'commit':self.workroom_color,
+		'push':self.set_of_tasks_color,
+		'publish':self.tasks_color,
+		'open':'work',
+		'report':'checking',
+		'recast':'recast',
+		'change_artist':self.artist_color,
+		'close':'close',
+		'done':'done',
+		'reader_accept':'done',
+		'return_a_job':'ready',
+		'send_to_outsource':'ready_to_send',
+		'load_from_outsource':'checking',
+		}
 		
 		# load db.
 		# studio level
@@ -5712,6 +5729,19 @@ class MainWindow(QtGui.QMainWindow):
 				# item
 				if header == 'artist':
 					color = QtGui.QColor(self.artist_color)
+					brush = QtGui.QBrush(color)
+					newItem.setBackground(brush)
+					#
+					table.setItem(i, j, newItem)
+				elif header == 'action':
+					pass
+					#
+					if self.conformity_colors[log[header]] in self.db_log.color_status.keys():
+						rgb = self.db_log.color_status[self.conformity_colors[log[header]]]
+						color = QtGui.QColor(rgb[0]*255, rgb[1]*255, rgb[2]*255)
+					else:
+						color=self.conformity_colors[log[header]]
+					#
 					brush = QtGui.QBrush(color)
 					newItem.setBackground(brush)
 					#
