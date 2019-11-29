@@ -2855,7 +2855,7 @@ class task(studio):
 		# (8)
 		if service_to_done:
 			for task_ob in service_to_done:
-				self._this_change_to_end(task_ob, assets = assets)
+				task_ob._this_change_to_end(assets = assets)
 		
 		return(True, 'Ok!')
 	'''	
