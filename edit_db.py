@@ -5879,8 +5879,9 @@ class task(studio):
 		# 1 - получение task_data,
 		# 2 - перезапись БД задачи
 		# 3 - изменение статусов исходящих задачь
-		# 4 - запись лога
-		# 5 - внесение изменений в объект если он инициализирован
+		# 4 - запись task лога
+		# 5 - запись artist_task_log
+		# 6 - внесение изменений в объект если он инициализирован
 		
 		# (1)
 		
@@ -5917,6 +5918,15 @@ class task(studio):
 			return(b, r)
 		
 		# (5)
+		artist_log_keys = {
+		'price': self.price,
+		'finish': datetime.datetime.now(),
+		}
+		b, r = log(self).artist_write_log(artist_log_keys)
+		if not b:
+			return(b, r)
+		
+		# (6)
 		self.status = 'done'
 		self.readers = {} # ???
 			
