@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 
 import sys
-from PySide import QtCore, QtGui, QtUiTools, QtSql
+from PySide2 import QtCore, QtGui, QtUiTools, QtSql, QtWidgets
 import os
 import shutil
 import webbrowser
@@ -15,7 +15,7 @@ import uuid
 import datetime
 
 # from lineyka 
-import ui
+#import ui
 import edit_db as db
 import lineyka_chat
 #import lineyka_publish
@@ -25,12 +25,13 @@ import lineyka_chat
 class G(object):
 	pass
 
-class MainWindow(QtGui.QMainWindow):
+class MainWindow(QtWidgets.QMainWindow):
 	def __init__(self, parent = None):
 		pass
 		# get Path
 		root_dir = os.path.dirname(db.__file__)
-		path = os.path.dirname(ui.__file__)
+		path = db.NormPath(os.path.join(root_dir, 'ui'))
+		#path = os.path.dirname(ui.__file__)
 		self.lineyka_path = os.path.dirname(path)
 		self.main_window_path = os.path.join(path, "lineyka_manager.ui")
 		self.set_window_path = os.path.join(path, "qt_settings.ui")
@@ -142,7 +143,7 @@ class MainWindow(QtGui.QMainWindow):
 		self.current_group = False
 		self.type_editor = False
 		
-		QtGui.QMainWindow.__init__(self, parent)
+		QtWidgets.QMainWindow.__init__(self, parent)
 		loader = QtUiTools.QUiLoader()
 		file = QtCore.QFile(self.main_window_path)
 		file.open(QtCore.QFile.ReadOnly)
@@ -8226,7 +8227,7 @@ class MainWindow(QtGui.QMainWindow):
 		print(args)
 		
     
-app = QtGui.QApplication(sys.argv)
+app = QtWidgets.QApplication(sys.argv)
 mw = MainWindow()
 mw.show()
 app.exec_()

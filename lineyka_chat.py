@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 
 import sys
-from PySide import QtCore, QtGui, QtUiTools, QtSql
+from PySide2 import QtCore, QtGui, QtUiTools, QtSql
 import os
 import shutil
 import webbrowser
