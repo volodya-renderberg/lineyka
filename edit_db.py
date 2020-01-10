@@ -315,6 +315,7 @@ class studio:
 	'set_of_tasks',
 	]
 	
+	# лог активити
 	logs_keys = {
 	'version': 'text',
 	'date_time': 'timestamp',
@@ -327,7 +328,8 @@ class studio:
 	'branch' : 'json', # ветка - в случае push, publish для sketch - списки веток.
 	'time' : 'real', # время затраченное на commit, ед. измерения секунда.
 	}
-
+    
+	# лог артиста по всем его задачам
 	artists_logs_keys = {
 	'project_name': 'text',
 	'task_name': 'text',
@@ -335,6 +337,14 @@ class studio:
 	'price': 'real', 		# сумма начисленная за выполнение задачи. вносится по принятию задачи.
 	'start': 'timestamp', 	# дата-время создания записи, запись создаётся при первом open задачи.
 	'finish': 'timestamp',  # дата-время принятия задачи.
+	}
+    
+	# лог артиста по дням, заполняемый вручную: день/проект/задача/время
+	artists_time_logs_keys = {
+	'project_name':'text',
+	'task_name':'text',
+	'date':'timestamp',  # возможно только дата без времени?
+	'time':'integer',    # суммарное время затраченое артистом на задачу, ед. измерения секунда. Заполняется вручную.
 	}
 	
 	init_folder = '.lineyka'
@@ -378,6 +388,9 @@ class studio:
 	# --- artists logs
 	artists_logs_db = '.artists_logs.db'
 	# table_name = 'nik_name_tasks_logs'
+	# --- artists time logs
+	artists_time_logs_db = '.artists_time_logs.db'
+	# table_name = '[nik_name]_time_logs'
 	# --- chat
 	chats_db = '.chats.db'
 	# --- set_of_tasks

@@ -904,7 +904,8 @@ class MainWindow(QtWidgets.QMainWindow):
 				fin_logs.append(log)
 		
 		# fill table
-		headers = self.db_log.artists_logs_keys.keys()
+		#headers = self.db_log.artists_logs_keys.keys()
+		headers = ['project_name', 'task_name', 'start', 'finish', 'full_time', 'price']
 		num_column = len(headers)
 		num_row = len(fin_logs)
 		
