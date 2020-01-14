@@ -1,9 +1,9 @@
-.. lineyka_doc documentation master file, created by
+.. lineyka documentation master file, created by
    sphinx-quickstart on Sat Jul  6 16:22:57 2019.
    You can adapt this file completely to your liking, but it should at least
    contain the root `toctree` directive.
 
-Welcome to lineyka_doc's documentation!
+Welcome to lineyka's documentation!
 =======================================
 
 Contents:
