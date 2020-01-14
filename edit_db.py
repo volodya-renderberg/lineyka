@@ -48,7 +48,7 @@ def print_args(fn):
 	
 class studio:
 	"""Супер класс """
-	# 
+	
 	farme_offset = 100
 	"""int: супер атрибут"""
 	# studio
@@ -892,6 +892,8 @@ class studio:
 		return(True, 'Ok')
 	
 class database():
+    """Супер мега класс """
+    
 	def __init__(self):
 		self.sqlite3_db_folder_attr = {
 			'studio': 'studio_folder',
@@ -908,7 +910,8 @@ class database():
 	# table_root - assets, chats - те случаи когда имя файла ДБ не соответствует имени таблицы, если есть table_root - имя файла ДБ будет определяться по нему.
 	# table_root - может быть как именем таблицы - например: assets, так и именем файла - .assets.db
 	def get(self, level, read_ob, table_name, com, table_root=False):
-		pass
+        """Супер мега метод """
+        
 		# get use_db
 		attr = self.use_db_attr.get(level)
 		if not attr:
