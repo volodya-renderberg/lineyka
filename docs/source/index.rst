@@ -8,7 +8,7 @@ Welcome to lineyka's documentation!
 
 Contents:
 
-.. autoclass:: edit_db
+.. automodule:: edit_db
     :members:
 
 .. toctree::
