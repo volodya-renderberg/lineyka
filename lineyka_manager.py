@@ -8227,7 +8227,7 @@ class MainWindow(QtWidgets.QMainWindow):
 	def print_data(self, *args):
 		print(args)
 		
-    
+QtCore.QCoreApplication.setAttribute(QtCore.Qt.AA_ShareOpenGLContexts)
 app = QtWidgets.QApplication(sys.argv)
 mw = MainWindow()
 mw.show()
