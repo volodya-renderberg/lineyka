@@ -4,14 +4,16 @@
    contain the root `toctree` directive.
 
 Welcome to lineyka's documentation!
-=======================================
+===================================
 
 Contents:
 
+.. autoclass:: edit_db.studio
+    :members:
+
 .. toctree::
    :maxdepth: 2
-   
-   autoclass
+
    studio
    database
    artist
