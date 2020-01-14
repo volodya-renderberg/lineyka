@@ -3,5 +3,5 @@
 Api
 ===
 
-.. automodule:: edit_db
+.. autoclass:: edit_db.studio
     :members:
