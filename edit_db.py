@@ -1,6 +1,15 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
 
+"""Описание содержимого файла list.py
+
+Данный файл содержит конфигурацию сборки лицевого рига на блендшейпах.
+
+Базовые константы
+-----------------
+
+"""
+
 import os
 #import sys
 import platform
@@ -38,12 +47,10 @@ def print_args(fn):
 	return(inner_fn)
 	
 class studio:
-	'''
-	@classmethod get_studio()
-	@classmethod make_init_file()
-	'''
+	"""Супер класс """
 	# 
 	farme_offset = 100
+	"""int: супер атрибут"""
 	# studio
 	studio_folder = False
 	tmp_folder = False
@@ -453,6 +460,7 @@ class studio:
 	
 	@classmethod
 	def set_studio(self, path):
+        """Супер метод класса """
 		if not os.path.exists(path):
 			return(False, "****** to studio path not Found!")
 		
