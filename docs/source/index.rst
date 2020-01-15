@@ -9,8 +9,11 @@ Welcome to Lineyka's documentation!
 Contents:
 
 .. toctree::
-   :maxdepth: 2
-
+   :maxdepth: 1
+   
+   project
+   examples
+   specifications
 
 
 Indices and tables

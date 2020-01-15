@@ -1,15 +1,6 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
 
-"""Описание содержимого файла list.py
-
-Данный файл содержит конфигурацию сборки лицевого рига на блендшейпах.
-
-Базовые константы
------------------
-
-"""
-
 import os
 #import sys
 import platform
@@ -460,7 +451,7 @@ class studio:
 	
 	@classmethod
 	def set_studio(self, path):
-        """Супер метод класса """
+		"""Супер метод класса """
 		if not os.path.exists(path):
 			return(False, "****** to studio path not Found!")
 		
@@ -892,7 +883,7 @@ class studio:
 		return(True, 'Ok')
 	
 class database():
-    """Супер мега класс """
+	"""Супер мега класс """
     
 	def __init__(self):
 		self.sqlite3_db_folder_attr = {
@@ -910,7 +901,7 @@ class database():
 	# table_root - assets, chats - те случаи когда имя файла ДБ не соответствует имени таблицы, если есть table_root - имя файла ДБ будет определяться по нему.
 	# table_root - может быть как именем таблицы - например: assets, так и именем файла - .assets.db
 	def get(self, level, read_ob, table_name, com, table_root=False):
-        """Супер мега метод """
+		"""Супер мега метод """
         
 		# get use_db
 		attr = self.use_db_attr.get(level)
@@ -1364,8 +1355,10 @@ class database():
 		conn.commit()
 		conn.close()
 		return(True, 'Ok!')
-
+	
 class project(studio):
+	"""Самый самый класс """
+	
 	list_active_projects = []
 	list_projects = []
 	dict_projects = {}
@@ -1381,6 +1374,7 @@ class project(studio):
 		
 	# if new=True - возвращает новый инициализированный объект, если False то инициализирует текущий объект и возвращает (True, 'Ok')
 	def init(self, name, new=True): # v2
+		"""Инициализация по имени """
 		pass
 		b, r = database().read('studio', self, self.projects_t, self.projects_keys, table_root=self.projects_db)
 		if not b:
