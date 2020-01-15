@@ -1361,8 +1361,8 @@ class project(studio):
 	
 	**level** = 'studio'
 	
-	Данные хранимые в БД (имя столбца : тип данных):
-	------------------------------------------------
+	.. rubric:: Данные хранимые в БД (имя столбца : тип данных):
+	
 	.. code-block:: python
 
 		projects_keys = {
@@ -1377,17 +1377,16 @@ class project(studio):
 		'units': 'text',
 		}
 	
-	Создание экземпляра класса:
-	---------------------------
+	.. rubric:: Создание экземпляра класса:
+	
 	.. code-block:: python
 	
 		import edit_db as db
 		
 		project = db.project()
 		
-	Атрибуты
-	--------
-
+	.. rubric:: Атрибуты
+	
 	:name: (*str*) - имя проекта (уникально).
 
 	:path: (*str*) - путь до директории проекта.
@@ -1412,6 +1411,13 @@ class project(studio):
 
 	:dict_projects: (*dict*) - ``атрибут класса`` словарь содержащий все проекты (экземпляры) с ключами по именам. . Заполняется при выполнеии метода `get_list`_, значение по умолчанию - *{}*.
 	
+	
+	Attributes
+    ----------
+    attr1 : str
+        Description of `attr1`.
+    attr2 : :obj:`int`, optional
+        Description of `attr2`.
 	
 	"""
 	
