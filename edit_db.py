@@ -1357,7 +1357,8 @@ class database():
 		return(True, 'Ok!')
 	
 class project(studio):
-	"""**level** = 'studio'
+	"""
+    **level** = 'studio'
 
     .. rubric:: Данные хранимые в БД (имя столбца : тип данных):
 
@@ -1374,9 +1375,6 @@ class project(studio):
         'fps': 'real',
         'units': 'text',
         }
-        
-    Создание экземпляра класса
-    --------------------------
 
     .. rubric:: Создание экземпляра класса:
 
@@ -1551,7 +1549,7 @@ class project(studio):
 		
 	# заполняет поля класса list_active_projects, list_projects, dict_projects.
 	def get_list(self): # v2
-        """Тот самый метод """
+		"""Тот самый метод """
 		pass
 		b, r = database().read('studio', self, self.projects_t, self.projects_keys)
 		if not b:
