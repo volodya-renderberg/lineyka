@@ -1,34 +1,17 @@
-.. lineyka documentation master file, created by
-   sphinx-quickstart on Sat Jul  6 16:22:57 2019.
+.. Lineyka documentation master file, created by
+   sphinx-quickstart on Wed Jan 15 10:54:29 2020.
    You can adapt this file completely to your liking, but it should at least
    contain the root `toctree` directive.
 
-Welcome to lineyka's documentation!
+Welcome to Lineyka's documentation!
 ===================================
 
 Contents:
 
-.. automodule:: edit_db
-    :members:
-
 .. toctree::
    :maxdepth: 2
 
-   studio
-   database
-   artist
-   workroom
-   project
-   set_of_tasks
-   group
-   season
-   asset
-   task
-   log
-   chat
-   list_of_assets
-   examples
-   specifications
+
 
 Indices and tables
 ==================
