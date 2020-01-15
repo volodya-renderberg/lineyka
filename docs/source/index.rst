@@ -12,7 +12,8 @@ Contents:
    :maxdepth: 1
    
    project
-
+   examples
+   specifications
 
 Indices and tables
 ==================
