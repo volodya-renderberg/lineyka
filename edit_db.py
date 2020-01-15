@@ -1357,7 +1357,63 @@ class database():
 		return(True, 'Ok!')
 	
 class project(studio):
-	"""Самый самый класс """
+	"""Самый самый класс
+	
+	**level** = 'studio'
+	
+	Данные хранимые в БД (имя столбца : тип данных):
+	------------------------------------------------
+	.. code-block:: python
+
+		projects_keys = {
+		'name': 'text',
+		'path': 'text',
+		'status': 'text',
+		'project_database': 'json',
+		'chat_img_path': 'text',
+		'list_of_assets_path': 'text',
+		'preview_img_path': 'text',
+		'fps': 'real',
+		'units': 'text',
+		}
+	
+	Создание экземпляра класса:
+	---------------------------
+	.. code-block:: python
+	
+		import edit_db as db
+		
+		project = db.project()
+		
+	Атрибуты
+	--------
+
+	:name: (*str*) - имя проекта (уникально).
+
+	:path: (*str*) - путь до директории проекта.
+
+	:status: (*str*) - ``['active', 'none']``
+
+	:project_database: (*list*) - параметры используемой базы данных, по умолчанию: ``['sqlite3', False]``
+
+	:chat_img_path: (*str*) - путь до директории с картинками чата.
+
+	:list_of_assets_path: (*str*) - путь до файла с временными данными создаваемых ассетов.
+
+	:preview_img_path: (*str*) - путь до директории с превью картинок чата.
+
+	:fps: (*float*) - **fps** проекта (по умолчанию 24).
+
+	:units: (*str*) - юниты 3d сцен ``['m', 'cm', 'mm']`` по умолчанию ``'m'``
+
+	:list_active_projects: (*list*) - ``атрибут класса`` список активных проектов, только имена. . Заполняется при выполнеии метода `get_list`_, значение по умолчанию - *[]*.
+
+	:list_projects:  (*list*) - ``атрибут класса`` список всех проектов (экземпляры). Заполняется при выполнеии метода `get_list`_, значение по умолчанию - *[]*.
+
+	:dict_projects: (*dict*) - ``атрибут класса`` словарь содержащий все проекты (экземпляры) с ключами по именам. . Заполняется при выполнеии метода `get_list`_, значение по умолчанию - *{}*.
+	
+	
+	"""
 	
 	list_active_projects = []
 	list_projects = []
