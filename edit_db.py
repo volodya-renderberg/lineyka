@@ -1357,70 +1357,71 @@ class database():
 		return(True, 'Ok!')
 	
 class project(studio):
-	"""Самый самый класс
-	
-	**level** = 'studio'
-	
-	.. rubric:: Данные хранимые в БД (имя столбца : тип данных):
-	
-	.. code-block:: python
+	"""**level** = 'studio'
 
-		projects_keys = {
-		'name': 'text',
-		'path': 'text',
-		'status': 'text',
-		'project_database': 'json',
-		'chat_img_path': 'text',
-		'list_of_assets_path': 'text',
-		'preview_img_path': 'text',
-		'fps': 'real',
-		'units': 'text',
-		}
-	
-	.. rubric:: Создание экземпляра класса:
-	
-	.. code-block:: python
-	
-		import edit_db as db
-		
-		project = db.project()
-		
-	.. rubric:: Атрибуты
-	
-	:name: (*str*) - имя проекта (уникально).
+    .. rubric:: Данные хранимые в БД (имя столбца : тип данных):
 
-	:path: (*str*) - путь до директории проекта.
+    .. code-block:: python
 
-	:status: (*str*) - ``['active', 'none']``
+        projects_keys = {
+        'name': 'text',
+        'path': 'text',
+        'status': 'text',
+        'project_database': 'json',
+        'chat_img_path': 'text',
+        'list_of_assets_path': 'text',
+        'preview_img_path': 'text',
+        'fps': 'real',
+        'units': 'text',
+        }
+        
+    Создание экземпляра класса
+    --------------------------
 
-	:project_database: (*list*) - параметры используемой базы данных, по умолчанию: ``['sqlite3', False]``
+    .. rubric:: Создание экземпляра класса:
 
-	:chat_img_path: (*str*) - путь до директории с картинками чата.
+    .. code-block:: python
 
-	:list_of_assets_path: (*str*) - путь до файла с временными данными создаваемых ассетов.
+        import edit_db as db
+        
+        project = db.project()
+        
+    .. rubric:: Атрибуты
 
-	:preview_img_path: (*str*) - путь до директории с превью картинок чата.
+    :name: (*str*) - имя проекта (уникально).
 
-	:fps: (*float*) - **fps** проекта (по умолчанию 24).
+    :path: (*str*) - путь до директории проекта.
 
-	:units: (*str*) - юниты 3d сцен ``['m', 'cm', 'mm']`` по умолчанию ``'m'``
+    :status: (*str*) - ``['active', 'none']``
 
-	:list_active_projects: (*list*) - ``атрибут класса`` список активных проектов, только имена. . Заполняется при выполнеии метода `get_list`_, значение по умолчанию - *[]*.
+    :project_database: (*list*) - параметры используемой базы данных, по умолчанию: ``['sqlite3', False]``
 
-	:list_projects:  (*list*) - ``атрибут класса`` список всех проектов (экземпляры). Заполняется при выполнеии метода `get_list`_, значение по умолчанию - *[]*.
+    :chat_img_path: (*str*) - путь до директории с картинками чата.
 
-	:dict_projects: (*dict*) - ``атрибут класса`` словарь содержащий все проекты (экземпляры) с ключами по именам. . Заполняется при выполнеии метода `get_list`_, значение по умолчанию - *{}*.
-	
-	
-	Attributes
-	----------
-	name : :obj:`str`,
-		Имя проекта (уникально).
-	path : :obj:`str`,
-		Путь до директории проекта.
-	status : :obj:`str`,
-		значение из списка ``['active', 'none']``
-	
+    :list_of_assets_path: (*str*) - путь до файла с временными данными создаваемых ассетов.
+
+    :preview_img_path: (*str*) - путь до директории с превью картинок чата.
+
+    :fps: (*float*) - **fps** проекта (по умолчанию 24).
+
+    :units: (*str*) - юниты 3d сцен ``['m', 'cm', 'mm']`` по умолчанию ``'m'``
+
+    :list_active_projects: (*list*) - ``атрибут класса`` список активных проектов, только имена. . Заполняется при выполнеии метода `get_list`_, значение по умолчанию - *[]*.
+
+    :list_projects:  (*list*) - ``атрибут класса`` список всех проектов (экземпляры). Заполняется при выполнеии метода `get_list`_, значение по умолчанию - *[]*.
+
+    :dict_projects: (*dict*) - ``атрибут класса`` словарь содержащий все проекты (экземпляры) с ключами по именам. . Заполняется при выполнеии метода `get_list`_, значение по умолчанию - *{}*.
+
+
+    Attributes
+    ----------
+    name : :obj:`str`,
+        Имя проекта (уникально).
+    path : :obj:`str`,
+        Путь до директории проекта.
+    status : :obj:`str`,
+        значение из списка ``['active', 'none']``
+
 	"""
 	
 	list_active_projects = []
