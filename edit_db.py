@@ -1388,24 +1388,6 @@ class project(studio):
         
     .. rubric:: Атрибуты
 
-    :name: (*str*) - имя проекта (уникально).
-
-    :path: (*str*) - путь до директории проекта.
-
-    :status: (*str*) - ``['active', 'none']``
-
-    :project_database: (*list*) - параметры используемой базы данных, по умолчанию: ``['sqlite3', False]``
-
-    :chat_img_path: (*str*) - путь до директории с картинками чата.
-
-    :list_of_assets_path: (*str*) - путь до файла с временными данными создаваемых ассетов.
-
-    :preview_img_path: (*str*) - путь до директории с превью картинок чата.
-
-    :fps: (*float*) - **fps** проекта (по умолчанию 24).
-
-    :units: (*str*) - юниты 3d сцен ``['m', 'cm', 'mm']`` по умолчанию ``'m'``
-
     :list_active_projects: (*list*) - ``атрибут класса`` список активных проектов, только имена. . Заполняется при выполнеии метода `get_list`_, значение по умолчанию - *[]*.
 
     :list_projects:  (*list*) - ``атрибут класса`` список всех проектов (экземпляры). Заполняется при выполнеии метода `get_list`_, значение по умолчанию - *[]*.
@@ -1420,7 +1402,21 @@ class project(studio):
     path : :obj:`str`,
         Путь до директории проекта.
     status : :obj:`str`,
-        значение из списка ``['active', 'none']``
+        Значение из списка :obj:`['active', 'none']`.
+    project_database : :obj:`list`,
+        Параметры используемой базы данных, по умолчанию: ``['sqlite3', False]``.
+    chat_img_path : :obj:`str`,
+        Путь до директории с картинками чата.
+    list_of_assets_path : :obj:`str`,
+        Путь до файла с временными данными создаваемых ассетов.
+    preview_img_path : :obj:`str`,
+        Путь до директории с превью картинок чата.
+    fps : :obj:`float`,
+        **fps** проекта (по умолчанию 24).
+    units : :obj:`str`,
+        Юниты 3d сцен, значение из списка: :obj:`['m', 'cm', 'mm']` по умолчанию ``'m'``.
+    list_active_projects : :obj:`list`, ``атрибут класса``,
+        Список активных проектов, только имена. Заполняется при выполнеии метода :mod:`edit_db.project.get_list`, значение по умолчанию - ``[]``.
 
 	"""
 	
@@ -1555,6 +1551,7 @@ class project(studio):
 		
 	# заполняет поля класса list_active_projects, list_projects, dict_projects.
 	def get_list(self): # v2
+        """Тот самый метод """
 		pass
 		b, r = database().read('studio', self, self.projects_t, self.projects_keys)
 		if not b:
