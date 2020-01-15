@@ -1413,11 +1413,13 @@ class project(studio):
 	
 	
 	Attributes
-    ----------
-    attr1 : str
-        Description of `attr1`.
-    attr2 : :obj:`int`, optional
-        Description of `attr2`.
+	----------
+	name : :obj:`str`,
+		Имя проекта (уникально).
+	path : :obj:`str`,
+		Путь до директории проекта.
+	status : :obj:`str`,
+		значение из списка ``['active', 'none']``
 	
 	"""
 	
