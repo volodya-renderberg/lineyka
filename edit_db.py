@@ -1413,8 +1413,12 @@ class project(studio):
     """
 
     list_active_projects = []
+    
     list_projects = []
+    """list:  ``атрибут класса`` - Список всех проектов (экземпляры). Заполняется при выполнеии метода :func:`edit_db.project.get_list`, значение по умолчанию - ``[]``. """
+    
     dict_projects = {}
+    
 
     def __init__(self):
         pass
@@ -1582,7 +1586,12 @@ class project(studio):
         
     # заполняет поля класса list_active_projects, list_projects, dict_projects.
     def get_list(self): # v2
-        """Тот самый метод """
+        """Заполняет поля класса :mod:`edit_db.project.list_active_projects`, :mod:`edit_db.project.list_projects`, :mod:`edit_db.project.dict_projects`
+        
+        .. rubric:: Returns:
+        
+        * (*True, :mod:`edit_db.project.list_projects`) или (*False, comment*)
+        """
         pass
         b, r = database().read('studio', self, self.projects_t, self.projects_keys)
         if not b:
