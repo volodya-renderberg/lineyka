@@ -15,1349 +15,1349 @@ import tempfile
 import subprocess
 
 try:
-	from .lineyka_publish import publish
+    from .lineyka_publish import publish
 except:
-	from lineyka_publish import publish
-	
+    from lineyka_publish import publish
+
 def NormPath(input_path):
-	if not input_path:
-		return(input_path)
-	if platform.system() == 'Windows':
-			# windows
-			path = str(input_path)
-			path = os.path.normpath(path.encode('string-escape'))
-	else:
-		# linux etc...
-		path = os.path.normpath(input_path)
-	return(path)
+    if not input_path:
+        return(input_path)
+    if platform.system() == 'Windows':
+            # windows
+            path = str(input_path)
+            path = os.path.normpath(path.encode('string-escape'))
+    else:
+        # linux etc...
+        path = os.path.normpath(input_path)
+    return(path)
 
 def print_args(fn):
-	def inner_fn(*args):
-		print(args)
-		return fn(*args)
-	return(inner_fn)
-	
+    def inner_fn(*args):
+        print(args)
+        return fn(*args)
+    return(inner_fn)
+
 class studio:
-	"""Супер класс """
-	
-	farme_offset = 100
-	"""int: супер атрибут"""
-	# studio
-	studio_folder = False
-	tmp_folder = False
-	work_folder = False
-	convert_exe = False
-	studio_database = ['sqlite3', False]
-	init_path = False
-	set_path = False
-	share_dir = False
-	list_projects = {} # a list of existing projects
-	list_active_projects = []
-	
-	extensions = ['.blend', '.ma', '.tiff', '.ntp']
-	setting_data = {
-	'extension': {
-		'.tiff':'krita',
-		'.blend': 'blender',
-		'.ntp': 'natron',
-		'.ma': 'maya',
-		'.ods':'libreoffice',
-		},
-	'task__visible_fields':[
-		'activity',
-		'task_type',
-		'artist',
-		'priority',
-		'extension',
-		]
-	}
-	look_extension = '.jpg'
-	preview_extension = '.png'
-	publish_folder_name = 'publish'
-	
-	soft_data = None
-	
-	priority = ['normal', 'high', 'top', 'ultra']
-	
-	user_levels = ('user', 'extend_user', 'manager', 'root')
-	manager_levels = ('manager', 'root')
+    """Супер класс """
 
-	task_status = ('null','ready', 'ready_to_send', 'work', 'work_to_outsorce', 'pause', 'recast', 'checking', 'done', 'close')
-	working_statuses = ['ready', 'ready_to_send', 'work', 'work_to_outsorce', 'pause', 'recast']
-	end_statuses = ('done', 'close')
-	
-	#NOT_USED_EXTENSIONS = ['.blend','.tiff', '.ods', '.xcf', '.svg']
-	EMPTY_FILES_DIR_NAME = 'empty_files'
-	
-	color_status = {
-	'null':(0.451000005, 0.451000005, 0.451000005),
-	#'ready':(0.7627863884, 0, 1),
-	'ready':(0.826, 0.249, 1),
-	'ready_to_send':(0.9367088675, 0.2608556151, 0.4905878305),
-	'work':(0.520749867, 0.7143493295, 0.8227847815),
-	'work_to_outsorce':(0.2161512673, 0.5213058591, 0.8987341523),
-	#'pause':(0.3417721391, 0.2282493114, 0.1557442695),
-	'pause':(0.670, 0.539, 0.827),
-	'recast':(0.8481012583, 0.1967110634, 0.1502964497),
-	'checking':(1, 0.5872552395, 0.2531645298),
-	'done':(0.175, 0.752, 0.113),
-	#'close':(0.1645569652, 0.08450711519, 0.02499599569)
-	'close':(0.613, 0.373, 0.195)
-	}
-	
-	projects_units = ['m', 'cm', 'mm']
-	
-	task_types = [
-	# -- film
-	'animatic',
-	'film',
-	#
-	'sketch',
-	'textures',
-	# -- model
-	'sculpt',
-	'model',
-	# -- rig
-	'rig',
-	'test_animation', # анимация для проверки рига - активити test_animation
-	# -- location,
-	'specification',
-	'location',
-	#'location_full',
-	#'location_for_anim',
-	# -- animation
-	'animation_shot',
-	'tech_anim',
-	'simulation_din',
-	#'simulation_fluid',
-	'render',
-	'composition',
-	]
-	
-	multi_publish_task_types = ['sketch']
-	
-	service_tasks = [
-	'all',
-	'pre',
-	]
-	
-	asset_types = [
-	'object',
-	'location',
-	'shot_animation',
-	'film'
-	]
-	
-	asset_types_with_season = [
-	'animatic',
-	'shot_animation',
-	'camera',
-	'shot_render',
-	'shot_composition',
-	'film'
-	]
-	
-	asset_keys = {
-	'name': 'text',
-	'group': 'text',
-	#'path': 'text', # каждый раз определяется при инициализации.
-	'type': 'text',
-	'loading_type': 'text', # способ загрузки ассета object в анимационную сцену, значения из studio.loading_types
-	'season': 'text',
-	'priority': 'integer',
-	'description': 'text',
-	'content': 'text',
-	'id': 'text',
-	'status': 'text',
-	'parent': 'json' # {'name':asset_name, 'id': asset_id} - возможно не нужно
-	}
-    
-	loading_types = ['mesh', 'group', 'rig']
-	
-	# constants (0 - 3 required parameters)
-	tasks_keys = {
-	'activity': 'text',
-	'task_name': 'text',
-	'task_type': 'text',
-	'source': 'json',
-	'input': 'json',
-	'status': 'text',
-	'outsource': 'integer',
-	'artist': 'text',
-	'level': 'text',        # пользовательский уровень сложности задачи.
-	'planned_time': 'real',
-	'time':  'json',        # словарь: ключи - nik_name, значения - ссумарное время атриста по этой задаче (ед. измерения - секунда).
-	'full_time': 'real',    # ссумарное время всех атристов по этой задаче (ед. измерения - секунда).
-	'deadline': 'timestamp',# расчётная дата окончания работ
-	'start': 'timestamp',
-	'end': 'timestamp',
-	'price': 'real',
-	'specification': 'text',
-	'chat_local': 'json',
-	'web_chat': 'text',
-	'supervisor': 'text',
-	'readers': 'json',
-	'output': 'json',
-	'priority':'integer',
-	'extension': 'text',
-	'description': 'text',  # описание задачи
-	}
-	'''
-	workroom_keys = [
-	('name', 'text'),
-	('id', 'text'),
-	('type', 'json')
-	]
-	'''
-	workroom_keys = {
-	'name': 'text',
-	'id': 'text',
-	'type': 'json'
-	}
-	
-	# activity, task_name, action, date_time, description, version, artist
-	'''
-	logs_keys = [
-	('activity', 'text'),
-	('task_name', 'text'),
-	('action', 'text'),
-	('date_time', 'timestamp'),
-	('description', 'text'),
-	('version', 'text'),
-	('artist', 'text')
-	]
-	'''
-	# user_name, task_name, data_start, data_end, long_time, cost
-	statistics_keys = [
-	('project_name', 'text'),
-	('task_name', 'text'),
-	('data_start', 'timestamp'),
-	('data_end', 'timestamp'),
-	('long_time', 'text'),
-	('cost', 'text'),
-	('status', 'text')
-	]
-	# artist_name, user_name, email, phone, specialty, outsource = '' or '0'/'1'
-	'''
-	artists_keys = [
-	('nik_name', 'text'),
-	('user_name', 'text'),
-	('password', 'text'),
-	('date_time', 'timestamp'),
-	('email', 'text'),
-	('phone', 'text'),
-	('specialty', 'text'),
-	('outsource', 'text'),
-	('workroom', 'text'),
-	('level', 'text'),
-	('share_dir', 'text'),
-	('status', 'text')
-	]
-	'''
-	artists_keys = {
-	'nik_name': 'text',
-	'user_name': 'text',
-	'password': 'text',
-	'date_time': 'timestamp',
-	'email': 'text',
-	'phone': 'text',
-	'specialty': 'text',
-	'outsource': 'integer',
-	'workroom': 'json',# список id отделов
-	'level': 'text',
-	'share_dir': 'text',
-	'status': 'text',
-	'working_tasks': 'json',# список имён назначенных в работу задач
-	'checking_tasks': 'json',# список имён назначенных на проверку задач
-	}
-	chats_keys = {
-	'message_id':'text',
-	'date_time': 'timestamp',
-	'date_time_of_edit': 'timestamp',
-	'author': 'text',
-	'topic': 'json',
-	'color': 'json',
-	'status': 'text',
-	'reading_status': 'json',
-	}
-	
-	projects_keys = {
-	'name': 'text',
-	'path': 'text',
-	'status': 'text',
-	'project_database': 'json',
-	'chat_img_path': 'text',
-	'list_of_assets_path': 'text',
-	'preview_img_path': 'text',
-	'fps': 'real',
-	'units': 'text',
-	}
-	
-	group_keys = {
-	'name': 'text',
-	'type': 'text',
-	'season': 'text',
-	'description': 'text',
-	'id': 'text',
-	}
-	
-	season_keys = {
-	'name': 'text',
-	'status':'text',
-	'id': 'text',
-	}
+    farme_offset = 100
+    """int: супер атрибут"""
+    # studio
+    studio_folder = False
+    tmp_folder = False
+    work_folder = False
+    convert_exe = False
+    studio_database = ['sqlite3', False]
+    init_path = False
+    set_path = False
+    share_dir = False
+    list_projects = {} # a list of existing projects
+    list_active_projects = []
 
-	list_of_assets_keys = [
-	'asset_name',
-	'asset_type',
-	'set_of_tasks',
-	]
-	
-	# лог активити
-	logs_keys = {
-	'version': 'text',
-	'date_time': 'timestamp',
-	'activity': 'text',
-	'task_name': 'text',
-	'action': 'text',
-	'artist': 'text',
-	'description': 'text',
-	'source': 'json', # для push - версия коммита источника (в случае sketch - список версий по всем веткам, порядок совпадает с порядком записи веток в branch), для publish - версия push источника.
-	'branch' : 'json', # ветка - в случае push, publish для sketch - списки веток.
-	'time' : 'real', # время затраченное на commit, ед. измерения секунда.
-	}
-    
-	# лог артиста по всем его задачам
-	artists_logs_keys = {
-	'project_name': 'text',
-	'task_name': 'text',
-	'full_time': 'integer', # суммарное время затраченое артистом на задачу, ед. измерения секунда.
-	'price': 'real', 		# сумма начисленная за выполнение задачи. вносится по принятию задачи.
-	'start': 'timestamp', 	# дата-время создания записи, запись создаётся при первом open задачи.
-	'finish': 'timestamp',  # дата-время принятия задачи.
-	}
-    
-	# лог артиста по дням, заполняемый вручную: день/проект/задача/время
-	artists_time_logs_keys = {
-	'project_name':'text',
-	'task_name':'text',
-	'date':'timestamp',  # возможно только дата без времени?
-	'time':'integer',    # суммарное время затраченое артистом на задачу, ед. измерения секунда. Заполняется вручную.
-	}
-	
-	init_folder = '.lineyka'
-	init_file = 'lineyka_init.json'
-	set_file = 'user_setting.json'
-	#projects_file = '.projects.json'
-	location_position_file = 'location_content_position.json'
-	user_registr_file_name = 'user_registr.json'
-	recycle_bin_name = '-Recycle_Bin-'
-	list_of_assets_name = '.list_of_assets.json'
-	PROJECT_SETTING = '.project_setting.json'
-	
-	#database files
-	# --- projects
-	projects_db = '.projects.db'
-	projects_t = 'projects'
-	# --- assets
-	assets_db = '.assets.db'
-	#assets_t = 'assets' # имя таблицы - тип ассета
-	# --- artists
-	artists_db = '.artists.db'
-	artists_t = 'artists'
-	# --- workroom
-	workroom_db = artists_db
-	workroom_t = 'workrooms'
-	# --- statistic
-	statistic_db = '.statistic.db'
-	statistic_t = 'statistic'
-	# --- season
-	season_db = assets_db
-	season_t = 'season'
-	# --- group
-	group_db = assets_db
-	group_t = 'groups'
-	# --- tasks
-	tasks_db = '.tasks.db'
-	tasks_t = 'tasks'
-	# --- tasks logs
-	logs_db = '.tasks_logs.db'
-	logs_t = 'logs'
-	# --- artists logs
-	artists_logs_db = '.artists_logs.db'
-	# table_name = 'nik_name_tasks_logs'
-	# --- artists time logs
-	artists_time_logs_db = '.artists_time_logs.db'
-	# table_name = '[nik_name]_time_logs'
-	# --- chat
-	chats_db = '.chats.db'
-	# --- set_of_tasks
-	set_of_tasks_db = '.set_of_tasks.db'
-	set_of_tasks_t = 'set_of_tasks'
-	
-	# shot_animation
-	meta_data_file = '.shot_meta_data.json'
-	
-	# blender
-	blend_service_images = {
-		'preview_img_name' : 'Lineyka_Preview_Image',
-		'bg_image_name' : 'Lineyka_BG_Image',
-		}
-		
-	def __init__(self):
-		self.make_init_file()
-		self.get_studio()
+    extensions = ['.blend', '.ma', '.tiff', '.ntp']
+    setting_data = {
+    'extension': {
+        '.tiff':'krita',
+        '.blend': 'blender',
+        '.ntp': 'natron',
+        '.ma': 'maya',
+        '.ods':'libreoffice',
+        },
+    'task__visible_fields':[
+        'activity',
+        'task_type',
+        'artist',
+        'priority',
+        'extension',
+        ]
+    }
+    look_extension = '.jpg'
+    preview_extension = '.png'
+    publish_folder_name = 'publish'
 
-	@classmethod
-	def make_init_file(self):
-		home = os.path.expanduser('~')
-		
-		folder = NormPath(os.path.join(home, self.init_folder))
-		empty_folder = NormPath(os.path.join(folder, self.EMPTY_FILES_DIR_NAME))
-		self.init_path = NormPath(os.path.join(home, self.init_folder, self.init_file))
-		self.set_path = NormPath(os.path.join(folder, self.set_file))
-		
-		# make folder
-		if not os.path.exists(folder):
-			os.mkdir(folder)
-		if not os.path.exists(empty_folder):
-			os.mkdir(empty_folder)
-		
-		# make init_file
-		if not os.path.exists(self.init_path):
-			# make jason
-			d = {
-				'studio_folder': None,
-				'work_folder': None,
-				'convert_exe': None,
-				'tmp_folder': tempfile.gettempdir(),
-				'use_database': ['sqlite3', False],
-				}
-			m_json = json.dumps(d, sort_keys=True, indent=4)
-			# save
-			data_fale = open(self.init_path, 'w')
-			data_fale.write(m_json)
-			data_fale.close()
-			
-		# make set_file
-		if not os.path.exists(self.set_path):
-			# make jason
-			d = self.setting_data
-			m_json = json.dumps(d, sort_keys=True, indent=4)
-			# save
-			data_fale = open(self.set_path, 'w')
-			data_fale.write(m_json)
-			data_fale.close()
-	
-	@classmethod
-	def set_studio(self, path):
-		"""Супер метод класса """
-		if not os.path.exists(path):
-			return(False, "****** to studio path not Found!")
-		
-		home = os.path.expanduser('~')	
-		init_path = os.path.join(home, self.init_folder, self.init_file).replace('\\','/')
-		if not os.path.exists(init_path):
-			return(False, "****** init_path not Found!")
-		
-		# write studio path
-		try:
-			with open(init_path, 'r') as read:
-				data = json.load(read)
-				data['studio_folder'] = path
-				read.close()
-		except:
-			return(False, "****** in set_studio() -> init file  can not be read")
+    soft_data = None
 
-		try:
-			with open(init_path, 'w') as f:
-				jsn = json.dump(data, f, sort_keys=True, indent=4)
-				f.close()
-		except:
-			return(False, "****** in set_studio() ->  init file  can not be read")
+    priority = ['normal', 'high', 'top', 'ultra']
 
-		self.studio_folder = path
-		
-		return(True, 'Ok')
-	
-	@classmethod
-	def set_tmp_dir(self, path):
-		if not os.path.exists(path):
-			return "****** to studio path not Found!"
-		
-		home = os.path.expanduser('~')	
-		init_path = os.path.join(home, self.init_folder, self.init_file).replace('\\','/')
-		if not os.path.exists(init_path):
-			return "****** init_path not Found!"
-		
-		# write studio path
-		try:
-			with open(init_path, 'r') as read:
-				data = json.load(read)
-				data['tmp_folder'] = path
-				read.close()
-		except:
-			return "****** init file  can not be read"
+    user_levels = ('user', 'extend_user', 'manager', 'root')
+    manager_levels = ('manager', 'root')
 
-		try:
-			with open(init_path, 'w') as f:
-				jsn = json.dump(data, f, sort_keys=True, indent=4)
-				f.close()
-		except:
-			return "****** init file  can not be read"
+    task_status = ('null','ready', 'ready_to_send', 'work', 'work_to_outsorce', 'pause', 'recast', 'checking', 'done', 'close')
+    working_statuses = ['ready', 'ready_to_send', 'work', 'work_to_outsorce', 'pause', 'recast']
+    end_statuses = ('done', 'close')
 
-		self.tmp_folder = path
-				
-		return(True, 'Ok')
-	
-	@classmethod
-	def set_convert_exe_path(self, path):
-		pass
-		#if not os.path.exists(path):
-			#return(False, "****** to convert.exe path not Found!")
-		
-		home = os.path.expanduser('~')
-		init_path = NormPath(os.path.join(home, self.init_folder, self.init_file))
-		if not os.path.exists(init_path):
-			return(False, "****** init_path not Found!")
-		
-		# write path
-		try:
-			with open(init_path, 'r') as read:
-				data = json.load(read)
-				data['convert_exe'] = NormPath(path)
-				read.close()
-		except:
-			return(False, "****** init file  can not be read")
+    #NOT_USED_EXTENSIONS = ['.blend','.tiff', '.ods', '.xcf', '.svg']
+    EMPTY_FILES_DIR_NAME = 'empty_files'
 
-		try:
-			with open(init_path, 'w') as f:
-				jsn = json.dump(data, f, sort_keys=True, indent=4)
-				f.close()
-		except:
-			return(False, "****** init file  can not be read")
+    color_status = {
+    'null':(0.451000005, 0.451000005, 0.451000005),
+    #'ready':(0.7627863884, 0, 1),
+    'ready':(0.826, 0.249, 1),
+    'ready_to_send':(0.9367088675, 0.2608556151, 0.4905878305),
+    'work':(0.520749867, 0.7143493295, 0.8227847815),
+    'work_to_outsorce':(0.2161512673, 0.5213058591, 0.8987341523),
+    #'pause':(0.3417721391, 0.2282493114, 0.1557442695),
+    'pause':(0.670, 0.539, 0.827),
+    'recast':(0.8481012583, 0.1967110634, 0.1502964497),
+    'checking':(1, 0.5872552395, 0.2531645298),
+    'done':(0.175, 0.752, 0.113),
+    #'close':(0.1645569652, 0.08450711519, 0.02499599569)
+    'close':(0.613, 0.373, 0.195)
+    }
 
-		self.convert_exe = path
-		
-		return True, 'Ok'
-	
-	@classmethod
-	def set_work_folder(self, path):
-		if not os.path.exists(path):
-			return(False, 'The path "%s" - not Found!' % path)
-		
-		home = os.path.expanduser('~')
-		init_path = NormPath(os.path.join(home, self.init_folder, self.init_file))
-		if not os.path.exists(init_path):
-			return(False, "****** init_path not Found!")
-		
-		# write path
-		try:
-			with open(init_path, 'r') as read:
-				data = json.load(read)
-				data['work_folder'] = NormPath(path)
-				read.close()
-		except:
-			return(False, "****** init file  can not be read")
+    projects_units = ['m', 'cm', 'mm']
 
-		try:
-			with open(init_path, 'w') as f:
-				jsn = json.dump(data, f, sort_keys=True, indent=4)
-				f.close()
-		except:
-			return(False, "****** init file  can not be read")
+    task_types = [
+    # -- film
+    'animatic',
+    'film',
+    #
+    'sketch',
+    'textures',
+    # -- model
+    'sculpt',
+    'model',
+    # -- rig
+    'rig',
+    'test_animation', # анимация для проверки рига - активити test_animation
+    # -- location,
+    'specification',
+    'location',
+    #'location_full',
+    #'location_for_anim',
+    # -- animation
+    'animation_shot',
+    'tech_anim',
+    'simulation_din',
+    #'simulation_fluid',
+    'render',
+    'composition',
+    ]
 
-		self.work_folder = path
-		
-		return True, 'Ok'
-	
-	# преобразование версии к строке нужного формата.
-	# version (int / str)
-	def _template_version_num(self, version):
-		try:
-			str_version = '{:04d}'.format(int(version))
-			return(True, str_version)
-		except:
-			return (False, 'Wrong version format "%s"' %  str(version))
-	
-	# шаблонный путь к файлу или активити в рабочей директории
-	# c_task  (task) - задача, для которой ищется файл
-	# version (bool / int / str) - номер версии или False -в этом случае возврат только пути до активити.
-	def _template_get_work_path(self, c_task, version=False):
-		pass
-		# exists work folder
-		if not self.work_folder:
-			return(False, 'Working directory not defined!')
-		elif not os.path.exists(self.work_folder):
-			return(False, 'The path "%s" to working directory does not exist!' % self.work_folder)
-		
-		if version or version==0:
-			# test version
-			b, str_version = self._template_version_num(version)
-			if not b:
-				return (b, str_version)
-			# file path
-			return (True, NormPath(os.path.join(self.work_folder, c_task.asset.project.name, 'assets', c_task.asset.name, c_task.activity, str_version, '%s%s' % (c_task.asset.name, c_task.extension))))
-		else:
-			# activity path
-			return (True, NormPath(os.path.join(self.work_folder, c_task.asset.project.name, 'assets', c_task.asset.name, c_task.activity)))
+    multi_publish_task_types = ['sketch']
 
-	# шаблонный путь к файлу или активити push версии на сервере студии.
-	# c_task  (task) - задача, для которой ищется путь к файлам.
-	# version (bool / int / str) - номер версии или False -в этом случае возврат только пути до активити.
-	# branches (bool / list) - список веток из которых делался push - для task_type = sketch.
-	# look (bool) - рассматривается только при task_type = sketch, если False - то используется c_task.extension, если True - то используется studio.look_extension (список путей для просмотра).
-	# return (True, path или path_dict - ключи имена веток) или (False, comment).
-	def _template_get_push_path(self, c_task, version=False, branches=False, look=False): # v2
-		pass
-		# 1 - task_type = sketch
-		# 1.1 - преобразование version
-		# 1.2 - branches - тест типа данных
-		# 1.3 - получение списка путей
-		# 2 - не sketch
-		# 2.1 - преобразование version
-		# 2.2 - путь до файла
-		# 2.3 - путь до активити
-		
-		# (1)
-		if c_task.task_type in self.multi_publish_task_types:
-			#
-			if not version is False:
-				# ( 1.1)
-				b, str_version = self._template_version_num(version)
-				if not b:
-					return (b, str_version)
-				# (1.2)
-				if not isinstance(branches, list):
-					return(False, 'Branch data type should be a "list" and not a "%s"' % branches.__class__.__name__)
-				# (1.3)
-				path_dict = dict()
-				for branch in branches:
-					if look:
-						path_dict[branch] = NormPath(os.path.join(c_task.asset.path, c_task.activity, str_version, '%s#%s%s' % (c_task.asset.name, branch, self.look_extension)))
-					else:
-						path_dict[branch] = NormPath(os.path.join(c_task.asset.path, c_task.activity, str_version, '%s#%s%s' % (c_task.asset.name, branch, c_task.extension)))
-				return(True, path_dict)
-				
-			else:
-				return (True, NormPath(os.path.join(c_task.asset.path, c_task.activity)))
-		# (2)
-		else:
-			if not version is False:
-				# ( 2.1)
-				b, str_version = self._template_version_num(version)
-				if not b:
-					return (b, str_version)
-				# (2.2)
-				return (True, NormPath(os.path.join(c_task.asset.path, c_task.activity, str_version, '%s%s' % (c_task.asset.name, c_task.extension))))
-			else:
-				# (2.3)
-				return (True, NormPath(os.path.join(c_task.asset.path, c_task.activity)))
-	
-	# шаблонный путь до паблиш файлов.
-	# c_task  (task) - задача, для которой ищется путь к файлам.
-	# version (bool / int / str) - номер версии или False,если False - то путь до финальной версии, которая сверху версий (в паблиш/активити).
-	# branches (bool / list) - список веток из которых делался push или publish (в случае репаблиша) - для task_type = sketch.
-	# look (bool) - рассматривается только при task_type = sketch, если False - то используется c_task.extension, если True - то используется studio.look_extension (список путей для просмотра).
-	# return (True, path или path_dict - ключи имена веток) или (False, comment).
-	def _template_get_publish_path(self, c_task, version=False, branches=list(), look=False): # v2
-		pass
-		# 1 - 
-		
-		if not version is False and not version is None:
-			#
-			b, str_version = self._template_version_num(version)
-			if not b:
-				return (b, str_version)
-			#
-			if c_task.task_type in self.multi_publish_task_types:
-				path_dict = dict()
-				for branch in branches:
-					if look:
-						path = os.path.join(c_task.asset.path, self.publish_folder_name, c_task.activity, str_version, '%s#%s%s' % (c_task.asset.name, branch, self.look_extension))
-					else:
-						path = os.path.join(c_task.asset.path, self.publish_folder_name, c_task.activity, str_version, '%s#%s%s' % (c_task.asset.name, branch, c_task.extension))
-					path_dict[branch] = NormPath(path)
-				return(True, path_dict)
-			else:
-				path = os.path.join(c_task.asset.path, self.publish_folder_name, c_task.activity, str_version, '%s%s' % (c_task.asset.name, c_task.extension))
-				return (True, NormPath(path))
-		else:
-			if c_task.task_type in self.multi_publish_task_types:
-				path_dict = dict()
-				for branch in branches:
-					if look:
-						path = os.path.join(c_task.asset.path, self.publish_folder_name, c_task.activity, '%s#%s%s' % (c_task.asset.name, branch, self.look_extension))
-					else:
-						path = os.path.join(c_task.asset.path, self.publish_folder_name, c_task.activity, '%s#%s%s' % (c_task.asset.name, branch, c_task.extension))
-					path_dict[branch] = NormPath(path)
-				return(True, path_dict)
-			else:
-				return (True, NormPath(os.path.join(c_task.asset.path, self.publish_folder_name, c_task.activity, '%s%s' % (c_task.asset.name, c_task.extension))))
-		
-	def set_share_dir(self, path):
-		if not os.path.exists(path):
-			return "****** to studio path not Found!"
-		
-		home = os.path.expanduser('~')	
-		init_path = os.path.join(home, self.init_folder, self.init_file).replace('\\','/')
-		if not os.path.exists(init_path):
-			return "****** init_path not Found!"
-		
-		# write studio path
-		try:
-			with open(init_path, 'r') as read:
-				data = json.load(read)
-				data['share_folder'] = path
-				read.close()
-		except:
-			return "****** init file  can not be read"
+    service_tasks = [
+    'all',
+    'pre',
+    ]
 
-		try:
-			with open(init_path, 'w') as f:
-				jsn = json.dump(data, f, sort_keys=True, indent=4)
-				f.close()
-		except:
-			return "****** init file  can not be read"
+    asset_types = [
+    'object',
+    'location',
+    'shot_animation',
+    'film'
+    ]
 
-		#self.out_source_share_folder = path
-		
-		self.get_studio()
-		return True, 'Ok'
-		
-	def get_share_dir(self):
-		pass
-		# get lineyka_init.json
-		home = os.path.expanduser('~')	
-		init_path = os.path.join(home, self.init_folder, self.init_file).replace('\\','/')
-		if not os.path.exists(init_path):
-			return False, "****** init_path not Found!"
-			
-		# write studio path
-		
-		try:
-			with open(init_path, 'r') as read:
-				data = json.load(read)
-				try:
-					path = data['share_folder']
-					self.share_dir = path
-					return True, path
-				except:
-					return False, 'Not key \"share_folder\"'
-				read.close()
-		except:
-			return False, '****** init file not Read!'
-	
-	@classmethod
-	def get_studio(self):
-		if self.init_path == False:
-			return(False, '****** in get_studio() -> init_path = False!')
-		# write studio path
-		try:
-			with open(self.init_path, 'r') as read:
-				data = json.load(read)
-				#self.studio_folder = data['studio_folder']
-				#self.tmp_folder = data['tmp_folder']
-				read.close()
-		except:
-			return(False, "****** init file  can not be read")
-		try:
-			self.studio_folder = data['studio_folder']
-			self.work_folder = data['work_folder']
-			self.convert_exe = data['convert_exe']
-			self.tmp_folder = data['tmp_folder']
-			self.use_database = data['use_database']
-		except Exception as e:
-			print(e)
-			
-		#print('artist path: ', self.artists_path)
-			
-		'''
-		# get list_active_projects
-		if self.list_projects:
-			self.list_active_projects = []
-			for key in self.list_projects:
-				if self.list_projects[key]['status'] == 'active':
-					self.list_active_projects.append(key)
-		'''
-				
-		# fill self.extensions
-		try:
-			with open(self.set_path, 'r') as read:
-				data = json.load(read)
-				self.extensions = data['extension'].keys()
-				self.soft_data = data['extension']
-				read.close()
-		except:
-			return(False, 'in get_studio -> not read user_setting.json!')
-		
-		print('studio.get_studio')
-		return True, [self.studio_folder, self.tmp_folder]
-	
-	# ****** SETTING ******
-	# ------- EXTENSION -------------
-	def get_extension_dict(self):
-		extension_dict = {}
-		
-		home = os.path.expanduser('~')
-		folder = os.path.join(home, self.init_folder)
-		set_path = os.path.join(folder, self.set_file)
-		
-		if not os.path.exists(set_path):
-			return(False, ('Not Path ' + set_path))
-		
-		with open(set_path, 'r') as read:
-			extension_dict = json.load(read)['extension']
-			
-		return(True, extension_dict)
-		
-	def edit_extension_dict(self, key, path):
-		extension_dict = {}
-		
-		home = os.path.expanduser('~')
-		folder = os.path.join(home, self.init_folder)
-		set_path = os.path.join(folder, self.set_file)
-		
-		if not os.path.exists(set_path):
-			return(False, ('Not Path ' + set_path))
-		
-		with open(set_path, 'r') as read:
-			data = json.load(read)
-		
-		data['extension'][key] = path
-		
-		with open(set_path, 'w') as f:
-			jsn = json.dump(data, f, sort_keys=True, indent=4)
-			f.close()
-		
-		self.get_studio()
-		return(True, 'Ok')
-		
-	def edit_extension(self, extension, action, new_extension = False):
-		if not extension:
-			return(False, 'Extension not specified!')
-			
-		if not action in ['ADD', 'REMOVE', 'EDIT']:
-			return(False, 'Incorrect Action!')
-			
-		# get file path
-		home = os.path.expanduser('~')
-		folder = os.path.join(home, self.init_folder)
-		set_path = os.path.join(folder, self.set_file)
-		
-		if not os.path.exists(set_path):
-			return(False, ('Not Path ' + set_path))
-		
-		# preparation extension
-		if extension[0] != '.':
-			extension = '.' + extension
-			
-		# read extensions
-		with open(set_path, 'r') as read:
-			data = json.load(read)
-			
-		if action == 'ADD':
-			if not extension in data['extension'].keys():
-				data['extension'][extension] = ''
-			else:
-				return(False, ('This Extension \"' + extension + '\" Already Exists!'))
-		elif action == 'REMOVE':
-			if extension in data['extension'].keys():
-				del data['extension'][extension]
-			else:
-				return(False, ('This Extension \"' + extension + '\" Not Found!'))
-		elif action == 'EDIT':
-			if new_extension: 
-				if extension in data['extension'].keys():
-					value = data['extension'][extension]
-					del data['extension'][extension]
-					data['extension'][new_extension] = value
-			else:
-				return(False, 'Not New Extension!')
-			
-		with open(set_path, 'w') as f:
-			jsn = json.dump(data, f, sort_keys=True, indent=4)
-			f.close()
-		
-		self.get_studio()
-		return(True, 'Ok')
-	
+    asset_types_with_season = [
+    'animatic',
+    'shot_animation',
+    'camera',
+    'shot_render',
+    'shot_composition',
+    'film'
+    ]
+
+    asset_keys = {
+    'name': 'text',
+    'group': 'text',
+    #'path': 'text', # каждый раз определяется при инициализации.
+    'type': 'text',
+    'loading_type': 'text', # способ загрузки ассета object в анимационную сцену, значения из studio.loading_types
+    'season': 'text',
+    'priority': 'integer',
+    'description': 'text',
+    'content': 'text',
+    'id': 'text',
+    'status': 'text',
+    'parent': 'json' # {'name':asset_name, 'id': asset_id} - возможно не нужно
+    }
+
+    loading_types = ['mesh', 'group', 'rig']
+
+    # constants (0 - 3 required parameters)
+    tasks_keys = {
+    'activity': 'text',
+    'task_name': 'text',
+    'task_type': 'text',
+    'source': 'json',
+    'input': 'json',
+    'status': 'text',
+    'outsource': 'integer',
+    'artist': 'text',
+    'level': 'text',        # пользовательский уровень сложности задачи.
+    'planned_time': 'real',
+    'time':  'json',        # словарь: ключи - nik_name, значения - ссумарное время атриста по этой задаче (ед. измерения - секунда).
+    'full_time': 'real',    # ссумарное время всех атристов по этой задаче (ед. измерения - секунда).
+    'deadline': 'timestamp',# расчётная дата окончания работ
+    'start': 'timestamp',
+    'end': 'timestamp',
+    'price': 'real',
+    'specification': 'text',
+    'chat_local': 'json',
+    'web_chat': 'text',
+    'supervisor': 'text',
+    'readers': 'json',
+    'output': 'json',
+    'priority':'integer',
+    'extension': 'text',
+    'description': 'text',  # описание задачи
+    }
+    '''
+    workroom_keys = [
+    ('name', 'text'),
+    ('id', 'text'),
+    ('type', 'json')
+    ]
+    '''
+    workroom_keys = {
+    'name': 'text',
+    'id': 'text',
+    'type': 'json'
+    }
+
+    # activity, task_name, action, date_time, description, version, artist
+    '''
+    logs_keys = [
+    ('activity', 'text'),
+    ('task_name', 'text'),
+    ('action', 'text'),
+    ('date_time', 'timestamp'),
+    ('description', 'text'),
+    ('version', 'text'),
+    ('artist', 'text')
+    ]
+    '''
+    # user_name, task_name, data_start, data_end, long_time, cost
+    statistics_keys = [
+    ('project_name', 'text'),
+    ('task_name', 'text'),
+    ('data_start', 'timestamp'),
+    ('data_end', 'timestamp'),
+    ('long_time', 'text'),
+    ('cost', 'text'),
+    ('status', 'text')
+    ]
+    # artist_name, user_name, email, phone, specialty, outsource = '' or '0'/'1'
+    '''
+    artists_keys = [
+    ('nik_name', 'text'),
+    ('user_name', 'text'),
+    ('password', 'text'),
+    ('date_time', 'timestamp'),
+    ('email', 'text'),
+    ('phone', 'text'),
+    ('specialty', 'text'),
+    ('outsource', 'text'),
+    ('workroom', 'text'),
+    ('level', 'text'),
+    ('share_dir', 'text'),
+    ('status', 'text')
+    ]
+    '''
+    artists_keys = {
+    'nik_name': 'text',
+    'user_name': 'text',
+    'password': 'text',
+    'date_time': 'timestamp',
+    'email': 'text',
+    'phone': 'text',
+    'specialty': 'text',
+    'outsource': 'integer',
+    'workroom': 'json',# список id отделов
+    'level': 'text',
+    'share_dir': 'text',
+    'status': 'text',
+    'working_tasks': 'json',# список имён назначенных в работу задач
+    'checking_tasks': 'json',# список имён назначенных на проверку задач
+    }
+    chats_keys = {
+    'message_id':'text',
+    'date_time': 'timestamp',
+    'date_time_of_edit': 'timestamp',
+    'author': 'text',
+    'topic': 'json',
+    'color': 'json',
+    'status': 'text',
+    'reading_status': 'json',
+    }
+
+    projects_keys = {
+    'name': 'text',
+    'path': 'text',
+    'status': 'text',
+    'project_database': 'json',
+    'chat_img_path': 'text',
+    'list_of_assets_path': 'text',
+    'preview_img_path': 'text',
+    'fps': 'real',
+    'units': 'text',
+    }
+
+    group_keys = {
+    'name': 'text',
+    'type': 'text',
+    'season': 'text',
+    'description': 'text',
+    'id': 'text',
+    }
+
+    season_keys = {
+    'name': 'text',
+    'status':'text',
+    'id': 'text',
+    }
+
+    list_of_assets_keys = [
+    'asset_name',
+    'asset_type',
+    'set_of_tasks',
+    ]
+
+    # лог активити
+    logs_keys = {
+    'version': 'text',
+    'date_time': 'timestamp',
+    'activity': 'text',
+    'task_name': 'text',
+    'action': 'text',
+    'artist': 'text',
+    'description': 'text',
+    'source': 'json', # для push - версия коммита источника (в случае sketch - список версий по всем веткам, порядок совпадает с порядком записи веток в branch), для publish - версия push источника.
+    'branch' : 'json', # ветка - в случае push, publish для sketch - списки веток.
+    'time' : 'real', # время затраченное на commit, ед. измерения секунда.
+    }
+
+    # лог артиста по всем его задачам
+    artists_logs_keys = {
+    'project_name': 'text',
+    'task_name': 'text',
+    'full_time': 'integer', # суммарное время затраченое артистом на задачу, ед. измерения секунда.
+    'price': 'real', 		# сумма начисленная за выполнение задачи. вносится по принятию задачи.
+    'start': 'timestamp', 	# дата-время создания записи, запись создаётся при первом open задачи.
+    'finish': 'timestamp',  # дата-время принятия задачи.
+    }
+
+    # лог артиста по дням, заполняемый вручную: день/проект/задача/время
+    artists_time_logs_keys = {
+    'project_name':'text',
+    'task_name':'text',
+    'date':'timestamp',  # возможно только дата без времени?
+    'time':'integer',    # суммарное время затраченое артистом на задачу, ед. измерения секунда. Заполняется вручную.
+    }
+
+    init_folder = '.lineyka'
+    init_file = 'lineyka_init.json'
+    set_file = 'user_setting.json'
+    #projects_file = '.projects.json'
+    location_position_file = 'location_content_position.json'
+    user_registr_file_name = 'user_registr.json'
+    recycle_bin_name = '-Recycle_Bin-'
+    list_of_assets_name = '.list_of_assets.json'
+    PROJECT_SETTING = '.project_setting.json'
+
+    #database files
+    # --- projects
+    projects_db = '.projects.db'
+    projects_t = 'projects'
+    # --- assets
+    assets_db = '.assets.db'
+    #assets_t = 'assets' # имя таблицы - тип ассета
+    # --- artists
+    artists_db = '.artists.db'
+    artists_t = 'artists'
+    # --- workroom
+    workroom_db = artists_db
+    workroom_t = 'workrooms'
+    # --- statistic
+    statistic_db = '.statistic.db'
+    statistic_t = 'statistic'
+    # --- season
+    season_db = assets_db
+    season_t = 'season'
+    # --- group
+    group_db = assets_db
+    group_t = 'groups'
+    # --- tasks
+    tasks_db = '.tasks.db'
+    tasks_t = 'tasks'
+    # --- tasks logs
+    logs_db = '.tasks_logs.db'
+    logs_t = 'logs'
+    # --- artists logs
+    artists_logs_db = '.artists_logs.db'
+    # table_name = 'nik_name_tasks_logs'
+    # --- artists time logs
+    artists_time_logs_db = '.artists_time_logs.db'
+    # table_name = '[nik_name]_time_logs'
+    # --- chat
+    chats_db = '.chats.db'
+    # --- set_of_tasks
+    set_of_tasks_db = '.set_of_tasks.db'
+    set_of_tasks_t = 'set_of_tasks'
+
+    # shot_animation
+    meta_data_file = '.shot_meta_data.json'
+
+    # blender
+    blend_service_images = {
+        'preview_img_name' : 'Lineyka_Preview_Image',
+        'bg_image_name' : 'Lineyka_BG_Image',
+        }
+        
+    def __init__(self):
+        self.make_init_file()
+        self.get_studio()
+
+    @classmethod
+    def make_init_file(self):
+        home = os.path.expanduser('~')
+        
+        folder = NormPath(os.path.join(home, self.init_folder))
+        empty_folder = NormPath(os.path.join(folder, self.EMPTY_FILES_DIR_NAME))
+        self.init_path = NormPath(os.path.join(home, self.init_folder, self.init_file))
+        self.set_path = NormPath(os.path.join(folder, self.set_file))
+        
+        # make folder
+        if not os.path.exists(folder):
+            os.mkdir(folder)
+        if not os.path.exists(empty_folder):
+            os.mkdir(empty_folder)
+        
+        # make init_file
+        if not os.path.exists(self.init_path):
+            # make jason
+            d = {
+                'studio_folder': None,
+                'work_folder': None,
+                'convert_exe': None,
+                'tmp_folder': tempfile.gettempdir(),
+                'use_database': ['sqlite3', False],
+                }
+            m_json = json.dumps(d, sort_keys=True, indent=4)
+            # save
+            data_fale = open(self.init_path, 'w')
+            data_fale.write(m_json)
+            data_fale.close()
+            
+        # make set_file
+        if not os.path.exists(self.set_path):
+            # make jason
+            d = self.setting_data
+            m_json = json.dumps(d, sort_keys=True, indent=4)
+            # save
+            data_fale = open(self.set_path, 'w')
+            data_fale.write(m_json)
+            data_fale.close()
+
+    @classmethod
+    def set_studio(self, path):
+        """Супер метод класса """
+        if not os.path.exists(path):
+            return(False, "****** to studio path not Found!")
+        
+        home = os.path.expanduser('~')	
+        init_path = os.path.join(home, self.init_folder, self.init_file).replace('\\','/')
+        if not os.path.exists(init_path):
+            return(False, "****** init_path not Found!")
+        
+        # write studio path
+        try:
+            with open(init_path, 'r') as read:
+                data = json.load(read)
+                data['studio_folder'] = path
+                read.close()
+        except:
+            return(False, "****** in set_studio() -> init file  can not be read")
+
+        try:
+            with open(init_path, 'w') as f:
+                jsn = json.dump(data, f, sort_keys=True, indent=4)
+                f.close()
+        except:
+            return(False, "****** in set_studio() ->  init file  can not be read")
+
+        self.studio_folder = path
+        
+        return(True, 'Ok')
+
+    @classmethod
+    def set_tmp_dir(self, path):
+        if not os.path.exists(path):
+            return "****** to studio path not Found!"
+        
+        home = os.path.expanduser('~')	
+        init_path = os.path.join(home, self.init_folder, self.init_file).replace('\\','/')
+        if not os.path.exists(init_path):
+            return "****** init_path not Found!"
+        
+        # write studio path
+        try:
+            with open(init_path, 'r') as read:
+                data = json.load(read)
+                data['tmp_folder'] = path
+                read.close()
+        except:
+            return "****** init file  can not be read"
+
+        try:
+            with open(init_path, 'w') as f:
+                jsn = json.dump(data, f, sort_keys=True, indent=4)
+                f.close()
+        except:
+            return "****** init file  can not be read"
+
+        self.tmp_folder = path
+                
+        return(True, 'Ok')
+
+    @classmethod
+    def set_convert_exe_path(self, path):
+        pass
+        #if not os.path.exists(path):
+            #return(False, "****** to convert.exe path not Found!")
+        
+        home = os.path.expanduser('~')
+        init_path = NormPath(os.path.join(home, self.init_folder, self.init_file))
+        if not os.path.exists(init_path):
+            return(False, "****** init_path not Found!")
+        
+        # write path
+        try:
+            with open(init_path, 'r') as read:
+                data = json.load(read)
+                data['convert_exe'] = NormPath(path)
+                read.close()
+        except:
+            return(False, "****** init file  can not be read")
+
+        try:
+            with open(init_path, 'w') as f:
+                jsn = json.dump(data, f, sort_keys=True, indent=4)
+                f.close()
+        except:
+            return(False, "****** init file  can not be read")
+
+        self.convert_exe = path
+        
+        return True, 'Ok'
+
+    @classmethod
+    def set_work_folder(self, path):
+        if not os.path.exists(path):
+            return(False, 'The path "%s" - not Found!' % path)
+        
+        home = os.path.expanduser('~')
+        init_path = NormPath(os.path.join(home, self.init_folder, self.init_file))
+        if not os.path.exists(init_path):
+            return(False, "****** init_path not Found!")
+        
+        # write path
+        try:
+            with open(init_path, 'r') as read:
+                data = json.load(read)
+                data['work_folder'] = NormPath(path)
+                read.close()
+        except:
+            return(False, "****** init file  can not be read")
+
+        try:
+            with open(init_path, 'w') as f:
+                jsn = json.dump(data, f, sort_keys=True, indent=4)
+                f.close()
+        except:
+            return(False, "****** init file  can not be read")
+
+        self.work_folder = path
+        
+        return True, 'Ok'
+
+    # преобразование версии к строке нужного формата.
+    # version (int / str)
+    def _template_version_num(self, version):
+        try:
+            str_version = '{:04d}'.format(int(version))
+            return(True, str_version)
+        except:
+            return (False, 'Wrong version format "%s"' %  str(version))
+
+    # шаблонный путь к файлу или активити в рабочей директории
+    # c_task  (task) - задача, для которой ищется файл
+    # version (bool / int / str) - номер версии или False -в этом случае возврат только пути до активити.
+    def _template_get_work_path(self, c_task, version=False):
+        pass
+        # exists work folder
+        if not self.work_folder:
+            return(False, 'Working directory not defined!')
+        elif not os.path.exists(self.work_folder):
+            return(False, 'The path "%s" to working directory does not exist!' % self.work_folder)
+        
+        if version or version==0:
+            # test version
+            b, str_version = self._template_version_num(version)
+            if not b:
+                return (b, str_version)
+            # file path
+            return (True, NormPath(os.path.join(self.work_folder, c_task.asset.project.name, 'assets', c_task.asset.name, c_task.activity, str_version, '%s%s' % (c_task.asset.name, c_task.extension))))
+        else:
+            # activity path
+            return (True, NormPath(os.path.join(self.work_folder, c_task.asset.project.name, 'assets', c_task.asset.name, c_task.activity)))
+
+    # шаблонный путь к файлу или активити push версии на сервере студии.
+    # c_task  (task) - задача, для которой ищется путь к файлам.
+    # version (bool / int / str) - номер версии или False -в этом случае возврат только пути до активити.
+    # branches (bool / list) - список веток из которых делался push - для task_type = sketch.
+    # look (bool) - рассматривается только при task_type = sketch, если False - то используется c_task.extension, если True - то используется studio.look_extension (список путей для просмотра).
+    # return (True, path или path_dict - ключи имена веток) или (False, comment).
+    def _template_get_push_path(self, c_task, version=False, branches=False, look=False): # v2
+        pass
+        # 1 - task_type = sketch
+        # 1.1 - преобразование version
+        # 1.2 - branches - тест типа данных
+        # 1.3 - получение списка путей
+        # 2 - не sketch
+        # 2.1 - преобразование version
+        # 2.2 - путь до файла
+        # 2.3 - путь до активити
+        
+        # (1)
+        if c_task.task_type in self.multi_publish_task_types:
+            #
+            if not version is False:
+                # ( 1.1)
+                b, str_version = self._template_version_num(version)
+                if not b:
+                    return (b, str_version)
+                # (1.2)
+                if not isinstance(branches, list):
+                    return(False, 'Branch data type should be a "list" and not a "%s"' % branches.__class__.__name__)
+                # (1.3)
+                path_dict = dict()
+                for branch in branches:
+                    if look:
+                        path_dict[branch] = NormPath(os.path.join(c_task.asset.path, c_task.activity, str_version, '%s#%s%s' % (c_task.asset.name, branch, self.look_extension)))
+                    else:
+                        path_dict[branch] = NormPath(os.path.join(c_task.asset.path, c_task.activity, str_version, '%s#%s%s' % (c_task.asset.name, branch, c_task.extension)))
+                return(True, path_dict)
+                
+            else:
+                return (True, NormPath(os.path.join(c_task.asset.path, c_task.activity)))
+        # (2)
+        else:
+            if not version is False:
+                # ( 2.1)
+                b, str_version = self._template_version_num(version)
+                if not b:
+                    return (b, str_version)
+                # (2.2)
+                return (True, NormPath(os.path.join(c_task.asset.path, c_task.activity, str_version, '%s%s' % (c_task.asset.name, c_task.extension))))
+            else:
+                # (2.3)
+                return (True, NormPath(os.path.join(c_task.asset.path, c_task.activity)))
+
+    # шаблонный путь до паблиш файлов.
+    # c_task  (task) - задача, для которой ищется путь к файлам.
+    # version (bool / int / str) - номер версии или False,если False - то путь до финальной версии, которая сверху версий (в паблиш/активити).
+    # branches (bool / list) - список веток из которых делался push или publish (в случае репаблиша) - для task_type = sketch.
+    # look (bool) - рассматривается только при task_type = sketch, если False - то используется c_task.extension, если True - то используется studio.look_extension (список путей для просмотра).
+    # return (True, path или path_dict - ключи имена веток) или (False, comment).
+    def _template_get_publish_path(self, c_task, version=False, branches=list(), look=False): # v2
+        pass
+        # 1 - 
+        
+        if not version is False and not version is None:
+            #
+            b, str_version = self._template_version_num(version)
+            if not b:
+                return (b, str_version)
+            #
+            if c_task.task_type in self.multi_publish_task_types:
+                path_dict = dict()
+                for branch in branches:
+                    if look:
+                        path = os.path.join(c_task.asset.path, self.publish_folder_name, c_task.activity, str_version, '%s#%s%s' % (c_task.asset.name, branch, self.look_extension))
+                    else:
+                        path = os.path.join(c_task.asset.path, self.publish_folder_name, c_task.activity, str_version, '%s#%s%s' % (c_task.asset.name, branch, c_task.extension))
+                    path_dict[branch] = NormPath(path)
+                return(True, path_dict)
+            else:
+                path = os.path.join(c_task.asset.path, self.publish_folder_name, c_task.activity, str_version, '%s%s' % (c_task.asset.name, c_task.extension))
+                return (True, NormPath(path))
+        else:
+            if c_task.task_type in self.multi_publish_task_types:
+                path_dict = dict()
+                for branch in branches:
+                    if look:
+                        path = os.path.join(c_task.asset.path, self.publish_folder_name, c_task.activity, '%s#%s%s' % (c_task.asset.name, branch, self.look_extension))
+                    else:
+                        path = os.path.join(c_task.asset.path, self.publish_folder_name, c_task.activity, '%s#%s%s' % (c_task.asset.name, branch, c_task.extension))
+                    path_dict[branch] = NormPath(path)
+                return(True, path_dict)
+            else:
+                return (True, NormPath(os.path.join(c_task.asset.path, self.publish_folder_name, c_task.activity, '%s%s' % (c_task.asset.name, c_task.extension))))
+        
+    def set_share_dir(self, path):
+        if not os.path.exists(path):
+            return "****** to studio path not Found!"
+        
+        home = os.path.expanduser('~')	
+        init_path = os.path.join(home, self.init_folder, self.init_file).replace('\\','/')
+        if not os.path.exists(init_path):
+            return "****** init_path not Found!"
+        
+        # write studio path
+        try:
+            with open(init_path, 'r') as read:
+                data = json.load(read)
+                data['share_folder'] = path
+                read.close()
+        except:
+            return "****** init file  can not be read"
+
+        try:
+            with open(init_path, 'w') as f:
+                jsn = json.dump(data, f, sort_keys=True, indent=4)
+                f.close()
+        except:
+            return "****** init file  can not be read"
+
+        #self.out_source_share_folder = path
+        
+        self.get_studio()
+        return True, 'Ok'
+        
+    def get_share_dir(self):
+        pass
+        # get lineyka_init.json
+        home = os.path.expanduser('~')	
+        init_path = os.path.join(home, self.init_folder, self.init_file).replace('\\','/')
+        if not os.path.exists(init_path):
+            return False, "****** init_path not Found!"
+            
+        # write studio path
+        
+        try:
+            with open(init_path, 'r') as read:
+                data = json.load(read)
+                try:
+                    path = data['share_folder']
+                    self.share_dir = path
+                    return True, path
+                except:
+                    return False, 'Not key \"share_folder\"'
+                read.close()
+        except:
+            return False, '****** init file not Read!'
+
+    @classmethod
+    def get_studio(self):
+        if self.init_path == False:
+            return(False, '****** in get_studio() -> init_path = False!')
+        # write studio path
+        try:
+            with open(self.init_path, 'r') as read:
+                data = json.load(read)
+                #self.studio_folder = data['studio_folder']
+                #self.tmp_folder = data['tmp_folder']
+                read.close()
+        except:
+            return(False, "****** init file  can not be read")
+        try:
+            self.studio_folder = data['studio_folder']
+            self.work_folder = data['work_folder']
+            self.convert_exe = data['convert_exe']
+            self.tmp_folder = data['tmp_folder']
+            self.use_database = data['use_database']
+        except Exception as e:
+            print(e)
+            
+        #print('artist path: ', self.artists_path)
+            
+        '''
+        # get list_active_projects
+        if self.list_projects:
+            self.list_active_projects = []
+            for key in self.list_projects:
+                if self.list_projects[key]['status'] == 'active':
+                    self.list_active_projects.append(key)
+        '''
+                
+        # fill self.extensions
+        try:
+            with open(self.set_path, 'r') as read:
+                data = json.load(read)
+                self.extensions = data['extension'].keys()
+                self.soft_data = data['extension']
+                read.close()
+        except:
+            return(False, 'in get_studio -> not read user_setting.json!')
+        
+        print('studio.get_studio')
+        return True, [self.studio_folder, self.tmp_folder]
+
+    # ****** SETTING ******
+    # ------- EXTENSION -------------
+    def get_extension_dict(self):
+        extension_dict = {}
+        
+        home = os.path.expanduser('~')
+        folder = os.path.join(home, self.init_folder)
+        set_path = os.path.join(folder, self.set_file)
+        
+        if not os.path.exists(set_path):
+            return(False, ('Not Path ' + set_path))
+        
+        with open(set_path, 'r') as read:
+            extension_dict = json.load(read)['extension']
+            
+        return(True, extension_dict)
+        
+    def edit_extension_dict(self, key, path):
+        extension_dict = {}
+        
+        home = os.path.expanduser('~')
+        folder = os.path.join(home, self.init_folder)
+        set_path = os.path.join(folder, self.set_file)
+        
+        if not os.path.exists(set_path):
+            return(False, ('Not Path ' + set_path))
+        
+        with open(set_path, 'r') as read:
+            data = json.load(read)
+        
+        data['extension'][key] = path
+        
+        with open(set_path, 'w') as f:
+            jsn = json.dump(data, f, sort_keys=True, indent=4)
+            f.close()
+        
+        self.get_studio()
+        return(True, 'Ok')
+        
+    def edit_extension(self, extension, action, new_extension = False):
+        if not extension:
+            return(False, 'Extension not specified!')
+            
+        if not action in ['ADD', 'REMOVE', 'EDIT']:
+            return(False, 'Incorrect Action!')
+            
+        # get file path
+        home = os.path.expanduser('~')
+        folder = os.path.join(home, self.init_folder)
+        set_path = os.path.join(folder, self.set_file)
+        
+        if not os.path.exists(set_path):
+            return(False, ('Not Path ' + set_path))
+        
+        # preparation extension
+        if extension[0] != '.':
+            extension = '.' + extension
+            
+        # read extensions
+        with open(set_path, 'r') as read:
+            data = json.load(read)
+            
+        if action == 'ADD':
+            if not extension in data['extension'].keys():
+                data['extension'][extension] = ''
+            else:
+                return(False, ('This Extension \"' + extension + '\" Already Exists!'))
+        elif action == 'REMOVE':
+            if extension in data['extension'].keys():
+                del data['extension'][extension]
+            else:
+                return(False, ('This Extension \"' + extension + '\" Not Found!'))
+        elif action == 'EDIT':
+            if new_extension: 
+                if extension in data['extension'].keys():
+                    value = data['extension'][extension]
+                    del data['extension'][extension]
+                    data['extension'][new_extension] = value
+            else:
+                return(False, 'Not New Extension!')
+            
+        with open(set_path, 'w') as f:
+            jsn = json.dump(data, f, sort_keys=True, indent=4)
+            f.close()
+        
+        self.get_studio()
+        return(True, 'Ok')
+
 class database():
-	"""Супер мега класс """
-    
-	def __init__(self):
-		self.sqlite3_db_folder_attr = {
-			'studio': 'studio_folder',
-			'project': 'path',
-			}
-		
-		self.use_db_attr = {
-			'studio': 'studio_database',
-			'project': 'project_database',
-			}
-	
-	# level - studio or project; or: studio, project, season, group, asset, task, chat, log, statistic ...
-	# read_ob - object of studio or project;
-	# table_root - assets, chats - те случаи когда имя файла ДБ не соответствует имени таблицы, если есть table_root - имя файла ДБ будет определяться по нему.
-	# table_root - может быть как именем таблицы - например: assets, так и именем файла - .assets.db
-	def get(self, level, read_ob, table_name, com, table_root=False):
-		"""Супер мега метод """
+    """Супер мега класс """
+
+    def __init__(self):
+        self.sqlite3_db_folder_attr = {
+            'studio': 'studio_folder',
+            'project': 'path',
+            }
         
-		# get use_db
-		attr = self.use_db_attr.get(level)
-		if not attr:
-			raise Exception('database.get()', 'Unknown Level : %s' % level)
-		
-		db_name, db_data = eval('read_ob.%s' % attr)
-		#return(db_name, db_data)
-		
-		if db_name == 'sqlite3':
-			return_data = self.__sqlite3_get(level, read_ob, table_name, com, table_root)
-			return(return_data)
-	
-	# table_root - может быть как именем таблицы - например: assets, так и именем файла - .assets.db
-	def set_db(self, level, read_ob, table_name, com, data_com=False, table_root=False):
-		pass
-		# get use_db
-		attr = self.use_db_attr.get(level)
-		if not attr:
-			raise Exception('database.set_db()', 'Unknown Level : %s' % level)
-		
-		db_name, db_data = eval('read_ob.%s' % attr)
-		#return(db_name, db_data)
-		
-		if db_name == 'sqlite3':
-			return_data = self.__sqlite3_set(level, read_ob, table_name, com, data_com, table_root)
-			return(return_data)
-	
-	# table_root - может быть как именем таблицы - например: assets, так и именем файла - .assets.db
-	def create_table(self, level, read_ob, table_name, keys, table_root = False):
-		attr = self.use_db_attr.get(level)
-		if not attr:
-			raise Exception('database.write()', 'Unknown Level : %s' % level)
-		
-		db_name, db_data = eval('read_ob.%s' % attr)
-		#return(db_name, db_data)
-		
-		if db_name == 'sqlite3':
-			return_data = self.__sqlite3_create_table(level, read_ob, table_name, keys, table_root)
-			return(return_data)
-		
-	# write_data - словарь по ключам keys, также может быть списком словарей, для записи нескольких строк.
-	# keys - это: tasks_keys, projects_keys итд.
-	# table_root - может быть как именем таблицы - например: assets, так и именем файла - .assets.db
-	def insert(self, level, read_ob, table_name, keys, write_data, table_root=False):
-		attr = self.use_db_attr.get(level)
-		if not attr:
-			raise Exception('database.insert()', 'Unknown Level : %s' % level)
-		
-		db_name, db_data = eval('read_ob.%s' % attr)
-		#return(db_name, db_data)
-		
-		if db_name == 'sqlite3':
-			# create table
-			bool_, r_data = self.__sqlite3_create_table(level, read_ob, table_name, keys, table_root)
-			if not bool_:
-				return(bool_, r_data)
-			# write
-			return_data = self.__sqlite3_insert(level, read_ob, table_name, keys, write_data, table_root)
-			return(return_data)
-	
-	# where - 1) строка условия, 2) словарь по keys, 3) False - значит выделяется всё.
-	# columns - False - означает все столбцы если не False - то список столбцов.
-	def read(self, level, read_ob, table_name, keys, columns = False, where=False, table_root=False):
-		attr = self.use_db_attr.get(level)
-		if not attr:
-			raise Exception('database.read()', 'Unknown Level : %s' % level)
-		
-		db_name, db_data = eval('read_ob.%s' % attr)
-		#return(db_name, db_data)
-		
-		if db_name == 'sqlite3':
-			b, r = self.__sqlite3_read(level, read_ob, table_name, keys, columns, where, table_root)
-			return(b, r)
-	
-	# update_data - словарь по ключам из keys
-	# where - словарь по ключам, так как значения маскируются под "?" не может быть None или False
-	# table_root - может быть как именем таблицы - например: assets, так и именем файла - .assets.db
-	def update(self, level, read_ob, table_name, keys, update_data, where, table_root=False):
-		attr = self.use_db_attr.get(level)
-		if not attr:
-			raise Exception('database.update()', 'Unknown Level : %s' % level)
-		
-		db_name, db_data = eval('read_ob.%s' % attr)
-		#return(db_name, db_data)
-		
-		if db_name == 'sqlite3':
-			return_data = self.__sqlite3_update(level, read_ob, table_name, keys, update_data, where, table_root)
-			return(return_data)
-		
-	# удаление строки из таблицы БД
-	# where - словарь по ключам, так как значения маскируются под "?" не может быть None или False
-	# table_root - может быть как именем таблицы - например: assets, так и именем файла - .assets.db
-	def delete(self, level, read_ob, table_name, where, table_root=False):
-		attr = self.use_db_attr.get(level)
-		if not attr:
-			raise Exception('database.update()', 'Unknown Level : %s' % level)
-		
-		db_name, db_data = eval('read_ob.%s' % attr)
-		#return(db_name, db_data)
-		
-		if db_name == 'sqlite3':
-			return_data = self.__sqlite3_delete(level, read_ob, table_name, where, table_root)
-			return(return_data)
-	
-	### SQLITE3
-	# table_root - может быть как именем таблицы - например: assets, так и именем файла - .assets.db
-	#@print_args
-	def __get_db_path(self, level, read_ob, table_name, table_root):
-		attr = self.sqlite3_db_folder_attr.get(level)
-		db_folder = getattr(read_ob, attr)
-		if not db_folder:
-			return(None)
-		if table_root:
-			if table_root.endswith('.db'):
-				db_path = os.path.join(db_folder, table_root)
-			else:
-				db_path = os.path.join(db_folder, '.%s.db' % table_root)
-		else:
-			db_path = os.path.join(db_folder, '.%s.db' % table_name)
-		return(db_path)
-	
-	# update_data - словарь по ключам из keys
-	# where - словарь по ключам, так как значения маскируются под "?" не может быть None или False
-	def __sqlite3_update(self, level, read_ob, table_name, keys, update_data, where, table_root):
-		data_com = []
-		# set_data
-		set_data = ''
-		if update_data.__class__.__name__ != 'dict':
-			return(False, 'update_data not dict!')
-		else:
-			for i, key in enumerate(update_data):
-				if i==0:
-					set_data = '"%s" = ?' % key
-				else:
-					set_data = set_data + ', "%s" = ?' % key
-				if keys[key]=='json':
-					data_com.append(json.dumps(update_data[key]))
-				else:
-					data_com.append(update_data[key])
-		# where
-		where_data = ''
-		if where.__class__.__name__ != 'dict':
-			return(False, 'where not dict!')
-		else:
-			for i, key in enumerate(where):
-				if i==0:
-					where_data = '%s = ?' % key
-				else:
-					where_data = where_data + 'AND %s = ?' % key
-				data_com.append(where[key])
-		# com
-		com = 'UPDATE %s SET %s WHERE %s' % (table_name, set_data, where_data)
-		
-		# connect
-		# -- db_path
-		db_path = self.__get_db_path(level, read_ob, table_name, table_root)
-		if not db_path:
-			return(False, 'No path to database!')
-		# -- connect
-		conn = sqlite3.connect(db_path, detect_types=sqlite3.PARSE_DECLTYPES|sqlite3.PARSE_COLNAMES)
-		conn.row_factory = sqlite3.Row
-		c = conn.cursor()
-		# -- com
-		try:
-			c.execute(com, data_com)
-		except Exception as e:
-			print('#'*3, 'Exception in database.__sqlite3_update:')
-			print('#'*3, 'com:', com)
-			print('#'*3, 'data_com:', data_com)
-			print('#'*3, e)
-			conn.close()
-			return(False, 'Exception in database.__sqlite3_update, please look the terminal!')
-		conn.commit()
-		conn.close()
-		return(True, 'Ok!')
-	
-	# where - словарь по ключам, так как значения маскируются под "?" не может быть None или False
-	def __sqlite3_delete(self, level, read_ob, table_name, where, table_root):
-		data_com = []
-		
-		# where
-		where_data = ''
-		if where.__class__.__name__ != 'dict':
-			return(False, 'where not dict!')
-		else:
-			for i, key in enumerate(where):
-				if i==0:
-					where_data = '%s = ?' % key
-				else:
-					where_data = where_data + ', %s = ?' % key
-				data_com.append(where[key])
-		# com
-		com = 'DELETE FROM %s WHERE %s' % (table_name, where_data)
-		
-		# connect
-		# -- db_path
-		db_path = self.__get_db_path(level, read_ob, table_name, table_root)
-		if not db_path:
-			return(False, 'No path to database!')
-		# -- connect
-		conn = sqlite3.connect(db_path, detect_types=sqlite3.PARSE_DECLTYPES|sqlite3.PARSE_COLNAMES)
-		conn.row_factory = sqlite3.Row
-		c = conn.cursor()
-		# -- com
-		try:
-			c.execute(com, data_com)
-		except Exception as e:
-			print('#'*3, 'Exception in database.__sqlite3_delete:')
-			print('#'*3, 'com:', com)
-			print('#'*3, 'data_com:', data_com)
-			print('#'*3, e)
-			conn.close()
-			return(False, 'Exception in database.__sqlite3_delete, please look the terminal!')
-		conn.commit()
-		conn.close()
-		return(True, 'Ok!')
-	
-	# where - 1) строка условия, 2) словарь по keys, может иметь ключ условия - 'condition' значения из [or, end] 3) False - значит выделяется всё.
-	# columns - False - означает все столбцы если не False - то список столбцов.
-	#@print_args
-	def __sqlite3_read(self, level, read_ob, table_name, keys, columns, where, table_root):
-		# columns
-		col = ''
-		if not columns:
-			col = '*'
-		elif columns.__class__.__name__ == 'list':
-			for i, item in enumerate(columns):
-				if i == 0:
-					col = col + item
-				else:
-					col = col + ', %s' % item
-		# com
-		com = 'SELECT %s FROM %s ' % (col, table_name)
-		if where:
-			if where.__class__.__name__ == 'string':
-				com = '%s WHERE %s' % (com, where)
-			elif where.__class__.__name__ == 'dict':
-				were_string = ''
-				i=0
-				if not where.get('condition'):
-					for key in where:
-						if i == 0:
-							were_string = were_string + '"%s" = "%s"' % (key, where.get(key))
-						else:
-							were_string = were_string + 'AND "%s" = "%s"' % (key, where.get(key))
-						i=i+1
-				else:
-					var = where['condition'].upper()
-					for key in where:
-						if key == 'condition':
-							continue
-						for item in where[key]:
-							if i == 0:
-								were_string = were_string + '"%s" = "%s"' % (key, item)
-							else:
-								were_string = were_string + '%s "%s" = "%s"' % (var, key, item)
-							i=i+1
-						break
-				com = '%s WHERE %s' % (com, were_string)
-		# connect
-		# -- db_path
-		db_path = self.__get_db_path(level, read_ob, table_name, table_root)
-		# -- connect
-		try:
-			conn = sqlite3.connect(db_path, detect_types=sqlite3.PARSE_DECLTYPES|sqlite3.PARSE_COLNAMES)
-			conn.row_factory = sqlite3.Row
-			c = conn.cursor()
-		except Exception as e:
-			print('#'*3, 'Exception in database.__sqlite3_read:')
-			print('#'*3, 'db_path:', db_path)
-			print('#'*3, e)
-			return(False, 'Exception in database.__sqlite3_read, please look the terminal!')
+        self.use_db_attr = {
+            'studio': 'studio_database',
+            'project': 'project_database',
+            }
+
+    # level - studio or project; or: studio, project, season, group, asset, task, chat, log, statistic ...
+    # read_ob - object of studio or project;
+    # table_root - assets, chats - те случаи когда имя файла ДБ не соответствует имени таблицы, если есть table_root - имя файла ДБ будет определяться по нему.
+    # table_root - может быть как именем таблицы - например: assets, так и именем файла - .assets.db
+    def get(self, level, read_ob, table_name, com, table_root=False):
+        """Супер мега метод """
         
-		# -- exists table_name
-		res = c.execute("SELECT name FROM sqlite_master WHERE type='table';")
-		tables = []
-		for item in res:
-			#print(item[0], item[0].__class__.__name__)
-			#print(table_name, table_name.__class__.__name__)
-			#print(item[0] == table_name)
-			tables.append(item[0])
-		if not table_name.replace('"', '') in tables:
-			conn.close()
-			#print('not %s in %s' % (table_name, str(tables)))
-			return(True, list())
+        # get use_db
+        attr = self.use_db_attr.get(level)
+        if not attr:
+            raise Exception('database.get()', 'Unknown Level : %s' % level)
         
-		# -- execute
-		try:
-			c.execute(com)
-		except Exception as e:
-			conn.close()
-			print('#'*3, 'Exception in database.__sqlite3_read:')
-			print('#'*3, 'com:', com)
-			print('#'*3, e)
-			return(False, 'Exception in database.__sqlite3_read, please look the terminal!')
-		
-		data = []
-		for row in c.fetchall():
-			'''
-			dict_row = dict(row)
-			'''
-			dict_row = {}
-			for key in row.keys():
-				if keys[key]=='json':
-					#print('#'*10, key)
-					#print('*'*10, row[key])
-					try:
-						dict_row[key] = json.loads(row[key])
-					except Exception as e:
-						print('%s Exception in database.__sqlite3_read:' % '#'*10)
-						print('%s table = %s, key = %s, row[key] = %s' % ('#'*10, table_name, key, row[key]))
-						print('#'*10, e)
-						dict_row[key] = None
-				else:
-					dict_row[key] = row[key]
-			
-			data.append(dict_row)
-		conn.close()
-		return(True, data)
-	
-	def __sqlite3_create_table(self, level, read_ob, table_name, keys, table_root):
-		com = ''
-		#data_com = []
-		for i, key in enumerate(keys):
-			if keys[key] == 'json':
-				type_data = 'text'
-			else:
-				type_data = keys[key]
-			if i==0:
-				com = com + '"%s" "%s"' % (key, type_data)
-			else:
-				com = com + ', "%s" "%s"' % (key, type_data)
-		com = 'CREATE TABLE IF NOT EXISTS %s (%s)' % (table_name, com)
-		return_data = self.__sqlite3_set(level, read_ob, table_name, com, False, table_root)
-		return(return_data)
-	
-	# write_data - словарь по ключам keys, также может быть списком словарей, для записи нескольких строк.
-	# keys - это: tasks_keys, projects_keys итд.
-	def __sqlite3_insert(self, level, read_ob, table_name, keys, write_data, table_root):
-		if write_data.__class__.__name__ == 'dict':
-			iterator = [write_data]
-		elif write_data.__class__.__name__ == 'list':
-			iterator = write_data
-		# connect
-		# -- db_path
-		db_path = self.__get_db_path(level, read_ob, table_name, table_root)
-		#if not db_path:
-			#return(False, 'No path to database!')
-		# -- connect
-		conn = sqlite3.connect(db_path, detect_types=sqlite3.PARSE_DECLTYPES|sqlite3.PARSE_COLNAMES)
-		conn.row_factory = sqlite3.Row
-		c = conn.cursor()
-		# -- com
-		for item in iterator:
-			com = 'INSERT INTO %s VALUES' % table_name
-			com_=''
-			data_com = []
-			for i, key in enumerate(keys):
-				if i==0:
-					com_ = com_ + ' ?'
-				else:
-					com_ = com_ + ', ?'
-				if keys[key] == 'json':
-					data_ = json.dumps(item.get(key))
-				else:
-					data_ = item.get(key)
-				data_com.append(data_)
-			com = '%s (%s)' % (com, com_)
-			try:
-				c.execute(com, data_com)
-			except Exception as e:
-				print('#'*3, 'Exception in database.__sqlite3_insert:')
-				print('#'*3, 'com:', com)
-				print('#'*3, 'data_com:', data_com)
-				print('#'*3, e)
-				conn.close()
-				return(False, 'Exception in database.__sqlite3_insert, please look the terminal!')
-		conn.commit()
-		conn.close()
-		return(True, 'Ok!')
-			
-	def __sqlite3_get(self, level, read_ob, table_name, com, table_root):
-		#db_path
-		db_path = self.__get_db_path(level, read_ob, table_name, table_root)
-		if not db_path:
-			return(True, list())
-		#print('__sqlite3_get()', db_path, os.path.exists(db_path))
-		
-		try:
-			# -- CONNECT  .db
-			conn = sqlite3.connect(db_path, detect_types=sqlite3.PARSE_DECLTYPES|sqlite3.PARSE_COLNAMES)
-			conn.row_factory = sqlite3.Row
-			c = conn.cursor()
-			
-			# -- exists table_name
-			res = c.execute("SELECT name FROM sqlite_master WHERE type='table';")
-			tables = list()
-			for item in res:
-				tables.append(item[0])
-			if not table_name.replace('"', '') in tables:
-				conn.close()
-				return(True, list())
-			
-			# -- execute
-			c.execute(com)
-			data = []
-			for row in c.fetchall():
-				data.append(dict(row))
-			#print('*'*10, data)
-		except Exception as e:
-			try:
-				conn.close()
-			except:
-				pass
-			print('__sqlite3_get()', e)
-			return(False, e)
-		
-		conn.close()
-		return(True, data)
-	
-	# if com = False - создаётся пустая таблица ,при отсутствии
-	def __sqlite3_set(self, level, read_ob, table_name, com, data_com, table_root):
-		#db_path
-		db_path = self.__get_db_path(level, read_ob, table_name, table_root)
-		#if not db_path:
-			#return(False, 'No path to database!')
-		#print('__sqlite3_get()', db_path, os.path.exists(db_path))
-		
-		try:
-			# -- CONNECT  .db
-			conn = sqlite3.connect(db_path, detect_types=sqlite3.PARSE_DECLTYPES|sqlite3.PARSE_COLNAMES)
-			conn.row_factory = sqlite3.Row
-			c = conn.cursor()
-			if data_com:
-				c.execute(com, data_com)
-			elif com:
-				c.execute(com)
-			else:
-				pass
-		except Exception as e:
-			try:
-				conn.close()
-			except:
-				pass
-			print('#'*3, 'Exception in __sqlite3_set()', e)
-			print('#'*3, 'com:', com)
-			print('#'*3, 'data_com:', data_com)
-			return(False, 'Exception in __sqlite3_set(), please read the terminal!')
-		
-		conn.commit()
-		conn.close()
-		return(True, 'Ok!')
-	
+        db_name, db_data = eval('read_ob.%s' % attr)
+        #return(db_name, db_data)
+        
+        if db_name == 'sqlite3':
+            return_data = self.__sqlite3_get(level, read_ob, table_name, com, table_root)
+            return(return_data)
+
+    # table_root - может быть как именем таблицы - например: assets, так и именем файла - .assets.db
+    def set_db(self, level, read_ob, table_name, com, data_com=False, table_root=False):
+        pass
+        # get use_db
+        attr = self.use_db_attr.get(level)
+        if not attr:
+            raise Exception('database.set_db()', 'Unknown Level : %s' % level)
+        
+        db_name, db_data = eval('read_ob.%s' % attr)
+        #return(db_name, db_data)
+        
+        if db_name == 'sqlite3':
+            return_data = self.__sqlite3_set(level, read_ob, table_name, com, data_com, table_root)
+            return(return_data)
+
+    # table_root - может быть как именем таблицы - например: assets, так и именем файла - .assets.db
+    def create_table(self, level, read_ob, table_name, keys, table_root = False):
+        attr = self.use_db_attr.get(level)
+        if not attr:
+            raise Exception('database.write()', 'Unknown Level : %s' % level)
+        
+        db_name, db_data = eval('read_ob.%s' % attr)
+        #return(db_name, db_data)
+        
+        if db_name == 'sqlite3':
+            return_data = self.__sqlite3_create_table(level, read_ob, table_name, keys, table_root)
+            return(return_data)
+        
+    # write_data - словарь по ключам keys, также может быть списком словарей, для записи нескольких строк.
+    # keys - это: tasks_keys, projects_keys итд.
+    # table_root - может быть как именем таблицы - например: assets, так и именем файла - .assets.db
+    def insert(self, level, read_ob, table_name, keys, write_data, table_root=False):
+        attr = self.use_db_attr.get(level)
+        if not attr:
+            raise Exception('database.insert()', 'Unknown Level : %s' % level)
+        
+        db_name, db_data = eval('read_ob.%s' % attr)
+        #return(db_name, db_data)
+        
+        if db_name == 'sqlite3':
+            # create table
+            bool_, r_data = self.__sqlite3_create_table(level, read_ob, table_name, keys, table_root)
+            if not bool_:
+                return(bool_, r_data)
+            # write
+            return_data = self.__sqlite3_insert(level, read_ob, table_name, keys, write_data, table_root)
+            return(return_data)
+
+    # where - 1) строка условия, 2) словарь по keys, 3) False - значит выделяется всё.
+    # columns - False - означает все столбцы если не False - то список столбцов.
+    def read(self, level, read_ob, table_name, keys, columns = False, where=False, table_root=False):
+        attr = self.use_db_attr.get(level)
+        if not attr:
+            raise Exception('database.read()', 'Unknown Level : %s' % level)
+        
+        db_name, db_data = eval('read_ob.%s' % attr)
+        #return(db_name, db_data)
+        
+        if db_name == 'sqlite3':
+            b, r = self.__sqlite3_read(level, read_ob, table_name, keys, columns, where, table_root)
+            return(b, r)
+
+    # update_data - словарь по ключам из keys
+    # where - словарь по ключам, так как значения маскируются под "?" не может быть None или False
+    # table_root - может быть как именем таблицы - например: assets, так и именем файла - .assets.db
+    def update(self, level, read_ob, table_name, keys, update_data, where, table_root=False):
+        attr = self.use_db_attr.get(level)
+        if not attr:
+            raise Exception('database.update()', 'Unknown Level : %s' % level)
+        
+        db_name, db_data = eval('read_ob.%s' % attr)
+        #return(db_name, db_data)
+        
+        if db_name == 'sqlite3':
+            return_data = self.__sqlite3_update(level, read_ob, table_name, keys, update_data, where, table_root)
+            return(return_data)
+        
+    # удаление строки из таблицы БД
+    # where - словарь по ключам, так как значения маскируются под "?" не может быть None или False
+    # table_root - может быть как именем таблицы - например: assets, так и именем файла - .assets.db
+    def delete(self, level, read_ob, table_name, where, table_root=False):
+        attr = self.use_db_attr.get(level)
+        if not attr:
+            raise Exception('database.update()', 'Unknown Level : %s' % level)
+        
+        db_name, db_data = eval('read_ob.%s' % attr)
+        #return(db_name, db_data)
+        
+        if db_name == 'sqlite3':
+            return_data = self.__sqlite3_delete(level, read_ob, table_name, where, table_root)
+            return(return_data)
+
+    ### SQLITE3
+    # table_root - может быть как именем таблицы - например: assets, так и именем файла - .assets.db
+    #@print_args
+    def __get_db_path(self, level, read_ob, table_name, table_root):
+        attr = self.sqlite3_db_folder_attr.get(level)
+        db_folder = getattr(read_ob, attr)
+        if not db_folder:
+            return(None)
+        if table_root:
+            if table_root.endswith('.db'):
+                db_path = os.path.join(db_folder, table_root)
+            else:
+                db_path = os.path.join(db_folder, '.%s.db' % table_root)
+        else:
+            db_path = os.path.join(db_folder, '.%s.db' % table_name)
+        return(db_path)
+
+    # update_data - словарь по ключам из keys
+    # where - словарь по ключам, так как значения маскируются под "?" не может быть None или False
+    def __sqlite3_update(self, level, read_ob, table_name, keys, update_data, where, table_root):
+        data_com = []
+        # set_data
+        set_data = ''
+        if update_data.__class__.__name__ != 'dict':
+            return(False, 'update_data not dict!')
+        else:
+            for i, key in enumerate(update_data):
+                if i==0:
+                    set_data = '"%s" = ?' % key
+                else:
+                    set_data = set_data + ', "%s" = ?' % key
+                if keys[key]=='json':
+                    data_com.append(json.dumps(update_data[key]))
+                else:
+                    data_com.append(update_data[key])
+        # where
+        where_data = ''
+        if where.__class__.__name__ != 'dict':
+            return(False, 'where not dict!')
+        else:
+            for i, key in enumerate(where):
+                if i==0:
+                    where_data = '%s = ?' % key
+                else:
+                    where_data = where_data + 'AND %s = ?' % key
+                data_com.append(where[key])
+        # com
+        com = 'UPDATE %s SET %s WHERE %s' % (table_name, set_data, where_data)
+        
+        # connect
+        # -- db_path
+        db_path = self.__get_db_path(level, read_ob, table_name, table_root)
+        if not db_path:
+            return(False, 'No path to database!')
+        # -- connect
+        conn = sqlite3.connect(db_path, detect_types=sqlite3.PARSE_DECLTYPES|sqlite3.PARSE_COLNAMES)
+        conn.row_factory = sqlite3.Row
+        c = conn.cursor()
+        # -- com
+        try:
+            c.execute(com, data_com)
+        except Exception as e:
+            print('#'*3, 'Exception in database.__sqlite3_update:')
+            print('#'*3, 'com:', com)
+            print('#'*3, 'data_com:', data_com)
+            print('#'*3, e)
+            conn.close()
+            return(False, 'Exception in database.__sqlite3_update, please look the terminal!')
+        conn.commit()
+        conn.close()
+        return(True, 'Ok!')
+
+    # where - словарь по ключам, так как значения маскируются под "?" не может быть None или False
+    def __sqlite3_delete(self, level, read_ob, table_name, where, table_root):
+        data_com = []
+        
+        # where
+        where_data = ''
+        if where.__class__.__name__ != 'dict':
+            return(False, 'where not dict!')
+        else:
+            for i, key in enumerate(where):
+                if i==0:
+                    where_data = '%s = ?' % key
+                else:
+                    where_data = where_data + ', %s = ?' % key
+                data_com.append(where[key])
+        # com
+        com = 'DELETE FROM %s WHERE %s' % (table_name, where_data)
+        
+        # connect
+        # -- db_path
+        db_path = self.__get_db_path(level, read_ob, table_name, table_root)
+        if not db_path:
+            return(False, 'No path to database!')
+        # -- connect
+        conn = sqlite3.connect(db_path, detect_types=sqlite3.PARSE_DECLTYPES|sqlite3.PARSE_COLNAMES)
+        conn.row_factory = sqlite3.Row
+        c = conn.cursor()
+        # -- com
+        try:
+            c.execute(com, data_com)
+        except Exception as e:
+            print('#'*3, 'Exception in database.__sqlite3_delete:')
+            print('#'*3, 'com:', com)
+            print('#'*3, 'data_com:', data_com)
+            print('#'*3, e)
+            conn.close()
+            return(False, 'Exception in database.__sqlite3_delete, please look the terminal!')
+        conn.commit()
+        conn.close()
+        return(True, 'Ok!')
+
+    # where - 1) строка условия, 2) словарь по keys, может иметь ключ условия - 'condition' значения из [or, end] 3) False - значит выделяется всё.
+    # columns - False - означает все столбцы если не False - то список столбцов.
+    #@print_args
+    def __sqlite3_read(self, level, read_ob, table_name, keys, columns, where, table_root):
+        # columns
+        col = ''
+        if not columns:
+            col = '*'
+        elif columns.__class__.__name__ == 'list':
+            for i, item in enumerate(columns):
+                if i == 0:
+                    col = col + item
+                else:
+                    col = col + ', %s' % item
+        # com
+        com = 'SELECT %s FROM %s ' % (col, table_name)
+        if where:
+            if where.__class__.__name__ == 'string':
+                com = '%s WHERE %s' % (com, where)
+            elif where.__class__.__name__ == 'dict':
+                were_string = ''
+                i=0
+                if not where.get('condition'):
+                    for key in where:
+                        if i == 0:
+                            were_string = were_string + '"%s" = "%s"' % (key, where.get(key))
+                        else:
+                            were_string = were_string + 'AND "%s" = "%s"' % (key, where.get(key))
+                        i=i+1
+                else:
+                    var = where['condition'].upper()
+                    for key in where:
+                        if key == 'condition':
+                            continue
+                        for item in where[key]:
+                            if i == 0:
+                                were_string = were_string + '"%s" = "%s"' % (key, item)
+                            else:
+                                were_string = were_string + '%s "%s" = "%s"' % (var, key, item)
+                            i=i+1
+                        break
+                com = '%s WHERE %s' % (com, were_string)
+        # connect
+        # -- db_path
+        db_path = self.__get_db_path(level, read_ob, table_name, table_root)
+        # -- connect
+        try:
+            conn = sqlite3.connect(db_path, detect_types=sqlite3.PARSE_DECLTYPES|sqlite3.PARSE_COLNAMES)
+            conn.row_factory = sqlite3.Row
+            c = conn.cursor()
+        except Exception as e:
+            print('#'*3, 'Exception in database.__sqlite3_read:')
+            print('#'*3, 'db_path:', db_path)
+            print('#'*3, e)
+            return(False, 'Exception in database.__sqlite3_read, please look the terminal!')
+        
+        # -- exists table_name
+        res = c.execute("SELECT name FROM sqlite_master WHERE type='table';")
+        tables = []
+        for item in res:
+            #print(item[0], item[0].__class__.__name__)
+            #print(table_name, table_name.__class__.__name__)
+            #print(item[0] == table_name)
+            tables.append(item[0])
+        if not table_name.replace('"', '') in tables:
+            conn.close()
+            #print('not %s in %s' % (table_name, str(tables)))
+            return(True, list())
+        
+        # -- execute
+        try:
+            c.execute(com)
+        except Exception as e:
+            conn.close()
+            print('#'*3, 'Exception in database.__sqlite3_read:')
+            print('#'*3, 'com:', com)
+            print('#'*3, e)
+            return(False, 'Exception in database.__sqlite3_read, please look the terminal!')
+        
+        data = []
+        for row in c.fetchall():
+            '''
+            dict_row = dict(row)
+            '''
+            dict_row = {}
+            for key in row.keys():
+                if keys[key]=='json':
+                    #print('#'*10, key)
+                    #print('*'*10, row[key])
+                    try:
+                        dict_row[key] = json.loads(row[key])
+                    except Exception as e:
+                        print('%s Exception in database.__sqlite3_read:' % '#'*10)
+                        print('%s table = %s, key = %s, row[key] = %s' % ('#'*10, table_name, key, row[key]))
+                        print('#'*10, e)
+                        dict_row[key] = None
+                else:
+                    dict_row[key] = row[key]
+            
+            data.append(dict_row)
+        conn.close()
+        return(True, data)
+
+    def __sqlite3_create_table(self, level, read_ob, table_name, keys, table_root):
+        com = ''
+        #data_com = []
+        for i, key in enumerate(keys):
+            if keys[key] == 'json':
+                type_data = 'text'
+            else:
+                type_data = keys[key]
+            if i==0:
+                com = com + '"%s" "%s"' % (key, type_data)
+            else:
+                com = com + ', "%s" "%s"' % (key, type_data)
+        com = 'CREATE TABLE IF NOT EXISTS %s (%s)' % (table_name, com)
+        return_data = self.__sqlite3_set(level, read_ob, table_name, com, False, table_root)
+        return(return_data)
+
+    # write_data - словарь по ключам keys, также может быть списком словарей, для записи нескольких строк.
+    # keys - это: tasks_keys, projects_keys итд.
+    def __sqlite3_insert(self, level, read_ob, table_name, keys, write_data, table_root):
+        if write_data.__class__.__name__ == 'dict':
+            iterator = [write_data]
+        elif write_data.__class__.__name__ == 'list':
+            iterator = write_data
+        # connect
+        # -- db_path
+        db_path = self.__get_db_path(level, read_ob, table_name, table_root)
+        #if not db_path:
+            #return(False, 'No path to database!')
+        # -- connect
+        conn = sqlite3.connect(db_path, detect_types=sqlite3.PARSE_DECLTYPES|sqlite3.PARSE_COLNAMES)
+        conn.row_factory = sqlite3.Row
+        c = conn.cursor()
+        # -- com
+        for item in iterator:
+            com = 'INSERT INTO %s VALUES' % table_name
+            com_=''
+            data_com = []
+            for i, key in enumerate(keys):
+                if i==0:
+                    com_ = com_ + ' ?'
+                else:
+                    com_ = com_ + ', ?'
+                if keys[key] == 'json':
+                    data_ = json.dumps(item.get(key))
+                else:
+                    data_ = item.get(key)
+                data_com.append(data_)
+            com = '%s (%s)' % (com, com_)
+            try:
+                c.execute(com, data_com)
+            except Exception as e:
+                print('#'*3, 'Exception in database.__sqlite3_insert:')
+                print('#'*3, 'com:', com)
+                print('#'*3, 'data_com:', data_com)
+                print('#'*3, e)
+                conn.close()
+                return(False, 'Exception in database.__sqlite3_insert, please look the terminal!')
+        conn.commit()
+        conn.close()
+        return(True, 'Ok!')
+            
+    def __sqlite3_get(self, level, read_ob, table_name, com, table_root):
+        #db_path
+        db_path = self.__get_db_path(level, read_ob, table_name, table_root)
+        if not db_path:
+            return(True, list())
+        #print('__sqlite3_get()', db_path, os.path.exists(db_path))
+        
+        try:
+            # -- CONNECT  .db
+            conn = sqlite3.connect(db_path, detect_types=sqlite3.PARSE_DECLTYPES|sqlite3.PARSE_COLNAMES)
+            conn.row_factory = sqlite3.Row
+            c = conn.cursor()
+            
+            # -- exists table_name
+            res = c.execute("SELECT name FROM sqlite_master WHERE type='table';")
+            tables = list()
+            for item in res:
+                tables.append(item[0])
+            if not table_name.replace('"', '') in tables:
+                conn.close()
+                return(True, list())
+            
+            # -- execute
+            c.execute(com)
+            data = []
+            for row in c.fetchall():
+                data.append(dict(row))
+            #print('*'*10, data)
+        except Exception as e:
+            try:
+                conn.close()
+            except:
+                pass
+            print('__sqlite3_get()', e)
+            return(False, e)
+        
+        conn.close()
+        return(True, data)
+
+    # if com = False - создаётся пустая таблица ,при отсутствии
+    def __sqlite3_set(self, level, read_ob, table_name, com, data_com, table_root):
+        #db_path
+        db_path = self.__get_db_path(level, read_ob, table_name, table_root)
+        #if not db_path:
+            #return(False, 'No path to database!')
+        #print('__sqlite3_get()', db_path, os.path.exists(db_path))
+        
+        try:
+            # -- CONNECT  .db
+            conn = sqlite3.connect(db_path, detect_types=sqlite3.PARSE_DECLTYPES|sqlite3.PARSE_COLNAMES)
+            conn.row_factory = sqlite3.Row
+            c = conn.cursor()
+            if data_com:
+                c.execute(com, data_com)
+            elif com:
+                c.execute(com)
+            else:
+                pass
+        except Exception as e:
+            try:
+                conn.close()
+            except:
+                pass
+            print('#'*3, 'Exception in __sqlite3_set()', e)
+            print('#'*3, 'com:', com)
+            print('#'*3, 'data_com:', data_com)
+            return(False, 'Exception in __sqlite3_set(), please read the terminal!')
+        
+        conn.commit()
+        conn.close()
+        return(True, 'Ok!')
+
 class project(studio):
-	"""
+    """
     **level** = 'studio'
 
     .. rubric:: Данные хранимые в БД (имя столбца : тип данных):
@@ -1386,13 +1386,6 @@ class project(studio):
         
     .. rubric:: Атрибуты
 
-    :list_active_projects: (*list*) - ``атрибут класса`` список активных проектов, только имена. . Заполняется при выполнеии метода `get_list`_, значение по умолчанию - *[]*.
-
-    :list_projects:  (*list*) - ``атрибут класса`` список всех проектов (экземпляры). Заполняется при выполнеии метода `get_list`_, значение по умолчанию - *[]*.
-
-    :dict_projects: (*dict*) - ``атрибут класса`` словарь содержащий все проекты (экземпляры) с ключами по именам. . Заполняется при выполнеии метода `get_list`_, значение по умолчанию - *{}*.
-
-
     Attributes
     ----------
     name : :obj:`str`,
@@ -1410,297 +1403,317 @@ class project(studio):
     preview_img_path : :obj:`str`,
         Путь до директории с превью картинок чата.
     fps : :obj:`float`,
-        **fps** проекта (по умолчанию 24).
+        *fps* проекта (по умолчанию 24).
     units : :obj:`str`,
         Юниты 3d сцен, значение из списка: :obj:`['m', 'cm', 'mm']` по умолчанию ``'m'``.
-    list_active_projects : :obj:`list`, ``атрибут класса``,
-        Список активных проектов, только имена. Заполняется при выполнеии метода :mod:`edit_db.project.get_list`, значение по умолчанию - ``[]``.
-
-	"""
-	
-	list_active_projects = []
-	list_projects = []
-	dict_projects = {}
-	
-	def __init__(self):
-		pass
-		#base fields
-		for key in self.projects_keys:
-			exec('self.%s = False' % key)
-			
-		# constans
-		self.folders = {'assets':'assets', 'chat_img_folder':'.chat_images', 'preview_images': '.preview_images'}
-		
-	# if new=True - возвращает новый инициализированный объект, если False то инициализирует текущий объект и возвращает (True, 'Ok')
-	def init(self, name, new=True): # v2
-		"""Инициализация по имени """
-		pass
-		b, r = database().read('studio', self, self.projects_t, self.projects_keys, table_root=self.projects_db)
-		if not b:
-			return(b, r)
-		
-		for data in r:
-			if data['name'] == name:
-				return(self.init_by_keys(data, new=new))
-		if new:
-			return(None)
-		else:
-			return(False, 'Project with the same name "%s" does not exist!' % name)
+    list_active_projects : :obj:`list` ``атрибут класса``,
+        Список активных проектов, только имена. Заполняется при выполнеии метода :func:`edit_db.project.get_list`, значение по умолчанию - ``[]``.
+    list_projects : :obj:`list` ``атрибут класса``,
+        Список всех проектов (экземпляры). Заполняется при выполнеии метода :func:`edit_db.project.get_list`, значение по умолчанию - ``[]``.
+    dict_projects : :obj:`dict` ``атрибут класса``,
+        Cловарь содержащий все проекты (экземпляры) с ключами по именам. . Заполняется при выполнеии метода :func:`edit_db.project.get_list`, значение по умолчанию - ``{}``.
         
-	def init_by_keys(self, keys, new=True): # v2
-		if new:
-			r_ob = project()
-		else:
-			r_ob = self
-		
-		for key in self.projects_keys:
-			setattr(r_ob, key, keys[key])
-			
-		if new:
-			return r_ob
-		else:
-			return(True, 'Ok!')
+    """
+
+    list_active_projects = []
+    list_projects = []
+    dict_projects = {}
+
+    def __init__(self):
+        pass
+        #base fields
+        for key in self.projects_keys:
+            exec('self.%s = False' % key)
+            
+        # constans
+        self.folders = {'assets':'assets', 'chat_img_folder':'.chat_images', 'preview_images': '.preview_images'}
+        
+    # if new=True - возвращает новый инициализированный объект, если False то инициализирует текущий объект и возвращает (True, 'Ok')
+    def init(self, name, new=True): # v2
+        """Инициализация по имени, возвращает объект проекта
+        
+        Parameters
+        ----------
+        name : :obj:`str`,
+            имя проекта
+        new : :obj:`bool`,
+            если new= *True* - возвращает новый инициализированный экземпляр, если *False* то инициализирует текущий экземпляр
+            
+        Returns
+        -------
+        project
+            если new= *True*
+        tuple
+            (*True,  'Ok!'*) или (*False, comment*)
+        
+        """
+        pass
+        b, r = database().read('studio', self, self.projects_t, self.projects_keys, table_root=self.projects_db)
+        if not b:
+            return(b, r)
+        
+        for data in r:
+            if data['name'] == name:
+                return(self.init_by_keys(data, new=new))
+        if new:
+            return(None)
+        else:
+            return(False, 'Project with the same name "%s" does not exist!' % name)
+        
+    def init_by_keys(self, keys, new=True): # v2
+        if new:
+            r_ob = project()
+        else:
+            r_ob = self
+        
+        for key in self.projects_keys:
+            setattr(r_ob, key, keys[key])
+            
+        if new:
+            return r_ob
+        else:
+            return(True, 'Ok!')
         
 
-	def add_project(self, name, path): # v2
-		project_path = NormPath(path)
-		# test by name
-		self.get_list()
-		if name in self.dict_projects.keys():
-			return(False, "This project name already exists!")
-		
-		# project_name, get project_path
-		if not project_path and not name:
-			return(False, 'No options!')
-			
-		elif not project_path:
-			project_path = os.path.join(self.studio_folder, name)
-			#self.path=project_path
-			try:
-				os.mkdir(project_path)
-			except:
-				return(False, ('Failed to create folder: %s' % project_path))
-		elif name == '':
-			if not os.path.exists(project_path):
-				return(False, ('Project Path: \"%s\" Not Found!' % project_path))
-			name = os.path.basename(project_path)
-		
-		if not os.path.exists(project_path):
-			text = '****** studio.project.add_project() -> %s not found' % project_path
-			return False, text
-		else:
-			self.name = name
-			self.path = project_path
-		
-		# read data
-		data = self._read_settings()
-		#print(data)
-		if not data:
-			self.project_database = ['sqlite3', False] # новый проект в начале всегда sqlite3, чтобы сработало всё в database
-			self.fps = 24
-			self.units = 'm'
-		else:
-			self.project_database = data['project_database']
-			self.fps = data['fps']
-			self.units = data['units']
-			self.name = data['name']
-			
-		#print(self.name, self.path, self.fps)
-		#return
-		
-		#
-		self.list_of_assets_path = NormPath(os.path.join(self.path, self.list_of_assets_name))
-		# create folders
-		self.__make_folders(self.path)
-		# -- get chat_img_folder
-		img_folder_path = os.path.join(self.path, self.folders['chat_img_folder'])
-		if os.path.exists(img_folder_path):
-			self.chat_img_path = img_folder_path
-		else:
-			self.chat_img_path = False
-		# -- get preview_images
-		preview_img_path = os.path.join(self.path, self.folders['preview_images'])	
-		if os.path.exists(preview_img_path):
-			self.preview_img_path = preview_img_path
-		else:
-			self.chat_img_path = False
-		
-		# status
-		self.status = 'active'
-		
-		# create project
-		# -- write data
-		write_data = {}
-		for key in self.projects_keys:
-			write_data[key] = eval('self.%s' % key)
-		#print('#'*3, write_data)
-		bool_, return_data = database().insert('studio', self, self.projects_t, self.projects_keys, write_data)
-		if not bool_:
-			return(bool_, return_data)
-		
-		# create_recycle_bin
-		
-		result = group(self).create_recycle_bin()
-		if not result[0]:
-			return(False, result[1])
-		#
-		self._write_settings()
-		return True, 'ok'
-		
-	# заполняет поля класса list_active_projects, list_projects, dict_projects.
-	def get_list(self): # v2
-		"""Тот самый метод """
-		pass
-		b, r = database().read('studio', self, self.projects_t, self.projects_keys)
-		if not b:
-			return(b,r)
-		
-		list_active_projects = [] # имена активных проектов
-		list_projects = [] # все проекты (объекты)
-		dict_projects = {} # все проекты (объекты) по именам.
-		
-		for item in r:
-			ob = self.init_by_keys(item)
-			list_projects.append(ob)
-			dict_projects[ob.name] = ob
-			if ob.status == 'active':
-				list_active_projects.append(ob.name)
-		
-		self.__fill_class_fields(list_active_projects, list_projects, dict_projects)
-		return(True, list_projects)
-	
-	@classmethod
-	def __fill_class_fields(self, list_active_projects, list_projects, dict_projects):
-		self.list_active_projects = list_active_projects
-		self.list_projects = list_projects
-		self.dict_projects = dict_projects
-	
-	# переименование проекта, перезагружает studio.list_projects
-	# объект должен быть инициализирован
-	def rename_project(self, new_name): # v2
-		pass
-		if not new_name:
-			return(False, 'Not Name!')
-		ud = {'name': new_name}
-		wh = {'name': self.name}
-		bool_, rdata = database().update('studio', self, self.projects_t, self.projects_keys, update_data=ud, where=wh, table_root=self.projects_db)
-		if not bool_:
-			return(bool_, rdata)
-		
-		self.name = new_name
-		#
-		self._write_settings()
-		return(True, 'Ok!')
-		
-	# удаляет проект из БД, перезагружает studio.list_projects, приводит объектк empty.
-	# объект должен быть инициализирован
-	def remove_project(self): # v2
-		pass
-		# edit DB
-		wh = {'name': self.name}
-		bool_, return_data = database().delete('studio', self, self.projects_t, where=wh, table_root=self.projects_db)
-		
-		# to empty
-		for key in self.projects_keys:
-			setattr(self, key, False)
-		#
-		return(True, 'Ok!')
-		
-	# меняет статус проекта
-	# объект должен быть инициализирован
-	def edit_status(self, status): # v2
-		pass
-		# database
-		ud = {'status': status}
-		wh = {'name': self.name}
-		bool_, return_data = database().update('studio', self, self.projects_t, self.projects_keys, update_data=ud, where=wh, table_root=self.projects_db)
-		if not bool_:
-			return(bool_, return_data)
-		
-		self.status = status
-		#
-		self._write_settings()
-		return(True, 'Ok')
-	
-	def change_fps(self, fps):
-		pass
-		try:
-			fps = float(fps)
-		except:
-			return(False, 'invalid value for FPS: "%s"' % str(fps))
-		
-		# database
-		ud = {'fps': fps}
-		wh = {'name': self.name}
-		bool_, return_data = database().update('studio', self, self.projects_t, self.projects_keys, update_data=ud, where=wh, table_root=self.projects_db)
-		if not bool_:
-			return(bool_, return_data)
-		
-		self.fps = fps
-		#
-		self._write_settings()
-		return(True, 'Ok')
-	
-	def change_units(self, units):
-		if not units in self.projects_units:
-			return(False, 'invalid value for Units: "%s"' % str(units))
-		pass
-	
-		# database
-		ud = {'units': units}
-		wh = {'name': self.name}
-		bool_, return_data = database().update('studio', self, self.projects_t, self.projects_keys, update_data=ud, where=wh, table_root=self.projects_db)
-		if not bool_:
-			return(bool_, return_data)
-	
-		self.units = units
-		#
-		self._write_settings()
-		return(True, 'Ok')
-		
-	def __make_folders(self, root): # v2
-		for f in self.folders:
-			path = os.path.join(root, self.folders[f])
-			if not os.path.exists(path):
-				os.mkdir(path)
-				#print '\n****** Created'
-			else:
-				return False, '\n****** studio.project.make_folders -> No Created'
-	
-	def _write_settings(self):
-		pass
-		# 1 - get data
-		# 2 - write data
-	
-		ignoring_keys = ['path', 'list_active_projects', 'list_projects', 'dict_projects']
-	
-		# (1)
-		data = {}
-		for key in self.projects_keys:
-			if key in ignoring_keys:
-				continue
-			data[key] = getattr(self, key)
-		
-		# (2)
-		path = NormPath(os.path.join(self.path, self.PROJECT_SETTING))
-		with open(path, 'w') as f:
-			jsn = json.dump(data, f, sort_keys=True, indent=4)
-			
-		return(True, 'Ok')
-	
-	def _read_settings(self):
-		pass
-	
-		#
-		path = NormPath(os.path.join(self.path, self.PROJECT_SETTING))
-		if not os.path.exists(path):
-			return(None)
-		#
-		with open(path, 'r') as f:
-			data = json.load(f)
-			
-		return data
-	
+    def add_project(self, name, path): # v2
+        project_path = NormPath(path)
+        # test by name
+        self.get_list()
+        if name in self.dict_projects.keys():
+            return(False, "This project name already exists!")
+        
+        # project_name, get project_path
+        if not project_path and not name:
+            return(False, 'No options!')
+            
+        elif not project_path:
+            project_path = os.path.join(self.studio_folder, name)
+            #self.path=project_path
+            try:
+                os.mkdir(project_path)
+            except:
+                return(False, ('Failed to create folder: %s' % project_path))
+        elif name == '':
+            if not os.path.exists(project_path):
+                return(False, ('Project Path: \"%s\" Not Found!' % project_path))
+            name = os.path.basename(project_path)
+        
+        if not os.path.exists(project_path):
+            text = '****** studio.project.add_project() -> %s not found' % project_path
+            return False, text
+        else:
+            self.name = name
+            self.path = project_path
+        
+        # read data
+        data = self._read_settings()
+        #print(data)
+        if not data:
+            self.project_database = ['sqlite3', False] # новый проект в начале всегда sqlite3, чтобы сработало всё в database
+            self.fps = 24
+            self.units = 'm'
+        else:
+            self.project_database = data['project_database']
+            self.fps = data['fps']
+            self.units = data['units']
+            self.name = data['name']
+            
+        #print(self.name, self.path, self.fps)
+        #return
+        
+        #
+        self.list_of_assets_path = NormPath(os.path.join(self.path, self.list_of_assets_name))
+        # create folders
+        self.__make_folders(self.path)
+        # -- get chat_img_folder
+        img_folder_path = os.path.join(self.path, self.folders['chat_img_folder'])
+        if os.path.exists(img_folder_path):
+            self.chat_img_path = img_folder_path
+        else:
+            self.chat_img_path = False
+        # -- get preview_images
+        preview_img_path = os.path.join(self.path, self.folders['preview_images'])	
+        if os.path.exists(preview_img_path):
+            self.preview_img_path = preview_img_path
+        else:
+            self.chat_img_path = False
+        
+        # status
+        self.status = 'active'
+        
+        # create project
+        # -- write data
+        write_data = {}
+        for key in self.projects_keys:
+            write_data[key] = eval('self.%s' % key)
+        #print('#'*3, write_data)
+        bool_, return_data = database().insert('studio', self, self.projects_t, self.projects_keys, write_data)
+        if not bool_:
+            return(bool_, return_data)
+        
+        # create_recycle_bin
+        
+        result = group(self).create_recycle_bin()
+        if not result[0]:
+            return(False, result[1])
+        #
+        self._write_settings()
+        return True, 'ok'
+        
+    # заполняет поля класса list_active_projects, list_projects, dict_projects.
+    def get_list(self): # v2
+        """Тот самый метод """
+        pass
+        b, r = database().read('studio', self, self.projects_t, self.projects_keys)
+        if not b:
+            return(b,r)
+        
+        list_active_projects = [] # имена активных проектов
+        list_projects = [] # все проекты (объекты)
+        dict_projects = {} # все проекты (объекты) по именам.
+        
+        for item in r:
+            ob = self.init_by_keys(item)
+            list_projects.append(ob)
+            dict_projects[ob.name] = ob
+            if ob.status == 'active':
+                list_active_projects.append(ob.name)
+        
+        self.__fill_class_fields(list_active_projects, list_projects, dict_projects)
+        return(True, list_projects)
+
+    @classmethod
+    def __fill_class_fields(self, list_active_projects, list_projects, dict_projects):
+        self.list_active_projects = list_active_projects
+        self.list_projects = list_projects
+        self.dict_projects = dict_projects
+
+    # переименование проекта, перезагружает studio.list_projects
+    # объект должен быть инициализирован
+    def rename_project(self, new_name): # v2
+        pass
+        if not new_name:
+            return(False, 'Not Name!')
+        ud = {'name': new_name}
+        wh = {'name': self.name}
+        bool_, rdata = database().update('studio', self, self.projects_t, self.projects_keys, update_data=ud, where=wh, table_root=self.projects_db)
+        if not bool_:
+            return(bool_, rdata)
+        
+        self.name = new_name
+        #
+        self._write_settings()
+        return(True, 'Ok!')
+        
+    # удаляет проект из БД, перезагружает studio.list_projects, приводит объектк empty.
+    # объект должен быть инициализирован
+    def remove_project(self): # v2
+        pass
+        # edit DB
+        wh = {'name': self.name}
+        bool_, return_data = database().delete('studio', self, self.projects_t, where=wh, table_root=self.projects_db)
+        
+        # to empty
+        for key in self.projects_keys:
+            setattr(self, key, False)
+        #
+        return(True, 'Ok!')
+        
+    # меняет статус проекта
+    # объект должен быть инициализирован
+    def edit_status(self, status): # v2
+        pass
+        # database
+        ud = {'status': status}
+        wh = {'name': self.name}
+        bool_, return_data = database().update('studio', self, self.projects_t, self.projects_keys, update_data=ud, where=wh, table_root=self.projects_db)
+        if not bool_:
+            return(bool_, return_data)
+        
+        self.status = status
+        #
+        self._write_settings()
+        return(True, 'Ok')
+
+    def change_fps(self, fps):
+        pass
+        try:
+            fps = float(fps)
+        except:
+            return(False, 'invalid value for FPS: "%s"' % str(fps))
+        
+        # database
+        ud = {'fps': fps}
+        wh = {'name': self.name}
+        bool_, return_data = database().update('studio', self, self.projects_t, self.projects_keys, update_data=ud, where=wh, table_root=self.projects_db)
+        if not bool_:
+            return(bool_, return_data)
+        
+        self.fps = fps
+        #
+        self._write_settings()
+        return(True, 'Ok')
+
+    def change_units(self, units):
+        if not units in self.projects_units:
+            return(False, 'invalid value for Units: "%s"' % str(units))
+        pass
+
+        # database
+        ud = {'units': units}
+        wh = {'name': self.name}
+        bool_, return_data = database().update('studio', self, self.projects_t, self.projects_keys, update_data=ud, where=wh, table_root=self.projects_db)
+        if not bool_:
+            return(bool_, return_data)
+
+        self.units = units
+        #
+        self._write_settings()
+        return(True, 'Ok')
+        
+    def __make_folders(self, root): # v2
+        for f in self.folders:
+            path = os.path.join(root, self.folders[f])
+            if not os.path.exists(path):
+                os.mkdir(path)
+                #print '\n****** Created'
+            else:
+                return False, '\n****** studio.project.make_folders -> No Created'
+
+    def _write_settings(self):
+        pass
+        # 1 - get data
+        # 2 - write data
+
+        ignoring_keys = ['path', 'list_active_projects', 'list_projects', 'dict_projects']
+
+        # (1)
+        data = {}
+        for key in self.projects_keys:
+            if key in ignoring_keys:
+                continue
+            data[key] = getattr(self, key)
+        
+        # (2)
+        path = NormPath(os.path.join(self.path, self.PROJECT_SETTING))
+        with open(path, 'w') as f:
+            jsn = json.dump(data, f, sort_keys=True, indent=4)
+            
+        return(True, 'Ok')
+
+    def _read_settings(self):
+        pass
+
+        #
+        path = NormPath(os.path.join(self.path, self.PROJECT_SETTING))
+        if not os.path.exists(path):
+            return(None)
+        #
+        with open(path, 'r') as f:
+            data = json.load(f)
+            
+        return data
+
 class asset(studio):
 	'''
 	https://sites.google.com/site/lineykadoc/home/doc/edit-database/class-studio-project-asset
