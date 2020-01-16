@@ -1430,9 +1430,14 @@ class project(studio):
         
     # if new=True - возвращает новый инициализированный объект, если False то инициализирует текущий объект и возвращает (True, 'Ok')
     def init(self, name, new=True): # v2
-        """Инициализация по имени, возвращает объект проекта
+        """Инициализация по имени, возвращает объект проекта, или инициализирует текущий.
         
-        .. rubric:: Parameters
+        Args:
+            param1 (int): The first parameter.
+            param2 (str): The second parameter.
+
+        Returns:
+            bool: The return value. True for success, False otherwise.
         
         name : :obj:`str`,
             имя проекта
