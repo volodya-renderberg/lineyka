@@ -1425,19 +1425,18 @@ class project(studio):
         # constans
         self.folders = {'assets':'assets', 'chat_img_folder':'.chat_images', 'preview_images': '.preview_images'}
         
-    # if new=True - возвращает новый инициализированный объект, если False то инициализирует текущий объект и возвращает (True, 'Ok')
     def init(self, name, new=True): # v2
-        """Инициализация по имени, возвращает объект проекта, или инициализирует текущий.
+        """Инициализация по имени, возвращает новый, или инициализирует текущий экземпляр.
         
         .. rubric:: Parameters:
         
         :name: (str) - имя проекта
         
-        :new: (bool) - если new= *True* - возвращает новый инициализированный экземпляр, если *False* то инициализирует текущий экземпляр
+        :new: (bool) - если *True* - возвращает новый инициализированный экземпляр, если *False* то инициализирует текущий экземпляр
             
         .. rubric:: Returns:
         
-        * если new= *True* - экземпляр :class:`edit_db.project`
+        * если new= *True* - экземпляр класса :class:`edit_db.project`
         * если new= *False* - (*True,  'Ok!'*) или (*False, comment*)
         """
         pass
@@ -1452,8 +1451,22 @@ class project(studio):
             return(None)
         else:
             return(False, 'Project with the same name "%s" does not exist!' % name)
-        
+
     def init_by_keys(self, keys, new=True): # v2
+        """Инициализация по словарю (без чтения БД), возвращает новый, или инициализирует текущий экземпляр.
+        
+        .. rubric:: Parameters:
+  
+        :keys: (dict) - словарь по :obj:`edit_db.studio.projects_keys`
+        
+        :new: (bool) - если *True* - возвращает новый инициализированный экземпляр, если *False* то инициализирует текущий.
+        
+        .. rubric:: Returns:
+        
+        * если new= *True* - экземпляр класса :class:`edit_db.project`
+        * если new= *False* - (*True,  'Ok!'*) или (*False, comment*)
+        """
+        
         if new:
             r_ob = project()
         else:
@@ -1466,9 +1479,23 @@ class project(studio):
             return r_ob
         else:
             return(True, 'Ok!')
-        
 
     def add_project(self, name, path): # v2
+        """Создаёт проект 
+        
+        .. note:: При создании проекта новый экземпляр не возвращается, заполняются поля текущего экземпляра.
+  
+        .. rubric:: Parameters:
+        
+        :project_name: (str) - имя проекта, если имя не указано, но указана директория, проект будет назван именем директории
+        
+        :project_path: (str - path) - путь к директории проекта, если путь не указан, директория проекта будет создана в директории студии
+        
+        .. rubric:: Returns:
+        
+        * (*True, 'Ok!'*) или (*False, comment*)
+        """
+        
         project_path = NormPath(path)
         # test by name
         self.get_list()
