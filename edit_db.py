@@ -1432,20 +1432,19 @@ class project(studio):
     def init(self, name, new=True): # v2
         """Инициализация по имени, возвращает объект проекта
         
-        Parameters
-        ----------
+        .. rubric:: Parameters
+        
         name : :obj:`str`,
             имя проекта
         new : :obj:`bool`,
             если new= *True* - возвращает новый инициализированный экземпляр, если *False* то инициализирует текущий экземпляр
             
-        Returns
-        -------
+        .. rubric:: Returns
+        
         project
             если new= *True*
         tuple
-            (*True,  'Ok!'*) или (*False, comment*)
-        
+            (*True,  'Ok!'*) или (*False, comment*) если new= *False*
         """
         pass
         b, r = database().read('studio', self, self.projects_t, self.projects_keys, table_root=self.projects_db)
