@@ -1481,7 +1481,7 @@ class project(studio):
             return(True, 'Ok!')
 
     def add_project(self, name, path): # v2
-        """Создаёт проект 
+        """Создаёт проект согласно :ref:`make-project-page`
         
         .. note:: При создании проекта новый экземпляр не возвращается, заполняются поля текущего экземпляра.
   

@@ -12,6 +12,7 @@ Contents:
    specifications/statistics
    specifications/time_zone
    specifications/input_output
+   specifications/make_project
    specifications/task
    specifications/chat
    specifications/new_types_of_assets
