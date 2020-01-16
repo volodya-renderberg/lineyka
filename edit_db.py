@@ -1384,34 +1384,31 @@ class project(studio):
         
         project = db.project()
         
-    .. rubric:: Атрибуты
+    .. rubric:: Attributes:
 
-    Attributes
-    ----------
-    name : :obj:`str`,
-        Имя проекта (уникально).
-    path : :obj:`str`,
-        Путь до директории проекта.
-    status : :obj:`str`,
-        Значение из списка :obj:`['active', 'none']`.
-    project_database : :obj:`list`,
-        Параметры используемой базы данных, по умолчанию: ``['sqlite3', False]``.
-    chat_img_path : :obj:`str`,
-        Путь до директории с картинками чата.
-    list_of_assets_path : :obj:`str`,
-        Путь до файла с временными данными создаваемых ассетов.
-    preview_img_path : :obj:`str`,
-        Путь до директории с превью картинок чата.
-    fps : :obj:`float`,
-        *fps* проекта (по умолчанию 24).
-    units : :obj:`str`,
-        Юниты 3d сцен, значение из списка: :obj:`['m', 'cm', 'mm']` по умолчанию ``'m'``.
-    list_active_projects : :obj:`list` ``атрибут класса``,
-        Список активных проектов, только имена. Заполняется при выполнеии метода :func:`edit_db.project.get_list`, значение по умолчанию - ``[]``.
-    list_projects : :obj:`list` ``атрибут класса``,
-        Список всех проектов (экземпляры). Заполняется при выполнеии метода :func:`edit_db.project.get_list`, значение по умолчанию - ``[]``.
-    dict_projects : :obj:`dict` ``атрибут класса``,
-        Cловарь содержащий все проекты (экземпляры) с ключами по именам. . Заполняется при выполнеии метода :func:`edit_db.project.get_list`, значение по умолчанию - ``{}``.
+    :name: (str) - Имя проекта (уникально).
+    
+    :path: (str) -  Путь до директории проекта.
+    
+    :status: (str) -  Значение из списка :obj:`['active', 'none']`.
+    
+    :project_database: (list) - Параметры используемой базы данных, по умолчанию: ``['sqlite3', False]``.
+    
+    :chat_img_path: (str) - Путь до директории с картинками чата.
+    
+    :list_of_assets_path: (str) - Путь до файла с временными данными создаваемых ассетов.
+    
+    :preview_img_path: (str) - Путь до директории с превью картинок чата.
+    
+    :fps: (float) - *fps* проекта (по умолчанию 24).
+    
+    :units: (str) - Юниты 3d сцен, значение из списка: :obj:`['m', 'cm', 'mm']` по умолчанию ``'m'``.
+    
+    :list_active_projects: (list) ``атрибут класса`` - Список активных проектов, только имена. Заполняется при выполнеии метода :func:`edit_db.project.get_list`, значение по умолчанию - ``[]``.
+    
+    :list_projects: (list) ``атрибут класса`` - Список всех проектов (экземпляры). Заполняется при выполнеии метода :func:`edit_db.project.get_list`, значение по умолчанию - ``[]``.
+    
+    :dict_projects: (dict) ``атрибут класса`` - Cловарь содержащий все проекты (экземпляры) с ключами по именам. . Заполняется при выполнеии метода :func:`edit_db.project.get_list`, значение по умолчанию - ``{}``.
         
     """
 
@@ -1432,24 +1429,16 @@ class project(studio):
     def init(self, name, new=True): # v2
         """Инициализация по имени, возвращает объект проекта, или инициализирует текущий.
         
-        Args:
-            param1 (int): The first parameter.
-            param2 (str): The second parameter.
-
-        Returns:
-            bool: The return value. True for success, False otherwise.
+        .. rubric:: Parameters:
         
-        name : :obj:`str`,
-            имя проекта
-        new : :obj:`bool`,
-            если new= *True* - возвращает новый инициализированный экземпляр, если *False* то инициализирует текущий экземпляр
+        :name: (str) - имя проекта
+        
+        :new: (bool) - если new= *True* - возвращает новый инициализированный экземпляр, если *False* то инициализирует текущий экземпляр
             
-        .. rubric:: Returns
+        .. rubric:: Returns:
         
-        project
-            если new= *True*
-        tuple
-            (*True,  'Ok!'*) или (*False, comment*) если new= *False*
+        * если new= *True* - экземпляр :class:`edit_db.project`
+        * если new= *False* - (*True,  'Ok!'*) или (*False, comment*)
         """
         pass
         b, r = database().read('studio', self, self.projects_t, self.projects_keys, table_root=self.projects_db)
