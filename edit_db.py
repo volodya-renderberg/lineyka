@@ -1444,16 +1444,11 @@ class project(studio):
     def init(self, name, new=True): # v2
         """Инициализация по имени, возвращает новый, или инициализирует текущий экземпляр.
         
-        .. rubric:: Parameters:
-        
-        * name - ``str`` имя проекта
-        
-        * new - ``bool`` если *True* - возвращает новый инициализированный экземпляр, если *False* то инициализирует текущий экземпляр
+        :Parameters: * **name** (*str*) - имя проекта.
+                     * **new** (*bool*) - если *True* - возвращает новый инициализированный экземпляр, если *False* то инициализирует текущий экземпляр
             
-        .. rubric:: Returns:
-        
-        * если new= *True* - экземпляр класса :class:`edit_db.project`
-        * если new= *False* - (*True,  'Ok!'*) или (*False, comment*)
+        :Returns: * если new= *True* - экземпляр класса :class:`edit_db.project`
+                  * если new= *False* - (*True,  'Ok!'*) или (*False, comment*)
         """
         pass
         b, r = database().read('studio', self, self.projects_t, self.projects_keys, table_root=self.projects_db)
@@ -1496,10 +1491,10 @@ class project(studio):
         
         .. note:: При создании проекта новый экземпляр не возвращается, заполняются поля текущего экземпляра.
   
-        :Parameters: * **project_name** (*str ) - имя проекта, если имя не указано, но указана директория, проект будет назван именем директории
+        :Parameters: * **project_name** (*str*) - имя проекта, если имя не указано, но указана директория, проект будет назван именем директории
                      * **project_path** (*str*) - путь к директории проекта, если путь не указан, директория проекта будет создана в директории студии
         
-        :Returns: (*True, 'Ok!'*) или (*False, comment*)
+        :Returns: (*True, Ok!*) или (*False, comment*)
         """
         
         project_path = NormPath(path)
@@ -1589,14 +1584,13 @@ class project(studio):
     def get_list(self): # v2
         """Заполняет атрибуты класса:
         
-        * :attr:`edit_db.project.list_active_projects`,
-        * :attr:`edit_db.project.list_projects`,
+        * :attr:`edit_db.project.list_active_projects`
+        * :attr:`edit_db.project.list_projects`
         * :attr:`edit_db.project.dict_projects`
         
-        .. rubric:: Returns:
-        
-        * (*True*, :attr:`edit_db.project.list_projects`) или (*False, comment*)
+        :Returns: (*True*, :attr:`edit_db.project.list_projects`) или (*False, comment*)
         """
+        
         pass
         b, r = database().read('studio', self, self.projects_t, self.projects_keys)
         if not b:
@@ -1628,13 +1622,9 @@ class project(studio):
         * заполняются поля экземпляра,
         * перезаписывается :attr:`edit_db.studio.PROJECT_SETTING`
         
-        .. rubric:: Parameters:
+        :Parameters: **new_name** (*str*) - новое имя отдела.
         
-        :new_name: (*str*) - новое имя отдела.
-        
-        .. rubric:: Returns:
-        
-        * (*True, 'Ok!'*) или (*False, comment*).
+        :Returns: (*True, 'Ok!'*) или (*False, comment*).
         
         """
         pass
@@ -1657,9 +1647,7 @@ class project(studio):
         * перезаписывается :attr:`edit_db.studio.PROJECT_SETTING`,
         * приводит экземпляр к сосотоянию *empty* (все поля по :attr:`edit_db.studio.projects_keys` = *False*).
   
-        .. rubric:: Returns:
-        
-        * (*True, 'Ok!'*) или (*False, comment*).
+        :Returns: (*True, 'Ok!'*) или (*False, comment*).
         
         """
         pass
@@ -1677,13 +1665,9 @@ class project(studio):
         """
         Изменение статуса проекта.
         
-        .. rubric:: Parameters:
+        :Parameters: **status** (*str*) - присваиваемый статус, должен быть из списка :attr:`edit_db.studio.PROJECTS_STATUSES`
         
-        :status: (*str*) - присваиваемый статус, должен быть из списка :attr:`edit_db.studio.PROJECTS_STATUSES`
-        
-        .. rubric:: Returns:
-        
-        * (*True, 'Ok!'*) или (*False, comment*)
+        :Returns: (*True, 'Ok!'*) или (*False, comment*)
         """
         
         pass
@@ -1702,6 +1686,13 @@ class project(studio):
         return(True, 'Ok')
 
     def change_fps(self, fps):
+        """Изменение *fps* проекта, предполагается автоматическое назначение этого параметра в сценах. 
+        
+        :Parameters: **fps** (*float*) - fps
+        
+        :Returns (*True, Ok!*) или (*False, comment*)
+        """
+        
         pass
         try:
             fps = float(fps)
@@ -1721,6 +1712,14 @@ class project(studio):
         return(True, 'Ok')
 
     def change_units(self, units):
+        """
+        Изменение юнитов проекта, параметр для 3d сцен. Предполагается автоматическое назначение этого параметра в сценах.
+  
+        :Parameters: **units** (*str*) - юниты для 3d сцен, значение из :attr:`edit_db.studio.projects_units`
+        
+        :Returns: (*True, Ok!*) или (*False, comment*)
+        """
+        
         if not units in self.projects_units:
             return(False, 'invalid value for Units: "%s"' % str(units))
         pass
