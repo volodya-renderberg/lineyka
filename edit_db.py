@@ -38,23 +38,37 @@ def print_args(fn):
     return(inner_fn)
 
 class studio:
-    """Супер класс """
+    """Базовый класс для всех остальных классов. """
 
     farme_offset = 100
-    """int: супер атрибут"""
-    # studio
+    """(int) - Номер кадра, который будет считаться стартовым для сцены анимации. """
     studio_folder = False
+    """(str) - Директория студии. """
     tmp_folder = False
+    """(str) - tmp директория пользователя, в неё копируются открываемые сцены. """
     work_folder = False
+    """(str) - Директория для локального хранения ассетов пользователя. Создаётся вся файловая структура ``project/assets/asset/activity/version_dir/file`` """
     convert_exe = False
+    """(str) - Путь к файлу convert.exe приложения 'Imagemagick' """
     studio_database = ['sqlite3', False]
+    """(str) - Определение используемой в студии базы данных. """
     init_path = False
+    """(str) - ``?`` """
     set_path = False
+    """(str) - ``?`` """
     share_dir = False
-    list_projects = {} # a list of existing projects
+    """(str) - ``?`` """
+    list_projects = {}
+    """(list) - ``?`` """
     list_active_projects = []
-
+    """(list) - ``?`` """
     extensions = ['.blend', '.ma', '.tiff', '.ntp']
+    """(list) - Список возможных расширений для рабочих файлов, которым будет сопоставляться приложение. 
+    
+    Заполняется в :func:`edit_db.studio.get_studio`
+    
+    .. note:: Возможно совершенно бесполезный атрибут, так как эти значения есть :attr:`edit_db.studio.setting_data` ['extension'].keys()
+    """
     setting_data = {
     'extension': {
         '.tiff':'krita',
@@ -63,31 +77,54 @@ class studio:
         '.ma': 'maya',
         '.ods':'libreoffice',
         },
-    'task__visible_fields':[
+    'task_visible_fields':[
         'activity',
         'task_type',
         'artist',
         'priority',
-        'extension',
-        ]
-    }
+        'extension',]}
+    """(dict) - словарь пользовательский настроек.
+    
+    :Значения по ключам: * **extension** (dict) - ключи - расширения файлов, значения - приложение которое им соответствует (имя экзешника или путь к нему).
+                         * **task_visible_fields** (list) - список полей, отображаемых в ячейке задачи таблицы таск менеджера.
+    .. note:: А возможно наоборот превратить этот словарь в два атрибута, соответсвующих его ключам.
+    """
     look_extension = '.jpg'
+    """(str) - расширение файла изображения, которое используется в просмотре. """
     preview_extension = '.png'
+    """(str) - расширение файла изображения, которое используется при создании превью изображения. """
     publish_folder_name = 'publish'
-
+    """(str) - имя паблиш директории """
     soft_data = None
-
+    """ ``?`` """
     priority = ['normal', 'high', 'top', 'ultra']
-
+    """(list) - Список используемых приоритетов
+    
+    .. note:: Возможно устарело, так как мы перешли просто на множество натуральных чисел (от 0 до бесконечности).
+    """
     user_levels = ('user', 'extend_user', 'manager', 'root')
-    manager_levels = ('manager', 'root')
-
-    task_status = ('null','ready', 'ready_to_send', 'work', 'work_to_outsorce', 'pause', 'recast', 'checking', 'done', 'close')
+    """(list) - Список существующих пользователей
+    
+    .. note:: Возможно стоит добавить ``superroot`` - который будет всего один, когда root`ов может быть сколько угодно.
+    """
+    manager_levels = ['manager', 'root']
+    """(list) - Список пользовательских уровней, обладающих функцией менеджера. """
+    task_status = ['null','ready', 'ready_to_send', 'work', 'work_to_outsorce', 'pause', 'recast', 'checking', 'done', 'close']
+    """(list) - список существующих статусов задач. """
     working_statuses = ['ready', 'ready_to_send', 'work', 'work_to_outsorce', 'pause', 'recast']
-    end_statuses = ('done', 'close')
+    """(list) - Список статусов задач, не выполненного состояния.
+    
+    .. note:: Возможно тупость, достаточно просто проверять, находится ли статуc в :attr:`edit_db.studio.end_statuses`
+    """
+    end_statuses = ['done', 'close']
+    """(list) - Статусы задач завершённого состояния. """
 
     #NOT_USED_EXTENSIONS = ['.blend','.tiff', '.ods', '.xcf', '.svg']
     EMPTY_FILES_DIR_NAME = 'empty_files'
+    """(str) - имя директории для хранения пользовательских заготовок файлов, для тех приложений, которые не могут создавать пустой файл при открытии по несуществующему пути.
+    
+    Расположение в директории: ``~/.lineyka/``
+    """
 
     color_status = {
     'null':(0.451000005, 0.451000005, 0.451000005),
@@ -104,12 +141,13 @@ class studio:
     #'close':(0.1645569652, 0.08450711519, 0.02499599569)
     'close':(0.613, 0.373, 0.195)
     }
+    """(dict) - ключ - название статуса задачи, значение - соответствующий ему ``rgb`` (0 - 1) """
 
     projects_units = ['m', 'cm', 'mm']
-    """list: Список возможных размерностей юнита 3d сцен. """
+    """(list) - Список возможных размерностей юнита 3d сцен. """
     
     PROJECTS_STATUSES = ['active', 'none']
-    """list: Список возможных статусов для проектов. """
+    """(list) - Список возможных статусов для проектов. """
 
     task_types = [
     # -- film
@@ -137,13 +175,16 @@ class studio:
     'render',
     'composition',
     ]
+    """(list) - Список используемых типов задач. """
 
     multi_publish_task_types = ['sketch']
+    """(list) - Список задач, для которых возможен паблиш всех существующих веток, подробнее тут :ref:`commit-push-publish-page`. """
 
     service_tasks = [
     'all',
     'pre',
     ]
+    """(list) - Префиксы сервисных задач. """
 
     asset_types = [
     'object',
@@ -151,6 +192,7 @@ class studio:
     'shot_animation',
     'film'
     ]
+    """(list) - Список используемых типов ассетов. """
 
     asset_types_with_season = [
     'animatic',
@@ -160,6 +202,10 @@ class studio:
     'shot_composition',
     'film'
     ]
+    """(list) - Список ассетов для которых имеет значение сезон.
+    
+    .. attention:: Совсем устаревшее, возможно надо полностью удалить.
+    """
 
     asset_keys = {
     'name': 'text',
@@ -175,8 +221,10 @@ class studio:
     'status': 'text',
     'parent': 'json' # {'name':asset_name, 'id': asset_id} - возможно не нужно
     }
+    """(dict) - Обозначение данных хранимых в БД для объектов :class:`edit_db.asset` . Ключи - заголовки, значения - тип данных БД. """
 
     loading_types = ['mesh', 'group', 'rig']
+    """(list) - Типы загрузок ассетов в сцену. """
 
     # constants (0 - 3 required parameters)
     tasks_keys = {
@@ -206,32 +254,15 @@ class studio:
     'extension': 'text',
     'description': 'text',  # описание задачи
     }
-    '''
-    workroom_keys = [
-    ('name', 'text'),
-    ('id', 'text'),
-    ('type', 'json')
-    ]
-    '''
+    """(dict) - Обозначение данных хранимых в БД для объектов :class:`edit_db.task` . Ключи - заголовки, значения - тип данных БД. """
+    
     workroom_keys = {
     'name': 'text',
     'id': 'text',
     'type': 'json'
     }
+    """(dict) - Обозначение данных хранимых в БД для объектов :class:`edit_db.workroom` . Ключи - заголовки, значения - тип данных БД. """
 
-    # activity, task_name, action, date_time, description, version, artist
-    '''
-    logs_keys = [
-    ('activity', 'text'),
-    ('task_name', 'text'),
-    ('action', 'text'),
-    ('date_time', 'timestamp'),
-    ('description', 'text'),
-    ('version', 'text'),
-    ('artist', 'text')
-    ]
-    '''
-    # user_name, task_name, data_start, data_end, long_time, cost
     statistics_keys = [
     ('project_name', 'text'),
     ('task_name', 'text'),
@@ -241,23 +272,8 @@ class studio:
     ('cost', 'text'),
     ('status', 'text')
     ]
-    # artist_name, user_name, email, phone, specialty, outsource = '' or '0'/'1'
-    '''
-    artists_keys = [
-    ('nik_name', 'text'),
-    ('user_name', 'text'),
-    ('password', 'text'),
-    ('date_time', 'timestamp'),
-    ('email', 'text'),
-    ('phone', 'text'),
-    ('specialty', 'text'),
-    ('outsource', 'text'),
-    ('workroom', 'text'),
-    ('level', 'text'),
-    ('share_dir', 'text'),
-    ('status', 'text')
-    ]
-    '''
+    """(list) ``?`` """
+    
     artists_keys = {
     'nik_name': 'text',
     'user_name': 'text',
@@ -274,6 +290,8 @@ class studio:
     'working_tasks': 'json',# список имён назначенных в работу задач
     'checking_tasks': 'json',# список имён назначенных на проверку задач
     }
+    """(dict) - Обозначение данных хранимых в БД для объектов :class:`edit_db.artist` . Ключи - заголовки, значения - тип данных БД. """
+    
     chats_keys = {
     'message_id':'text',
     'date_time': 'timestamp',
@@ -284,6 +302,7 @@ class studio:
     'status': 'text',
     'reading_status': 'json',
     }
+    """(dict) - Обозначение данных хранимых в БД для объектов :class:`edit_db.chat` . Ключи - заголовки, значения - тип данных БД. """
 
     projects_keys = {
     'name': 'text',
@@ -296,6 +315,7 @@ class studio:
     'fps': 'real',
     'units': 'text',
     }
+    """(dict) - Обозначение данных хранимых в БД для объектов :class:`edit_db.project` . Ключи - заголовки, значения - тип данных БД. """
 
     group_keys = {
     'name': 'text',
@@ -304,12 +324,17 @@ class studio:
     'description': 'text',
     'id': 'text',
     }
+    """(dict) - Обозначение данных хранимых в БД для объектов :class:`edit_db.group` . Ключи - заголовки, значения - тип данных БД. """
 
     season_keys = {
     'name': 'text',
     'status':'text',
     'id': 'text',
     }
+    """(dict) - Обозначение данных хранимых в БД для объектов :class:`edit_db.season` . Ключи - заголовки, значения - тип данных БД. 
+    
+    .. attention:: Устаревшее, так же как и класс, скорее всего.
+    """
 
     list_of_assets_keys = [
     'asset_name',
@@ -1424,13 +1449,13 @@ class project(studio):
     """
 
     list_active_projects = []
-    """(list) ``атрибут класса`` - Список активных проектов, только имена. Заполняется при выполнеии метода :func:`edit_db.project.get_list`, значение по умолчанию - ``[]``. """
+    """(list) ``атрибут класса`` - Список активных проектов, только имена. Заполняется при выполнении метода :func:`edit_db.project.get_list`, значение по умолчанию - ``[]``. """
     
     list_projects = []
-    """(list)  ``атрибут класса`` - Список всех проектов (экземпляры). Заполняется при выполнеии метода :func:`edit_db.project.get_list`, значение по умолчанию - ``[]``. """
+    """(list)  ``атрибут класса`` - Список всех проектов (экземпляры). Заполняется при выполнении метода :func:`edit_db.project.get_list`, значение по умолчанию - ``[]``. """
     
     dict_projects = {}
-    """(dict) ``атрибут класса`` - Cловарь содержащий все проекты (экземпляры) с ключами по именам. Заполняется при выполнеии метода :func:`edit_db.project.get_list`, значение по умолчанию - ``{}``. """
+    """(dict) ``атрибут класса`` - Cловарь содержащий все проекты (экземпляры) с ключами по именам. Заполняется при выполнении метода :func:`edit_db.project.get_list`, значение по умолчанию - ``{}``. """
 
     def __init__(self):
         pass
@@ -1644,7 +1669,6 @@ class project(studio):
     def remove_project(self): # v2
         """
         * удаляет проект из БД (не удаляя файловую структуру),
-        * перезаписывается :attr:`edit_db.studio.PROJECT_SETTING`,
         * приводит экземпляр к сосотоянию *empty* (все поля по :attr:`edit_db.studio.projects_keys` = *False*).
   
         :Returns: (*True, Ok!*) или (*False, comment*).

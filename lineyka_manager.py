@@ -6232,7 +6232,7 @@ class MainWindow(QtWidgets.QMainWindow):
 				
 				newItem = QtGui.QTableWidgetItem()
 				#item_text = '%s\n---' % task_ob.task_name.replace('%s:' % task_ob.asset.name, '')
-				#for attr in self.db_studio.setting_data['task__visible_fields']:
+				#for attr in self.db_studio.setting_data['task_visible_fields']:
 					#item_text = '%s\n%s: %s' % (item_text, attr, getattr(task_ob, attr))
 				item_text = self.tm_get_item_text(task_ob)
 				newItem.setText(item_text)
@@ -6272,7 +6272,7 @@ class MainWindow(QtWidgets.QMainWindow):
 		
 	def tm_get_item_text(self, task_ob):
 		item_text = '%s\n---' % task_ob.task_name.replace('%s:' % task_ob.asset.name, '')
-		for attr in self.db_studio.setting_data['task__visible_fields']:
+		for attr in self.db_studio.setting_data['task_visible_fields']:
 			item_text = '%s\n%s: %s' % (item_text, attr, getattr(task_ob, attr))
 		return(item_text)
 		
