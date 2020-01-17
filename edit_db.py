@@ -1388,35 +1388,36 @@ class project(studio):
         import edit_db as db
         
         project = db.project()
+    
         
     .. rubric:: Параметры экземпляра (заполнение из БД):
         
-        name
-            str: - Имя проекта (уникально).
-        
-        path
-            str: - Путь до директории проекта.
-        
-        status
-            str: - Теущий статус проекта, значение из списка :attr:`edit_db.studio.PROJECTS_STATUSES`.
-        
-        project_database
-            list: - Параметры используемой базы данных, по умолчанию: ``['sqlite3', False]``.
-        
-        chat_img_path
-            str: - Путь до директории с картинками чата.
-        
-        list_of_assets_path
-            str: - Путь до файла с временными данными создаваемых ассетов.
-        
-        preview_img_path
-            str: - Путь до директории с превью картинок чата.
-        
-        fps
-            float: - *fps* проекта (по умолчанию 24).
-        
-        units
-            str: - Юниты 3d сцен, значение из списка: :attr:`edit_db.studio.projects_units` по умолчанию ``'m'``.
+    name
+        str: - Имя проекта (уникально).
+    
+    path
+        str: - Путь до директории проекта.
+    
+    status
+        str: - Теущий статус проекта, значение из списка :attr:`edit_db.studio.PROJECTS_STATUSES`.
+    
+    project_database
+        list: - Параметры используемой базы данных, по умолчанию: ``['sqlite3', False]``.
+    
+    chat_img_path
+        str: - Путь до директории с картинками чата.
+    
+    list_of_assets_path
+        str: - Путь до файла с временными данными создаваемых ассетов.
+    
+    preview_img_path
+        str: - Путь до директории с превью картинок чата.
+    
+    fps
+        float: - *fps* проекта (по умолчанию 24).
+    
+    units
+        str: - Юниты 3d сцен, значение из списка: :attr:`edit_db.studio.projects_units` по умолчанию ``'m'``.
     
     .. rubric:: Атрибуты:
 
@@ -1470,16 +1471,11 @@ class project(studio):
     def init_by_keys(self, keys, new=True): # v2
         """Инициализация по словарю (без чтения БД), возвращает новый, или инициализирует текущий экземпляр.
         
-        .. rubric:: Parameters:
-  
-        :keys: (dict) - словарь по :attr:`edit_db.studio.projects_keys`
+        :Parameters: * **keys** (*dict*) - словарь по :attr:`edit_db.studio.projects_keys`
+                     * **new** (*bool*) - если *True* - возвращает новый инициализированный экземпляр, если *False* то инициализирует текущий.
         
-        :new: (bool) - если *True* - возвращает новый инициализированный экземпляр, если *False* то инициализирует текущий.
-        
-        .. rubric:: Returns:
-        
-        * если new= *True* - экземпляр класса :class:`edit_db.project`
-        * если new= *False* - (*True,  'Ok!'*) или (*False, comment*)
+        :Returns: * если new= *True* - экземпляр класса :class:`edit_db.project`
+                  * если new= *False* - (*True,  Ok!*) или (*False, comment*)
         """
         
         if new:
@@ -1500,15 +1496,10 @@ class project(studio):
         
         .. note:: При создании проекта новый экземпляр не возвращается, заполняются поля текущего экземпляра.
   
-        .. rubric:: Parameters:
+        :Parameters: * **project_name** (*str ) - имя проекта, если имя не указано, но указана директория, проект будет назван именем директории
+                     * **project_path** (*str*) - путь к директории проекта, если путь не указан, директория проекта будет создана в директории студии
         
-        :project_name: (str) - имя проекта, если имя не указано, но указана директория, проект будет назван именем директории
-        
-        :project_path: (str - path) - путь к директории проекта, если путь не указан, директория проекта будет создана в директории студии
-        
-        .. rubric:: Returns:
-        
-        * (*True, 'Ok!'*) или (*False, comment*)
+        :Returns: (*True, 'Ok!'*) или (*False, comment*)
         """
         
         project_path = NormPath(path)
