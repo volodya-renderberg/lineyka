@@ -106,6 +106,8 @@ class studio:
     }
 
     projects_units = ['m', 'cm', 'mm']
+    """list: Список возможных размерностей юнита 3d сцен. """
+    
     PROJECTS_STATUSES = ['active', 'none']
     """list: Список возможных статусов для проектов. """
 
@@ -1405,7 +1407,7 @@ class project(studio):
     
     :fps: (float) - *fps* проекта (по умолчанию 24).
     
-    :units: (str) - Юниты 3d сцен, значение из списка: :obj:`['m', 'cm', 'mm']` по умолчанию ``'m'``.
+    :units: (str) - Юниты 3d сцен, значение из списка: :attr:`edit_db.studio.projects_units` по умолчанию ``'m'``.
     
     .. rubric:: Атрибуты:
 
@@ -1418,7 +1420,7 @@ class project(studio):
     """list:  ``атрибут класса`` - Список всех проектов (экземпляры). Заполняется при выполнеии метода :func:`edit_db.project.get_list`, значение по умолчанию - ``[]``. """
     
     dict_projects = {}
-    """dict: ``атрибут класса`` - Cловарь содержащий все проекты (экземпляры) с ключами по именам. . Заполняется при выполнеии метода :func:`edit_db.project.get_list`, значение по умолчанию - ``{}``. """
+    """dict: ``атрибут класса`` - Cловарь содержащий все проекты (экземпляры) с ключами по именам. Заполняется при выполнеии метода :func:`edit_db.project.get_list`, значение по умолчанию - ``{}``. """
 
     def __init__(self):
         pass
@@ -1434,9 +1436,8 @@ class project(studio):
         
         .. rubric:: Parameters:
         
-        :name: (str) - имя проекта
-        
-        :new: (bool) - если *True* - возвращает новый инициализированный экземпляр, если *False* то инициализирует текущий экземпляр
+        * **name** (str) - имя проекта
+        * **new** (bool) - если *True* - возвращает новый инициализированный экземпляр, если *False* то инициализирует текущий экземпляр
             
         .. rubric:: Returns:
         
@@ -1586,9 +1587,10 @@ class project(studio):
 
     def get_list(self): # v2
         """Заполняет атрибуты класса:
-            * :attr:`edit_db.project.list_active_projects`,
-            * :attr:`edit_db.project.list_projects`,
-            * :attr:`edit_db.project.dict_projects`
+        
+        * :attr:`edit_db.project.list_active_projects`,
+        * :attr:`edit_db.project.list_projects`,
+        * :attr:`edit_db.project.dict_projects`
         
         .. rubric:: Returns:
         
@@ -1672,7 +1674,7 @@ class project(studio):
 
     def edit_status(self, status): # v2
         """
-        изменение статуса проекта.
+        Изменение статуса проекта.
         
         .. rubric:: Parameters:
         
