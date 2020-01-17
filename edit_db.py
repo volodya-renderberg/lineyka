@@ -1391,9 +1391,11 @@ class project(studio):
         
     .. rubric:: Параметры экземпляра (заполнение из БД):
 
-    :name: (str) - Имя проекта (уникально).
+    name
+        (str) - Имя проекта (уникально).
     
-    :path: (str) -  Путь до директории проекта.
+    path : (str)
+        Путь до директории проекта.
     
     :status: (str) -  Значение из списка :obj:`['active', 'none']`.
     
@@ -6815,7 +6817,7 @@ class task(studio):
 			for key in self.tasks_keys:
 				exec('task_data["%s"] = self.%s' % (key, key))
 		
-		# debug	
+		# debug
 		#print(task_data['task_name'])
 		#print(removed_task_data['task_name'])
 		#print(added_task_data['task_name'])
