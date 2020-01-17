@@ -106,6 +106,8 @@ class studio:
     }
 
     projects_units = ['m', 'cm', 'mm']
+    PROJECTS_STATUSES = ['active', 'none']
+    """list: Список возможных статусов для проектов. """
 
     task_types = [
     # -- film
@@ -354,6 +356,7 @@ class studio:
     recycle_bin_name = '-Recycle_Bin-'
     list_of_assets_name = '.list_of_assets.json'
     PROJECT_SETTING = '.project_setting.json'
+    """str: имя json файла c параметрами проекта, дублируются из базы данных. Применяются к проекту при его повторном добавлении в студию. """
 
     #database files
     # --- projects
@@ -1384,7 +1387,7 @@ class project(studio):
         
         project = db.project()
         
-    .. rubric:: Attributes:
+    .. rubric:: Параметры экземпляра (заполнение из БД):
 
     :name: (str) - Имя проекта (уникально).
     
@@ -1404,21 +1407,18 @@ class project(studio):
     
     :units: (str) - Юниты 3d сцен, значение из списка: :obj:`['m', 'cm', 'mm']` по умолчанию ``'m'``.
     
-    :list_active_projects: (list) ``атрибут класса`` - Список активных проектов, только имена. Заполняется при выполнеии метода :func:`edit_db.project.get_list`, значение по умолчанию - ``[]``.
-    
-    :list_projects: (list) ``атрибут класса`` - Список всех проектов (экземпляры). Заполняется при выполнеии метода :func:`edit_db.project.get_list`, значение по умолчанию - ``[]``.
-    
-    :dict_projects: (dict) ``атрибут класса`` - Cловарь содержащий все проекты (экземпляры) с ключами по именам. . Заполняется при выполнеии метода :func:`edit_db.project.get_list`, значение по умолчанию - ``{}``.
-        
+    .. rubric:: Атрибуты:
+
     """
 
     list_active_projects = []
+    """list: ``атрибут класса`` - Список активных проектов, только имена. Заполняется при выполнеии метода :func:`edit_db.project.get_list`, значение по умолчанию - ``[]``. """
     
     list_projects = []
     """list:  ``атрибут класса`` - Список всех проектов (экземпляры). Заполняется при выполнеии метода :func:`edit_db.project.get_list`, значение по умолчанию - ``[]``. """
     
     dict_projects = {}
-    
+    """dict: ``атрибут класса`` - Cловарь содержащий все проекты (экземпляры) с ключами по именам. . Заполняется при выполнеии метода :func:`edit_db.project.get_list`, значение по умолчанию - ``{}``. """
 
     def __init__(self):
         pass
@@ -1428,7 +1428,7 @@ class project(studio):
             
         # constans
         self.folders = {'assets':'assets', 'chat_img_folder':'.chat_images', 'preview_images': '.preview_images'}
-        
+
     def init(self, name, new=True): # v2
         """Инициализация по имени, возвращает новый, или инициализирует текущий экземпляр.
         
@@ -1461,7 +1461,7 @@ class project(studio):
         
         .. rubric:: Parameters:
   
-        :keys: (dict) - словарь по :obj:`edit_db.studio.projects_keys`
+        :keys: (dict) - словарь по :attr:`edit_db.studio.projects_keys`
         
         :new: (bool) - если *True* - возвращает новый инициализированный экземпляр, если *False* то инициализирует текущий.
         
@@ -1583,14 +1583,16 @@ class project(studio):
         #
         self._write_settings()
         return True, 'ok'
-        
-    # заполняет поля класса list_active_projects, list_projects, dict_projects.
+
     def get_list(self): # v2
-        """Заполняет поля класса :mod:`edit_db.project.list_active_projects`, :mod:`edit_db.project.list_projects`, :mod:`edit_db.project.dict_projects`
+        """Заполняет атрибуты класса:
+            * :attr:`edit_db.project.list_active_projects`,
+            * :attr:`edit_db.project.list_projects`,
+            * :attr:`edit_db.project.dict_projects`
         
         .. rubric:: Returns:
         
-        * (*True, :mod:`edit_db.project.list_projects`) или (*False, comment*)
+        * (*True*, :attr:`edit_db.project.list_projects`) или (*False, comment*)
         """
         pass
         b, r = database().read('studio', self, self.projects_t, self.projects_keys)
@@ -1617,9 +1619,21 @@ class project(studio):
         self.list_projects = list_projects
         self.dict_projects = dict_projects
 
-    # переименование проекта, перезагружает studio.list_projects
-    # объект должен быть инициализирован
     def rename_project(self, new_name): # v2
+        """
+        * переименование проекта (данного экземпляра),
+        * заполняются поля экземпляра,
+        * перезаписывается :attr:`edit_db.studio.PROJECT_SETTING`
+        
+        .. rubric:: Parameters:
+        
+        :new_name: (*str*) - новое имя отдела.
+        
+        .. rubric:: Returns:
+        
+        * (*True, 'Ok!'*) или (*False, comment*).
+        
+        """
         pass
         if not new_name:
             return(False, 'Not Name!')
@@ -1633,10 +1647,18 @@ class project(studio):
         #
         self._write_settings()
         return(True, 'Ok!')
-        
-    # удаляет проект из БД, перезагружает studio.list_projects, приводит объектк empty.
-    # объект должен быть инициализирован
+
     def remove_project(self): # v2
+        """
+        * удаляет проект из БД (не удаляя файловую структуру),
+        * перезаписывается :attr:`edit_db.studio.PROJECT_SETTING`,
+        * приводит экземпляр к сосотоянию *empty* (все поля по :attr:`edit_db.studio.projects_keys` = *False*).
+  
+        .. rubric:: Returns:
+        
+        * (*True, 'Ok!'*) или (*False, comment*).
+        
+        """
         pass
         # edit DB
         wh = {'name': self.name}
@@ -1647,11 +1669,23 @@ class project(studio):
             setattr(self, key, False)
         #
         return(True, 'Ok!')
-        
-    # меняет статус проекта
-    # объект должен быть инициализирован
+
     def edit_status(self, status): # v2
+        """
+        изменение статуса проекта.
+        
+        .. rubric:: Parameters:
+        
+        :status: (*str*) - присваиваемый статус, должен быть из списка :attr:`edit_db.studio.PROJECTS_STATUSES`
+        
+        .. rubric:: Returns:
+        
+        * (*True, 'Ok!'*) или (*False, comment*)
+        """
+        
         pass
+        if not status in self.PROJECTS_STATUSES:
+            return(False, 'Wrong status - "%s", must be from the list - %s' % (status, str(self.PROJECTS_STATUSES)))
         # database
         ud = {'status': status}
         wh = {'name': self.name}
