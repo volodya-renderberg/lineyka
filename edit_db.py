@@ -1393,44 +1393,44 @@ class project(studio):
     .. rubric:: Параметры экземпляра (заполнение из БД):
         
     name
-        str: - Имя проекта (уникально).
+        (str) - Имя проекта (уникально).
     
     path
-        str: - Путь до директории проекта.
+        (str) - Путь до директории проекта.
     
     status
-        str: - Теущий статус проекта, значение из списка :attr:`edit_db.studio.PROJECTS_STATUSES`.
+        (str) - Теущий статус проекта, значение из списка :attr:`edit_db.studio.PROJECTS_STATUSES`.
     
     project_database
-        list: - Параметры используемой базы данных, по умолчанию: ``['sqlite3', False]``.
+        (list) - Параметры используемой базы данных, по умолчанию: ``['sqlite3', False]``.
     
     chat_img_path
-        str: - Путь до директории с картинками чата.
+        (str) - Путь до директории с картинками чата.
     
     list_of_assets_path
-        str: - Путь до файла с временными данными создаваемых ассетов.
+        (str) - Путь до файла с временными данными создаваемых ассетов.
     
     preview_img_path
-        str: - Путь до директории с превью картинок чата.
+        (str) - Путь до директории с превью картинок чата.
     
     fps
-        float: - *fps* проекта (по умолчанию 24).
+        (float) - *fps* проекта (по умолчанию 24).
     
     units
-        str: - Юниты 3d сцен, значение из списка: :attr:`edit_db.studio.projects_units` по умолчанию ``'m'``.
+        (str) - Юниты 3d сцен, значение из списка: :attr:`edit_db.studio.projects_units` по умолчанию ``'m'``.
     
     .. rubric:: Атрибуты:
 
     """
 
     list_active_projects = []
-    """list: ``атрибут класса`` - Список активных проектов, только имена. Заполняется при выполнеии метода :func:`edit_db.project.get_list`, значение по умолчанию - ``[]``. """
+    """(list) ``атрибут класса`` - Список активных проектов, только имена. Заполняется при выполнеии метода :func:`edit_db.project.get_list`, значение по умолчанию - ``[]``. """
     
     list_projects = []
-    """list:  ``атрибут класса`` - Список всех проектов (экземпляры). Заполняется при выполнеии метода :func:`edit_db.project.get_list`, значение по умолчанию - ``[]``. """
+    """(list)  ``атрибут класса`` - Список всех проектов (экземпляры). Заполняется при выполнеии метода :func:`edit_db.project.get_list`, значение по умолчанию - ``[]``. """
     
     dict_projects = {}
-    """dict: ``атрибут класса`` - Cловарь содержащий все проекты (экземпляры) с ключами по именам. Заполняется при выполнеии метода :func:`edit_db.project.get_list`, значение по умолчанию - ``{}``. """
+    """(dict) ``атрибут класса`` - Cловарь содержащий все проекты (экземпляры) с ключами по именам. Заполняется при выполнеии метода :func:`edit_db.project.get_list`, значение по умолчанию - ``{}``. """
 
     def __init__(self):
         pass
@@ -1448,7 +1448,7 @@ class project(studio):
                      * **new** (*bool*) - если *True* - возвращает новый инициализированный экземпляр, если *False* то инициализирует текущий экземпляр
             
         :Returns: * если new= *True* - экземпляр класса :class:`edit_db.project`
-                  * если new= *False* - (*True,  'Ok!'*) или (*False, comment*)
+                  * если new= *False* - (*True,  Ok!*) или (*False, comment*)
         """
         pass
         b, r = database().read('studio', self, self.projects_t, self.projects_keys, table_root=self.projects_db)
@@ -1624,7 +1624,7 @@ class project(studio):
         
         :Parameters: **new_name** (*str*) - новое имя отдела.
         
-        :Returns: (*True, 'Ok!'*) или (*False, comment*).
+        :Returns: (*True, Ok!*) или (*False, comment*).
         
         """
         pass
@@ -1647,7 +1647,7 @@ class project(studio):
         * перезаписывается :attr:`edit_db.studio.PROJECT_SETTING`,
         * приводит экземпляр к сосотоянию *empty* (все поля по :attr:`edit_db.studio.projects_keys` = *False*).
   
-        :Returns: (*True, 'Ok!'*) или (*False, comment*).
+        :Returns: (*True, Ok!*) или (*False, comment*).
         
         """
         pass
@@ -1667,7 +1667,7 @@ class project(studio):
         
         :Parameters: **status** (*str*) - присваиваемый статус, должен быть из списка :attr:`edit_db.studio.PROJECTS_STATUSES`
         
-        :Returns: (*True, 'Ok!'*) или (*False, comment*)
+        :Returns: (*True, Ok!*) или (*False, comment*)
         """
         
         pass
