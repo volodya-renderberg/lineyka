@@ -1,7 +1,7 @@
 .. _branch-page:
 
-Branch
-======
+Branches
+========
 
 Общее
 -----

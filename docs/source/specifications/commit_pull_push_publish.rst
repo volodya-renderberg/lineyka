@@ -6,15 +6,15 @@ Commit Pull Push Publish
 Общее
 -----
 
-* Все экшены пишутся в один лог :ref:`class-log-page`.
-* Уйти от 16-тиричной нумерации версий ?
+* Все экшены пишутся в один лог :class:`edit_db.studio.log`.
+* Уйти от 16-тиричной нумерации версий?
 
 Commit
 ------
 
 Cоздание локальной версии.
 
-* место хранения ``work`` директория, определяется в *set studio*, метод ``studio.set_work_folder()``
+* место хранения :attr:`edit_db.studio.work_folder` директория, определяется в *set studio*, метод :func:`edit_db.studio.set_work_folder`
 
 Pull
 ----

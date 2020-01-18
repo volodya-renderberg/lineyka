@@ -1,4 +1,4 @@
-.. time-log-page:
+.. _time-log-page:
 
 Time Logs
 =========
@@ -17,7 +17,7 @@ task_log (project-level)
 
 На самом деле лог активити ассета, с фильтром по задачам.
 
-* Добавить в :ref:`class-log-page` затраченое время - атрибут ``time``  ``+``
+* Добавить в :class:`edit_db.log` затраченое время - атрибут ``time``  ``+``
     * запись при каждом коммите ``+``
     * при открытии задачи заполнять атрибут ``task.open_time`` ``+``
     * при комите записывать разницу в ``commit_log.time`` и обновлять ``task.open_time`` временем коммита. ``+``
@@ -26,7 +26,7 @@ task_log (project-level)
 artist_task_log (studio-level)
 ------------------------------
 
-.. note:: :ref:`class-log-page` добавить методы для чтения-записи, принимающие объект *artist*. ``+``
+.. note:: :class:`edit_db.log` добавить методы для чтения-записи, принимающие объект *artist*. ``+``
 
 * **table_name**: ``[nik_name]_tasks_logs`` ``+``
 * **table_columns**: ``[project_name, task_name, full_time, price, start, finish]`` (словарь *studio.artists_logs_keys*) ``+``
