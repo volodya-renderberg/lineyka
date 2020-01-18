@@ -331,9 +331,9 @@ class studio:
     'status':'text',
     'id': 'text',
     }
-    """(dict) - Обозначение данных хранимых в БД для объектов :class:`edit_db.season` . Ключи - заголовки, значения - тип данных БД. 
+    """(dict) - Обозначение данных хранимых в БД для объектов :class:`edit_db.season` . Ключи - заголовки, значения - тип данных БД.
     
-    .. attention:: Устаревшее, так же как и класс, скорее всего.
+    .. attention:: Устаревшее, так же как и класс, смотри :ref:`season-series-shot-page`.
     """
 
     list_of_assets_keys = [
@@ -1406,7 +1406,9 @@ class project(studio):
         'units': 'text',
         }
 
-    .. rubric:: Создание экземпляра класса:
+    Examples
+    --------
+    Создание экземпляра класса:
 
     .. code-block:: python
 
@@ -1415,47 +1417,51 @@ class project(studio):
         project = db.project()
     
         
-    .. rubric:: Параметры экземпляра (заполнение из БД):
+    Attributes
+    ----------
+    name : str
+        Имя проекта (уникально)    
+    
+    path : str
+        Путь до директории проекта.
+    
+    status : str
+        Теущий статус проекта, значение из списка :attr:`edit_db.studio.PROJECTS_STATUSES`.
+    
+    project_database : list
+        Параметры используемой базы данных, по умолчанию: ``['sqlite3', False]``.
+    
+    chat_img_path : str
+        Путь до директории с картинками чата.
+    
+    list_of_assets_path : str
+        Путь до файла с временными данными создаваемых ассетов.
+    
+    preview_img_path : str
+        Путь до директории с превью картинок чата.
+    
+    fps : float
+        *fps* проекта (по умолчанию 24).
+    
+    units : str
+        Юниты 3d сцен, значение из списка: :attr:`edit_db.studio.projects_units` по умолчанию ``'m'``.
+    
+    list_active_projects : list ``атрибут класса``
+        Список активных проектов, только имена. Заполняется при выполнении метода :func:`edit_db.project.get_list`, значение по умолчанию - ``[]``.
+    
+    list_projects : list  ``атрибут класса``
+        Список всех проектов (экземпляры). Заполняется при выполнении метода :func:`edit_db.project.get_list`, значение по умолчанию - ``[]``.
         
-    name
-        (str) - Имя проекта (уникально).
+    dict_projects : dict ``атрибут класса``
+        Cловарь содержащий все проекты (экземпляры) с ключами по именам. Заполняется при выполнении метода :func:`edit_db.project.get_list`, значение по умолчанию - ``{}``.
     
-    path
-        (str) - Путь до директории проекта.
-    
-    status
-        (str) - Теущий статус проекта, значение из списка :attr:`edit_db.studio.PROJECTS_STATUSES`.
-    
-    project_database
-        (list) - Параметры используемой базы данных, по умолчанию: ``['sqlite3', False]``.
-    
-    chat_img_path
-        (str) - Путь до директории с картинками чата.
-    
-    list_of_assets_path
-        (str) - Путь до файла с временными данными создаваемых ассетов.
-    
-    preview_img_path
-        (str) - Путь до директории с превью картинок чата.
-    
-    fps
-        (float) - *fps* проекта (по умолчанию 24).
-    
-    units
-        (str) - Юниты 3d сцен, значение из списка: :attr:`edit_db.studio.projects_units` по умолчанию ``'m'``.
-    
-    .. rubric:: Атрибуты:
-
     """
 
     list_active_projects = []
-    """(list) ``атрибут класса`` - Список активных проектов, только имена. Заполняется при выполнении метода :func:`edit_db.project.get_list`, значение по умолчанию - ``[]``. """
     
     list_projects = []
-    """(list)  ``атрибут класса`` - Список всех проектов (экземпляры). Заполняется при выполнении метода :func:`edit_db.project.get_list`, значение по умолчанию - ``[]``. """
     
     dict_projects = {}
-    """(dict) ``атрибут класса`` - Cловарь содержащий все проекты (экземпляры) с ключами по именам. Заполняется при выполнении метода :func:`edit_db.project.get_list`, значение по умолчанию - ``{}``. """
 
     def __init__(self):
         pass
@@ -1469,11 +1475,18 @@ class project(studio):
     def init(self, name, new=True): # v2
         """Инициализация по имени, возвращает новый, или инициализирует текущий экземпляр.
         
-        :Parameters: * **name** (*str*) - имя проекта.
-                     * **new** (*bool*) - если *True* - возвращает новый инициализированный экземпляр, если *False* то инициализирует текущий экземпляр
+        Parameters
+        ----------
+        name : str
+            имя проекта.
+        new : bool
+            если *True* - возвращает новый инициализированный экземпляр, если *False* то инициализирует текущий экземпляр
             
-        :Returns: * если new= *True* - экземпляр класса :class:`edit_db.project`
-                  * если new= *False* - (*True,  Ok!*) или (*False, comment*)
+        Returns
+        -------
+        :obj:`project` / tuple
+            если new= *True* - экземпляр класса :obj:`project`,
+            если new= *False* - (*True,  'Ok!'*) или (*False, comment*)
         """
         pass
         b, r = database().read('studio', self, self.projects_t, self.projects_keys, table_root=self.projects_db)
@@ -1491,11 +1504,18 @@ class project(studio):
     def init_by_keys(self, keys, new=True): # v2
         """Инициализация по словарю (без чтения БД), возвращает новый, или инициализирует текущий экземпляр.
         
-        :Parameters: * **keys** (*dict*) - словарь по :attr:`edit_db.studio.projects_keys`
-                     * **new** (*bool*) - если *True* - возвращает новый инициализированный экземпляр, если *False* то инициализирует текущий.
+        Parameters
+        ----------
+        keys : dict
+            словарь по :attr:`edit_db.studio.projects_keys`
+        new : bool
+            если *True* - возвращает новый инициализированный экземпляр, если *False* то инициализирует текущий.
         
-        :Returns: * если new= *True* - экземпляр класса :class:`edit_db.project`
-                  * если new= *False* - (*True,  Ok!*) или (*False, comment*)
+        Returns
+        -------
+        :obj:`project` / tuple
+            если new= *True* - экземпляр класса :obj:`project`,
+            если new= *False* - (*True,  'Ok!'*) или (*False, comment*)
         """
         
         if new:
@@ -1516,10 +1536,17 @@ class project(studio):
         
         .. note:: При создании проекта новый экземпляр не возвращается, заполняются поля текущего экземпляра.
   
-        :Parameters: * **name** (*str*) - имя проекта, если имя не указано, но указана директория, проект будет назван именем директории
-                     * **path** (*str*) - путь к директории проекта, если путь не указан, директория проекта будет создана в директории студии
+        Parameters
+        ----------
+        name : str
+            имя проекта, если имя не указано, но указана директория, проект будет назван именем директории
+        path : str
+            путь к директории проекта, если путь не указан, директория проекта будет создана в директории студии
         
-        :Returns: (*True, Ok!*) или (*False, comment*)
+        Returns
+        -------
+        tuple
+            (*True, 'Ok!'*) или (*False, comment*)
         """
         
         project_path = NormPath(path)
@@ -1613,7 +1640,10 @@ class project(studio):
         * :attr:`edit_db.project.list_projects`
         * :attr:`edit_db.project.dict_projects`
         
-        :Returns: (*True*, :attr:`edit_db.project.list_projects`) или (*False, comment*)
+        Returns
+        -------
+        tuple
+            (*True*, :attr:`edit_db.project.list_projects`) или (*False, comment*)
         """
         
         pass
@@ -1647,9 +1677,15 @@ class project(studio):
         * заполняются поля экземпляра,
         * перезаписывается :attr:`edit_db.studio.PROJECT_SETTING`
         
-        :Parameters: **new_name** (*str*) - новое имя отдела.
+        Parameters
+        ----------
+        new_name : str
+            новое имя отдела.
         
-        :Returns: (*True, Ok!*) или (*False, comment*).
+        Returns
+        -------
+        tuple
+            (*True, 'Ok!'*) или  (*False, comment*)
         
         """
         pass
@@ -1671,7 +1707,10 @@ class project(studio):
         * удаляет проект из БД (не удаляя файловую структуру),
         * приводит экземпляр к сосотоянию *empty* (все поля по :attr:`edit_db.studio.projects_keys` = *False*).
   
-        :Returns: (*True, Ok!*) или (*False, comment*).
+        Returns
+        -------
+        tuple
+            (*True, 'Ok!'*) или (*False, comment*)
         
         """
         pass
@@ -1689,9 +1728,15 @@ class project(studio):
         """
         Изменение статуса проекта.
         
-        :Parameters: **status** (*str*) - присваиваемый статус, должен быть из списка :attr:`edit_db.studio.PROJECTS_STATUSES`
+        Parameters
+        ----------
+        status : str
+            присваиваемый статус, должен быть из списка :attr:`edit_db.studio.PROJECTS_STATUSES`
         
-        :Returns: (*True, Ok!*) или (*False, comment*)
+        Returns
+        -------
+        tuple
+            (*True, 'Ok!'*) или (*False, comment*)
         """
         
         pass
@@ -1714,9 +1759,15 @@ class project(studio):
         * Изменение *fps* проекта, предполагается автоматическое назначение этого параметра в сценах.
         * Перезаписывается :attr:`edit_db.studio.PROJECT_SETTING`
         
-        :Parameters: **fps** (*float*) - fps
+        Parameters
+        ----------
+        fps :float
+            fps
         
-        :Returns (*True, Ok!*) или (*False, comment*)
+        Returns
+        -------
+        tuple
+            (*True, 'Ok!'*) или (*False, comment*)
         """
         
         pass
@@ -1742,9 +1793,15 @@ class project(studio):
         * Изменение юнитов проекта, параметр для 3d сцен (предполагается автоматическое назначение этого параметра в сценах).
         * Перезаписывается :attr:`edit_db.studio.PROJECT_SETTING`
   
-        :Parameters: **units** (*str*) - юниты для 3d сцен, значение из :attr:`edit_db.studio.projects_units`
+        Parameters
+        ----------
+        units : str
+            юниты для 3d сцен, значение из :attr:`edit_db.studio.projects_units`
         
-        :Returns: (*True, Ok!*) или (*False, comment*)
+        Returns
+        -------
+        tuple
+            (*True, 'Ok!'*) или (*False, comment*)
         """
         
         if not units in self.projects_units:
@@ -1807,904 +1864,953 @@ class project(studio):
         return data
 
 class asset(studio):
-	'''
-	https://sites.google.com/site/lineykadoc/home/doc/edit-database/class-studio-project-asset
-	'''
-	
-	def __init__(self, project_ob):
-		if not isinstance(project_ob, project):
-			raise Exception('in asset.__init__() - Object is not the right type "%s", must be "project"' % project_ob.__class__.__name__)
-		# objects
-		self.project = project_ob
-		
-		self.task_list = False # task lists from this asset
-		self.activity_path = False # директория какого либо активити по запросу, заполняется в get_activity_path()
-		
-		#base fields
-		for key in self.asset_keys:
-			exec('self.%s = False' % key)
-		
-		# constants
-		#self.extension = '.ma'
-		self.ACTIVITY_FOLDER = {
-		#'animatic' : {
-		'film':{
-			'storyboard':'storyboard',
-			'specification':'specification',
-			'animatic':'animatic',
-			'film':'film'
-		},
-		'object':{
-			'sketch':'sketch',
-			'face_blend':'10_face_blend',
-			'sculpt':'sculpt',
-			'model':'03_model',
-			'rig':'08_rig',
-			#'rig_face':'09_rig_face',
-			#'rig_face_crowd':'09_rig_face_crowd',
-			#'rig_hik':'08_rig_hik',
-			#'rig_hik_face':'09_ri_hik_face',
-			#'rig_low':'08_rig_low',
-			'def_rig':'def_rig',
-			'din_rig':'din_rig',
-			'textures':'05_textures',
-			'cache':'cache',
-			'test_animation': 'test_animation', # тестовая анимация для проверки рига
-		},
-		'location' : {
-			'sketch':'sketch',
-			'specification':'specification',
-			'location_anim':'location_anim',
-			'location':'location'
-		},
-		'shot_animation' : {
-			'animatic':'animatic',
-			'shot_animation':'shot_animation',
-			'camera':'camera',
-			'pleyblast_sequence':'pleyblast_sequence',
-			'tech_anim': 'tech_anim',
-			'simulation_din':'simulation_din',
-			'render':'render',
-			'composition':'composition',
-			'cache':'cache',
-			'actions':'actions',
-			#'din_simulation':'din_simulation',
-			#'fluid_simulation':'fluid_simulation',
-		},
-		'camera' : {'camera':'camera'},
-		'shot_render' : {'shot_render':'shot_render'},
-		'shot_composition' : {'shot_composition':'shot_composition'},
-		'light' : {'light':'light'},
-		}
-		
-		self.ADDITIONAL_FOLDERS = {
-		'meta_data':'00_common',
-		}
-		
-		self.UNCHANGEABLE_KEYS = ['id', 'type', 'path']
-		#self.COPIED_ASSET = ['obj', 'char']
-		self.COPIED_ASSET = {
-			'object':['object'],
-			}
-		self.COPIED_WITH_TASK = ['object']
+    '''Супер мега класс
+    
+    Examples
+    --------
+    Examples can be given using either the ``Example`` or ``Examples``
+    sections. Sections support any reStructuredText formatting, including
+    literal blocks::
 
-	# инициализация по имени
-	# заполнение полей по self.asset_keys
-	# asset_name (str) - имя ассета. данные ассета будут считаны из базы данных.
-	# new (bool) - если True - то возвращается новый инициализированный объект класса asset, если False - то инициализируется текущий объект
-	def init(self, asset_name, new = True):
-		pass
-		# 1 - чтение БД
-		where = {'name': asset_name}
-		asset_data = False
-		for asset_type in self.asset_types:
-			b, r = database().read('project', self.project, asset_type, self.asset_keys, where=where, table_root=self.assets_db)
-			if not b:
-				print(r)
-				continue
-			if r:
-				asset_data = r[0]
-		
-		if not asset_data:
-			return(False, 'An asset with that name(%s) was not found!' % asset_name)
-				
-		return(self.init_by_keys(asset_data, new=new))
-		
-	# инициализация по словарю ассета
-	# заполнение полей по self.asset_keys
-	# new (bool) - если True - то возвращается новый инициализированный объект класса asset, если False - то инициализируется текущий объект
-	def init_by_keys(self, keys, new = True):
-		pass
-		if new:
-			r_ob = asset(self.project)
-		else:
-			r_ob = self
-			
-		for key in self.asset_keys:
-			setattr(r_ob, key, keys.get(key))
-			r_ob.path = NormPath(os.path.join(self.project.path, self.project.folders['assets'],keys['type'], keys['name']))
-			
-		if new:
-			return r_ob
-		else:
-			return(True, 'Ok!')
-		
-	# list_keys (list) - список словарей по ключам asset_keys
-	# -- обязательные параметры в keys (list_keys): name, group(id). важный параметр set_of_tasks - имя набора
-	# asset_type (str) - тип для всех ассетов
-	def create(self, asset_type, list_keys):  # v2
-		pass
-		# 1 - проверка типа ассета
-		# 2 - проверка типа list_keys
-		# 3 - список ассетов данного типа для проверки наличия
-		# 4 - создание таблицы если нет
-		# 5 - проверка на совпадение имени ассета
-		# 6 - создание ассетов - проверки:
-		# --6.1 - наличие name, group(id), season
-		# --6.2 - изменение имени
-		# --6.3 - добавление значений (type, status, priority) в словарь ассета
-		# --6.4 - создание id с проверкой на совпадение.
-		# --6.5 - создание директорий
-		# --6.6 - создание ассета в БД
-		
-		# (1) test valid asset_type
-		if not asset_type in self.asset_types:
-			return(False, 'Asset_Type (%s) is Not Valid!' % asset_type)
-		# (2) test valid type of list_keys
-		if list_keys.__class__.__name__!= 'list':
-			return(False, 'The type of "list_keys" (%s) is Not Valid! There must be a "list"' % list_keys.__class__.__name__)
-		# start data
-		make_assets = {}
-		# get list assets
-		assets = []
-		ids = []
-		result = self.get_list_by_all_types()
-		if result[0]:
-			for row in result[1]:
-				assets.append(row.name)
-				ids.append(row.id)
-		else:
-			print('#'*5)
-			print(result[1])
-			
-		# (4) cteate table
-		bool_, return_data = database().create_table('project', self.project, asset_type, self.asset_keys, table_root = self.assets_db)
-		if not bool_:
-			return(bool_, return_data)
-		
-		#
-		if not list_keys:
-			return(False, 'No data to create an Asset!')
-		# (5) test exists name
-		for keys in list_keys:
-			if keys['name'] in assets:
-				return(False, 'The name "%s" already exists!' % keys['name'])
-		# (6) create assets
-		b, r = set_of_tasks().get_dict_by_all_types()
-		if not b:
-			return(b, r)
-		else:
-			set_of_tasks_dict = r
-		for keys in list_keys:
-			# (6.1)
-			# test name
-			if not keys.get('name'):
-				return(False,('No name!'))
-			# test group(id)
-			if not keys.get('group'):
-				return(False, 'In the asset "%s" does not specify a group!' % keys['name'])
-			# test season
-			'''
-			if asset_type in self.asset_types_with_season and not keys.get('season'):
-				return(False, 'In the asset "%s" does not specify a season' % keys['name'])
-			elif not asset_type in self.asset_types_with_season and not keys.get('season'):
-				keys['season'] = ''
-			'''
-			# (6.2) edit name
-			if asset_type in ['shot_animation']:
-				keys['name'] = keys['name'].replace(' ', '_')
-			else:
-				keys['name'] = keys['name'].replace(' ', '_').replace('.', '_')
-			# (6.3) make keys
-			keys['type'] = asset_type
-			keys['status'] = 'active'
-			if not keys.get('priority'):
-				keys['priority'] = 0
-			# -- loading_type
-			if keys['type']=='object' and keys.get('set_of_tasks'):
-				if set_of_tasks_dict.get('object') and keys.get('set_of_tasks') in set_of_tasks_dict['object']:
-					keys['loading_type'] = set_of_tasks_dict['object'][keys.get('set_of_tasks')].loading_type
-			
-			# (6.4) get id
-			keys['id'] = hex(random.randint(0, 1000000000)).replace('0x','')
-			while keys['id'] in ids:
-				keys['id'] = hex(random.randint(0, 1000000000)).replace('0x','')
+        $ python example_numpy.py
+    
+    Notes
+    -----
+        Наилучший класс!
 
-			# (6.5) create Folders
-			group_dir = NormPath(os.path.join(self.project.path, self.project.folders['assets'],asset_type))
-			asset_path = NormPath(os.path.join(group_dir, keys['name']))
-			# -- create group folder
-			if not os.path.exists(group_dir):
-				try:
-					os.mkdir(group_dir)
-				except Exception as e:
-					print('#'*5, 'In asset.create() -- create group folder')
-					print(e)
-					return(False, 'Exception in asset.create() look the terminal!')
-			# -- create root folder
-			if not os.path.exists(asset_path):
-				try:
-					os.mkdir(asset_path)
-				except Exception as e:
-					print('#'*5, 'In asset.create() -- create root folder')
-					print(e)
-					return(False, 'Exception in asset.create() look the terminal!')
-			
-			# -- create activity folders
-			for activity in self.ACTIVITY_FOLDER[asset_type]:
-				folder_path = NormPath(os.path.join(asset_path, activity))
-				if not os.path.exists(folder_path):
-					os.mkdir(folder_path)
-					
-			# -- create additional folders  self.ADDITIONAL_FOLDERS
-			for activity in self.ADDITIONAL_FOLDERS:
-				folder_path = NormPath(os.path.join(asset_path, activity))
-				if not os.path.exists(folder_path):
-					os.mkdir(folder_path)
-			
-			# (6.6) create in DB init
-			bool_, return_data = database().insert('project', self.project, asset_type, self.asset_keys, keys, table_root=self.assets_db)
-			if not bool_:
-				return(bool_, return_data)
-			
-			########### make task data
-			
-			this_asset_tasks = []
-			# add service tasks ("final")
-			final = {
-				'asset_name':keys['name'],
-				'asset_id': keys['id'],
-				'asset_type': asset_type,
-				'task_name': (keys['name'] + ':final'),
-				#'season': keys['season'],
-				'status':'null',
-				'task_type':'service',
-				'input':[],
-				'output': [],
-			}
-			# create service tasks ("all_input")
-			all_input = {
-				'asset_name':keys['name'],
-				'asset_id': keys['id'],
-				'asset_type': asset_type,
-				'task_name': (keys['name'] + ':all_input'),
-				#'season': keys['season'],
-				'status':'done',
-				'task_type':'service',
-				'input':[],
-				'output': [],
-			}
-			this_asset_tasks.append(all_input)
-			
-			# get list from set_of_tasks
-			result = set_of_tasks().get(keys.get('set_of_tasks'))
-			if result[0]:
-				print('**** by set of tasks: %s' % keys.get('set_of_tasks'))
-				set_tasks = result[1].sets
-				
-				outputs = {}
-				for task_ in set_tasks:
-					# name
-					name = task_['task_name']
-					task_['task_name'] = keys['name'] + ':' + name
-					
-					# output
-					#task_['output'] = json.dumps([final['task_name']])
-					task_['output'] = [final['task_name']]
-					
-					# input
-					input_ = task_['input']
-					if  input_ == 'all':
-						task_['input'] = all_input['task_name']
-						# status
-						task_['status'] = 'ready'
-						# add to output all_input
-						#all_outputs = json.loads(all_input['output'])
-						all_outputs = all_input['output']
-						all_outputs.append(task_['task_name'])
-						#all_input['output'] = json.dumps(all_outputs)
-						all_input['output'] = all_outputs
-						
-					elif input_ == 'pre':
-						task_['input'] = keys['name'] + ':pre_input:' + name
-						# status
-						task_['status'] = 'ready'
-						# add service tasks ("pre_input" )
-						pre_input = {
-							'asset_name':keys['name'],
-							'asset_id': keys['id'],
-							'asset_type': asset_type,
-							'task_name': task_['input'],
-							#'season': keys['season'],
-							'status':'done',
-							'task_type':'service',
-							'input':'',
-							#'output': json.dumps([final['task_name'], task_['task_name']])
-							#'output': json.dumps([task_['task_name']])
-							'output': [task_['task_name']]
-						}
-						this_asset_tasks.append(pre_input)
-					elif input_:
-						task_['input'] = keys['name'] + ':' + input_
-						# status
-						task_['status'] = 'null'
-						
-						# outputs
-						if task_['input'] in outputs.keys():
-							outputs[task_['input']].append(task_['task_name'])
-						else:
-							outputs[task_['input']] = [task_['task_name'],]
-						
-					else:
-						# status
-						task_['status'] = 'ready'
-						
-					# price
-					task_['price'] = task_['cost']
-						
-					# asset
-					#task_['asset_name'] = keys['name']
-					#task_['asset_id'] = keys['id']
-					#task_['asset_type'] = asset_type
-					
-					# season
-					#task_['season'] = keys['season']
-					
-					# readers
-					task_['readers'] = {}
-					
-					# append task
-					this_asset_tasks.append(task_)
-					
-				for task_ in this_asset_tasks:
-					if task_['task_name'] in outputs:
-						if task_['output']:
-							#task_outputs = json.loads(task_['output'])
-							task_outputs = task_['output']
-							task_outputs = task_outputs + outputs[task_['task_name']]
-							#task_['output'] = json.dumps(task_outputs)
-							task_['output'] = task_outputs
-						else:
-							#task_['output'] = json.dumps(outputs['task_name'])
-							task_['output'] = outputs['task_name']
-			else:
-				print('**** without sets')
-			
-			# set input of "final"
-			final_input = []
-			for task_ in this_asset_tasks:
-				final_input.append(task_['task_name'])
-			#final['input'] = json.dumps(final_input)
-			final['input'] = final_input
-			
-			# append final to task list
-			this_asset_tasks.append(final)
-			
-			#print(this_asset_tasks)
-			
-			########### create tasks (by task data)
-			#c = json.dumps(this_asset_tasks, sort_keys=True, indent=4)
-			#print(c)
-			new_asset = self.init_by_keys(keys)
-			result = task(new_asset).create_tasks_from_list(this_asset_tasks)
-			if not result[0]:
-				return(False, result[1])
-			
-			########### make return data
-			# path
-			keys['path'] = NormPath(os.path.join(self.project.path, self.project.folders['assets'],keys['type'], keys['name']))
-			#
-			make_assets[keys['name']] = self.init_by_keys(keys)
-		
-		return(True, make_assets)
-	
-	# удаление текущего ассета
-	def remove(self): # v2
-		pass
-		# 1 - получение id recycle_bin
-		# 2 - замена группы ассета на recycle_bin, обнуление priority, status.
-		# 3 - список задач ассета
-		# 4 - перезапись задачь ассета, обнуление: status, artist, readers, priority.
-		# 5 - разрывы исходящих связей в другие ассеты.
-		
-		# (1)
-		# -- get recycle bin  data
-		result = group(self.project).get_by_keys({'type': 'recycle_bin'})
-		if not result[0]:
-			return(False, ('in asset().remove' + result[1]))
-		recycle_bin = result[1][0]
-		
-		# (2)
-		update_data = {'group': recycle_bin.id, 'priority': 0, 'status':'none'}
-		where = {'id': self.id}
-		bool_, return_data = database().update('project', self.project, self.type, self.asset_keys, update_data, where, table_root=self.assets_db)
-		if not bool_:
-			return(bool_, return_data)
-				
-		# (3)
-		bool_, task_list = task(self).get_list()
-		if not bool_:
-			return(bool_, task_list)
-		
-		output_tasks = []
-		output_tasks_name_list = []
-		table = '"%s:%s"' % (self.id, self.tasks_t)
-		# (4)
-		for row in task_list:
-			if row.task_type == 'service':
-				continue
-			if row.output:
-				for task_name in row.output:
-					if task_name.split(':')[0] != row.asset.name:
-						output_tasks.append((row, task_name))
-						output_tasks_name_list.append(task_name)
-			# -- -- get status
-			new_status = 'null'
-			if not row.input:
-				new_status = 'ready'
-			
-			update_data = {'artist':'', 'status': new_status, 'readers': [], 'priority':0}
-			where = {'task_name': row.task_name}
-			bool_, r_data = database().update('project', self.project, table, self.tasks_keys, update_data, where, table_root=self.tasks_db)
-			if not bool_:
-				bool_, r_data
-		
-		# (5)
-		# ******** DISCONNECT OUTPUTS
-		# -- get output tasks dict
-		result = task(self).get_tasks_by_name_list(output_tasks_name_list)
-		if not result[0]:
-			return(False, ('in asset().remove - %s' % result[1]))
-		output_tasks_data_dict = result[1]
-		
-		for key in output_tasks:
-			if not key[1]:
-				continue
-			if output_tasks_data_dict[key[1]].task_type == 'service':
-				b,r = output_tasks_data_dict[key[1]]._service_remove_task_from_input([key[0]])
-				if not b:
-					return(b,r)
-			else:
-				print((output_tasks_data_dict[key[1]].task_name + ' not service!'))
-				continue
-		
-		return(True, 'Ok!')
-	
-	# копируется инициализированный ассет
-	# self.project должен быть инициализирован
-	# new_group_name (str)
-	# new_asset_name (str)
-	# new_asset_type (str) из studio.asset_types
-	# set_of_tasks (str)
-	def copy_of_asset(self, new_group_name, new_asset_name, new_asset_type, set_of_tasks): # v2
-		pass
-		# 0 - test work_dir
-		# 1 - приведение имени нового ассета к стандарту
-		# 2 - получение id группы по имени
-		# 3 - заполнение словаря на создание ассета(new_keys) - по данным self и новым данным
-		# 4 - 
-		# 5 - создание ассета
-		# 6 - копирование директорий
-		# 6.1 - метадата
-		# 6.2 - рабочие активити
-		# 7 - copy preview images
-		
-		# (0)
-		if not self.work_folder:
-			return(False, 'Working directory not defined!')
+    Attributes:
+        module_level_variable1 (int): Module level variables may be documented in
+            either the ``Attributes`` section of the module docstring, or in an
+            inline docstring immediately following the variable.
+
+            Either form is acceptable, but the two should not be mixed. Choose
+            one convention to document module level variables and be consistent
+            with it.
+
+    '''
+
+    def __init__(self, project_ob):
+        if not isinstance(project_ob, project):
+            raise Exception('in asset.__init__() - Object is not the right type "%s", must be "project"' % project_ob.__class__.__name__)
+        # objects
+        self.project = project_ob
         
-		# (1) edit name
-		if not new_asset_name:
-			return(False, 'New asset name is not specified!')
-		elif not new_group_name:
-			return(False, 'New group name is not specified!')
-		elif not new_asset_type:
-			return(False, 'New type of asset is not specified!')
-		elif not set_of_tasks:
-			return(False, '"Set of tasks" is not specified!')
-		
-		#
-		if new_asset_type in ['shot_animation']:
-			new_asset_name = new_asset_name.replace(' ', '_')
-		else:
-			new_asset_name = new_asset_name.replace(' ', '_').replace('.', '_')
-		
-		# (2) get group id
-		result = group(self.project).get_by_name(new_group_name)
-		if not result[0]:
-			return(False, result[1])
-		new_group_id = result[1].id
-		
-		# (3)
-		new_keys={}
-		asset_list_keys = list(self.asset_keys.keys()) + ['path']
-		for key in asset_list_keys:
-			if key in dir(self):
-				new_keys[key] = getattr(self, key)
-			else:
-				new_keys[key] = None
-		#
-		new_keys['set_of_tasks'] = set_of_tasks
-		new_keys['type'] = new_asset_type
-		new_keys['group'] = new_group_id
-		new_keys['name'] = new_asset_name
-		new_keys['path'] = ''
-		#
-		list_keys = [new_keys]
-		
-		#print(json.dumps(list_keys, sort_keys = True, indent = 4))
-		
-		# (5) make asset
-		result = self.create(new_asset_type, list_keys)
-		if not result[0]:
-			return(False, result[1])
-		new_asset = result[1][new_asset_name]
-			
-		# (6) copy activity files
-		# (6.1) copy meta data
-		for key in self.ADDITIONAL_FOLDERS:
-			pass
-			#src_activity_path = NormPath(os.path.join(self.path, self.ADDITIONAL_FOLDERS[key]))
-			src_activity_path = NormPath(os.path.join(self.path, key))
-			#dst_activity_path = NormPath(os.path.join(new_asset.path, self.ADDITIONAL_FOLDERS[key]))
-			dst_activity_path = NormPath(os.path.join(new_asset.path, key))
-			for obj in os.listdir(src_activity_path):
-				src = NormPath(os.path.join(src_activity_path, obj))
-				dst = NormPath(os.path.join(dst_activity_path, obj.replace(self.name, new_asset_name))) # + replace name
-				#print('*'*50)
-				#print('src', src)
-				#print('dst', dst)
-				if os.path.isfile(src):
-					shutil.copyfile(src, dst)
-				elif os.path.isdir(src):
-					shutil.copytree(src, dst)
-		
-		# (6.2) copy activity version
-		# -- get task_list of old asset
-		b, old_tasks = task(self).get_list()
-		if not b:
-			return(b, old_tasks)
-		# -- get task_list of new asset
-		b, new_tasks = task(new_asset).get_list()
-		if not b:
-			return(b, new_tasks)
-		#
-		used_activites = list()
-		#
-		for new_tsk in new_tasks:
-			pass
-			if new_tsk.activity in used_activites:
-				continue
-			elif new_tsk.task_type=='service':
-				continue
-			# -- get tasks
-			old_tsk=None
-			for old_tsk in old_tasks:
-				if old_tsk.activity == new_tsk.activity:
-					used_activites.append(new_tsk.activity)
-					break
-			if not old_tsk:
-				print('*** There is no task in the source asset with this activity: %s' % new_tsk.activity)
-				continue
-			# -- get final push file path
-			b, r = old_tsk.get_final_push_file_path()
-			if not b:
-				print('### %s in %s' % (r, old_tsk.task_name))
-				#return(b,r)
-				continue
-			#
-			description = 'copy asset from "%s"' % self.name
-			#
-			if new_tsk.task_type in self.multi_publish_task_types:
-				for branch, source_path in r[0]['push_path'].items():
-					new_tsk.open_time = datetime.datetime.now()
-					new_tsk.commit(source_path, description, branch=branch)
-				new_tsk.push(description)
-			else:
-				source_path = r[0]
-				new_tsk.open_time = datetime.datetime.now()
-				new_tsk.commit(source_path, description)
-				new_tsk.push(description)
+        self.task_list = False # task lists from this asset
+        self.activity_path = False # директория какого либо активити по запросу, заполняется в get_activity_path()
+        
+        #base fields
+        for key in self.asset_keys:
+            exec('self.%s = False' % key)
+        
+        # constants
+        #self.extension = '.ma'
+        self.ACTIVITY_FOLDER = {
+        #'animatic' : {
+        'film':{
+            'storyboard':'storyboard',
+            'specification':'specification',
+            'animatic':'animatic',
+            'film':'film'
+        },
+        'object':{
+            'sketch':'sketch',
+            'face_blend':'10_face_blend',
+            'sculpt':'sculpt',
+            'model':'03_model',
+            'rig':'08_rig',
+            #'rig_face':'09_rig_face',
+            #'rig_face_crowd':'09_rig_face_crowd',
+            #'rig_hik':'08_rig_hik',
+            #'rig_hik_face':'09_ri_hik_face',
+            #'rig_low':'08_rig_low',
+            'def_rig':'def_rig',
+            'din_rig':'din_rig',
+            'textures':'05_textures',
+            'cache':'cache',
+            'test_animation': 'test_animation', # тестовая анимация для проверки рига
+        },
+        'location' : {
+            'sketch':'sketch',
+            'specification':'specification',
+            'location_anim':'location_anim',
+            'location':'location'
+        },
+        'shot_animation' : {
+            'animatic':'animatic',
+            'shot_animation':'shot_animation',
+            'camera':'camera',
+            'pleyblast_sequence':'pleyblast_sequence',
+            'tech_anim': 'tech_anim',
+            'simulation_din':'simulation_din',
+            'render':'render',
+            'composition':'composition',
+            'cache':'cache',
+            'actions':'actions',
+            #'din_simulation':'din_simulation',
+            #'fluid_simulation':'fluid_simulation',
+        },
+        'camera' : {'camera':'camera'},
+        'shot_render' : {'shot_render':'shot_render'},
+        'shot_composition' : {'shot_composition':'shot_composition'},
+        'light' : {'light':'light'},
+        }
+        
+        self.ADDITIONAL_FOLDERS = {
+        'meta_data':'00_common',
+        }
+        
+        self.UNCHANGEABLE_KEYS = ['id', 'type', 'path']
+        #self.COPIED_ASSET = ['obj', 'char']
+        self.COPIED_ASSET = {
+            'object':['object'],
+            }
+        self.COPIED_WITH_TASK = ['object']
 
-		# (7) copy preview image
-		img_folder_path = NormPath(os.path.join(self.project.path, self.project.folders['preview_images']))
-		old_img_path = NormPath(os.path.join(img_folder_path, (self.name + self.preview_extension)))
-		old_img_icon_path = NormPath(os.path.join(img_folder_path, (self.name + '_icon%s' % self.preview_extension)))
-		new_img_path = NormPath(os.path.join(img_folder_path, (new_asset_name + self.preview_extension)))
-		new_img_icon_path = NormPath(os.path.join(img_folder_path, (new_asset_name + '_icon%s' % self.preview_extension)))
-		
-		if os.path.exists(old_img_path):
-			shutil.copyfile(old_img_path, new_img_path)
-		if os.path.exists(old_img_icon_path):
-			shutil.copyfile(old_img_icon_path, new_img_icon_path)
-		
-		return(True, 'Ok!')
-	
-	# возвращает список ассетов по типам
-	# asset_type (str) - тип ассета, если False, то возвращает список ассетов по всем типам.
-	# return - (True, [objects]) или (False, comment)
-	def get_list_by_type(self, asset_type=False): # v2
-		pass
-		#
-		
-		where = False
-		assets_list = []
-		r_data = []
-		if not asset_type:
-			for asset_type in self.asset_types:
-				b, r = database().read('project', self.project, asset_type, self.asset_keys, where = where, table_root=self.assets_db)
-				if not b:
-					print('#'*5, r)
-					continue
-				else:
-					assets_list = assets_list + r
-		else:
-			b, r = database().read('project', self.project, asset_type, self.asset_keys, where = where, table_root=self.assets_db)
-			if not b:
-				print('#'*5, r)
-				return(True, [])
-			else:
-				assets_list = r
-				
-		for asset in assets_list:
-			r_data.append(self.init_by_keys(asset))
-		return(True, r_data)
-	
-	# обёртка на get_list_by_type()
-	# return - (True, [objects]) или (False, comment)
-	def get_list_by_all_types(self): # v2
-		b, r = self.get_list_by_type()
-		return(b, r)
-	
-	# group (group) - объект группы
-	# return - (True, [objects]) или (False, comment)
-	def get_list_by_group(self, group_ob): # v2
-		pass
-		# 1 - тест типа переменной group
-		# 2 - чтение БД
-		
-		# (1)
-		if not isinstance(group_ob, group):
-			return(False, 'asset.get_list_by_group(): the data type of the variable passed to this procedure must be a "group", passed type: "%s"' % group_ob.__class__.__name__)
-		
-		# (2)
-		assets = []
-		where = {'group': group_ob.id}
-		if group_ob.type == 'recycle_bin':
-			for asset_type in self.asset_types:
-				b, r = database().read('project', group_ob.project, asset_type, self.asset_keys, where = where, table_root=self.assets_db)
-				if not b:
-					print('#'*5, r)
-					continue
-				else:
-					assets = assets + r
-		else:
-			bool_, assets = database().read('project', group_ob.project, group_ob.type, self.asset_keys, where = where, table_root=self.assets_db)
-			if not bool_:
-				print('#'*5, assets)
-				return(True, [])
-		
-		r_data = []
-		for asset in assets:
-			#asset['path'] = NormPath(os.path.join(self.project.path, self.project.folders['assets'],asset['type'], asset['name']))
-			r_data.append(self.init_by_keys(asset))
-		return(True, r_data)
+    # инициализация по имени
+    # заполнение полей по self.asset_keys
+    # asset_name (str) - имя ассета. данные ассета будут считаны из базы данных.
+    # new (bool) - если True - то возвращается новый инициализированный объект класса asset, если False - то инициализируется текущий объект
+    def init(self, asset_name, new = True):
+        """Mega function
+        
+        Parameters
+        ----------
+        param1 : int
+            The first parameter.
+        param2 : str
+            The second parameter.
+            
+        Returns
+        -------
+        :obj:`project` / tuple
+            True if successful, False otherwise.
+        
+        """
+        pass
+        # 1 - чтение БД
+        where = {'name': asset_name}
+        asset_data = False
+        for asset_type in self.asset_types:
+            b, r = database().read('project', self.project, asset_type, self.asset_keys, where=where, table_root=self.assets_db)
+            if not b:
+                print(r)
+                continue
+            if r:
+                asset_data = r[0]
+        
+        if not asset_data:
+            return(False, 'An asset with that name(%s) was not found!' % asset_name)
+                
+        return(self.init_by_keys(asset_data, new=new))
+        
+    # инициализация по словарю ассета
+    # заполнение полей по self.asset_keys
+    # new (bool) - если True - то возвращается новый инициализированный объект класса asset, если False - то инициализируется текущий объект
+    def init_by_keys(self, keys, new = True):
+        """
+        
+        Args:
+            param1 (str): Description of `param1`.
+            param2 (:obj:`int`, optional): Description of `param2`. Multiple
+                lines are supported.
+            param3 (list(str)): Description of `param3`.
 
-	'''
-	def get_name_list_by_type(self, project_name, asset_type):
-		result = self.get_project(project_name)
-		if not result[0]:
-			return(False, result[1])
-		
-		# write season to db
-		conn = sqlite3.connect(self.assets_path, detect_types=sqlite3.PARSE_DECLTYPES|sqlite3.PARSE_COLNAMES)
-		conn.row_factory = sqlite3.Row
-		c = conn.cursor()
-		
-		try:
-			table = asset_type
-			str_ = 'select * from ' + table
-			c.execute(str_)
-			rows = c.fetchall()
-			names = []
-			for row in rows:
-				names.append(row['name'])
-			conn.close()
-			return(True, rows)
-		except:
-			conn.close()
-			return(True, [])
-	'''
-			
-	def get_id_name_dict_by_type(self, asset_type): # v2
-		bool_, return_data = database().read('project', self.project, asset_type, self.asset_keys, table_root=self.assets_db)
-		if not bool_:
-			return(bool_, return_data)
-		asset_id_name_dict = {}
-		for row in return_data:
-			#row['path'] = NormPath(os.path.join(self.project.path, self.project.folders['assets'],row['type'], row['name']))
-			asset_id_name_dict[row['id']] = row['name']
-		return(True, asset_id_name_dict)
-		
-			
-	def get_dict_by_name_by_all_types(self): # v2
-		asset_list = []
-		for asset_type in self.asset_types:
-			bool_, return_data = database().read('project', self.project, asset_type, self.asset_keys, table_root=self.assets_db)
-			if not bool_:
-				print(return_data)
-				continue
-			asset_list = asset_list + return_data
-		# make dict
-		assets_dict = {}
-		for asset in asset_list:
-			asset['path'] = NormPath(os.path.join(self.project.path, self.project.folders['assets'],asset['type'], asset['name']))
-			assets_dict[asset['name']] = self.init_by_keys(asset)
-		return(True, assets_dict)
-			
-	def get_by_id(self, asset_id): # v2
-		where = {'id': asset_id}
-		asset_data = False
-		for asset_type in self.asset_types:
-			bool_, return_data = database().read('project', self.project, asset_type, self.asset_keys, where=where, table_root=self.assets_db)
-			if not bool_:
-				print(return_data)
-				continue
-			if return_data:
-				asset_data = return_data[0]
-				asset_data['path'] = NormPath(os.path.join(self.project.path, self.project.folders['assets'],asset_data['type'], asset_data['name']))
-				return(True, asset_data)
-		if not asset_data:
-			return(False, 'No Asset With This id(%s)!' % asset_id)
-	
-	# keys - словарь по asset_keys, 
-	# -- *name - для идентификации ассета
-	# -- *type - для идентификации таблицы
-	# -- не меняемые значения 'name', 'type', 'id', 'path'
-	def edit_asset_data_by_name(self, keys): # v2
-		pass
-		# test Name Type
-		if not 'name' in keys:
-			return(False, 'Name not specified!')
-		elif not 'type' in keys:
-			return(False, 'Type not specified!')
-		
-		where = {'name': keys['name']}
-		table_name = keys['type']
-		# cleaning keys
-		del keys['name']
-		for key in self.UNCHANGEABLE_KEYS:
-			if key in keys:
-				del keys[key]
-		# update
-		bool_, return_data = database().update('project', self.project, table_name, self.asset_keys, keys, where, table_root=self.assets_db)
-		if not bool_:
-			return(bool_, return_data)
-		
-		return(True, 'Ok!')
-	
-	# keys - словарь по asset_keys, 
-	# -- *id - для идентификации ассета
-	# -- *type - для идентификации таблицы
-	# -- не меняемые значения: 'name', 'type', 'id', 'path'
-	def edit_asset_data_by_id(self, keys): # v2
-		pass
-		# test Name Type
-		if not 'id' in keys:
-			return(False, 'Id not specified!')
-		elif not 'type' in keys:
-			return(False, 'Type not specified!')
-		
-		where = {'id': keys['id']}
-		table_name = keys['type']
-		# cleaning keys
-		for key in self.UNCHANGEABLE_KEYS:
-			if key in keys:
-				del keys[key]
-		# update
-		bool_, return_data = database().update('project', self.project, table_name, self.asset_keys, keys, where, table_root=self.assets_db)
-		if not bool_:
-			return(bool_, return_data)
-		
-		return(True, 'Ok!')
-		
-	# ассет должен быть инициализирован
-	# group_id (str) - id группы
-	def change_group(self, group_id): # v2
-		where = {'name': self.name}
-		keys={'group': group_id}
-		
-		# update
-		table_name = self.type
-		b, r = database().update('project', self.project, table_name, self.asset_keys, keys, where, table_root=self.assets_db)
-		if not b:
-			return(b, r)
-		
-		self.group = group_id
-		return(True, 'Ok!')
+        
+        Returns:
+            :obj:`project` / tuple: The return value. True for success, False otherwise.
+        
+        """
+        pass
+        if new:
+            r_ob = asset(self.project)
+        else:
+            r_ob = self
+            
+        for key in self.asset_keys:
+            setattr(r_ob, key, keys.get(key))
+            r_ob.path = NormPath(os.path.join(self.project.path, self.project.folders['assets'],keys['type'], keys['name']))
+            
+        if new:
+            return r_ob
+        else:
+            return(True, 'Ok!')
+        
+    # list_keys (list) - список словарей по ключам asset_keys
+    # -- обязательные параметры в keys (list_keys): name, group(id). важный параметр set_of_tasks - имя набора
+    # asset_type (str) - тип для всех ассетов
+    def create(self, asset_type, list_keys):  # v2
+        pass
+        # 1 - проверка типа ассета
+        # 2 - проверка типа list_keys
+        # 3 - список ассетов данного типа для проверки наличия
+        # 4 - создание таблицы если нет
+        # 5 - проверка на совпадение имени ассета
+        # 6 - создание ассетов - проверки:
+        # --6.1 - наличие name, group(id), season
+        # --6.2 - изменение имени
+        # --6.3 - добавление значений (type, status, priority) в словарь ассета
+        # --6.4 - создание id с проверкой на совпадение.
+        # --6.5 - создание директорий
+        # --6.6 - создание ассета в БД
+        
+        # (1) test valid asset_type
+        if not asset_type in self.asset_types:
+            return(False, 'Asset_Type (%s) is Not Valid!' % asset_type)
+        # (2) test valid type of list_keys
+        if list_keys.__class__.__name__!= 'list':
+            return(False, 'The type of "list_keys" (%s) is Not Valid! There must be a "list"' % list_keys.__class__.__name__)
+        # start data
+        make_assets = {}
+        # get list assets
+        assets = []
+        ids = []
+        result = self.get_list_by_all_types()
+        if result[0]:
+            for row in result[1]:
+                assets.append(row.name)
+                ids.append(row.id)
+        else:
+            print('#'*5)
+            print(result[1])
+            
+        # (4) cteate table
+        bool_, return_data = database().create_table('project', self.project, asset_type, self.asset_keys, table_root = self.assets_db)
+        if not bool_:
+            return(bool_, return_data)
+        
+        #
+        if not list_keys:
+            return(False, 'No data to create an Asset!')
+        # (5) test exists name
+        for keys in list_keys:
+            if keys['name'] in assets:
+                return(False, 'The name "%s" already exists!' % keys['name'])
+        # (6) create assets
+        b, r = set_of_tasks().get_dict_by_all_types()
+        if not b:
+            return(b, r)
+        else:
+            set_of_tasks_dict = r
+        for keys in list_keys:
+            # (6.1)
+            # test name
+            if not keys.get('name'):
+                return(False,('No name!'))
+            # test group(id)
+            if not keys.get('group'):
+                return(False, 'In the asset "%s" does not specify a group!' % keys['name'])
+            # test season
+            '''
+            if asset_type in self.asset_types_with_season and not keys.get('season'):
+                return(False, 'In the asset "%s" does not specify a season' % keys['name'])
+            elif not asset_type in self.asset_types_with_season and not keys.get('season'):
+                keys['season'] = ''
+            '''
+            # (6.2) edit name
+            if asset_type in ['shot_animation']:
+                keys['name'] = keys['name'].replace(' ', '_')
+            else:
+                keys['name'] = keys['name'].replace(' ', '_').replace('.', '_')
+            # (6.3) make keys
+            keys['type'] = asset_type
+            keys['status'] = 'active'
+            if not keys.get('priority'):
+                keys['priority'] = 0
+            # -- loading_type
+            if keys['type']=='object' and keys.get('set_of_tasks'):
+                if set_of_tasks_dict.get('object') and keys.get('set_of_tasks') in set_of_tasks_dict['object']:
+                    keys['loading_type'] = set_of_tasks_dict['object'][keys.get('set_of_tasks')].loading_type
+            
+            # (6.4) get id
+            keys['id'] = hex(random.randint(0, 1000000000)).replace('0x','')
+            while keys['id'] in ids:
+                keys['id'] = hex(random.randint(0, 1000000000)).replace('0x','')
 
-	# ассет должен быть инициализирован
-	# priority (int) - новый приоритет
-	def change_priority(self, priority):
-		pass
-		where = {'name': self.name}
-		keys={'priority': priority}
-		
-		# update
-		table_name = self.type
-		b, r = database().update('project', self.project, table_name, self.asset_keys, keys, where, table_root=self.assets_db)
-		if not b:
-			return(b, r)
-		
-		self.priority = priority
-		return(True, 'Ok!')
-	
-	# ассет должен быть инициализирован
-	# description (str) - новое описание
-	def change_description(self, description):
-		pass
-		where = {'name': self.name}
-		keys={'description': description}
-		
-		# update
-		table_name = self.type
-		b, r = database().update('project', self.project, table_name, self.asset_keys, keys, where, table_root=self.assets_db)
-		if not b:
-			return(b, r)
-		
-		self.description = description
-		return(True, 'Ok!')
-	
-	# смена типа загрузки ассета, для типа object
-	# loading_type (str) - тип загрузки, значение из studio.loading_types
-	def change_loading_type(self, loading_type):
-		pass
-		if self.type not in ['object']:
-			return(False, 'For an asset with this type "%s", the "loading_type" parameter cannot be changed' % self.type)
-		if not loading_type in self.loading_types:
-			return(False, 'Wrong loading_type: "%s"' % loading_type)
-		#
-		where = {'name': self.name}
-		keys={'loading_type': loading_type}
-		
-		# update
-		table_name = self.type
-		b, r = database().update('project', self.project, table_name, self.asset_keys, keys, where, table_root=self.assets_db)
-		if not b:
-			return(b, r)
-		
-		self.loading_type = loading_type
-		return(True, 'Ok!')
-			
-	def rename_asset(self, asset_type, old_name, new_name): # v2 ???????? ассет нельзя переименовывать!!!!!!!!!!!!!!!!!
-		pass
-		# get id by name
-		result = self.get_by_name(asset_type, old_name)
-		if not result[0]:
-			return(False, result[1])
-		
-		# rename
-		keys = {
-		'name': new_name,
-		'type': asset_type,
-		'id': result[1]['id'],
-		}
-		
-		result = self.edit_asset_data_by_id(keys)
-		if not result[0]:
-			return(False, result[1])
-		else:
-			return(True, 'Ok!')
+            # (6.5) create Folders
+            group_dir = NormPath(os.path.join(self.project.path, self.project.folders['assets'],asset_type))
+            asset_path = NormPath(os.path.join(group_dir, keys['name']))
+            # -- create group folder
+            if not os.path.exists(group_dir):
+                try:
+                    os.mkdir(group_dir)
+                except Exception as e:
+                    print('#'*5, 'In asset.create() -- create group folder')
+                    print(e)
+                    return(False, 'Exception in asset.create() look the terminal!')
+            # -- create root folder
+            if not os.path.exists(asset_path):
+                try:
+                    os.mkdir(asset_path)
+                except Exception as e:
+                    print('#'*5, 'In asset.create() -- create root folder')
+                    print(e)
+                    return(False, 'Exception in asset.create() look the terminal!')
+            
+            # -- create activity folders
+            for activity in self.ACTIVITY_FOLDER[asset_type]:
+                folder_path = NormPath(os.path.join(asset_path, activity))
+                if not os.path.exists(folder_path):
+                    os.mkdir(folder_path)
+                    
+            # -- create additional folders  self.ADDITIONAL_FOLDERS
+            for activity in self.ADDITIONAL_FOLDERS:
+                folder_path = NormPath(os.path.join(asset_path, activity))
+                if not os.path.exists(folder_path):
+                    os.mkdir(folder_path)
+            
+            # (6.6) create in DB init
+            bool_, return_data = database().insert('project', self.project, asset_type, self.asset_keys, keys, table_root=self.assets_db)
+            if not bool_:
+                return(bool_, return_data)
+            
+            ########### make task data
+            
+            this_asset_tasks = []
+            # add service tasks ("final")
+            final = {
+                'asset_name':keys['name'],
+                'asset_id': keys['id'],
+                'asset_type': asset_type,
+                'task_name': (keys['name'] + ':final'),
+                #'season': keys['season'],
+                'status':'null',
+                'task_type':'service',
+                'input':[],
+                'output': [],
+            }
+            # create service tasks ("all_input")
+            all_input = {
+                'asset_name':keys['name'],
+                'asset_id': keys['id'],
+                'asset_type': asset_type,
+                'task_name': (keys['name'] + ':all_input'),
+                #'season': keys['season'],
+                'status':'done',
+                'task_type':'service',
+                'input':[],
+                'output': [],
+            }
+            this_asset_tasks.append(all_input)
+            
+            # get list from set_of_tasks
+            result = set_of_tasks().get(keys.get('set_of_tasks'))
+            if result[0]:
+                print('**** by set of tasks: %s' % keys.get('set_of_tasks'))
+                set_tasks = result[1].sets
+                
+                outputs = {}
+                for task_ in set_tasks:
+                    # name
+                    name = task_['task_name']
+                    task_['task_name'] = keys['name'] + ':' + name
+                    
+                    # output
+                    #task_['output'] = json.dumps([final['task_name']])
+                    task_['output'] = [final['task_name']]
+                    
+                    # input
+                    input_ = task_['input']
+                    if  input_ == 'all':
+                        task_['input'] = all_input['task_name']
+                        # status
+                        task_['status'] = 'ready'
+                        # add to output all_input
+                        #all_outputs = json.loads(all_input['output'])
+                        all_outputs = all_input['output']
+                        all_outputs.append(task_['task_name'])
+                        #all_input['output'] = json.dumps(all_outputs)
+                        all_input['output'] = all_outputs
+                        
+                    elif input_ == 'pre':
+                        task_['input'] = keys['name'] + ':pre_input:' + name
+                        # status
+                        task_['status'] = 'ready'
+                        # add service tasks ("pre_input" )
+                        pre_input = {
+                            'asset_name':keys['name'],
+                            'asset_id': keys['id'],
+                            'asset_type': asset_type,
+                            'task_name': task_['input'],
+                            #'season': keys['season'],
+                            'status':'done',
+                            'task_type':'service',
+                            'input':'',
+                            #'output': json.dumps([final['task_name'], task_['task_name']])
+                            #'output': json.dumps([task_['task_name']])
+                            'output': [task_['task_name']]
+                        }
+                        this_asset_tasks.append(pre_input)
+                    elif input_:
+                        task_['input'] = keys['name'] + ':' + input_
+                        # status
+                        task_['status'] = 'null'
+                        
+                        # outputs
+                        if task_['input'] in outputs.keys():
+                            outputs[task_['input']].append(task_['task_name'])
+                        else:
+                            outputs[task_['input']] = [task_['task_name'],]
+                        
+                    else:
+                        # status
+                        task_['status'] = 'ready'
+                        
+                    # price
+                    task_['price'] = task_['cost']
+                        
+                    # asset
+                    #task_['asset_name'] = keys['name']
+                    #task_['asset_id'] = keys['id']
+                    #task_['asset_type'] = asset_type
+                    
+                    # season
+                    #task_['season'] = keys['season']
+                    
+                    # readers
+                    task_['readers'] = {}
+                    
+                    # append task
+                    this_asset_tasks.append(task_)
+                    
+                for task_ in this_asset_tasks:
+                    if task_['task_name'] in outputs:
+                        if task_['output']:
+                            #task_outputs = json.loads(task_['output'])
+                            task_outputs = task_['output']
+                            task_outputs = task_outputs + outputs[task_['task_name']]
+                            #task_['output'] = json.dumps(task_outputs)
+                            task_['output'] = task_outputs
+                        else:
+                            #task_['output'] = json.dumps(outputs['task_name'])
+                            task_['output'] = outputs['task_name']
+            else:
+                print('**** without sets')
+            
+            # set input of "final"
+            final_input = []
+            for task_ in this_asset_tasks:
+                final_input.append(task_['task_name'])
+            #final['input'] = json.dumps(final_input)
+            final['input'] = final_input
+            
+            # append final to task list
+            this_asset_tasks.append(final)
+            
+            #print(this_asset_tasks)
+            
+            ########### create tasks (by task data)
+            #c = json.dumps(this_asset_tasks, sort_keys=True, indent=4)
+            #print(c)
+            new_asset = self.init_by_keys(keys)
+            result = task(new_asset).create_tasks_from_list(this_asset_tasks)
+            if not result[0]:
+                return(False, result[1])
+            
+            ########### make return data
+            # path
+            keys['path'] = NormPath(os.path.join(self.project.path, self.project.folders['assets'],keys['type'], keys['name']))
+            #
+            make_assets[keys['name']] = self.init_by_keys(keys)
+        
+        return(True, make_assets)
+
+    # удаление текущего ассета
+    def remove(self): # v2
+        pass
+        # 1 - получение id recycle_bin
+        # 2 - замена группы ассета на recycle_bin, обнуление priority, status.
+        # 3 - список задач ассета
+        # 4 - перезапись задачь ассета, обнуление: status, artist, readers, priority.
+        # 5 - разрывы исходящих связей в другие ассеты.
+        
+        # (1)
+        # -- get recycle bin  data
+        result = group(self.project).get_by_keys({'type': 'recycle_bin'})
+        if not result[0]:
+            return(False, ('in asset().remove' + result[1]))
+        recycle_bin = result[1][0]
+        
+        # (2)
+        update_data = {'group': recycle_bin.id, 'priority': 0, 'status':'none'}
+        where = {'id': self.id}
+        bool_, return_data = database().update('project', self.project, self.type, self.asset_keys, update_data, where, table_root=self.assets_db)
+        if not bool_:
+            return(bool_, return_data)
+                
+        # (3)
+        bool_, task_list = task(self).get_list()
+        if not bool_:
+            return(bool_, task_list)
+        
+        output_tasks = []
+        output_tasks_name_list = []
+        table = '"%s:%s"' % (self.id, self.tasks_t)
+        # (4)
+        for row in task_list:
+            if row.task_type == 'service':
+                continue
+            if row.output:
+                for task_name in row.output:
+                    if task_name.split(':')[0] != row.asset.name:
+                        output_tasks.append((row, task_name))
+                        output_tasks_name_list.append(task_name)
+            # -- -- get status
+            new_status = 'null'
+            if not row.input:
+                new_status = 'ready'
+            
+            update_data = {'artist':'', 'status': new_status, 'readers': [], 'priority':0}
+            where = {'task_name': row.task_name}
+            bool_, r_data = database().update('project', self.project, table, self.tasks_keys, update_data, where, table_root=self.tasks_db)
+            if not bool_:
+                bool_, r_data
+        
+        # (5)
+        # ******** DISCONNECT OUTPUTS
+        # -- get output tasks dict
+        result = task(self).get_tasks_by_name_list(output_tasks_name_list)
+        if not result[0]:
+            return(False, ('in asset().remove - %s' % result[1]))
+        output_tasks_data_dict = result[1]
+        
+        for key in output_tasks:
+            if not key[1]:
+                continue
+            if output_tasks_data_dict[key[1]].task_type == 'service':
+                b,r = output_tasks_data_dict[key[1]]._service_remove_task_from_input([key[0]])
+                if not b:
+                    return(b,r)
+            else:
+                print((output_tasks_data_dict[key[1]].task_name + ' not service!'))
+                continue
+        
+        return(True, 'Ok!')
+
+    # копируется инициализированный ассет
+    # self.project должен быть инициализирован
+    # new_group_name (str)
+    # new_asset_name (str)
+    # new_asset_type (str) из studio.asset_types
+    # set_of_tasks (str)
+    def copy_of_asset(self, new_group_name, new_asset_name, new_asset_type, set_of_tasks): # v2
+        pass
+        # 0 - test work_dir
+        # 1 - приведение имени нового ассета к стандарту
+        # 2 - получение id группы по имени
+        # 3 - заполнение словаря на создание ассета(new_keys) - по данным self и новым данным
+        # 4 - 
+        # 5 - создание ассета
+        # 6 - копирование директорий
+        # 6.1 - метадата
+        # 6.2 - рабочие активити
+        # 7 - copy preview images
+        
+        # (0)
+        if not self.work_folder:
+            return(False, 'Working directory not defined!')
+        
+        # (1) edit name
+        if not new_asset_name:
+            return(False, 'New asset name is not specified!')
+        elif not new_group_name:
+            return(False, 'New group name is not specified!')
+        elif not new_asset_type:
+            return(False, 'New type of asset is not specified!')
+        elif not set_of_tasks:
+            return(False, '"Set of tasks" is not specified!')
+        
+        #
+        if new_asset_type in ['shot_animation']:
+            new_asset_name = new_asset_name.replace(' ', '_')
+        else:
+            new_asset_name = new_asset_name.replace(' ', '_').replace('.', '_')
+        
+        # (2) get group id
+        result = group(self.project).get_by_name(new_group_name)
+        if not result[0]:
+            return(False, result[1])
+        new_group_id = result[1].id
+        
+        # (3)
+        new_keys={}
+        asset_list_keys = list(self.asset_keys.keys()) + ['path']
+        for key in asset_list_keys:
+            if key in dir(self):
+                new_keys[key] = getattr(self, key)
+            else:
+                new_keys[key] = None
+        #
+        new_keys['set_of_tasks'] = set_of_tasks
+        new_keys['type'] = new_asset_type
+        new_keys['group'] = new_group_id
+        new_keys['name'] = new_asset_name
+        new_keys['path'] = ''
+        #
+        list_keys = [new_keys]
+        
+        #print(json.dumps(list_keys, sort_keys = True, indent = 4))
+        
+        # (5) make asset
+        result = self.create(new_asset_type, list_keys)
+        if not result[0]:
+            return(False, result[1])
+        new_asset = result[1][new_asset_name]
+            
+        # (6) copy activity files
+        # (6.1) copy meta data
+        for key in self.ADDITIONAL_FOLDERS:
+            pass
+            #src_activity_path = NormPath(os.path.join(self.path, self.ADDITIONAL_FOLDERS[key]))
+            src_activity_path = NormPath(os.path.join(self.path, key))
+            #dst_activity_path = NormPath(os.path.join(new_asset.path, self.ADDITIONAL_FOLDERS[key]))
+            dst_activity_path = NormPath(os.path.join(new_asset.path, key))
+            for obj in os.listdir(src_activity_path):
+                src = NormPath(os.path.join(src_activity_path, obj))
+                dst = NormPath(os.path.join(dst_activity_path, obj.replace(self.name, new_asset_name))) # + replace name
+                #print('*'*50)
+                #print('src', src)
+                #print('dst', dst)
+                if os.path.isfile(src):
+                    shutil.copyfile(src, dst)
+                elif os.path.isdir(src):
+                    shutil.copytree(src, dst)
+        
+        # (6.2) copy activity version
+        # -- get task_list of old asset
+        b, old_tasks = task(self).get_list()
+        if not b:
+            return(b, old_tasks)
+        # -- get task_list of new asset
+        b, new_tasks = task(new_asset).get_list()
+        if not b:
+            return(b, new_tasks)
+        #
+        used_activites = list()
+        #
+        for new_tsk in new_tasks:
+            pass
+            if new_tsk.activity in used_activites:
+                continue
+            elif new_tsk.task_type=='service':
+                continue
+            # -- get tasks
+            old_tsk=None
+            for old_tsk in old_tasks:
+                if old_tsk.activity == new_tsk.activity:
+                    used_activites.append(new_tsk.activity)
+                    break
+            if not old_tsk:
+                print('*** There is no task in the source asset with this activity: %s' % new_tsk.activity)
+                continue
+            # -- get final push file path
+            b, r = old_tsk.get_final_push_file_path()
+            if not b:
+                print('### %s in %s' % (r, old_tsk.task_name))
+                #return(b,r)
+                continue
+            #
+            description = 'copy asset from "%s"' % self.name
+            #
+            if new_tsk.task_type in self.multi_publish_task_types:
+                for branch, source_path in r[0]['push_path'].items():
+                    new_tsk.open_time = datetime.datetime.now()
+                    new_tsk.commit(source_path, description, branch=branch)
+                new_tsk.push(description)
+            else:
+                source_path = r[0]
+                new_tsk.open_time = datetime.datetime.now()
+                new_tsk.commit(source_path, description)
+                new_tsk.push(description)
+
+        # (7) copy preview image
+        img_folder_path = NormPath(os.path.join(self.project.path, self.project.folders['preview_images']))
+        old_img_path = NormPath(os.path.join(img_folder_path, (self.name + self.preview_extension)))
+        old_img_icon_path = NormPath(os.path.join(img_folder_path, (self.name + '_icon%s' % self.preview_extension)))
+        new_img_path = NormPath(os.path.join(img_folder_path, (new_asset_name + self.preview_extension)))
+        new_img_icon_path = NormPath(os.path.join(img_folder_path, (new_asset_name + '_icon%s' % self.preview_extension)))
+        
+        if os.path.exists(old_img_path):
+            shutil.copyfile(old_img_path, new_img_path)
+        if os.path.exists(old_img_icon_path):
+            shutil.copyfile(old_img_icon_path, new_img_icon_path)
+        
+        return(True, 'Ok!')
+
+    # возвращает список ассетов по типам
+    # asset_type (str) - тип ассета, если False, то возвращает список ассетов по всем типам.
+    # return - (True, [objects]) или (False, comment)
+    def get_list_by_type(self, asset_type=False): # v2
+        pass
+        #
+        
+        where = False
+        assets_list = []
+        r_data = []
+        if not asset_type:
+            for asset_type in self.asset_types:
+                b, r = database().read('project', self.project, asset_type, self.asset_keys, where = where, table_root=self.assets_db)
+                if not b:
+                    print('#'*5, r)
+                    continue
+                else:
+                    assets_list = assets_list + r
+        else:
+            b, r = database().read('project', self.project, asset_type, self.asset_keys, where = where, table_root=self.assets_db)
+            if not b:
+                print('#'*5, r)
+                return(True, [])
+            else:
+                assets_list = r
+                
+        for asset in assets_list:
+            r_data.append(self.init_by_keys(asset))
+        return(True, r_data)
+
+    # обёртка на get_list_by_type()
+    # return - (True, [objects]) или (False, comment)
+    def get_list_by_all_types(self): # v2
+        b, r = self.get_list_by_type()
+        return(b, r)
+
+    # group (group) - объект группы
+    # return - (True, [objects]) или (False, comment)
+    def get_list_by_group(self, group_ob): # v2
+        pass
+        # 1 - тест типа переменной group
+        # 2 - чтение БД
+        
+        # (1)
+        if not isinstance(group_ob, group):
+            return(False, 'asset.get_list_by_group(): the data type of the variable passed to this procedure must be a "group", passed type: "%s"' % group_ob.__class__.__name__)
+        
+        # (2)
+        assets = []
+        where = {'group': group_ob.id}
+        if group_ob.type == 'recycle_bin':
+            for asset_type in self.asset_types:
+                b, r = database().read('project', group_ob.project, asset_type, self.asset_keys, where = where, table_root=self.assets_db)
+                if not b:
+                    print('#'*5, r)
+                    continue
+                else:
+                    assets = assets + r
+        else:
+            bool_, assets = database().read('project', group_ob.project, group_ob.type, self.asset_keys, where = where, table_root=self.assets_db)
+            if not bool_:
+                print('#'*5, assets)
+                return(True, [])
+        
+        r_data = []
+        for asset in assets:
+            #asset['path'] = NormPath(os.path.join(self.project.path, self.project.folders['assets'],asset['type'], asset['name']))
+            r_data.append(self.init_by_keys(asset))
+        return(True, r_data)
+
+    '''
+    def get_name_list_by_type(self, project_name, asset_type):
+        result = self.get_project(project_name)
+        if not result[0]:
+            return(False, result[1])
+        
+        # write season to db
+        conn = sqlite3.connect(self.assets_path, detect_types=sqlite3.PARSE_DECLTYPES|sqlite3.PARSE_COLNAMES)
+        conn.row_factory = sqlite3.Row
+        c = conn.cursor()
+        
+        try:
+            table = asset_type
+            str_ = 'select * from ' + table
+            c.execute(str_)
+            rows = c.fetchall()
+            names = []
+            for row in rows:
+                names.append(row['name'])
+            conn.close()
+            return(True, rows)
+        except:
+            conn.close()
+            return(True, [])
+    '''
+            
+    def get_id_name_dict_by_type(self, asset_type): # v2
+        bool_, return_data = database().read('project', self.project, asset_type, self.asset_keys, table_root=self.assets_db)
+        if not bool_:
+            return(bool_, return_data)
+        asset_id_name_dict = {}
+        for row in return_data:
+            #row['path'] = NormPath(os.path.join(self.project.path, self.project.folders['assets'],row['type'], row['name']))
+            asset_id_name_dict[row['id']] = row['name']
+        return(True, asset_id_name_dict)
+        
+            
+    def get_dict_by_name_by_all_types(self): # v2
+        asset_list = []
+        for asset_type in self.asset_types:
+            bool_, return_data = database().read('project', self.project, asset_type, self.asset_keys, table_root=self.assets_db)
+            if not bool_:
+                print(return_data)
+                continue
+            asset_list = asset_list + return_data
+        # make dict
+        assets_dict = {}
+        for asset in asset_list:
+            asset['path'] = NormPath(os.path.join(self.project.path, self.project.folders['assets'],asset['type'], asset['name']))
+            assets_dict[asset['name']] = self.init_by_keys(asset)
+        return(True, assets_dict)
+            
+    def get_by_id(self, asset_id): # v2
+        where = {'id': asset_id}
+        asset_data = False
+        for asset_type in self.asset_types:
+            bool_, return_data = database().read('project', self.project, asset_type, self.asset_keys, where=where, table_root=self.assets_db)
+            if not bool_:
+                print(return_data)
+                continue
+            if return_data:
+                asset_data = return_data[0]
+                asset_data['path'] = NormPath(os.path.join(self.project.path, self.project.folders['assets'],asset_data['type'], asset_data['name']))
+                return(True, asset_data)
+        if not asset_data:
+            return(False, 'No Asset With This id(%s)!' % asset_id)
+
+    # keys - словарь по asset_keys, 
+    # -- *name - для идентификации ассета
+    # -- *type - для идентификации таблицы
+    # -- не меняемые значения 'name', 'type', 'id', 'path'
+    def edit_asset_data_by_name(self, keys): # v2
+        pass
+        # test Name Type
+        if not 'name' in keys:
+            return(False, 'Name not specified!')
+        elif not 'type' in keys:
+            return(False, 'Type not specified!')
+        
+        where = {'name': keys['name']}
+        table_name = keys['type']
+        # cleaning keys
+        del keys['name']
+        for key in self.UNCHANGEABLE_KEYS:
+            if key in keys:
+                del keys[key]
+        # update
+        bool_, return_data = database().update('project', self.project, table_name, self.asset_keys, keys, where, table_root=self.assets_db)
+        if not bool_:
+            return(bool_, return_data)
+        
+        return(True, 'Ok!')
+
+    # keys - словарь по asset_keys, 
+    # -- *id - для идентификации ассета
+    # -- *type - для идентификации таблицы
+    # -- не меняемые значения: 'name', 'type', 'id', 'path'
+    def edit_asset_data_by_id(self, keys): # v2
+        pass
+        # test Name Type
+        if not 'id' in keys:
+            return(False, 'Id not specified!')
+        elif not 'type' in keys:
+            return(False, 'Type not specified!')
+        
+        where = {'id': keys['id']}
+        table_name = keys['type']
+        # cleaning keys
+        for key in self.UNCHANGEABLE_KEYS:
+            if key in keys:
+                del keys[key]
+        # update
+        bool_, return_data = database().update('project', self.project, table_name, self.asset_keys, keys, where, table_root=self.assets_db)
+        if not bool_:
+            return(bool_, return_data)
+        
+        return(True, 'Ok!')
+        
+    # ассет должен быть инициализирован
+    # group_id (str) - id группы
+    def change_group(self, group_id): # v2
+        where = {'name': self.name}
+        keys={'group': group_id}
+        
+        # update
+        table_name = self.type
+        b, r = database().update('project', self.project, table_name, self.asset_keys, keys, where, table_root=self.assets_db)
+        if not b:
+            return(b, r)
+        
+        self.group = group_id
+        return(True, 'Ok!')
+
+    # ассет должен быть инициализирован
+    # priority (int) - новый приоритет
+    def change_priority(self, priority):
+        pass
+        where = {'name': self.name}
+        keys={'priority': priority}
+        
+        # update
+        table_name = self.type
+        b, r = database().update('project', self.project, table_name, self.asset_keys, keys, where, table_root=self.assets_db)
+        if not b:
+            return(b, r)
+        
+        self.priority = priority
+        return(True, 'Ok!')
+
+    # ассет должен быть инициализирован
+    # description (str) - новое описание
+    def change_description(self, description):
+        pass
+        where = {'name': self.name}
+        keys={'description': description}
+        
+        # update
+        table_name = self.type
+        b, r = database().update('project', self.project, table_name, self.asset_keys, keys, where, table_root=self.assets_db)
+        if not b:
+            return(b, r)
+        
+        self.description = description
+        return(True, 'Ok!')
+
+    # смена типа загрузки ассета, для типа object
+    # loading_type (str) - тип загрузки, значение из studio.loading_types
+    def change_loading_type(self, loading_type):
+        pass
+        if self.type not in ['object']:
+            return(False, 'For an asset with this type "%s", the "loading_type" parameter cannot be changed' % self.type)
+        if not loading_type in self.loading_types:
+            return(False, 'Wrong loading_type: "%s"' % loading_type)
+        #
+        where = {'name': self.name}
+        keys={'loading_type': loading_type}
+        
+        # update
+        table_name = self.type
+        b, r = database().update('project', self.project, table_name, self.asset_keys, keys, where, table_root=self.assets_db)
+        if not b:
+            return(b, r)
+        
+        self.loading_type = loading_type
+        return(True, 'Ok!')
+            
+    def rename_asset(self, asset_type, old_name, new_name): # v2 ???????? ассет нельзя переименовывать!!!!!!!!!!!!!!!!!
+        pass
+        # get id by name
+        result = self.get_by_name(asset_type, old_name)
+        if not result[0]:
+            return(False, result[1])
+        
+        # rename
+        keys = {
+        'name': new_name,
+        'type': asset_type,
+        'id': result[1]['id'],
+        }
+        
+        result = self.edit_asset_data_by_id(keys)
+        if not result[0]:
+            return(False, result[1])
+        else:
+            return(True, 'Ok!')
 
 class task(studio):
 	'''

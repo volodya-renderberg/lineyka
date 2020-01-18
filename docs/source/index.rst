@@ -13,6 +13,7 @@ Contents:
    
    studio
    project
+   asset
    examples
    specifications
 

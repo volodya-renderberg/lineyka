@@ -1,7 +1,7 @@
 .. _class-project-page:
 
-Class Project
-=============
+Class Project(studio)
+=====================
 
 .. autoclass:: edit_db.project
    :members:
