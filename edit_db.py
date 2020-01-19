@@ -395,28 +395,33 @@ class studio:
     """str: имя *json* файла c параметрами проекта, дублируются из базы данных. Применяются к проекту при его повторном добавлении в студию. """
 
     #database files
-    # --- projects
     projects_db = '.projects.db'
+    """str: Имя файла ДБ (для Sqlite3) где содержится таблица данных :obj:`edit_db.project` """
     projects_t = 'projects'
-    # --- assets
+    """str: Имя таблицы БД для :obj:`project` """
     assets_db = '.assets.db'
+    """str: Имя файла ДБ (для Sqlite3) где содержится таблица данных :obj:`asset`. Имя таблицы - тип ассета. """
     #assets_t = 'assets' # имя таблицы - тип ассета
-    # --- artists
     artists_db = '.artists.db'
+    """str: Имя файла ДБ (для Sqlite3) где содержится таблица данных :obj:`artist` """
     artists_t = 'artists'
-    # --- workroom
+    """str: Имя таблицы БД для :obj:`artist` """
     workroom_db = artists_db
+    """str: Имя файла ДБ (для Sqlite3) где содержится таблица данных :obj:`workroom` """
     workroom_t = 'workrooms'
-    # --- statistic
+    """str: Имя таблицы БД для :obj:`workroom` """
     statistic_db = '.statistic.db'
+    """str: Имя файла ДБ (для Sqlite3) где содержится таблица данных :obj:`statistic` """
     statistic_t = 'statistic'
-    # --- season
+    """str: Имя таблицы БД для :obj:`statistic` """
     season_db = assets_db
+    """str: Имя файла ДБ (для Sqlite3) где содержится таблица данных :obj:`season` """
     season_t = 'season'
-    # --- group
+    """str: Имя таблицы БД для :obj:`season` """
     group_db = assets_db
+    """str: Имя файла ДБ (для Sqlite3) где содержится таблица данных :obj:`group` """
     group_t = 'groups'
-    # --- tasks
+    """str: Имя таблицы БД для :obj:`group` """
     tasks_db = '.tasks.db'
     tasks_t = 'tasks'
     # --- tasks logs
