@@ -222,7 +222,7 @@ class studio:
     'status': 'text',
     'parent': 'json' # {'name':asset_name, 'id': asset_id} - возможно не нужно
     }
-    """dict: Обозначение данных хранимых в БД для объектов :obj:`asset` . Ключи - заголовки, значения - тип данных БД. """
+    """dict: Обозначение данных хранимых в БД для объектов :obj:`edit_db.asset` . Ключи - заголовки, значения - тип данных БД. """
 
     loading_types = ('mesh', 'group', 'rig')
     """tuple: Типы загрузок ассетов в сцену. """
@@ -255,14 +255,14 @@ class studio:
     'extension': 'text',
     'description': 'text',  # описание задачи
     }
-    """dict: Обозначение данных хранимых в БД для объектов :obj:`task` . Ключи - заголовки, значения - тип данных БД. """
+    """dict: Обозначение данных хранимых в БД для объектов :obj:`edit_db.task` . Ключи - заголовки, значения - тип данных БД. """
     
     workroom_keys = {
     'name': 'text',
     'id': 'text',
     'type': 'json'
     }
-    """dict: Обозначение данных хранимых в БД для объектов :obj:`workroom` . Ключи - заголовки, значения - тип данных БД. """
+    """dict: Обозначение данных хранимых в БД для объектов :obj:`edit_db.workroom` . Ключи - заголовки, значения - тип данных БД. """
 
     statistics_keys = (
     ('project_name', 'text'),
@@ -291,7 +291,7 @@ class studio:
     'working_tasks': 'json',# список имён назначенных в работу задач
     'checking_tasks': 'json',# список имён назначенных на проверку задач
     }
-    """dict: Обозначение данных хранимых в БД для объектов :obj:`artist` . Ключи - заголовки, значения - тип данных БД. """
+    """dict: Обозначение данных хранимых в БД для объектов :obj:`edit_db.artist` . Ключи - заголовки, значения - тип данных БД. """
     
     chats_keys = {
     'message_id':'text',
@@ -303,7 +303,7 @@ class studio:
     'status': 'text',
     'reading_status': 'json',
     }
-    """dict: Обозначение данных хранимых в БД для объектов :obj:`chat` . Ключи - заголовки, значения - тип данных БД. """
+    """dict: Обозначение данных хранимых в БД для объектов :obj:`edit_db.chat` . Ключи - заголовки, значения - тип данных БД. """
 
     projects_keys = {
     'name': 'text',
@@ -316,7 +316,7 @@ class studio:
     'fps': 'real',
     'units': 'text',
     }
-    """dict: Обозначение данных хранимых в БД для объектов :obj:`project` . Ключи - заголовки, значения - тип данных БД. """
+    """dict: Обозначение данных хранимых в БД для объектов :obj:`edit_db.project` . Ключи - заголовки, значения - тип данных БД. """
 
     group_keys = {
     'name': 'text',
@@ -325,14 +325,14 @@ class studio:
     'description': 'text',
     'id': 'text',
     }
-    """dict: Обозначение данных хранимых в БД для объектов :obj:`group` . Ключи - заголовки, значения - тип данных БД. """
+    """dict: Обозначение данных хранимых в БД для объектов :obj:`edit_db.group` . Ключи - заголовки, значения - тип данных БД. """
 
     season_keys = {
     'name': 'text',
     'status':'text',
     'id': 'text',
     }
-    """dict: Обозначение данных хранимых в БД для объектов :obj:`season` . Ключи - заголовки, значения - тип данных БД.
+    """dict: Обозначение данных хранимых в БД для объектов :obj:`edit_db.season` . Ключи - заголовки, значения - тип данных БД.
     
     .. attention:: Устаревшее, так же как и класс, смотри :ref:`season-series-shot-page`.
     """
@@ -366,7 +366,7 @@ class studio:
     'start': 'timestamp', 	# дата-время создания записи, запись создаётся при первом open задачи.
     'finish': 'timestamp',  # дата-время принятия задачи.
     }
-    """dict: Обозначение данных хранимых в БД для лога *артиста*. Автоматическое заполнение при выполнении :func:`edit_db.task.commit`. Строка - задача. Ключи - заголовки, значения - тип данных БД. Спецификации: :ref:`commit-push-publish-page` и :ref:`time-log-page` """
+    """dict: Обозначение данных хранимых в БД для лога *артиста*. Автоматическое заполнение при выполнении :func:`edit_db.task.commit`. Строка - задача. Ключи - заголовки, значения - тип данных БД. Спецификации - :ref:`commit-push-publish-page` и :ref:`time-log-page` """
 
     # лог артиста по дням, заполняемый вручную: день/проект/задача/время
     artists_time_logs_keys = {
@@ -398,32 +398,34 @@ class studio:
     projects_db = '.projects.db'
     """str: Имя файла ДБ (для Sqlite3) где содержится таблица данных :obj:`edit_db.project` """
     projects_t = 'projects'
-    """str: Имя таблицы БД для :obj:`project` """
+    """str: Имя таблицы БД для :obj:`edit_db.project` """
     assets_db = '.assets.db'
-    """str: Имя файла ДБ (для Sqlite3) где содержится таблица данных :obj:`asset`. Имя таблицы - тип ассета. """
+    """str: Имя файла ДБ (для Sqlite3) где содержится таблица данных :obj:`edit_db.asset`. Имя таблицы - тип ассета. """
     #assets_t = 'assets' # имя таблицы - тип ассета
     artists_db = '.artists.db'
-    """str: Имя файла ДБ (для Sqlite3) где содержится таблица данных :obj:`artist` """
+    """str: Имя файла ДБ (для Sqlite3) где содержится таблица данных :obj:`edit_db.artist` """
     artists_t = 'artists'
-    """str: Имя таблицы БД для :obj:`artist` """
+    """str: Имя таблицы БД для :obj:`edit_db.artist` """
     workroom_db = artists_db
-    """str: Имя файла ДБ (для Sqlite3) где содержится таблица данных :obj:`workroom` """
+    """str: Имя файла ДБ (для Sqlite3) где содержится таблица данных :obj:`edit_db.workroom` """
     workroom_t = 'workrooms'
-    """str: Имя таблицы БД для :obj:`workroom` """
+    """str: Имя таблицы БД для :obj:`edit_db.workroom` """
     statistic_db = '.statistic.db'
-    """str: Имя файла ДБ (для Sqlite3) где содержится таблица данных :obj:`statistic` """
+    """str: Имя файла ДБ (для Sqlite3) где содержится таблица данных :obj:`edit_db.statistic` """
     statistic_t = 'statistic'
-    """str: Имя таблицы БД для :obj:`statistic` """
+    """str: Имя таблицы БД для :obj:`edit_db.statistic` """
     season_db = assets_db
-    """str: Имя файла ДБ (для Sqlite3) где содержится таблица данных :obj:`season` """
+    """str: Имя файла ДБ (для Sqlite3) где содержится таблица данных :obj:`edit_db.season` """
     season_t = 'season'
-    """str: Имя таблицы БД для :obj:`season` """
+    """str: Имя таблицы БД для :obj:`edit_db.season` """
     group_db = assets_db
-    """str: Имя файла ДБ (для Sqlite3) где содержится таблица данных :obj:`group` """
+    """str: Имя файла ДБ (для Sqlite3) где содержится таблица данных :obj:`edit_db.group` """
     group_t = 'groups'
-    """str: Имя таблицы БД для :obj:`group` """
+    """str: Имя таблицы БД для :obj:`edit_db.group` """
     tasks_db = '.tasks.db'
+    """str: Имя файла ДБ (для Sqlite3) где содержится таблица данных :obj:`edit_db.task` """
     tasks_t = 'tasks'
+    """str: Имя таблицы БД для :obj:`edit_db.task` """
     # --- tasks logs
     logs_db = '.tasks_logs.db'
     logs_t = 'logs'
