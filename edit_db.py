@@ -50,9 +50,9 @@ class studio:
     tmp_folder = False
     """str: *tmp* директория пользователя, в неё копируются открываемые сцены. """
     work_folder = False
-    """str: Директория для локального хранения ассетов пользователя. Создаётся вся файловая структура ``project/assets/asset/activity/version_dir/file``. Определяется в *set studio*, метод :func:`edit_db.studio.set_work_folder`. """
+    """str: Директория для локального хранения ассетов пользователя. Создаётся вся файловая структура ``project/assets/asset/activity/version_dir/file``. Определяе методом :func:`edit_db.studio.set_work_folder`. """
     convert_exe = False
-    """str: Путь к файлу *convert.exe* приложения 'Imagemagick' """
+    """str: Путь к исполняемому файлу *convert* приложения 'Imagemagick' """
     studio_database = ['sqlite3', False]
     """list: Определение используемой в студии базы данных. """
     init_path = False
@@ -126,6 +126,8 @@ class studio:
     #NOT_USED_EXTENSIONS = ['.blend','.tiff', '.ods', '.xcf', '.svg']
     EMPTY_FILES_DIR_NAME = 'empty_files'
     """str: имя директории для хранения пользовательских заготовок файлов, для тех приложений, которые не могут создавать пустой файл при открытии по несуществующему пути.
+    
+    Создаётся в :func:`edit_db.studio.make_init_file`
     
     Расположение в директории: ``~/.lineyka/``
     """
@@ -380,9 +382,19 @@ class studio:
     init_folder = '.lineyka'
     """str: Имя домашней директории линейки с файлами пользовательской конфигурации. Расположение в ``~/`` """
     init_file = 'lineyka_init.json'
-    """str: Имя *json* файла конфигурации. Содержит пути. """
+    """str: Имя *json* файла конфигурации. Содержит пути. 
+    
+    Создаётся в :func:`edit_db.studio.make_init_file`
+    
+    Расположение в ~/:attr:`edit_db.studio.init_folder`/
+    """
     set_file = 'user_setting.json'
-    """str: Имя *json* файла конфигурации пользователя. Содержит словарь :attr:`edit_db.studio.setting_data` """
+    """str: Имя *json* файла конфигурации пользователя. Содержит словарь :attr:`edit_db.studio.setting_data`
+    
+    Создаётся в :func:`edit_db.studio.make_init_file`
+    
+    Расположение в ~/:attr:`edit_db.studio.init_folder`/
+    """
     location_position_file = 'location_content_position.json'
     """str: ``?`` """
     user_registr_file_name = 'user_registr.json'
@@ -426,29 +438,35 @@ class studio:
     """str: Имя файла ДБ (для Sqlite3) где содержится таблица данных :obj:`edit_db.task` """
     tasks_t = 'tasks'
     """str: Имя таблицы БД для :obj:`edit_db.task` """
-    # --- tasks logs
     logs_db = '.tasks_logs.db'
+    """str: Имя файла ДБ (для Sqlite3) где содержится таблица данных логов задачи/активити, :obj:`edit_db.log`. """
     logs_t = 'logs'
-    # --- artists logs
+    """str: Имя таблицы БД для лога задачи/активити """
     artists_logs_db = '.artists_logs.db'
-    # table_name = 'nik_name_tasks_logs'
-    # --- artists time logs
+    """str: Имя файла ДБ (для Sqlite3) где содержится таблица данных логов \`артистов, :obj:`edit_db.log`.
+    
+    Имя таблицы - '[nik_name]_tasks_logs'
+    """
     artists_time_logs_db = '.artists_time_logs.db'
-    # table_name = '[nik_name]_time_logs'
-    # --- chat
+    """str: Имя файла ДБ (для Sqlite3) где содержится таблица данных тайм логов \`артистов, :obj:`edit_db.log`.
+    
+    Имя таблицы - '[nik_name]_time_logs'
+    """
     chats_db = '.chats.db'
-    # --- set_of_tasks
+    """str: Имя файла ДБ (для Sqlite3) где содержится таблица данных :obj:`edit_db.chat` """
     set_of_tasks_db = '.set_of_tasks.db'
+    """str: Имя файла ДБ (для Sqlite3) где содержится таблица данных :obj:`edit_db.set_of_tasks` """
     set_of_tasks_t = 'set_of_tasks'
-
-    # shot_animation
+    """str: Имя таблицы БД для :obj:`edit_db.set_of_tasks` """
     meta_data_file = '.shot_meta_data.json'
-
+    """str: Имя *json* файла с метадатой шота. Хранение в ``asset_folder/common/`` """
+    
     # blender
     blend_service_images = {
         'preview_img_name' : 'Lineyka_Preview_Image',
         'bg_image_name' : 'Lineyka_BG_Image',
         }
+    """dict: Имена служебных файлов графических изображений, которые не сохраняются в ``asset_folder/textures/`` при выполнении процедуры ``Save Images`` в блендер аддоне. """
         
     def __init__(self):
         self.make_init_file()
@@ -456,6 +474,20 @@ class studio:
 
     @classmethod
     def make_init_file(self):
+        """Создание при их отсутствии:
+        
+        * :attr:`edit_db.studio.init_file` 
+        * :attr:`edit_db.studio.set_file`
+        * :attr:`edit_db.studio.EMPTY_FILES_DIR_NAME`
+        
+        Расположение файлов ~/:attr:`edit_db.studio.init_folder`/
+        
+        Returns
+        -------
+        None
+            *None*
+        """
+        
         home = os.path.expanduser('~')
         
         folder = NormPath(os.path.join(home, self.init_folder))
@@ -497,7 +529,21 @@ class studio:
 
     @classmethod
     def set_studio(self, path):
-        """Супер метод класса """
+        """Инициализация студийной директории.
+        
+        * Перезапись :attr:`edit_db.studio.init_file`
+        * Создание файловой структуры, при остуствии.
+        
+        Parameters
+        ----------
+        path : str
+            Путь до новой директории студии.
+            
+        Returns
+        -------
+        tuple
+            (*True*, 'Ok!') или (*False*, comment)
+        """
         if not os.path.exists(path):
             return(False, "****** to studio path not Found!")
         
@@ -528,6 +574,18 @@ class studio:
 
     @classmethod
     def set_tmp_dir(self, path):
+        """Определение пользовательской *tmp* директории - :attr:`edit_db.studio.tmp_folder`, в неё копируются открываемые сцены.
+        
+        Parameters
+        ----------
+        path : str
+            Путь до *tmp* директории.
+            
+        Returns
+        -------
+        tuple
+            (*True*, 'Ok!') или (*False*, comment)
+        """
         if not os.path.exists(path):
             return "****** to studio path not Found!"
         
@@ -558,6 +616,18 @@ class studio:
 
     @classmethod
     def set_convert_exe_path(self, path):
+        """Определение пути до исполняемого файла *convert* приложения ‘Imagemagick’, параметр :attr:`edit_db.studio.convert_exe`.
+        
+        Parameters
+        ----------
+        path : str
+            Путь до файла *convert* .
+            
+        Returns
+        -------
+        tuple
+            (*True*, 'Ok!') или (*False*, comment)
+        """
         pass
         #if not os.path.exists(path):
             #return(False, "****** to convert.exe path not Found!")
@@ -585,10 +655,22 @@ class studio:
 
         self.convert_exe = path
         
-        return True, 'Ok'
+        return(True, 'Ok!')
 
     @classmethod
     def set_work_folder(self, path):
+        """Определение директории для локального хранения ассетов пользователя, параметр :attr:`edit_db.studio.work_folder`.
+        
+        Parameters
+        ----------
+        path : str
+            Путь до директории.
+            
+        Returns
+        -------
+        tuple
+            (*True*, 'Ok!') или (*False*, comment)
+        """
         if not os.path.exists(path):
             return(False, 'The path "%s" - not Found!' % path)
         
@@ -617,19 +699,66 @@ class studio:
         
         return True, 'Ok'
 
-    # преобразование версии к строке нужного формата.
-    # version (int / str)
     def _template_version_num(self, version):
+        """Приобразование номера версии к строке нужного формата (от 4 симолов).
+        
+        Examples
+        --------
+        
+        .. code-block:: python
+        
+            >> import edit_db as db
+            >> db.studio._template_version_num(5)
+            >> (True, '0005')
+            >> db.studio._template_version_num('25')
+            >> (True, '0025')
+        
+        Parameters
+        ----------
+        version : str, int
+            Номер или строковое представление номера.
+            
+        Returns
+        -------
+        tuple
+            (*True*, str_version) или (*False*, comment)
+        """
         try:
             str_version = '{:04d}'.format(int(version))
             return(True, str_version)
         except:
             return (False, 'Wrong version format "%s"' %  str(version))
 
-    # шаблонный путь к файлу или активити в рабочей директории
-    # c_task  (task) - задача, для которой ищется файл
-    # version (bool / int / str) - номер версии или False -в этом случае возврат только пути до активити.
     def _template_get_work_path(self, c_task, version=False):
+        """Шаблонный путь к файлу или активити в рабочей директории пользователя (:attr:`edit_db.studio.work_folder`).
+        
+        Examples
+        --------
+        
+        .. code-block:: python
+        
+            >> import edit_db as db
+            >> ...
+            >> # получаем объект текущей задачи current_task
+            >> ...
+            >> db._template_get_work_path(current_task, version=25)
+            >> (True, 'path_to_work_folder/project_folder_name/assets/asset_name/activity_name/'0025'/asset_name.ext')
+            >> db._template_get_work_path(current_task)
+            >> (True, 'path_to_work_folder/project_folder_name/assets/asset_name/activity_name/')
+        
+        Parameters
+        ----------
+        c_task : :obj:`edit_db.task`
+            Объект задачи, для которой ищется файл.
+            
+        version : int, str, optional
+            Версия, число или строковое представление, если *False* - то возврат только пути до активити.
+            
+        Returns
+        -------
+        tuple
+            (*True*, path) или (*False*, comment)
+        """
         pass
         # exists work folder
         if not self.work_folder:
@@ -648,13 +777,46 @@ class studio:
             # activity path
             return (True, NormPath(os.path.join(self.work_folder, c_task.asset.project.name, 'assets', c_task.asset.name, c_task.activity)))
 
-    # шаблонный путь к файлу или активити push версии на сервере студии.
-    # c_task  (task) - задача, для которой ищется путь к файлам.
-    # version (bool / int / str) - номер версии или False -в этом случае возврат только пути до активити.
-    # branches (bool / list) - список веток из которых делался push - для task_type = sketch.
-    # look (bool) - рассматривается только при task_type = sketch, если False - то используется c_task.extension, если True - то используется studio.look_extension (список путей для просмотра).
-    # return (True, path или path_dict - ключи имена веток) или (False, comment).
     def _template_get_push_path(self, c_task, version=False, branches=False, look=False): # v2
+        """Шаблонный путь к файлу или активити *push* версии на сервере студии.
+        
+        Examples
+        --------
+        
+        .. code-block:: python
+        
+            >> import edit_db as db
+            >> ...
+            >> # получаем объект текущей задачи current_task
+            >> ...
+            >> db._template_get_push_path(current_task, version=25, branches=['master', 'branch1'], look=True)
+            >> (True, {'master' : 'path_to_project/assets/asset_name/activity_name/'0025'/asset_name#master.look_extension',
+                       'branch1' : 'path_to_project/assets/asset_name/activity_name/'0025'/asset_name#branch1.look_extension'})
+            >> db._template_get_push_path(current_task, version=25)
+            >> (True, 'path_to_project/assets/asset_name/activity_name/'0025'/asset_name.ext')
+            >> db._template_get_push_path(current_task)
+            >> (True, 'path_to_project/assets/asset_name/activity_name/')
+        
+        Parameters
+        ----------
+        c_task : :obj:`edit_db.task`
+            Объект задачи, для которой ищется файл.
+            
+        version : int, str, optional
+            Версия, число или строковое представление, если *False* - то возврат только пути до активити.
+            
+        branches : list, optional
+             Список веток из которых делался *push* - для *task_type* из списка :attr:`edit_db.studio.multi_publish_task_types` (например *'sketch'*).
+             
+        look : bool, optional
+            Рассматривается только если *task_type* из списка :attr:`edit_db.studio.multi_publish_task_types` (например *'sketch'*), если *False* - то используется *c_task.extension*, если *True* - то используется :attr:`edit_db.studio.look_extension`.
+            
+        Returns
+        -------
+        tuple
+            * (*True*, path) или (*False*, comment)
+            * (*True*, {branch_name : path1, ...}) или (*False*, comment) - для *task_type* из списка :attr:`edit_db.studio.multi_publish_task_types` (например *'sketch'*)
+        """
         pass
         # 1 - task_type = sketch
         # 1.1 - преобразование version
@@ -700,13 +862,53 @@ class studio:
                 # (2.3)
                 return (True, NormPath(os.path.join(c_task.asset.path, c_task.activity)))
 
-    # шаблонный путь до паблиш файлов.
-    # c_task  (task) - задача, для которой ищется путь к файлам.
-    # version (bool / int / str) - номер версии или False,если False - то путь до финальной версии, которая сверху версий (в паблиш/активити).
-    # branches (bool / list) - список веток из которых делался push или publish (в случае репаблиша) - для task_type = sketch.
-    # look (bool) - рассматривается только при task_type = sketch, если False - то используется c_task.extension, если True - то используется studio.look_extension (список путей для просмотра).
-    # return (True, path или path_dict - ключи имена веток) или (False, comment).
     def _template_get_publish_path(self, c_task, version=False, branches=list(), look=False): # v2
+        """Получение шаблонных путей для *publish* версий на сервере студии.
+        
+        .. note:: Если не передавать ``version`` - то будет получен путь к файлам, которые располагаются сверху директорий версий - это файлы последней версии.
+        
+        Examples
+        --------
+        
+        .. code-block:: python
+        
+            >> import edit_db as db
+            >> ...
+            >> # получаем объект текущей задачи current_task
+            >> ...
+            >> db._template_get_publish_path(current_task, version=25, branches=['master', 'branch1'], look=True)
+            >> (True, {'master' : 'path_to_project/assets/asset_name/publish/activity_name/'0025'/asset_name#master.look_extension',
+                       'branch1' : 'path_to_project/assets/asset_name/publish/activity_name/'0025'/asset_name#branch1.look_extension'})
+            >> db._template_get_publish_path(current_task, version=25)
+            >> (True, 'path_to_project/assets/asset_name/publish/activity_name/'0025'/asset_name.ext')
+            >> # Путь до финальной версии (для не скетч)
+            >> db._template_get_publish_path(current_task)
+            >> (True, 'path_to_project/assets/asset_name/publish/activity_name/asset_name.ext')
+            >> # Путь до финальной версии (для скетч)
+            >> db._template_get_publish_path(current_task, branches=['master', 'branch1'])
+            >> (True, {'master' : 'path_to_project/assets/asset_name/publish/activity_name/asset_name#master.ext',
+                       'branch1' : 'path_to_project/assets/asset_name/publish/activity_name/asset_name#branch1.ext'})
+        
+        Parameters
+        ----------
+        c_task : :obj:`edit_db.task`
+            Объект задачи, для которой ищется файл.
+            
+        version : int, str, optional
+            Версия, число или строковое представление, если *False* - то путь до финальной версии, которая сверху версий (в паблиш/активити).
+            
+        branches : list, optional
+             Список веток из которых делался *push* или *publish* (в случае репаблиша) - для *task_type* из списка :attr:`edit_db.studio.multi_publish_task_types` (например *'sketch'*).
+             
+        look : bool, optional
+            Рассматривается только если *task_type* из списка :attr:`edit_db.studio.multi_publish_task_types` (например *'sketch'*), если *False* - то используется *c_task.extension*, если *True* - то используется :attr:`edit_db.studio.look_extension`.
+            
+        Returns
+        -------
+        tuple
+            * (*True*, path) или (*False*, comment)
+            * (*True*, {branch_name : path1, ...}) или (*False*, comment) - для *task_type* из списка :attr:`edit_db.studio.multi_publish_task_types` (например *'sketch'*)
+        """
         pass
         # 1 - 
         
@@ -742,6 +944,7 @@ class studio:
                 return (True, NormPath(os.path.join(c_task.asset.path, self.publish_folder_name, c_task.activity, '%s%s' % (c_task.asset.name, c_task.extension))))
         
     def set_share_dir(self, path):
+        """Пока не используется. """
         if not os.path.exists(path):
             return "****** to studio path not Found!"
         
@@ -772,6 +975,7 @@ class studio:
         return True, 'Ok'
         
     def get_share_dir(self):
+        """Пока не используется. """
         pass
         # get lineyka_init.json
         home = os.path.expanduser('~')	
@@ -796,6 +1000,25 @@ class studio:
 
     @classmethod
     def get_studio(self):
+        """Заполнение атрибутов класса текущей студии. Которая определяется в :func:`edit_db.studio.set_studio`.
+        
+        Заполняемые атрибуты:
+        
+        * :attr:`edit_db.studio.studio_folder`
+        * :attr:`edit_db.studio.work_folder`
+        * :attr:`edit_db.studio.convert_exe`
+        * :attr:`edit_db.studio.tmp_folder`
+        * :attr:`edit_db.studio.studio_database`
+        * :attr:`edit_db.studio.extensions`
+        * :attr:`edit_db.studio.soft_data`
+        
+        Returns
+        -------
+        tuple
+            (*True*, [self.studio_folder, self.tmp_folder]) или (*False*, comment)
+        
+        """
+        
         if self.init_path == False:
             return(False, '****** in get_studio() -> init_path = False!')
         # write studio path
@@ -812,7 +1035,7 @@ class studio:
             self.work_folder = data['work_folder']
             self.convert_exe = data['convert_exe']
             self.tmp_folder = data['tmp_folder']
-            self.use_database = data['use_database']
+            self.studio_database = data['use_database']
         except Exception as e:
             print(e)
             
@@ -843,11 +1066,19 @@ class studio:
     # ****** SETTING ******
     # ------- EXTENSION -------------
     def get_extension_dict(self):
-        extension_dict = {}
+        """Получение словаря соответсвия расширения файлов и приложений для них, из файла :attr:`edit_db.studio.set_file`. 
+        
+        Returns
+        -------
+        tuple
+            (*True*, extension_dict) или (*False*, comment)
+        """
+        extension_dict = dict()
         
         home = os.path.expanduser('~')
-        folder = os.path.join(home, self.init_folder)
-        set_path = os.path.join(folder, self.set_file)
+        #folder = os.path.join(home, self.init_folder)
+        #set_path = os.path.join(folder, self.set_file)
+        set_path = NormPath(os.path.join(home, self.init_folder, self.set_file))
         
         if not os.path.exists(set_path):
             return(False, ('Not Path ' + set_path))
@@ -858,11 +1089,26 @@ class studio:
         return(True, extension_dict)
         
     def edit_extension_dict(self, key, path):
-        extension_dict = {}
+        """Изменение словаря соответсвия расширения файлов и приложений для них, в файле :attr:`edit_db.studio.set_file` 
+        
+        Parameters
+        ----------
+        key : str
+            Расширение файла с точкой, например: *'.obj'*
+        path : str
+            Путь до экзшника приложения или имя приложения (в зависимости от конфигурации), например '~/blender2.8/blender' или 'gimp'.
+            
+        Returns
+        -------
+        tuple
+            (*True, 'Ok!'*) или (*False*, comment)
+        """
+        extension_dict = dict()
         
         home = os.path.expanduser('~')
-        folder = os.path.join(home, self.init_folder)
-        set_path = os.path.join(folder, self.set_file)
+        #folder = os.path.join(home, self.init_folder)
+        #set_path = os.path.join(folder, self.set_file)
+        set_path = NormPath(os.path.join(home, self.init_folder, self.set_file))
         
         if not os.path.exists(set_path):
             return(False, ('Not Path ' + set_path))
@@ -880,6 +1126,22 @@ class studio:
         return(True, 'Ok')
         
     def edit_extension(self, extension, action, new_extension = False):
+        """Редактирование расширений (ключей) словаря соответсвия расширения файлов и приложений для них, в файле :attr:`edit_db.studio.set_file`
+        
+        Parameters
+        ----------
+        extension : str
+            Изменяемое расширение файла (с точкой, например: *'.obj'*)
+        action : str
+            Совершаемое действие. Действие из списка: *['ADD', 'REMOVE', 'EDIT']*
+        new_extension : str, optional
+            Добавляемое расширение (с точкой, например: *'.obj'*) взамен существующего (первый параметр), для *action* = *'EDIT'*
+            
+        Returns
+        -------
+        tuple
+            (*True, 'Ok!'*) или (*False*, comment)
+        """
         if not extension:
             return(False, 'Extension not specified!')
             
@@ -926,7 +1188,7 @@ class studio:
             f.close()
         
         self.get_studio()
-        return(True, 'Ok')
+        return(True, 'Ok!')
 
 class database():
     """Супер мега класс """
@@ -1524,7 +1786,7 @@ class project(studio):
         ----------
         keys : dict
             словарь по :attr:`edit_db.studio.projects_keys`
-        new : bool
+        new : bool, optional
             если *True* - возвращает новый инициализированный экземпляр, если *False* то инициализирует текущий.
         
         Returns
