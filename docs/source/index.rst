@@ -12,6 +12,7 @@ Contents:
    :maxdepth: 1
    
    studio
+   database
    project
    asset
    examples

@@ -1191,7 +1191,7 @@ class studio:
         return(True, 'Ok!')
 
 class database():
-    """Супер мега класс """
+    """Взаимодействия с базой данных. """
 
     def __init__(self):
         self.sqlite3_db_folder_attr = {
@@ -1209,7 +1209,26 @@ class database():
     # table_root - assets, chats - те случаи когда имя файла ДБ не соответствует имени таблицы, если есть table_root - имя файла ДБ будет определяться по нему.
     # table_root - может быть как именем таблицы - например: assets, так и именем файла - .assets.db
     def get(self, level, read_ob, table_name, com, table_root=False):
-        """Супер мега метод """
+        """Чтение БД, с использованием *sql* команды.
+        
+        Parameters
+        ----------
+        level : str
+            Уровень, варианты: ``studio``, ``project`` (данные проекта или студии).
+        read_ob : :obj:`edit_db.studio`, :obj:`edit_db.project`
+            Объект студии или проекта, для которого идёт взаимодействие с базой данных. 
+        table_name : str
+            Имя таблицы БД (для проверки наличия).
+        com : str
+            *SQL* команда.
+        table_root : str, optional
+            Имя файла БД для ``sqlite3``. Например :attr:`edit_db.studio.tasks_db`. Для тех случаев когда имя файла ДБ не соответствует имени таблицы (лучше передавать всегда).
+            
+        Returns
+        -------
+        tuple
+            (*True*, [строки-словари]) или (*False*, comment)
+        """
         
         # get use_db
         attr = self.use_db_attr.get(level)
@@ -1225,6 +1244,28 @@ class database():
 
     # table_root - может быть как именем таблицы - например: assets, так и именем файла - .assets.db
     def set_db(self, level, read_ob, table_name, com, data_com=False, table_root=False):
+        """Внесение изменений в БД, с использованием *sql* команды.
+        
+        Parameters
+        ----------
+        level : str
+            Уровень, варианты: ``studio``, ``project`` (данные проекта или студии).
+        read_ob : :obj:`edit_db.studio`, :obj:`edit_db.project`
+            Объект студии или проекта, для которого идёт взаимодействие с базой данных. 
+        table_name : str
+            Имя таблицы БД.
+        com : str
+            *SQL* команда.
+        data_com : tuple, optional
+            Кортеж значений для *com*.
+        table_root : str, optional
+            Имя файла БД для ``sqlite3``. Например :attr:`edit_db.studio.tasks_db`. Для тех случаев когда имя файла ДБ не соответствует имени таблицы (лучше передавать всегда).
+            
+        Returns
+        -------
+        tuple
+            (*True*, 'Ok!') или (*False*, comment)
+        """
         pass
         # get use_db
         attr = self.use_db_attr.get(level)
@@ -1240,6 +1281,26 @@ class database():
 
     # table_root - может быть как именем таблицы - например: assets, так и именем файла - .assets.db
     def create_table(self, level, read_ob, table_name, keys, table_root = False):
+        """Создание таблицы БД, при её отсутствии.
+        
+        Parameters
+        ----------
+        level : str
+            Уровень, варианты: ``studio``, ``project`` (данные проекта или студии).
+        read_ob : :obj:`edit_db.studio`, :obj:`edit_db.project`
+            Объект студии или проекта, для которого идёт взаимодействие с базой данных. 
+        table_name : str
+            Имя таблицы БД.
+        keys : dict
+            Словарь, инициализирующий данную таблицу: ключи - заголовки, значения - типы данных (стандартные для sqlite3 + дополнительные, например ``json``) например :attr:`edit_db.studio.tasks_keys`
+        table_root : str, optional
+            Имя файла БД для ``sqlite3``. Например :attr:`edit_db.studio.tasks_db`. Для тех случаев когда имя файла ДБ не соответствует имени таблицы (лучше передавать всегда).
+        
+        Returns
+        -------
+        tuple
+            (*True*, 'Ok!') или (*False*, comment)
+        """
         attr = self.use_db_attr.get(level)
         if not attr:
             raise Exception('database.write()', 'Unknown Level : %s' % level)
@@ -1255,6 +1316,28 @@ class database():
     # keys - это: tasks_keys, projects_keys итд.
     # table_root - может быть как именем таблицы - например: assets, так и именем файла - .assets.db
     def insert(self, level, read_ob, table_name, keys, write_data, table_root=False):
+        """Добавление строки или нескольких строк в таблицу БД.
+        
+        Parameters
+        ----------
+        level : str
+            Уровень, варианты: ``studio``, ``project`` (данные проекта или студии).
+        read_ob : :obj:`edit_db.studio`, :obj:`edit_db.project`
+            Объект студии или проекта, для которого идёт взаимодействие с базой данных. 
+        table_name : str
+            Имя таблицы БД.
+        keys : dict
+            Словарь, инициализирующий данную таблицу: ключи - заголовки, значения - типы данных (стандартные для sqlite3 + дополнительные, например ``json``) например :attr:`edit_db.studio.tasks_keys`
+        write_data : dict, list
+            Словарь строки по ключам ``keys``, также может быть списком словарей, для записи нескольких строк.
+        table_root : str, optional
+            Имя файла БД для ``sqlite3``. Например :attr:`edit_db.studio.tasks_db`. Для тех случаев когда имя файла ДБ не соответствует имени таблицы (лучше передавать всегда).
+            
+        Returns
+        -------
+        tuple
+            (*True*, 'Ok!') или (*False*, comment)
+        """
         attr = self.use_db_attr.get(level)
         if not attr:
             raise Exception('database.insert()', 'Unknown Level : %s' % level)
@@ -1274,6 +1357,31 @@ class database():
     # where - 1) строка условия, 2) словарь по keys, 3) False - значит выделяется всё.
     # columns - False - означает все столбцы если не False - то список столбцов.
     def read(self, level, read_ob, table_name, keys, columns = False, where=False, table_root=False):
+        """Чтение БД, используя условие.
+        
+        Parameters
+        ----------
+        level : str
+            Уровень, варианты: ``studio``, ``project`` (данные проекта или студии).
+        read_ob : :obj:`edit_db.studio`, :obj:`edit_db.project`
+            Объект студии или проекта, для которого идёт взаимодействие с базой данных. 
+        table_name : str
+            Имя таблицы БД.
+        keys : dict
+            Словарь, инициализирующий данную таблицу: ключи - заголовки, значения - типы данных (стандартные для sqlite3 + дополнительные, например ``json``) например :attr:`edit_db.studio.tasks_keys`
+        columns : list, optional
+            Список читаемых столбцов, если не передавать - то читаются все столбцы.
+        where : str, dict
+            * Строка условия для *sql* оператора ``WHERE``.
+            * Словарь для формирования строки *sql* оператора ``WHERE``, содержит ключи по ``keys``, плюс может содержать ``condition`` значения из [``or``, ``end``].
+        table_root : str, optional
+            Имя файла БД для ``sqlite3``. Например :attr:`edit_db.studio.tasks_db`. Для тех случаев когда имя файла ДБ не соответствует имени таблицы (лучше передавать всегда).
+        
+        Returns
+        -------
+        tuple
+            (*True*, [строки-словари]) или (*False*, comment)
+        """
         attr = self.use_db_attr.get(level)
         if not attr:
             raise Exception('database.read()', 'Unknown Level : %s' % level)
@@ -1289,6 +1397,30 @@ class database():
     # where - словарь по ключам, так как значения маскируются под "?" не может быть None или False
     # table_root - может быть как именем таблицы - например: assets, так и именем файла - .assets.db
     def update(self, level, read_ob, table_name, keys, update_data, where, table_root=False):
+        """Редактирование строк в таблице БД.
+        
+        Parameters
+        ----------
+        level : str
+            Уровень, варианты: ``studio``, ``project`` (данные проекта или студии).
+        read_ob : :obj:`edit_db.studio`, :obj:`edit_db.project`
+            Объект студии или проекта, для которого идёт взаимодействие с базой данных. 
+        table_name : str
+            Имя таблицы БД.
+        keys : dict
+            Словарь, инициализирующий данную таблицу: ключи - заголовки, значения - типы данных (стандартные для sqlite3 + дополнительные, например ``json``) например :attr:`edit_db.studio.tasks_keys`
+        update_data : dict
+            Данные на замену, словарь по ключам из ```keys``.
+        where : dict
+            Словарь для формирования строки *sql* оператора ``WHERE``, содержит ключи по ``keys``.
+        table_root : str, optional
+            Имя файла БД для ``sqlite3``. Например :attr:`edit_db.studio.tasks_db`. Для тех случаев когда имя файла ДБ не соответствует имени таблицы (лучше передавать всегда).
+            
+        Returns
+        -------
+        tuple
+            (*True*, 'Ok!') или (*False*, comment)
+        """
         attr = self.use_db_attr.get(level)
         if not attr:
             raise Exception('database.update()', 'Unknown Level : %s' % level)
@@ -1304,6 +1436,26 @@ class database():
     # where - словарь по ключам, так как значения маскируются под "?" не может быть None или False
     # table_root - может быть как именем таблицы - например: assets, так и именем файла - .assets.db
     def delete(self, level, read_ob, table_name, where, table_root=False):
+        """Удаление строки из таблицы БД.
+        
+        Parameters
+        ----------
+        level : str
+            Уровень, варианты: ``studio``, ``project`` (данные проекта или студии).
+        read_ob : :obj:`edit_db.studio`, :obj:`edit_db.project`
+            Объект студии или проекта, для которого идёт взаимодействие с базой данных. 
+        table_name : str
+            Имя таблицы БД.
+        where : dict
+            Словарь для формирования строки *sql* оператора ``WHERE``, содержит ключи по ``keys``.
+        table_root : str, optional
+            Имя файла БД для ``sqlite3``. Например :attr:`edit_db.studio.tasks_db`. Для тех случаев когда имя файла ДБ не соответствует имени таблицы (лучше передавать всегда).
+            
+        Returns
+        -------
+        tuple
+            (*True*, 'Ok!') или (*False*, comment)
+        """
         attr = self.use_db_attr.get(level)
         if not attr:
             raise Exception('database.update()', 'Unknown Level : %s' % level)
