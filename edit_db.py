@@ -3075,8 +3075,6 @@ class asset(studio):
             r_data.append(self.init_by_keys(asset))
         return(True, r_data)
 
-    # обёртка на get_list_by_type()
-    # return - (True, [objects]) или (False, comment)
     def get_list_by_all_types(self): # v2
         """Возвращает ассеты (экземпляры) по всем типам. Обёртка на :func:`edit_db.asset.get_list_by_type`
         
@@ -3088,9 +3086,19 @@ class asset(studio):
         b, r = self.get_list_by_type()
         return(b, r)
 
-    # group (group) - объект группы
-    # return - (True, [objects]) или (False, comment)
     def get_list_by_group(self, group_ob): # v2
+        """Возвращает список ассетов группы.
+        
+        Parameters
+        ----------
+        group_ob : :obj:`edit_db.group`
+            Группа - экземпляр.
+        
+        Returns
+        -------
+        tuple
+            (*True*, [экземпляры :obj:`edit_db.asset`]) или (*False, comment*)
+        """
         pass
         # 1 - тест типа переменной group
         # 2 - чтение БД
@@ -3121,33 +3129,8 @@ class asset(studio):
             #asset['path'] = NormPath(os.path.join(self.project.path, self.project.folders['assets'],asset['type'], asset['name']))
             r_data.append(self.init_by_keys(asset))
         return(True, r_data)
-
-    '''
-    def get_name_list_by_type(self, project_name, asset_type):
-        result = self.get_project(project_name)
-        if not result[0]:
-            return(False, result[1])
-        
-        # write season to db
-        conn = sqlite3.connect(self.assets_path, detect_types=sqlite3.PARSE_DECLTYPES|sqlite3.PARSE_COLNAMES)
-        conn.row_factory = sqlite3.Row
-        c = conn.cursor()
-        
-        try:
-            table = asset_type
-            str_ = 'select * from ' + table
-            c.execute(str_)
-            rows = c.fetchall()
-            names = []
-            for row in rows:
-                names.append(row['name'])
-            conn.close()
-            return(True, rows)
-        except:
-            conn.close()
-            return(True, [])
-    '''
-            
+    
+    # Нигде не используется
     def get_id_name_dict_by_type(self, asset_type): # v2
         bool_, return_data = database().read('project', self.project, asset_type, self.asset_keys, table_root=self.assets_db)
         if not bool_:
@@ -3157,9 +3140,15 @@ class asset(studio):
             #row['path'] = NormPath(os.path.join(self.project.path, self.project.folders['assets'],row['type'], row['name']))
             asset_id_name_dict[row['id']] = row['name']
         return(True, asset_id_name_dict)
-        
-            
+    
     def get_dict_by_name_by_all_types(self): # v2
+        """Возвращает словарь ассетов (экземпляры) по именам, по всем типам.
+        
+        Returns
+        -------
+        tuple
+            (*True*, {'asset_name' : экземпляр (:obj:`edit_db.asset`), ... }) или (*False, comment*)
+        """
         asset_list = []
         for asset_type in self.asset_types:
             bool_, return_data = database().read('project', self.project, asset_type, self.asset_keys, table_root=self.assets_db)
@@ -3175,6 +3164,18 @@ class asset(studio):
         return(True, assets_dict)
             
     def get_by_id(self, asset_id): # v2
+        """Возвращает экземпляр ассета по его *id*.
+        
+        Parameters
+        ----------
+        asset_id : str
+            *id* ассета.
+        
+        Returns
+        -------
+        tuple
+            (*True*, :obj:`edit_db.asset`) или (*False, comment*)
+        """
         where = {'id': asset_id}
         asset_data = False
         for asset_type in self.asset_types:
@@ -3184,11 +3185,12 @@ class asset(studio):
                 continue
             if return_data:
                 asset_data = return_data[0]
-                asset_data['path'] = NormPath(os.path.join(self.project.path, self.project.folders['assets'],asset_data['type'], asset_data['name']))
-                return(True, asset_data)
+                #asset_data['path'] = NormPath(os.path.join(self.project.path, self.project.folders['assets'],asset_data['type'], asset_data['name']))
+                return(True, self.init_by_keys(asset_data, new=True))
         if not asset_data:
             return(False, 'No Asset With This id(%s)!' % asset_id)
 
+    # не используетя
     # keys - словарь по asset_keys, 
     # -- *name - для идентификации ассета
     # -- *type - для идентификации таблицы
@@ -3215,6 +3217,7 @@ class asset(studio):
         
         return(True, 'Ok!')
 
+    # не используетя
     # keys - словарь по asset_keys, 
     # -- *id - для идентификации ассета
     # -- *type - для идентификации таблицы
@@ -3239,10 +3242,20 @@ class asset(studio):
             return(bool_, return_data)
         
         return(True, 'Ok!')
-        
-    # ассет должен быть инициализирован
-    # group_id (str) - id группы
+    
     def change_group(self, group_id): # v2
+        """Изменение группы ассета.
+        
+        Parameters
+        ----------
+        group_id : str
+            *id* новой группы.
+        
+        Returns
+        -------
+        tuple
+            (*True, 'Ok!'*) или (*False, comment*)
+        """
         where = {'name': self.name}
         keys={'group': group_id}
         
@@ -3255,9 +3268,19 @@ class asset(studio):
         self.group = group_id
         return(True, 'Ok!')
 
-    # ассет должен быть инициализирован
-    # priority (int) - новый приоритет
     def change_priority(self, priority):
+        """Изменение приоритета ассета.
+        
+        Parameters
+        ----------
+        priority : int
+            Новый приоритет.
+        
+        Returns
+        -------
+        tuple
+            (*True, 'Ok!'*) или (*False, comment*)
+        """
         pass
         where = {'name': self.name}
         keys={'priority': priority}
@@ -3271,9 +3294,19 @@ class asset(studio):
         self.priority = priority
         return(True, 'Ok!')
 
-    # ассет должен быть инициализирован
-    # description (str) - новое описание
     def change_description(self, description):
+        """Изменение описания текущего ассета.
+        
+        Parameters
+        ----------
+        description : str
+            Новое описание.
+        
+        Returns
+        -------
+        tuple
+            (*True, 'Ok!'*) или (*False, comment*)
+        """
         pass
         where = {'name': self.name}
         keys={'description': description}
@@ -3287,9 +3320,19 @@ class asset(studio):
         self.description = description
         return(True, 'Ok!')
 
-    # смена типа загрузки ассета, для типа object
-    # loading_type (str) - тип загрузки, значение из studio.loading_types
     def change_loading_type(self, loading_type):
+        """Смена типа загрузки ассета, для типа ``object``.
+        
+        Parameters
+        ----------
+        loading_type : str
+            Тип загрузки, значение из :attr:`edit_db.studio.loading_types`.
+        
+        Returns
+        -------
+        tuple
+            (*True, 'Ok!'*) или (*False, comment*)
+        """
         pass
         if self.type not in ['object']:
             return(False, 'For an asset with this type "%s", the "loading_type" parameter cannot be changed' % self.type)
