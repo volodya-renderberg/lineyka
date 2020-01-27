@@ -3078,7 +3078,8 @@ class asset(studio):
     # обёртка на get_list_by_type()
     # return - (True, [objects]) или (False, comment)
     def get_list_by_all_types(self): # v2
-        """
+        """Возвращает ассеты (экземпляры) по всем типам. Обёртка на :func:`edit_db.asset.get_list_by_type`
+        
         Returns
         -------
         tuple
