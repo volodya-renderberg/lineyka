@@ -1884,6 +1884,9 @@ class project(studio):
         
     dict_projects : dict
         ``атрибут класса`` Cловарь содержащий все проекты (экземпляры) с ключами по именам. Заполняется при выполнении метода :func:`edit_db.project.get_list`, значение по умолчанию - ``{}``.
+        
+    folders : dict
+        ``атрибут класса`` Служебные директории папки проекта.
     
     """
 
@@ -1892,15 +1895,18 @@ class project(studio):
     list_projects = []
     
     dict_projects = {}
+    
+    folders = {
+        'assets':'assets',
+        'chat_img_folder':'.chat_images',
+        'preview_images': '.preview_images'
+        }
 
     def __init__(self):
         pass
         #base fields
         for key in self.projects_keys:
             exec('self.%s = False' % key)
-            
-        # constans
-        self.folders = {'assets':'assets', 'chat_img_folder':'.chat_images', 'preview_images': '.preview_images'}
 
     def init(self, name, new=True): # v2
         """Инициализация по имени, возвращает новый, или инициализирует текущий экземпляр.
@@ -1914,9 +1920,9 @@ class project(studio):
             
         Returns
         -------
-        :obj:`project` / tuple
-            если new= *True* - экземпляр класса :obj:`project`,
-            если new= *False* - (*True,  'Ok!'*) или (*False, comment*)
+        :obj:`edit_db.project`, tuple
+            * если new= *True* - экземпляр класса :obj:`edit_db.project`,
+            * если new= *False* - (*True,  'Ok!'*) или (*False, comment*)
         """
         pass
         b, r = database().read('studio', self, self.projects_t, self.projects_keys, table_root=self.projects_db)
@@ -1943,9 +1949,9 @@ class project(studio):
         
         Returns
         -------
-        :obj:`project` / tuple
-            если new= *True* - экземпляр класса :obj:`project`,
-            если new= *False* - (*True,  'Ok!'*) или (*False, comment*)
+        :obj:`edit_db.project`, tuple
+            * если new= *True* - экземпляр класса :obj:`edit_db.project`,
+            * если new= *False* - (*True,  'Ok!'*) или (*False, comment*)
         """
         
         if new:
@@ -2294,28 +2300,67 @@ class project(studio):
         return data
 
 class asset(studio):
-    '''Супер мега класс
+    '''
+    **level** = 'project'
+    
+    .. rubric:: Данные хранимые в БД (имя столбца : тип данных):
+
+    .. code-block:: python
+
+        asset_keys = {
+        'name': 'text',
+        'group': 'text',
+        'type': 'text',
+        'loading_type': 'text', # способ загрузки ассета object в анимационную сцену, значения из studio.loading_types
+        'season': 'text',
+        'priority': 'integer',
+        'description': 'text',
+        'content': 'text',
+        'id': 'text',
+        'status': 'text',
+        'parent': 'json' # {'name':asset_name, 'id': asset_id} - возможно не нужно
+        }
     
     Examples
     --------
-    Examples can be given using either the ``Example`` or ``Examples``
-    sections. Sections support any reStructuredText formatting, including
-    literal blocks::
+    Создание экземпляра класса:
 
-        $ python example_numpy.py
+    .. code-block:: python
+
+        import edit_db as db
+        
+        project = db.project()
+        asset = db.asset(project) # экземпляр project - обязательный параметр при создании экземпляра asset
+        # доступ ко всем параметрам и методам принимаемого экземпляра project через asset.project
     
-    Notes
-    -----
-        Наилучший класс!
-
-    Attributes:
-        module_level_variable1 (int): Module level variables may be documented in
-            either the ``Attributes`` section of the module docstring, or in an
-            inline docstring immediately following the variable.
-
-            Either form is acceptable, but the two should not be mixed. Choose
-            one convention to document module level variables and be consistent
-            with it.
+    Attributes
+    ----------
+    name : str
+        Имя ассета (уникально)
+    group : str
+        *id* группы
+    type : str
+        Тип ассета из :attr:`edit_db.studio.asset_types`
+    loading_type : str
+        Тип загрузки в анимационную сцену, варианты: **mesh** - загрузка меша из активити ``model``, **group** - загрузка группы из активити ``model``, **rig** - загрузка группы рига из активити ``rig``.
+    season : str
+        *id* сезона ``?`` (возможно устарело)
+    priority : int
+        [0 - inf]
+    description : str
+        Описание
+    content : str
+        ``?``
+    id : str
+        *uuid*
+    status : str
+        Варианты из [``active``, ``none``]
+    parent : dict
+        ``?``
+    project : :obj:`edit_db.project`
+        Экземпляр класса :class:`edit_db.project` принимаемый при создании экземпляра класса, содержит все атрибуты и методы :obj:`edit_db.project`.
+    path : str
+        Путь к директории ассета на сервере ``?`` (заполняется при инициализации экземпляра).
 
     '''
 
@@ -2396,25 +2441,21 @@ class asset(studio):
             }
         self.COPIED_WITH_TASK = ['object']
 
-    # инициализация по имени
-    # заполнение полей по self.asset_keys
-    # asset_name str: имя ассета. данные ассета будут считаны из базы данных.
-    # new (bool) - если True - то возвращается новый инициализированный объект класса asset, если False - то инициализируется текущий объект
     def init(self, asset_name, new = True):
-        """Mega function
+        """Инициализация по имени, возвращает новый, или инициализирует текущий экземпляр.
         
         Parameters
         ----------
-        param1 : int
-            The first parameter.
-        param2 : str
-            The second parameter.
+        asset_name : str
+            Имя ассета.
+        new : bool
+            Если *True* - возвращает новый инициализированный экземпляр, если *False* то инициализирует текущий экземпляр.
             
         Returns
         -------
-        :obj:`project` / tuple
-            True if successful, False otherwise.
-        
+        :obj:`edit_db.asset`, tuple
+            * если new= *True* - экземпляр класса :obj:`edit_db.asset`,
+            * если new= *False* - (*True,  'Ok!'*) или (*False, comment*)
         """
         pass
         # 1 - чтение БД
@@ -2433,22 +2474,21 @@ class asset(studio):
                 
         return(self.init_by_keys(asset_data, new=new))
         
-    # инициализация по словарю ассета
-    # заполнение полей по self.asset_keys
-    # new (bool) - если True - то возвращается новый инициализированный объект класса asset, если False - то инициализируется текущий объект
     def init_by_keys(self, keys, new = True):
-        """
+        """Инициализация по словарю (без чтения БД), возвращает новый, или инициализирует текущий экземпляр.
         
-        Args:
-            param1 (str): Description of `param1`.
-            param2 (:obj:`int`, optional): Description of `param2`. Multiple
-                lines are supported.
-            param3 (list(str)): Description of `param3`.
-
+        Parameters
+        ----------
+        keys : dict
+            словарь по :attr:`edit_db.studio.asset_keys`
+        new : bool, optional
+            если *True* - возвращает новый инициализированный экземпляр, если *False* то инициализирует текущий.
         
-        Returns:
-            :obj:`project` / tuple: The return value. True for success, False otherwise.
-        
+        Returns
+        -------
+        :obj:`edit_db.asset`, tuple
+            * если new= *True* - экземпляр класса :obj:`edit_db.asset`,
+            * если new= *False* - (*True,  'Ok!'*) или (*False, comment*)
         """
         pass
         if new:
@@ -2465,10 +2505,21 @@ class asset(studio):
         else:
             return(True, 'Ok!')
         
-    # list_keys (list) - список словарей по ключам asset_keys
-    # -- обязательные параметры в keys (list_keys): name, group(id). важный параметр set_of_tasks - имя набора
-    # asset_type str: тип для всех ассетов
     def create(self, asset_type, list_keys):  # v2
+        """Создание ассетов по списку.
+        
+        Parameters
+        ----------
+        asset_type : str
+            Тип создаваемых ассетов, значение из списка :attr:`edit_db.studio.asset_types`
+        list_keys : list
+            Список словарей по ключам :attr:`edit_db.studio.asset_keys`, обязательные значения: ``name``, ``group`` (*id*). Важный параметр - ``set_of_tasks`` - имя набора задач, без этого параметра будут созданы только основные сервисные задачи ассетов.
+        
+        Returns
+        -------
+        tuple
+            (*True*, {*make_assets* - словарь объектов с ключами по именам}) или (*False*, comment)
+        """
         pass
         # 1 - проверка типа ассета
         # 2 - проверка типа list_keys
@@ -2744,8 +2795,14 @@ class asset(studio):
         
         return(True, make_assets)
 
-    # удаление текущего ассета
     def remove(self): # v2
+        """Перемещение текущего ассета в корзину, снятие задач с исполниетлей, изменение статуса и приоритета, разрыв исходящих связей ассета. Физически файлы ассета не удаляются.
+        
+        Returns
+        -------
+        tuple
+            (*True, 'Ok!'*) или (*False, comment*)
+        """
         pass
         # 1 - получение id recycle_bin
         # 2 - замена группы ассета на recycle_bin, обнуление priority, status.
@@ -2816,13 +2873,26 @@ class asset(studio):
         
         return(True, 'Ok!')
 
-    # копируется инициализированный ассет
-    # self.project должен быть инициализирован
-    # new_group_name (str)
-    # new_asset_name (str)
-    # new_asset_type (str) из studio.asset_types
-    # set_of_tasks (str)
     def copy_of_asset(self, new_group_name, new_asset_name, new_asset_type, set_of_tasks): # v2
+        """Копирование текущего ассета.
+        
+        Parameters
+        ----------
+        new_group_name : str
+            Имя группы для создаваемого ассета.
+        new_asset_name : str
+            Имя создаваемого ассета.
+        new_asset_type : str
+            Тип создаваемого ассета, значение из списка :attr:`edit_db.studio.asset_types`.
+        set_of_tasks : str
+            Имя набора задач.
+        
+        Returns
+        -------
+        tuple
+            (*True, 'Ok!'*) или (*False, comment*)
+        """
+        
         pass
         # 0 - test work_dir
         # 1 - приведение имени нового ассета к стандарту
@@ -2966,10 +3036,19 @@ class asset(studio):
         
         return(True, 'Ok!')
 
-    # возвращает список ассетов по типам
-    # asset_type (str) - тип ассета, если False, то возвращает список ассетов по всем типам.
-    # return - (True, [objects]) или (False, comment)
     def get_list_by_type(self, asset_type=False): # v2
+        """Возвращает ассеты (экземпляры) по типу. Если не указывать тип ассета, вернёт ассеты по всем типам.
+        
+        Parameters
+        ----------
+        asset_type : str, optional
+            Тип ассета, значение из списка :attr:`edit_db.studio.asset_types`. Если не передавать, то возвращается список ассетов по всем типам.
+            
+        Returns
+        -------
+        tuple
+            (*True*, [экземпляры :obj:`edit_db.asset`]) или (*False, comment*)
+        """
         pass
         #
         
@@ -2999,6 +3078,12 @@ class asset(studio):
     # обёртка на get_list_by_type()
     # return - (True, [objects]) или (False, comment)
     def get_list_by_all_types(self): # v2
+        """
+        Returns
+        -------
+        tuple
+            (*True*, [экземпляры :obj:`edit_db.asset`]) или (*False, comment*)
+        """
         b, r = self.get_list_by_type()
         return(b, r)
 
