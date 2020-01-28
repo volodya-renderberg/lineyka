@@ -2363,6 +2363,104 @@ class asset(studio):
         Путь к директории ассета на сервере ``?`` (заполняется при инициализации экземпляра).
 
     '''
+    
+    # CONSTANTS
+    self.ACTIVITY_FOLDER = {
+    'film':{
+        'storyboard':'storyboard',
+        'specification':'specification',
+        'animatic':'animatic',
+        'film':'film'
+    },
+    'object':{
+        'sketch':'sketch',
+        'face_blend':'10_face_blend',
+        'sculpt':'sculpt',
+        'model':'03_model',
+        'rig':'08_rig',
+        #'rig_face':'09_rig_face',
+        #'rig_face_crowd':'09_rig_face_crowd',
+        #'rig_hik':'08_rig_hik',
+        #'rig_hik_face':'09_ri_hik_face',
+        #'rig_low':'08_rig_low',
+        'def_rig':'def_rig',
+        'din_rig':'din_rig',
+        'textures':'05_textures',
+        'cache':'cache',
+        'test_animation': 'test_animation', # тестовая анимация для проверки рига
+    },
+    'location' : {
+        'sketch':'sketch',
+        'specification':'specification',
+        'location_anim':'location_anim',
+        'location':'location'
+    },
+    'shot_animation' : {
+        'animatic':'animatic',
+        'shot_animation':'shot_animation',
+        'camera':'camera',
+        'pleyblast_sequence':'pleyblast_sequence',
+        'tech_anim': 'tech_anim',
+        'simulation_din':'simulation_din',
+        'render':'render',
+        'composition':'composition',
+        'cache':'cache',
+        'actions':'actions',
+        #'din_simulation':'din_simulation',
+        #'fluid_simulation':'fluid_simulation',
+    },
+    'camera' : {'camera':'camera'},
+    'shot_render' : {'shot_render':'shot_render'},
+    'shot_composition' : {'shot_composition':'shot_composition'},
+    'light' : {'light':'light'},
+    }
+    """dict : Наброр активити в ассетах (по типам ассетов). 
+    
+    .. rubric:: Структура словаря:
+    
+    .. code-block:: python
+        
+        { asset_type_name: {
+            activiti_folder_name : description,
+            },
+        ...
+        }
+    
+    """
+    
+    self.ADDITIONAL_FOLDERS = {
+    'meta_data':'00_common',
+    }
+    """dict : Общие активити для всех типов ассетов. 
+    
+    .. rubric:: Структура словаря:
+    
+    .. code-block:: python
+        
+        { activiti_folder_name : description,
+        ...
+        }
+    """
+    
+    self.UNCHANGEABLE_KEYS = ['id', 'type', 'path']
+    """list : Заголовки неизменяемых данных ассетов. """
+    
+    self.COPIED_ASSET = {
+        'object':['object'],
+        }
+    """dict : Типы ассетов, которые подлежат копированию.
+    
+    .. rubric:: Структура словаря:
+    
+    .. code-block:: python
+        
+        { asset_type_name : [список типов ассетов, в которые может быть скопирован данный],
+        ...
+        }
+    """
+    
+    self.COPIED_WITH_TASK = ['object']
+    """list : Список типов ассетов, которые копируются с задачами ``?`` """
 
     def __init__(self, project_ob):
         if not isinstance(project_ob, project):
@@ -2376,104 +2474,6 @@ class asset(studio):
         #base fields
         for key in self.asset_keys:
             exec('self.%s = False' % key)
-        
-        # constants
-        #self.extension = '.ma'
-        self.ACTIVITY_FOLDER = {
-        #'animatic' : {},
-        'film':{
-            'storyboard':'storyboard',
-            'specification':'specification',
-            'animatic':'animatic',
-            'film':'film'
-        },
-        'object':{
-            'sketch':'sketch',
-            'face_blend':'10_face_blend',
-            'sculpt':'sculpt',
-            'model':'03_model',
-            'rig':'08_rig',
-            #'rig_face':'09_rig_face',
-            #'rig_face_crowd':'09_rig_face_crowd',
-            #'rig_hik':'08_rig_hik',
-            #'rig_hik_face':'09_ri_hik_face',
-            #'rig_low':'08_rig_low',
-            'def_rig':'def_rig',
-            'din_rig':'din_rig',
-            'textures':'05_textures',
-            'cache':'cache',
-            'test_animation': 'test_animation', # тестовая анимация для проверки рига
-        },
-        'location' : {
-            'sketch':'sketch',
-            'specification':'specification',
-            'location_anim':'location_anim',
-            'location':'location'
-        },
-        'shot_animation' : {
-            'animatic':'animatic',
-            'shot_animation':'shot_animation',
-            'camera':'camera',
-            'pleyblast_sequence':'pleyblast_sequence',
-            'tech_anim': 'tech_anim',
-            'simulation_din':'simulation_din',
-            'render':'render',
-            'composition':'composition',
-            'cache':'cache',
-            'actions':'actions',
-            #'din_simulation':'din_simulation',
-            #'fluid_simulation':'fluid_simulation',
-        },
-        'camera' : {'camera':'camera'},
-        'shot_render' : {'shot_render':'shot_render'},
-        'shot_composition' : {'shot_composition':'shot_composition'},
-        'light' : {'light':'light'},
-        }
-        """dict : Наброр активити в ассетах (по типам ассетов). 
-        
-        .. rubric:: Структура словаря:
-        
-        .. code-block:: python
-            
-            { asset_type_name: {
-                activiti_folder_name : description,
-                },
-            ...
-            }
-        
-        """
-        
-        self.ADDITIONAL_FOLDERS = {
-        'meta_data':'00_common',
-        }
-        """dict : Общие активити для всех типов ассетов. 
-        
-        .. rubric:: Структура словаря:
-        
-        .. code-block:: python
-            
-            { activiti_folder_name : description,
-            ...
-            }
-        """
-        
-        self.UNCHANGEABLE_KEYS = ['id', 'type', 'path']
-        """list : Заголовки неизменяемых данных ассетов. """
-        self.COPIED_ASSET = {
-            'object':['object'],
-            }
-        """dict : Типы ассетов, которые подлежат копированию.
-        
-        .. rubric:: Структура словаря:
-        
-        .. code-block:: python
-            
-            { asset_type_name : [список типов ассетов, в которые может быть скопирован данный],
-            ...
-            }
-        """
-        self.COPIED_WITH_TASK = ['object']
-        """list : Список типов ассетов, которые копируются с задачами ``?`` """
 
     def init(self, asset_name, new = True):
         """Инициализация по имени, возвращает новый, или инициализирует текущий экземпляр.
