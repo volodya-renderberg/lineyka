@@ -3511,7 +3511,8 @@ class task(studio):
     description : text
         Описание задачи
     branches : list
-        ``атрибут класса`` - список веток активити задачи. Заполняется при выполнении метода :func:`edit_db.task._set_branches` .
+        ``атрибут класса`` - список веток активити задачи. Заполняется при выполнении метода :func:`edit_db.task._set_branches`
+    
     '''
     
     branches = list()
@@ -3539,6 +3540,7 @@ class task(studio):
                 ...
                 },
         }
+    
     """
 
     def __init__(self, asset_ob):
@@ -3649,16 +3651,13 @@ class task(studio):
         else:
             return('ready')
 
-    # изменение статуса сервис задачи, по проверке статусов входящих задачь.
-    # задача должна быть инициализирована
-    # assets (dict) - словарь всех ассетов по всем типам (ключи - имена, данные - ассеты (объекты)) - результат функции asset.get_dict_by_name_by_all_types()
     def _service_input_to_end(self, assets): # v2 *** не тестилось.
-        """Изменение статуса текущей сервис задачи (задача инициализирована), по проверке статусов входящих задач. и далее задач по цепочке.
+        """Изменение статуса текущей сервисной задачи, по проверке статусов входящих задач. и далее задач по цепочке.
         
         Parameters
         ----------
         assets : dict
-            Словарь всех ассетов по всем типам (ключи - имена, данные - ассеты (объекты)) - результат функции :func:`edit_db.asset.get_dict_by_name_by_all_types`
+            Словарь всех ассетов по всем типам (ключи - имена, значения - ассеты (экземпляры)) - результат функции :func:`edit_db.asset.get_dict_by_name_by_all_types`
             
         Returns
         -------
@@ -3701,10 +3700,22 @@ class task(studio):
             
         return(True, new_status)
 
-    # возвращает новый статус текущей задачи (если this_task=False), на основе входящей задачи, ?? не меняя статуса данной задачи.
-    # input_task (task / False) входящая задача.
-    # this_task (task / False) - если False - то предполагается текущая задача.
     def _from_input_status(self, input_task, this_task=False):  # v2 no test
+        """Возвращает новый статус задачи (текущей или ``this_task``) на основе входящей задачи, не меняя статуса данной задачи.
+        
+        Parameters
+        ----------
+        input_task : :obj:`edit_db.task`
+            Входящая задача
+        this_task : :obj:`edit_db.task`, optional
+            Задача для которой определяется статус, если не передавать, то статус будет определятся для текущей задачи.
+            
+        Returns
+        -------
+        str
+            Новый статус, значение из :attr:`edit_db.studio.task_status`
+        
+        """
         pass
         if not this_task:
             this_task=self
@@ -3731,11 +3742,22 @@ class task(studio):
                 else:
                     new_status = 'ready'
         return(new_status)
-        
-    # замена статусов исходящих задачь при изменении статуса текущей задачи с done или с close.
-    # this_task (task / False) - если False то текущая задача.
-    # assets (dict) - словарь всех ассетов по всем типам (ключи - имена, данные - ассеты (объекты)) - результат функции asset.get_dict_by_name_by_all_types()
+    
     def _this_change_from_end(self, this_task=False, assets = False): # v2 *** no test
+        """Замена статусов исходящих задач при изменении статуса текущей задачи с ``done`` или с ``close``.
+        
+        Parameters
+        ----------
+        this_task : :obj:`edit_db.task`, optional
+            Задача относительно которой будут менятся статусы, если не передавать, то статусы будут менятся относительно текущей задачи.
+        assets : dict, optional
+            Словарь всех ассетов по всем типам (ключи - имена, значения - ассеты (экземпляры)) - результат функции :func:`edit_db.asset.get_dict_by_name_by_all_types`
+            
+        Returns
+        -------
+        tuple
+            (*True,  'Ok!'*) или (*False, comment*)
+        """
         pass
         # 0 - задаём объект текущей задачи
         # 1 - список исходящих задачь
@@ -3823,10 +3845,20 @@ class task(studio):
         
         
         return(True, 'Ok!')
-        
-    # замена статусов исходящих задачь при изменении статуса текущей задачи на done или close.
-    # assets (dict) - словарь всех ассетов по всем типам (ключи - имена, данные - ассеты (экземпляры)) - результат функции asset.get_dict_by_name_by_all_types()
+    
     def _this_change_to_end(self, assets = False): # v2 *** no test
+        """Замена статусов исходящих задач при изменении статуса текущей задачи на ``done`` или ``close``.
+        
+        Parameters
+        ----------
+        assets : dict, optional
+            Словарь всех ассетов по всем типам (ключи - имена, значения - ассеты (экземпляры)) - результат функции :func:`edit_db.asset.get_dict_by_name_by_all_types`.
+            
+        Returns
+        -------
+        tuple
+            (*True,  'Ok!'*) или (*False*, comment)        
+        """
         pass
         # 1 - список исходящих задачь
         # 2 - получение списка всех ассетов
@@ -3917,6 +3949,7 @@ class task(studio):
                 task_ob._this_change_to_end(assets = assets)
         
         return(True, 'Ok!')
+    
     '''	
     def from_service_remove_input_tasks(self, project_name, task_data, removed_tasks_list):
         # get input_list
@@ -3976,11 +4009,20 @@ class task(studio):
 
     # Work пути
 
-    # task - должен быит инициализирован
-    # путь к последней возможной версии для взятия в работу
-    # current_artist (artist) - текущий пользователь, если не передавать, будет сделано get_user
-    # return - (True, (path, version)) или (False, comment) если нет ни одного лога return - (True, ('',''))
     def get_final_work_file_path(self, current_artist=False): # v2
+        """Возвращает путь и версию последнего рабочего файла, для взятия в работу. Логика тут :ref:`task-specification-page`.
+        
+        Parameters
+        ----------
+        current_artist : :obj:`edit_db.artist`, optional
+            Текущий пользователь, если не передавать, будет сделано :func:`edit_db.artist.get_user`
+        
+        Returns
+        -------
+        tuple
+            (*True*, (``path``, ``version``)) или (*False, comment*), если нет ни одного лога вернёт (*True*, (``''``, ``''``)).
+        """
+        
         pass
         # 0 - current_artist
                 
@@ -4111,11 +4153,20 @@ class task(studio):
                         # (10.1)
                         return(False, 'the source of the "push" version "%s" is not in your working directory.\nAsk the manager to upload the latest version to the cloud,\n and make "pull."' % end_log['version'])
 
-    # обёртка на studio._template_get_work_path()
-    # получение шаблонного пути версии данной задачи
-    # version (int / str) - номер версии
-    # return - (True, path) - или (false, comment)
     def get_version_work_file_path(self, version):
+        """Возвращает путь до указанной версии рабочего файла. (обёртка на :func:`edit_db.studio._template_get_work_path`)
+        
+        Parameters
+        ----------
+        version : str, int
+            Номер версии
+            
+        Returns
+        -------
+        tuple
+            (*True*, path) или (*False*, comment)
+        """
+        
         b, r = self._template_get_work_path(self, version)
         if not b:
             return(b, r)
@@ -4126,9 +4177,15 @@ class task(studio):
             else:
                 return(True, r)
 
-    # создание пути для новой commit или pull версии файла.
-    # return - (True, (path, version)) или (False, comment)
     def get_new_work_file_path(self):
+        """Создание пути для новой ``commit`` или ``pull`` версии файла.
+        
+        Returns
+        -------
+        tuple
+            (*True*, (``path``, ``version``)) или (*False, comment*)        
+        """
+        
         pass
         # 1 - чтение commit + pull логов
         # 2 - новый номер версии
@@ -4157,11 +4214,37 @@ class task(studio):
             return(True, (r, version))
         
     # Push пути
-            
-    # путь к последней существующей пуш версии на локальном сервере.
-    # current_artist (artist) - текущий пользователь, если не передавать, будет сделано get_user
-    # return для sketch - (True, ({словарь - ключи: типы путей "look_path" или "push_path": значение словарь - пути по веткам}, version)) для остальных - (True, (path, version)) - или (false, comment)
+    
     def get_final_push_file_path(self, current_artist=False):
+        """Возвращает путь и версию финальной ``push`` версии файла (на локальном сервере студии).
+        
+        Parameters
+        ----------
+        current_artist : :obj:`edit_db.artist`, optional
+            Текущий пользователь, если не передавать, будет сделано :func:`edit_db.artist.get_user`
+        
+        Returns
+        -------
+        tuple
+            * для задач с типом из :attr:`edit_db.studio.multi_publish_task_types` - (*True*, (``{path_data}`` [5]_, ``version``)) или (*False*, comment)
+            * для остальных - (*True*, (``path``, ``version``)) - или (*False*, comment)
+            
+        .. [5] Структура словаря ``{path_data}`` :
+        
+        ::
+        
+            {
+            'look_path': {
+                branch_name : path,
+                ...
+                },
+            'push_path': {
+                branch_name : path,
+                ...
+                },
+            }
+        """
+        
         pass
         # 0 - current_artist
         # 1 - игнор аутсорс
@@ -4228,12 +4311,39 @@ class task(studio):
             return(False, 'Push version missing!')
         
         return(True, (r_data, version))
-        
-    # путь к указанной пуш версии на локальном сервере.
-    # version (int / str) - номер версии
-    # current_artist (artist) - текущий пользователь, если не передавать, будет сделано get_user
-    # return для sketch - (True, {словарь - ключи: типы путей "look_path" или "push_path": значение словарь - пути по веткам}) для остальных - (True, path) - или (false, comment)
+    
     def get_version_push_file_path(self, version, current_artist=False):
+        """Возвращает путь к указанной ``push`` версии файла (на локальном сервере студии).
+        
+        Parameters
+        ----------
+        version : str, int
+            Номер версии
+        current_artist : :obj:`edit_db.artist`, optional
+            Текущий пользователь, если не передавать, будет сделано :func:`edit_db.artist.get_user`
+        
+        Returns
+        -------
+        tuple
+            * для задач с типом из :attr:`edit_db.studio.multi_publish_task_types` - (*True*, ``{path_data}`` [5]_) или (*False*, comment)
+            * для остальных - (*True*, ``path``) - или (*False*, comment)
+            
+        .. [5] Структура словаря ``{path_data}`` :
+        
+        ::
+        
+            {
+            'look_path': {
+                branch_name : path,
+                ...
+                },
+            'push_path': {
+                branch_name : path,
+                ...
+                },
+            }
+        """
+        
         pass
         # 0 - current_artist
         # 1 - игнор аутсорс
