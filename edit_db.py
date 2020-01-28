@@ -3467,53 +3467,79 @@ class task(studio):
         Для сервисной задачи (*task_type=service*) - это список имён входящих задач. для не сервисной задачи - это имя входящей задачи.
     status : str
         Cтатус задачи из :attr:`edit_db.studio.task_status`
-
-    :outsource: (*int*) - значение из [0, 1] если = 1 - задача на аутсорсе.
-
-    :artist: (*str*) - *nik_name* исполнителя.
-
-    :level: (*text*) -  пользовательский уровень сложности задачи.
-
-    :planned_time: (*float*) - планируемое время (ед. измерения - час).
-
-    :price: (*float*) - стоимость работ по задаче (ед. измерения - юнит).
-
-    :time: (*dict*) - словарь: ключи - ``nik_name``, значения - ссумарное время атриста по этой задаче (ед. измерения - секунда).
-
-    :full_time: (*real*) - ссумарное время всех атристов по этой задаче (ед. измерения - секунда).
-
-    :deadline: (*timestamp*) - расчётная дата окончания работ.
-
-    :start: (*timestamp*) - дата и время взятия задачи в работу.
-
-    :end: (*timestamp*) - дата и время приёма задачи.
-
-    :specification: (*str*) - ссылка на техническое задание.
-
-    :chat_local: ``?``
-
-    :web_chat: ``?``
-
-    :supervisor: ``?``
-
-    :readers: (*dict*) - словарь: ключ - *nik_name*, значение - 0 или 1 (статус проверки),  плюс одна запись: ключ - *'first_reader'*, значение - *nik_name* - это первый проверяющий - пока он не проверит даннаня задача не будет видна у других проверяющих в списке на проверку.
-
-    :output: (*list*) - список имён исходящих задач.
-
-    :priority: (*int*) - приоритет.
-
-    :extension: (*str*) - расширение файла для работы над данной задачей, начинается с точки, например: *'.blend'*
-
-    :approved_date: (*timestamp*) - дата планируемого окончания работ (вычисляется при создании экземпляра)
-
-    :asset: (*asset*) - экземпляр :ref:`class-asset-page` принимаемый при создании экземпляра класса, содержит все атрибуты и методы :ref:`class-asset-page`.
-
-    :description: (*text*) - описание задачи
-
-    :branches: (*list*) - ``атрибут класса`` список веток активити задачи. Заполняется при выполнении метода `_set_branches`_
+    outsource : int
+        Значение из ``[0, 1]`` если = ``1`` - задача на аутсорсе.
+    artist : str
+        ``nik_name`` исполнителя.
+    level : text
+        Пользовательский уровень сложности задачи.
+    planned_time : float
+        Планируемое время (ед. измерения - час).
+    price : float
+        Стоимость работ по задаче (ед. измерения - юнит).
+    time : dict
+        Словарь: ключи - ``nik_name``, значения - ссумарное время атриста по этой задаче (ед. измерения - секунда).
+    full_time : real
+        Ссумарное время всех атристов по этой задаче (ед. измерения - секунда).
+    deadline : timestamp
+        Расчётная дата окончания работ.
+    start : timestamp
+        Дата и время взятия задачи в работу.
+    end : timestamp
+        Дата и время приёма задачи.
+    specification : str
+        Ссылка на техническое задание.
+    chat_local : str
+        ``?``
+    web_chat : str
+        ``?``
+    supervisor : str
+        ``?``
+    readers : dict
+        Словарь: ключ - ``nik_name``, значение - ``0`` или ``1`` (статус проверки),  плюс одна запись: ключ - ``first_reader``, значение - ``nik_name`` - это первый проверяющий - пока он не проверит даннаня задача не будет видна у других проверяющих в списке на проверку.
+    output : list
+        Список имён исходящих задач.
+    priority : int
+        Приоритет.
+    extension : str
+        Расширение файла для работы над данной задачей, начинается с точки, например: ``.blend``
+    approved_date : timestamp
+        Дата планируемого окончания работ (вычисляется при создании экземпляра)
+    asset : :obj:`edit_db.asset`
+        Экземпляр ``asset`` принимаемый при создании экземпляра класса, содержит все атрибуты и методы :class:`edit_db.asset`.
+    description : text
+        Описание задачи
+    branches : list
+        ``атрибут класса`` - список веток активити задачи. Заполняется при выполнении метода :func:`edit_db.task._set_branches`
     
-	'''
+    '''
+    
     branches = list()
+    
+    VARIABLE_STATUSES = ('ready', 'ready_to_send', 'work', 'work_to_outsorce')
+    """tuple: ``?`` """
+        
+    CHANGE_BY_OUTSOURCE_STATUSES = {
+    'to_outsource':{'ready':'ready_to_send', 'work':'ready_to_send'},
+    'to_studio':{'ready_to_send':'ready', 'work_to_outsorce':'ready'},
+    }
+    """dict: Описание того как меняютсе некоторые статусы задач, при изменении статуса исполнителя на аутсорс, или наоборот с аутсорса в студию.
+    
+    .. rubric:: Структура словаря:
+    
+    .. code-block:: python
+        
+        {
+        'to_outsource': {
+                status_name_from : status_name_to,
+                ...
+                },
+        'to_studio': {
+                status_name_from : status_name_to,
+                ...
+                },
+        }
+    """
 
     def __init__(self, asset_ob):
         if not isinstance(asset_ob, asset):
@@ -3523,13 +3549,6 @@ class task(studio):
         for key in self.tasks_keys:
             setattr(self, key, False)
         
-        self.VARIABLE_STATUSES = ('ready', 'ready_to_send', 'work', 'work_to_outsorce')
-        
-        self.CHANGE_BY_OUTSOURCE_STATUSES = {
-        'to_outsource':{'ready':'ready_to_send', 'work':'ready_to_send'},
-        'to_studio':{'ready_to_send':'ready', 'work_to_outsorce':'ready'},
-        }
-        
         #self.db_workroom = workroom() # ??????? как всегда под вопросом
         #self.publish = lineyka_publish.publish()
         
@@ -3537,11 +3556,36 @@ class task(studio):
         
     @classmethod
     def _set_branches(self, branches):
-        self.branches = branches
+        """Заполнение ``атрибута класса`` :attr:`edit_db.task.branches`
         
-    # инициализация по имени
-    # new (bool) - если True - то возвращается новый инициализированный объект класса task, если False - то инициализируется текущий объект
+        Parameters
+        ----------
+        branches : list
+            Список веток получаемый при выполнении :func:`edit_db.log.read_log`
+            
+        Returns
+        -------
+        None
+            *None*
+        """
+        self.branches = branches
+    
     def init(self, task_name, new = True):
+        """Инициализация по имени, возвращает новый, или инициализирует текущий экземпляр.
+        
+        Parameters
+        ----------
+        task_name : str
+            Имя задачи
+        new : bool
+            Если *True* - возвращает новый инициализированный экземпляр, если *False* то инициализирует текущий экземпляр.
+            
+        Returns
+        -------
+        :obj:`edit_db.task`, tuple
+            * если new= *True* - экземпляр класса :obj:`edit_db.task`,
+            * если new= *False* - (*True,  'Ok!'*) или (*False, comment*)
+        """
         pass
         # get keys
         b, r = self._read_task(task_name)
@@ -3549,10 +3593,26 @@ class task(studio):
             return(b, r)
         
         return(self.init_by_keys(r[0], new=new, new_asset=r[1]))
-        
-    # инициализация по словарю
-    # new (bool) - если True - то возвращается новый инициализированный объект класса task, если False - то инициализируется текущий объект
+    
     def init_by_keys(self, keys, new = True, new_asset=False):
+        """Инициализация по словарю (без чтения БД), возвращает новый, или инициализирует текущий экземпляр.
+        
+        Parameters
+        ----------
+        keys : dict
+            словарь по :attr:`edit_db.studio.tasks_keys`
+        new : bool, optional
+            если *True* - возвращает новый инициализированный экземпляр, если *False* то инициализирует текущий.
+        new_asset : :obj:`edit_db.asset`, optional
+            Новый экземпляр ассета, если надо его поменять, либо определить.
+        
+        Returns
+        -------
+        :obj:`edit_db.task`, tuple
+            * если new= *True* - экземпляр класса :obj:`edit_db.task`,
+            * если new= *False* - (*True,  'Ok!'*) или (*False, comment*)
+        """
+        
         pass
         if new:
             if new_asset:
