@@ -3496,34 +3496,34 @@ class task(studio):
     supervisor : str
         ``?``
     readers : dict
-        Словарь: ключ - ``nik_name``, значение - ``0`` или ``1`` (статус проверки),  плюс одна запись: ключ - ``first_reader``, значение - ``nik_name`` - это первый проверяющий - пока он не проверит даннаня задача не будет видна у других проверяющих в списке на проверку.
+        Словарь: ключ - ``nik_name``, значение - ``0`` или ``1`` (статус проверки),  \
+        плюс одна запись: ключ - ``first_reader``, значение - ``nik_name`` - это первый проверяющий - пока он не проверит даннаня задача не будет видна у других проверяющих в списке на проверку.
     output : list
         Список имён исходящих задач.
     priority : int
         Приоритет.
     extension : str
         Расширение файла для работы над данной задачей, начинается с точки, например: ``.blend``
-    approved_date : timestamp
+    approved_date : ``timestamp``
         Дата планируемого окончания работ (вычисляется при создании экземпляра)
     asset : :obj:`edit_db.asset`
-        Экземпляр ``asset`` принимаемый при создании экземпляра класса, содержит все атрибуты и методы :class:`edit_db.asset`.
+        Экземпляр ``asset`` принимаемый при создании экземпляра класса, содержит все атрибуты и методы :class:`edit_db.asset` .
     description : text
         Описание задачи
     branches : list
-        ``атрибут класса`` - список веток активити задачи. Заполняется при выполнении метода :func:`edit_db.task._set_branches`
-    
+        ``атрибут класса`` - список веток активити задачи. Заполняется при выполнении метода :func:`edit_db.task._set_branches` .
     '''
     
     branches = list()
     
     VARIABLE_STATUSES = ('ready', 'ready_to_send', 'work', 'work_to_outsorce')
     """tuple: ``?`` """
-        
+    
     CHANGE_BY_OUTSOURCE_STATUSES = {
-    'to_outsource':{'ready':'ready_to_send', 'work':'ready_to_send'},
-    'to_studio':{'ready_to_send':'ready', 'work_to_outsorce':'ready'},
+        'to_outsource':{'ready':'ready_to_send', 'work':'ready_to_send'},
+        'to_studio':{'ready_to_send':'ready', 'work_to_outsorce':'ready'},
     }
-    """dict: Описание того как меняютсе некоторые статусы задач, при изменении статуса исполнителя на аутсорс, или наоборот с аутсорса в студию.
+    """dict: Описание того как менять некоторые статусы задач, при изменении статуса исполнителя на аутсорс, или наоборот с аутсорса в студию.
     
     .. rubric:: Структура словаря:
     
@@ -3653,6 +3653,18 @@ class task(studio):
     # задача должна быть инициализирована
     # assets (dict) - словарь всех ассетов по всем типам (ключи - имена, данные - ассеты (объекты)) - результат функции asset.get_dict_by_name_by_all_types()
     def _service_input_to_end(self, assets): # v2 *** не тестилось.
+        """Изменение статуса текущей сервис задачи (задача инициализирована), по проверке статусов входящих задач. и далее задач по цепочке.
+        
+        Parameters
+        ----------
+        assets : dict
+            Словарь всех ассетов по всем типам (ключи - имена, данные - ассеты (объекты)) - результат функции :func:`edit_db.asset.get_dict_by_name_by_all_types`
+            
+        Returns
+        -------
+        tuple
+            (*True*, ``new_status``) или (*False, comment*)
+        """
         new_status = False
         
         # (1) get input_list
