@@ -2380,7 +2380,7 @@ class asset(studio):
         # constants
         #self.extension = '.ma'
         self.ACTIVITY_FOLDER = {
-        #'animatic' : {
+        #'animatic' : {},
         'film':{
             'storyboard':'storyboard',
             'specification':'specification',
@@ -2429,17 +2429,51 @@ class asset(studio):
         'shot_composition' : {'shot_composition':'shot_composition'},
         'light' : {'light':'light'},
         }
+        """dict : Наброр активити в ассетах (по типам ассетов). 
+        
+        .. rubric:: Структура словаря:
+        
+        .. code-block:: python
+            
+            { asset_type_name: {
+                activiti_folder_name : description,
+                },
+            ...
+            }
+        
+        """
         
         self.ADDITIONAL_FOLDERS = {
         'meta_data':'00_common',
         }
+        """dict : Общие активити для всех типов ассетов. 
+        
+        .. rubric:: Структура словаря:
+        
+        .. code-block:: python
+            
+            { activiti_folder_name : description,
+            ...
+            }
+        """
         
         self.UNCHANGEABLE_KEYS = ['id', 'type', 'path']
-        #self.COPIED_ASSET = ['obj', 'char']
+        """list : Заголовки неизменяемых данных ассетов. """
         self.COPIED_ASSET = {
             'object':['object'],
             }
+        """dict : Типы ассетов, которые подлежат копированию.
+        
+        .. rubric:: Структура словаря:
+        
+        .. code-block:: python
+            
+            { asset_type_name : [список типов ассетов, в которые может быть скопирован данный],
+            ...
+            }
+        """
         self.COPIED_WITH_TASK = ['object']
+        """list : Список типов ассетов, которые копируются с задачами ``?`` """
 
     def init(self, asset_name, new = True):
         """Инициализация по имени, возвращает новый, или инициализирует текущий экземпляр.
@@ -3372,4273 +3406,4378 @@ class asset(studio):
             return(True, 'Ok!')
 
 class task(studio):
-	'''
-	'''
-	branches = list()
-	
-	def __init__(self, asset_ob):
-		if not isinstance(asset_ob, asset):
-			raise Exception('in task.__init__() - Object is not the right type "%s", must be "asset"' % asset_ob.__class__.__name__)
-		self.asset = asset_ob
-		
-		for key in self.tasks_keys:
-			setattr(self, key, False)
-		
-		self.VARIABLE_STATUSES = ('ready', 'ready_to_send', 'work', 'work_to_outsorce')
-		
-		self.CHANGE_BY_OUTSOURCE_STATUSES = {
-		'to_outsource':{'ready':'ready_to_send', 'work':'ready_to_send'},
-		'to_studio':{'ready_to_send':'ready', 'work_to_outsorce':'ready'},
-		}
-		
-		#self.db_workroom = workroom() # ??????? как всегда под вопросом
-		#self.publish = lineyka_publish.publish()
-		
-		self.publish = publish(NormPath) # ??????? как всегда под вопросом
-		
-	@classmethod
-	def _set_branches(self, branches):
-		self.branches = branches
-		
-	# инициализация по имени
-	# new (bool) - если True - то возвращается новый инициализированный объект класса task, если False - то инициализируется текущий объект
-	def init(self, task_name, new = True):
-		pass
-		# get keys
-		b, r = self._read_task(task_name)
-		if not b:
-			return(b, r)
-		
-		return(self.init_by_keys(r[0], new=new, new_asset=r[1]))
-		
-	# инициализация по словарю
-	# new (bool) - если True - то возвращается новый инициализированный объект класса task, если False - то инициализируется текущий объект
-	def init_by_keys(self, keys, new = True, new_asset=False):
-		pass
-		if new:
-			if new_asset:
-				r_ob = task(new_asset)
-			else:
-				r_ob = task(self.asset)
-		else:
-			r_ob = self
-			if new_asset:
-				self.asset = new_asset
-			
-		for key in self.tasks_keys:
-			setattr(r_ob, key, keys.get(key))
-		
-		# approved_date
-		r_ob.approved_date = ''
-			
-		if new:
-			return(r_ob)
-		else:
-			return(True, 'Ok')
-		
-	# ************************ CHANGE STATUS ******************************** start
-	
-	@staticmethod
-	def _input_to_end(task_ob): # v2
-		if task_ob.status == 'close':
-			return(False)
-		
-		autsource = bool(task_ob.outsource)
-				
-		if autsource:
-			return('ready_to_send')
-		else:
-			return('ready')
-	
-	# изменение статуса сервис задачи, по проверке статусов входящих задачь.
-	# задача должна быть инициализирована
-	# assets (dict) - словарь всех ассетов по всем типам (ключи - имена, данные - ассеты (объекты)) - результат функции asset.get_dict_by_name_by_all_types()
-	def _service_input_to_end(self, assets): # v2 *** не тестилось.
-		new_status = False
-		
-		# (1) get input_list
-		input_list = self.input
-		if not input_list:
-			return(True, new_status)
-		
-		# get status
-		bool_statuses = []
-		# --------------- fill end_statuses -------------
-		for task_name in input_list:
-			# (2) asse id
-			asset_name = task_name.split(':')[0]
-			asset_ob = assets.get(asset_name)
-			if not asset_ob:
-				print('in task._service_input_to_end() incorrect asset_name  "%s"' % asset_name)
-				continue
-			# (3) get task data
-			task_ob = task(asset_ob).init(task_name)
-			
-			# (4) make status
-			if task_ob.status in self.end_statuses:
-				bool_statuses.append(True)
-			else:
-				bool_statuses.append(False)
-		
-		#conn.close()
-		
-		if False in bool_statuses:
-			new_status = 'null'
-		else:
-			new_status = 'done'
-			#self._this_change_to_end(self, project_name, task_data)
-			
-		return(True, new_status)
-	
-	# возвращает новый статус текущей задачи (если this_task=False), на основе входящей задачи, ?? не меняя статуса данной задачи.
-	# input_task (task / False) входящая задача.
-	# this_task (task / False) - если False - то предполагается текущая задача.
-	def _from_input_status(self, input_task, this_task=False):  # v2 no test
-		pass
-		if not this_task:
-			this_task=self
-		# get task_outsource
-		task_outsource = bool(this_task.outsource)
-		
-		new_status = 'null'
-		# change status
-		if input_task:
-			if input_task.status in self.end_statuses:
-				if not task_outsource:
-					if this_task.status == 'null':
-						new_status = 'ready'
-				else:
-					if this_task.status == 'null':
-						new_status = 'ready_to_send'
-			else:
-				if this_task.status != 'close':
-					new_status = 'null'
-		else:
-			if not this_task.status in self.end_statuses:
-				if task_outsource:
-					new_status = 'ready_to_send'
-				else:
-					new_status = 'ready'
-		return(new_status)
-		
-	# замена статусов исходящих задачь при изменении статуса текущей задачи с done или с close.
-	# this_task (task / False) - если False то текущая задача.
-	# assets (dict) - словарь всех ассетов по всем типам (ключи - имена, данные - ассеты (объекты)) - результат функции asset.get_dict_by_name_by_all_types()
-	def _this_change_from_end(self, this_task=False, assets = False): # v2 *** no test
-		pass
-		# 0 - задаём объект текущей задачи
-		# 1 - список исходящих задачь
-		# 2 - получение списка всех ассетов
-		# 3 - цикл по списку исходящих задачь (output_list)
-		# - 4 - получение ассета
-		# - 5 - чтение таска
-		# - 6 - определение нового статуса
-		# - 7 - изменения в readers
-		# - 8 - запись таск
-		# 9 - отправка далее в себя же - _this_change_from_end() - по списку from_end_list
-		
-		# (0)
-		if not this_task:
-			this_task=self
-		
-		#
-		from_end_list = []
-		this_asset_type = this_task.asset.type
-		
-		# (1)
-		output_list = this_task.output
-		if not output_list:
-			return(True, 'Ok!')
-		# (2)
-		if not assets:
-			# get assets dict
-			result = self.asset.get_dict_by_name_by_all_types()
-			if not result[0]:
-				return(False, result[1])
-			assets = result[1]
-		
-		# (3) ****** change status
-		for task_name in output_list:
-			# (4)
-			asset_name = task_name.split(':')[0]
-			asset_ob = assets.get(asset_name)
-			if not asset_ob:
-				print('in task._this_change_from_end() incorrect asset_name  "%s"' % asset_name)
-				continue
-			# (5) get task data
-			task_ob = task(asset_ob).init(task_name)
-			
-			# (6) make new status char и obj не отключают локацию и аним шот, а локация отключает аним шот. ??????
-			if task_ob.status == 'close':
-				continue
-			elif task_ob.asset.type in ['location', 'shot_animation'] and this_asset_type not in ['location', 'shot_animation']:
-				continue
-			elif task_ob.status == 'done':
-				from_end_list.append(task_ob)
-				
-			new_status = 'null'
-			# (7) edit readers
-			readers = {}
-			try:
-				readers = task_ob.readers
-			except:
-				pass
-			if readers:
-				for key in readers:
-					readers[key] = 0
-				#string = 'UPDATE ' +  table + ' SET  readers = ?, status  = ? WHERE task_name = ?'
-				#data = (json.dumps(readers), new_status, task_name)
-				update_data = {'readers': readers, 'status': new_status}
-			else:
-				#string = 'UPDATE ' +  table + ' SET  status  = ? WHERE task_name = ?'
-				#data = (new_status, task_name)
-				update_data = {'status': new_status}
-			# (8)
-			#c.execute(string, data)
-			table_name = '"%s:%s"' % (task_ob.asset.id, self.tasks_t)
-			where = {'task_name': task_name}
-			bool_, return_data = database().update('project', task_ob.asset.project, table_name, self.tasks_keys, update_data, where, table_root=self.tasks_db)
-			if not bool_:
-				return(bool_, return_data)
-		'''
-		conn.commit()
-		conn.close()
-		'''
-		
-		# (9) ****** edit from_end_list
-		if from_end_list:
-			for t_ob in from_end_list:
-				t_ob._this_change_from_end(assets = assets)
-		
-		
-		return(True, 'Ok!')
-		
-	# замена статусов исходящих задачь при изменении статуса текущей задачи на done или close.
-	# assets (dict) - словарь всех ассетов по всем типам (ключи - имена, данные - ассеты (экземпляры)) - результат функции asset.get_dict_by_name_by_all_types()
-	def _this_change_to_end(self, assets = False): # v2 *** no test
-		pass
-		# 1 - список исходящих задачь
-		# 2 - получение списка всех ассетов
-		# 3 - цикл по списку исходящих задачь (output_list)
-		# - 4 - получение id ассета
-		# - 5 - чтение таск даты
-		# - 6 - определение нового статуса
-		# - 7 - запись таск
-		# 8 - отправка далее в себя же - _this_change_to_end() - по списку service_to_done
+    '''
+    **level** = 'project'
+
+    .. code-block:: python
+
+        tasks_keys = {
+        'activity': 'text',
+        'task_name': 'text',
+        'task_type': 'text',
+        'source': 'json',
+        'input': 'json',
+        'status': 'text',
+        'outsource': 'integer',
+        'artist': 'text',           # nik_name
+        'level': 'text',            # пользовательский уровень сложности задачи.
+        'planned_time': 'real',
+        'price': 'real',
+        'time': 'json',             # словарь: ключи - nik_name, значения - ссумарное время атриста по этой задаче (ед. измерения - секунда).
+        'full_time': 'real',        # ссумарное время всех атристов по этой задаче (ед. измерения - секунда).
+        'deadline': 'timestamp',    # расчётная дата окончания работ.
+        'start': 'timestamp',
+        'end': 'timestamp',
+        'specification': 'text',
+        'chat_local': 'json',
+        'web_chat': 'text',
+        'supervisor': 'text',
+        'readers': 'json',          # словарь: ключ - nik_name, значение - 0 или 1 (статус проверки),  плюс одна запись: ключ - 'first_reader', значение - nik_name - это первый проверяющий - пока он не проверит даннаня задача не будет видна у других проверяющих в списке на проверку.
+        'output': 'json',
+        'priority':'integer',
+        'extension': 'text',
+        'description': 'text',      # описание задачи
+        }
         
-		# (1)
-		output_list = self.output
-		if not output_list:
-			return(True, 'Ok!')
-		# (2)
-		if not assets:
-			# get assets dict
-			result = self.asset.get_dict_by_name_by_all_types()
-			if not result[0]:
-				return(False, result[1])
-			assets = result[1]
-		'''
-		# ****** connect to db
-		conn = sqlite3.connect(self.tasks_path, detect_types=sqlite3.PARSE_DECLTYPES|sqlite3.PARSE_COLNAMES)
-		conn.row_factory = sqlite3.Row
-		c = conn.cursor()
-		'''
-		service_to_done = []
-		# ****** change status
-		for task_name in output_list:
-			# (4) asse id
-			asset_id = assets[task_name.split(':')[0]].id
-			if not asset_id:
-				print('in _this_change_to_end incorrect key "id" in  "%s"' % task_name.split(':')[0])
-				continue
-			'''
-			table = '\"' + asset_id + ':' + self.tasks_t + '\"'
-			string = 'select * from ' + table + ' WHERE task_name = \"' + task_name + '\"'
-			try:
-				c.execute(string)
-				task_data_ = c.fetchone()
-			except:
-				conn.close()
-				return(False, ('in _this_change_to_end can not read ', string))
-			'''
-			# (5) get task data
-			table_name = '"%s:%s"' % (asset_id, self.tasks_t)
-			read_ob = self.asset.project
-			where = {'task_name': task_name}
-			bool_, return_data = database().read('project', read_ob, table_name, self.tasks_keys, where=where, table_root=self.tasks_db)
-			if not bool_:
-				return(bool_, return_data)
-			elif return_data:
-				task_data_ = self.init_by_keys(return_data[0])
-			else:
-				return(False, 'Task Data Not Found! Task_name - "%s"' % task_name)
+    Examples
+    --------
+    Создание экземпляра класса:
+
+    .. code-block:: python
+    
+        import edit_db as db
+  
+        project = db.project()
+        asset = db.asset(project)
+        
+        task = db.task(asset) # asset - обязательный параметр при создании экземпляра task
+        # доступ ко всем параметрам и методам принимаемого экземпляра asset - через task.asset
+        
+    Attributes
+    ----------
+    activity : str
+        Активити из :attr:`edit_db.asset.ACTIVITY_FOLDER` [asset_type]
+    task_name : str
+        Имя задачи, структура имени: ``asset_name:task_name``
+    task_type : str
+        Тип задачи из :attr:`edit_db.studio.task_types` + ``service``
+    source : list
+        Имена задач, объекты из активити которых используются как исходники.
+    input : str, list
+        Для сервисной задачи (*task_type=service*) - это список имён входящих задач. для не сервисной задачи - это имя входящей задачи.
+    status : str
+        Cтатус задачи из :attr:`edit_db.studio.task_status`
+
+    :outsource: (*int*) - значение из [0, 1] если = 1 - задача на аутсорсе.
+
+    :artist: (*str*) - *nik_name* исполнителя.
+
+    :level: (*text*) -  пользовательский уровень сложности задачи.
+
+    :planned_time: (*float*) - планируемое время (ед. измерения - час).
+
+    :price: (*float*) - стоимость работ по задаче (ед. измерения - юнит).
+
+    :time: (*dict*) - словарь: ключи - ``nik_name``, значения - ссумарное время атриста по этой задаче (ед. измерения - секунда).
+
+    :full_time: (*real*) - ссумарное время всех атристов по этой задаче (ед. измерения - секунда).
+
+    :deadline: (*timestamp*) - расчётная дата окончания работ.
+
+    :start: (*timestamp*) - дата и время взятия задачи в работу.
+
+    :end: (*timestamp*) - дата и время приёма задачи.
+
+    :specification: (*str*) - ссылка на техническое задание.
+
+    :chat_local: ``?``
+
+    :web_chat: ``?``
+
+    :supervisor: ``?``
+
+    :readers: (*dict*) - словарь: ключ - *nik_name*, значение - 0 или 1 (статус проверки),  плюс одна запись: ключ - *'first_reader'*, значение - *nik_name* - это первый проверяющий - пока он не проверит даннаня задача не будет видна у других проверяющих в списке на проверку.
+
+    :output: (*list*) - список имён исходящих задач.
+
+    :priority: (*int*) - приоритет.
+
+    :extension: (*str*) - расширение файла для работы над данной задачей, начинается с точки, например: *'.blend'*
+
+    :approved_date: (*timestamp*) - дата планируемого окончания работ (вычисляется при создании экземпляра)
+
+    :asset: (*asset*) - экземпляр :ref:`class-asset-page` принимаемый при создании экземпляра класса, содержит все атрибуты и методы :ref:`class-asset-page`.
+
+    :description: (*text*) - описание задачи
+
+    :branches: (*list*) - ``атрибут класса`` список веток активити задачи. Заполняется при выполнении метода `_set_branches`_
+    
+	'''
+    branches = list()
+
+    def __init__(self, asset_ob):
+        if not isinstance(asset_ob, asset):
+            raise Exception('in task.__init__() - Object is not the right type "%s", must be "asset"' % asset_ob.__class__.__name__)
+        self.asset = asset_ob
+        
+        for key in self.tasks_keys:
+            setattr(self, key, False)
+        
+        self.VARIABLE_STATUSES = ('ready', 'ready_to_send', 'work', 'work_to_outsorce')
+        
+        self.CHANGE_BY_OUTSOURCE_STATUSES = {
+        'to_outsource':{'ready':'ready_to_send', 'work':'ready_to_send'},
+        'to_studio':{'ready_to_send':'ready', 'work_to_outsorce':'ready'},
+        }
+        
+        #self.db_workroom = workroom() # ??????? как всегда под вопросом
+        #self.publish = lineyka_publish.publish()
+        
+        self.publish = publish(NormPath) # ??????? как всегда под вопросом
+        
+    @classmethod
+    def _set_branches(self, branches):
+        self.branches = branches
+        
+    # инициализация по имени
+    # new (bool) - если True - то возвращается новый инициализированный объект класса task, если False - то инициализируется текущий объект
+    def init(self, task_name, new = True):
+        pass
+        # get keys
+        b, r = self._read_task(task_name)
+        if not b:
+            return(b, r)
+        
+        return(self.init_by_keys(r[0], new=new, new_asset=r[1]))
+        
+    # инициализация по словарю
+    # new (bool) - если True - то возвращается новый инициализированный объект класса task, если False - то инициализируется текущий объект
+    def init_by_keys(self, keys, new = True, new_asset=False):
+        pass
+        if new:
+            if new_asset:
+                r_ob = task(new_asset)
+            else:
+                r_ob = task(self.asset)
+        else:
+            r_ob = self
+            if new_asset:
+                self.asset = new_asset
             
-			# (6) make new status
-			if task_data_.task_type == 'service':
-				#result = self._service_input_to_end(task_data_, assets)
-				result = task_data_._service_input_to_end(assets)
-				if not result[0]:
-					return(False, result[1])
-				new_status = result[1]
-				if new_status == 'done':
-					service_to_done.append(task_data_)
-			else:
-				new_status = self._input_to_end(task_data_)
-				
-			if not new_status:
-				continue
-			'''
-			string = 'UPDATE ' +  table + ' SET  status  = ? WHERE task_name = ?'
-			data = (new_status, task_name)
-			c.execute(string, data)
-			'''
-			# (7)
-			update_data = {'status': new_status}
-			where = {'task_name': task_name}
-			bool_, return_data = database().update('project', read_ob, table_name, self.tasks_keys, update_data, where, table_root=self.tasks_db)
-			if not bool_:
-				return(bool_, return_data)
-		#conn.commit()
-		#conn.close()
-		# (8)
-		if service_to_done:
-			for task_ob in service_to_done:
-				task_ob._this_change_to_end(assets = assets)
-		
-		return(True, 'Ok!')
-	'''	
-	def from_service_remove_input_tasks(self, project_name, task_data, removed_tasks_list):
-		# get input_list
-		input_list = json.loads(task_data['input'])
-		for task in removed_tasks_list:
-			input_list.remove(task['task_name'])
-			
-		if not input_list:
-			return(True, 'done')
-			
-		# get assets dict
-		result = self.get_dict_by_name_by_all_types(project_name)
-		if not result[0]:
-			return(False, result[1])
-		assets = result[1]
-		
-		bool_statuses = []
-		# --------------- fill end_statuses -------------
-		
-		# ****** connect to db
-		conn = sqlite3.connect(self.tasks_path, detect_types=sqlite3.PARSE_DECLTYPES|sqlite3.PARSE_COLNAMES)
-		conn.row_factory = sqlite3.Row
-		c = conn.cursor()
-		
-		for task_name in input_list:
-			try:
-				asset_id = assets[task_name.split(':')[0]]['id']
-			except:
-				print(('in from_service_remove_input_tasks incorrect key: ' + task_name.split(':')[0] + ' in ' + task_name))
-				continue
-			
-			table = '\"' + asset_id + ':' + self.tasks_t + '\"'
-			
-			string = 'select * from ' + table + ' WHERE task_name = \"' + task_name + '\"'
-			try:
-				c.execute(string)
-				task_data = c.fetchone()
-			except:
-				conn.close()
-				return(False, ('in from_service_remove_input_tasks can not read ', string))
-				
-			if task_data['status'] in self.end_statuses:
-				bool_statuses.append(True)
-			else:
-				bool_statuses.append(False)
-		
-		conn.close()
-		
-		if False in bool_statuses:
-			new_status = 'null'
-		else:
-			new_status = 'done'
-			
-		return(True, new_status)
-	'''
-	# **************************** Task() File Path ************************************************
-	
-	# Work пути
-	
-	# task - должен быит инициализирован
-	# путь к последней возможной версии для взятия в работу
-	# current_artist (artist) - текущий пользователь, если не передавать, будет сделано get_user
-	# return - (True, (path, version)) или (False, comment) если нет ни одного лога return - (True, ('',''))
-	def get_final_work_file_path(self, current_artist=False): # v2
-		pass
-		# 0 - current_artist
-				
-		# (0) artist
-		if not current_artist:
-			current_artist = artist()
-			b, r = current_artist.get_user()
-			if not b:
-				return(b,r)
-		#
-		if not current_artist.outsource:
-			pass
-			# (1) загрузка push + commit + pull списков без учёта пользователя.
-			# (2) если последняя запись commit - то берём по этой версии.
-			# 	# если файл этой версии не в work директории данного пользователя, то будет предложено сделать push.
-			# (3) если последняя запись push:
-			#	# (4) не скетч - если commit версия этого push находится в work директории данного пользователя - то эта commit версия, 
-			#   # (5) иначе - push.
-			#   # (6) скетч
-			#   # (6.1) - выбираем последний номер версии из log.source
-			#   # (6.2) - если данный файл есть в рабочей директории данного пользователя - то это он
-			#   # (6.3) - если его нет - то предлагается сделать pull
-			# return - (path, номер версии)
-			
-			# (1)
-			b, r = log(self).read_log(action=['commit', 'push', 'pull'])
-			if not b:
-				return(b, r)
-			log_list = r[0]
-			#
-			if not log_list:
-				return(True, ('',''))
+        for key in self.tasks_keys:
+            setattr(r_ob, key, keys.get(key))
+        
+        # approved_date
+        r_ob.approved_date = ''
+            
+        if new:
+            return(r_ob)
+        else:
+            return(True, 'Ok')
+        
+    # ************************ CHANGE STATUS ******************************** start
+
+    @staticmethod
+    def _input_to_end(task_ob): # v2
+        if task_ob.status == 'close':
+            return(False)
+        
+        autsource = bool(task_ob.outsource)
+                
+        if autsource:
+            return('ready_to_send')
+        else:
+            return('ready')
+
+    # изменение статуса сервис задачи, по проверке статусов входящих задачь.
+    # задача должна быть инициализирована
+    # assets (dict) - словарь всех ассетов по всем типам (ключи - имена, данные - ассеты (объекты)) - результат функции asset.get_dict_by_name_by_all_types()
+    def _service_input_to_end(self, assets): # v2 *** не тестилось.
+        new_status = False
+        
+        # (1) get input_list
+        input_list = self.input
+        if not input_list:
+            return(True, new_status)
+        
+        # get status
+        bool_statuses = []
+        # --------------- fill end_statuses -------------
+        for task_name in input_list:
+            # (2) asse id
+            asset_name = task_name.split(':')[0]
+            asset_ob = assets.get(asset_name)
+            if not asset_ob:
+                print('in task._service_input_to_end() incorrect asset_name  "%s"' % asset_name)
+                continue
+            # (3) get task data
+            task_ob = task(asset_ob).init(task_name)
+            
+            # (4) make status
+            if task_ob.status in self.end_statuses:
+                bool_statuses.append(True)
+            else:
+                bool_statuses.append(False)
+        
+        #conn.close()
+        
+        if False in bool_statuses:
+            new_status = 'null'
+        else:
+            new_status = 'done'
+            #self._this_change_to_end(self, project_name, task_data)
+            
+        return(True, new_status)
+
+    # возвращает новый статус текущей задачи (если this_task=False), на основе входящей задачи, ?? не меняя статуса данной задачи.
+    # input_task (task / False) входящая задача.
+    # this_task (task / False) - если False - то предполагается текущая задача.
+    def _from_input_status(self, input_task, this_task=False):  # v2 no test
+        pass
+        if not this_task:
+            this_task=self
+        # get task_outsource
+        task_outsource = bool(this_task.outsource)
+        
+        new_status = 'null'
+        # change status
+        if input_task:
+            if input_task.status in self.end_statuses:
+                if not task_outsource:
+                    if this_task.status == 'null':
+                        new_status = 'ready'
+                else:
+                    if this_task.status == 'null':
+                        new_status = 'ready_to_send'
+            else:
+                if this_task.status != 'close':
+                    new_status = 'null'
+        else:
+            if not this_task.status in self.end_statuses:
+                if task_outsource:
+                    new_status = 'ready_to_send'
+                else:
+                    new_status = 'ready'
+        return(new_status)
+        
+    # замена статусов исходящих задачь при изменении статуса текущей задачи с done или с close.
+    # this_task (task / False) - если False то текущая задача.
+    # assets (dict) - словарь всех ассетов по всем типам (ключи - имена, данные - ассеты (объекты)) - результат функции asset.get_dict_by_name_by_all_types()
+    def _this_change_from_end(self, this_task=False, assets = False): # v2 *** no test
+        pass
+        # 0 - задаём объект текущей задачи
+        # 1 - список исходящих задачь
+        # 2 - получение списка всех ассетов
+        # 3 - цикл по списку исходящих задачь (output_list)
+        # - 4 - получение ассета
+        # - 5 - чтение таска
+        # - 6 - определение нового статуса
+        # - 7 - изменения в readers
+        # - 8 - запись таск
+        # 9 - отправка далее в себя же - _this_change_from_end() - по списку from_end_list
+        
+        # (0)
+        if not this_task:
+            this_task=self
+        
+        #
+        from_end_list = []
+        this_asset_type = this_task.asset.type
+        
+        # (1)
+        output_list = this_task.output
+        if not output_list:
+            return(True, 'Ok!')
+        # (2)
+        if not assets:
+            # get assets dict
+            result = self.asset.get_dict_by_name_by_all_types()
+            if not result[0]:
+                return(False, result[1])
+            assets = result[1]
+        
+        # (3) ****** change status
+        for task_name in output_list:
+            # (4)
+            asset_name = task_name.split(':')[0]
+            asset_ob = assets.get(asset_name)
+            if not asset_ob:
+                print('in task._this_change_from_end() incorrect asset_name  "%s"' % asset_name)
+                continue
+            # (5) get task data
+            task_ob = task(asset_ob).init(task_name)
+            
+            # (6) make new status char и obj не отключают локацию и аним шот, а локация отключает аним шот. ??????
+            if task_ob.status == 'close':
+                continue
+            elif task_ob.asset.type in ['location', 'shot_animation'] and this_asset_type not in ['location', 'shot_animation']:
+                continue
+            elif task_ob.status == 'done':
+                from_end_list.append(task_ob)
+                
+            new_status = 'null'
+            # (7) edit readers
+            readers = {}
+            try:
+                readers = task_ob.readers
+            except:
+                pass
+            if readers:
+                for key in readers:
+                    readers[key] = 0
+                #string = 'UPDATE ' +  table + ' SET  readers = ?, status  = ? WHERE task_name = ?'
+                #data = (json.dumps(readers), new_status, task_name)
+                update_data = {'readers': readers, 'status': new_status}
+            else:
+                #string = 'UPDATE ' +  table + ' SET  status  = ? WHERE task_name = ?'
+                #data = (new_status, task_name)
+                update_data = {'status': new_status}
+            # (8)
+            #c.execute(string, data)
+            table_name = '"%s:%s"' % (task_ob.asset.id, self.tasks_t)
+            where = {'task_name': task_name}
+            bool_, return_data = database().update('project', task_ob.asset.project, table_name, self.tasks_keys, update_data, where, table_root=self.tasks_db)
+            if not bool_:
+                return(bool_, return_data)
+        '''
+        conn.commit()
+        conn.close()
+        '''
+        
+        # (9) ****** edit from_end_list
+        if from_end_list:
+            for t_ob in from_end_list:
+                t_ob._this_change_from_end(assets = assets)
+        
+        
+        return(True, 'Ok!')
+        
+    # замена статусов исходящих задачь при изменении статуса текущей задачи на done или close.
+    # assets (dict) - словарь всех ассетов по всем типам (ключи - имена, данные - ассеты (экземпляры)) - результат функции asset.get_dict_by_name_by_all_types()
+    def _this_change_to_end(self, assets = False): # v2 *** no test
+        pass
+        # 1 - список исходящих задачь
+        # 2 - получение списка всех ассетов
+        # 3 - цикл по списку исходящих задачь (output_list)
+        # - 4 - получение id ассета
+        # - 5 - чтение таск даты
+        # - 6 - определение нового статуса
+        # - 7 - запись таск
+        # 8 - отправка далее в себя же - _this_change_to_end() - по списку service_to_done
+        
+        # (1)
+        output_list = self.output
+        if not output_list:
+            return(True, 'Ok!')
+        # (2)
+        if not assets:
+            # get assets dict
+            result = self.asset.get_dict_by_name_by_all_types()
+            if not result[0]:
+                return(False, result[1])
+            assets = result[1]
+        '''
+        # ****** connect to db
+        conn = sqlite3.connect(self.tasks_path, detect_types=sqlite3.PARSE_DECLTYPES|sqlite3.PARSE_COLNAMES)
+        conn.row_factory = sqlite3.Row
+        c = conn.cursor()
+        '''
+        service_to_done = []
+        # ****** change status
+        for task_name in output_list:
+            # (4) asse id
+            asset_id = assets[task_name.split(':')[0]].id
+            if not asset_id:
+                print('in _this_change_to_end incorrect key "id" in  "%s"' % task_name.split(':')[0])
+                continue
+            '''
+            table = '\"' + asset_id + ':' + self.tasks_t + '\"'
+            string = 'select * from ' + table + ' WHERE task_name = \"' + task_name + '\"'
+            try:
+                c.execute(string)
+                task_data_ = c.fetchone()
+            except:
+                conn.close()
+                return(False, ('in _this_change_to_end can not read ', string))
+            '''
+            # (5) get task data
+            table_name = '"%s:%s"' % (asset_id, self.tasks_t)
+            read_ob = self.asset.project
+            where = {'task_name': task_name}
+            bool_, return_data = database().read('project', read_ob, table_name, self.tasks_keys, where=where, table_root=self.tasks_db)
+            if not bool_:
+                return(bool_, return_data)
+            elif return_data:
+                task_data_ = self.init_by_keys(return_data[0])
+            else:
+                return(False, 'Task Data Not Found! Task_name - "%s"' % task_name)
+            
+            # (6) make new status
+            if task_data_.task_type == 'service':
+                #result = self._service_input_to_end(task_data_, assets)
+                result = task_data_._service_input_to_end(assets)
+                if not result[0]:
+                    return(False, result[1])
+                new_status = result[1]
+                if new_status == 'done':
+                    service_to_done.append(task_data_)
+            else:
+                new_status = self._input_to_end(task_data_)
+                
+            if not new_status:
+                continue
+            '''
+            string = 'UPDATE ' +  table + ' SET  status  = ? WHERE task_name = ?'
+            data = (new_status, task_name)
+            c.execute(string, data)
+            '''
+            # (7)
+            update_data = {'status': new_status}
+            where = {'task_name': task_name}
+            bool_, return_data = database().update('project', read_ob, table_name, self.tasks_keys, update_data, where, table_root=self.tasks_db)
+            if not bool_:
+                return(bool_, return_data)
+        #conn.commit()
+        #conn.close()
+        # (8)
+        if service_to_done:
+            for task_ob in service_to_done:
+                task_ob._this_change_to_end(assets = assets)
+        
+        return(True, 'Ok!')
+    '''	
+    def from_service_remove_input_tasks(self, project_name, task_data, removed_tasks_list):
+        # get input_list
+        input_list = json.loads(task_data['input'])
+        for task in removed_tasks_list:
+            input_list.remove(task['task_name'])
+            
+        if not input_list:
+            return(True, 'done')
+            
+        # get assets dict
+        result = self.get_dict_by_name_by_all_types(project_name)
+        if not result[0]:
+            return(False, result[1])
+        assets = result[1]
+        
+        bool_statuses = []
+        # --------------- fill end_statuses -------------
+        
+        # ****** connect to db
+        conn = sqlite3.connect(self.tasks_path, detect_types=sqlite3.PARSE_DECLTYPES|sqlite3.PARSE_COLNAMES)
+        conn.row_factory = sqlite3.Row
+        c = conn.cursor()
+        
+        for task_name in input_list:
+            try:
+                asset_id = assets[task_name.split(':')[0]]['id']
+            except:
+                print(('in from_service_remove_input_tasks incorrect key: ' + task_name.split(':')[0] + ' in ' + task_name))
+                continue
+            
+            table = '\"' + asset_id + ':' + self.tasks_t + '\"'
+            
+            string = 'select * from ' + table + ' WHERE task_name = \"' + task_name + '\"'
+            try:
+                c.execute(string)
+                task_data = c.fetchone()
+            except:
+                conn.close()
+                return(False, ('in from_service_remove_input_tasks can not read ', string))
+                
+            if task_data['status'] in self.end_statuses:
+                bool_statuses.append(True)
+            else:
+                bool_statuses.append(False)
+        
+        conn.close()
+        
+        if False in bool_statuses:
+            new_status = 'null'
+        else:
+            new_status = 'done'
+            
+        return(True, new_status)
+    '''
+    # **************************** Task() File Path ************************************************
+
+    # Work пути
+
+    # task - должен быит инициализирован
+    # путь к последней возможной версии для взятия в работу
+    # current_artist (artist) - текущий пользователь, если не передавать, будет сделано get_user
+    # return - (True, (path, version)) или (False, comment) если нет ни одного лога return - (True, ('',''))
+    def get_final_work_file_path(self, current_artist=False): # v2
+        pass
+        # 0 - current_artist
+                
+        # (0) artist
+        if not current_artist:
+            current_artist = artist()
+            b, r = current_artist.get_user()
+            if not b:
+                return(b,r)
+        #
+        if not current_artist.outsource:
+            pass
+            # (1) загрузка push + commit + pull списков без учёта пользователя.
+            # (2) если последняя запись commit - то берём по этой версии.
+            # 	# если файл этой версии не в work директории данного пользователя, то будет предложено сделать push.
+            # (3) если последняя запись push:
+            #	# (4) не скетч - если commit версия этого push находится в work директории данного пользователя - то эта commit версия, 
+            #   # (5) иначе - push.
+            #   # (6) скетч
+            #   # (6.1) - выбираем последний номер версии из log.source
+            #   # (6.2) - если данный файл есть в рабочей директории данного пользователя - то это он
+            #   # (6.3) - если его нет - то предлагается сделать pull
+            # return - (path, номер версии)
+            
+            # (1)
+            b, r = log(self).read_log(action=['commit', 'push', 'pull'])
+            if not b:
+                return(b, r)
+            log_list = r[0]
             #
-			end_log = log_list[-1:][0]
-			# (2)
-			if end_log['action'] in ['commit','pull']:
-				b, version_path = self._template_get_work_path(self, version=end_log['version'])
-				if not b:
-					return(b, version_path)
-				if not os.path.exists(version_path):
-					return(False, 'the latest "%s" version is not in your working directory, this user: "%s" needs to "push"' % (end_log['action'], end_log['artist']))
-				else:
-					return(True, (version_path, end_log['version']))
-			# (3)
-			elif end_log['action'] == 'push':
-				if self.task_type not in self.multi_publish_task_types:
-					pass
-					# (4)
-					b, version_path = self._template_get_work_path(self, version=end_log['source'])
-					if not b:
-						return(b, version_path)
-					if os.path.exists(version_path):
-						return(True, (version_path, end_log['version']))
-					# (5)
-					else:
-						push_version_path = self._template_get_push_path(self, end_log['version'])
-						if not os.path.exists(push_version_path):
-							return(False, 'Path of the push version "%s" not found!')
-						else:
-							return(True, (push_version_path, end_log['version']))
-				# (6) sketch
-				else:
-					# (6.1)
-					version = int(end_log['source'][0])
-					for v in end_log['source']:
-						if int(v)>version:
-							version=v
-					# (6.2)
-					b, version_path = self._template_get_work_path(self, version=version)
-					if not b:
-						return(b, version_path)
-					#
-					if os.path.exists(version_path):
-						return(True, (version_path, version))
-					else:
-						# (6.3)
-						return(False, 'Need to execute the "Pull"!')
-		#
-		else:
-			pass # outsource
-			# 7 - загрузка списков commit + push + pull данного артиста.
-			# 8 - если последняя запись commit или pull - то эта версия.
-			# 8.1 - если файл отсутствует в рабочей директории - то предложение сделать push тем артистом, кто делал последний коммит или пул.
-			# 9 - если последняя запись push
-			# 9.1 - если не скетч - проверка наличия исходника пуша в ворк директории
-			# 9.2 - если исходника пуша нет в ворк директории - предлагается чтобы менеджер сделал выгрузку пуш версии в облако и потом сделать пул.
-			# 10 - если скетч - получаем последнюю версию рабочего файла исходника - если он есть в рабочей директории - то это он
-			# 10.1 - если его нет - то предлагается чтобы менеджер сделал выгрузку пуш версии в облако и потом сделать пул.
-			
-			# (7)
-			b, r = log(self).read_log(action=['commit', 'push', 'pull'])
-			if not b:
-				return(b, r)
-			log_list = r[0]
-			#
-			if not log_list:
-				return(True, ('',''))
-			
-			# (8)
-			end_log = log_list[-1:][0]
-			if end_log['action'] in ['commit','pull']:
-				version_path = self._template_get_work_path(self, version=end_log['version'])
-				if os.path.exists(version_path):
-					return(True, (version_path, end_log['version']))
-				# (8.1)
-				else:
-					return(False, 'the latest "%s" version is not in your working directory,\nthis user: "%s" needs to "push"' % (end_log['action'], end_log['artist']))
-			# (9)
-			elif end_log['action'] == 'push':
-				# (9.1)
-				if self.task_type != 'sketch':
-					version_path = self._template_get_work_path(self, version=end_log['source'])
-					if os.path.exists(version_path):
-						return(True, (version_path, end_log['source']))
-					else:
-						# (9.2)
-						return(False, 'the source of the "push" version "%s" is not in your working directory.\nAsk the manager to upload the latest version to the cloud,\n and make "pull."' % end_log['version'])
-				else:
-					# (10)
-					version = int(end_log['source'][0])
-					for v in end_log['source']:
-						if int(v)>version:
-							version=v
-					version_path = self._template_get_work_path(self, version=version)
-					if os.path.exists(version_path):
-						return(True, (version_path, version))
-					else:
-						# (10.1)
-						return(False, 'the source of the "push" version "%s" is not in your working directory.\nAsk the manager to upload the latest version to the cloud,\n and make "pull."' % end_log['version'])
-	
-	# обёртка на studio._template_get_work_path()
-	# получение шаблонного пути версии данной задачи
-	# version (int / str) - номер версии
-	# return - (True, path) - или (false, comment)
-	def get_version_work_file_path(self, version):
-		b, r = self._template_get_work_path(self, version)
-		if not b:
-			return(b, r)
-		else:
-			#print(r)
-			if not os.path.exists(r):
-				return(False, 'The path "%s" not exists!' % r)
-			else:
-				return(True, r)
+            if not log_list:
+                return(True, ('',''))
+            #
+            end_log = log_list[-1:][0]
+            # (2)
+            if end_log['action'] in ['commit','pull']:
+                b, version_path = self._template_get_work_path(self, version=end_log['version'])
+                if not b:
+                    return(b, version_path)
+                if not os.path.exists(version_path):
+                    return(False, 'the latest "%s" version is not in your working directory, this user: "%s" needs to "push"' % (end_log['action'], end_log['artist']))
+                else:
+                    return(True, (version_path, end_log['version']))
+            # (3)
+            elif end_log['action'] == 'push':
+                if self.task_type not in self.multi_publish_task_types:
+                    pass
+                    # (4)
+                    b, version_path = self._template_get_work_path(self, version=end_log['source'])
+                    if not b:
+                        return(b, version_path)
+                    if os.path.exists(version_path):
+                        return(True, (version_path, end_log['version']))
+                    # (5)
+                    else:
+                        push_version_path = self._template_get_push_path(self, end_log['version'])
+                        if not os.path.exists(push_version_path):
+                            return(False, 'Path of the push version "%s" not found!')
+                        else:
+                            return(True, (push_version_path, end_log['version']))
+                # (6) sketch
+                else:
+                    # (6.1)
+                    version = int(end_log['source'][0])
+                    for v in end_log['source']:
+                        if int(v)>version:
+                            version=v
+                    # (6.2)
+                    b, version_path = self._template_get_work_path(self, version=version)
+                    if not b:
+                        return(b, version_path)
+                    #
+                    if os.path.exists(version_path):
+                        return(True, (version_path, version))
+                    else:
+                        # (6.3)
+                        return(False, 'Need to execute the "Pull"!')
+        #
+        else:
+            pass # outsource
+            # 7 - загрузка списков commit + push + pull данного артиста.
+            # 8 - если последняя запись commit или pull - то эта версия.
+            # 8.1 - если файл отсутствует в рабочей директории - то предложение сделать push тем артистом, кто делал последний коммит или пул.
+            # 9 - если последняя запись push
+            # 9.1 - если не скетч - проверка наличия исходника пуша в ворк директории
+            # 9.2 - если исходника пуша нет в ворк директории - предлагается чтобы менеджер сделал выгрузку пуш версии в облако и потом сделать пул.
+            # 10 - если скетч - получаем последнюю версию рабочего файла исходника - если он есть в рабочей директории - то это он
+            # 10.1 - если его нет - то предлагается чтобы менеджер сделал выгрузку пуш версии в облако и потом сделать пул.
+            
+            # (7)
+            b, r = log(self).read_log(action=['commit', 'push', 'pull'])
+            if not b:
+                return(b, r)
+            log_list = r[0]
+            #
+            if not log_list:
+                return(True, ('',''))
+            
+            # (8)
+            end_log = log_list[-1:][0]
+            if end_log['action'] in ['commit','pull']:
+                version_path = self._template_get_work_path(self, version=end_log['version'])
+                if os.path.exists(version_path):
+                    return(True, (version_path, end_log['version']))
+                # (8.1)
+                else:
+                    return(False, 'the latest "%s" version is not in your working directory,\nthis user: "%s" needs to "push"' % (end_log['action'], end_log['artist']))
+            # (9)
+            elif end_log['action'] == 'push':
+                # (9.1)
+                if self.task_type != 'sketch':
+                    version_path = self._template_get_work_path(self, version=end_log['source'])
+                    if os.path.exists(version_path):
+                        return(True, (version_path, end_log['source']))
+                    else:
+                        # (9.2)
+                        return(False, 'the source of the "push" version "%s" is not in your working directory.\nAsk the manager to upload the latest version to the cloud,\n and make "pull."' % end_log['version'])
+                else:
+                    # (10)
+                    version = int(end_log['source'][0])
+                    for v in end_log['source']:
+                        if int(v)>version:
+                            version=v
+                    version_path = self._template_get_work_path(self, version=version)
+                    if os.path.exists(version_path):
+                        return(True, (version_path, version))
+                    else:
+                        # (10.1)
+                        return(False, 'the source of the "push" version "%s" is not in your working directory.\nAsk the manager to upload the latest version to the cloud,\n and make "pull."' % end_log['version'])
 
-	# создание пути для новой commit или pull версии файла.
-	# return - (True, (path, version)) или (False, comment)
-	def get_new_work_file_path(self):
-		pass
-		# 1 - чтение commit + pull логов
-		# 2 - новый номер версии
-		# 3 - шаблонный путь
-	
-		# (1)
-		b, r = log(self).read_log(action=['commit', 'pull'])
-		if not b:
-			return(b, r)
-		
-		# (2)
-		if r[0]:
-			log_list = r[0]
-			end_log = log_list[-1:][0]
-			version = int(end_log['version']) + 1
-		else:
-			b, version = self._template_version_num(0)
-			if not b:
-				return(b, version)
-		
-		# (3)
-		b, r = self._template_get_work_path(self, version=version)
-		if not b:
-			return(b, r)
-		else:
-			return(True, (r, version))
-		
-	# Push пути
-			
-	# путь к последней существующей пуш версии на локальном сервере.
-	# current_artist (artist) - текущий пользователь, если не передавать, будет сделано get_user
-	# return для sketch - (True, ({словарь - ключи: типы путей "look_path" или "push_path": значение словарь - пути по веткам}, version)) для остальных - (True, (path, version)) - или (false, comment)
-	def get_final_push_file_path(self, current_artist=False):
-		pass
-		# 0 - current_artist
-		# 1 - игнор аутсорс
-		# 2 - чтение пуш лога
-		# 3 - получение путей
-				
-		# (0) artist
-		if not current_artist:
-			current_artist = artist()
-			b, r = current_artist.get_user()
-			if not b:
-				return(b,r)
-		
-		# (1)
-		if current_artist.outsource:
-			return(False, 'This function is not available on outsourcing!')
-		
-		# (2)
-		b, r = log(self).read_log(action='push')
-		if not b:
-			return(b, r)
-		log_list = r[0]
-		if log_list:
-			end_log = log_list[-1:][0]
-		else:
-			return(False, 'Push versions not found!')
-		
-		# (3)
-		if end_log:
-			version = end_log['version']
-			if self.task_type in self.multi_publish_task_types:
-				pass
-				r_data = dict()
-				# -- push path
-				b, r_push = self._template_get_push_path(self, version=version, branches=end_log['branch'], look=False)
-				if not b:
-					return(b,r_push)
-				# -- look path
-				b, r_look = self._template_get_push_path(self, version=version, branches=end_log['branch'], look=True)
-				if not b:
-					return(b,r_look)
-				#
-				r_data['push_path'] = r_push
-				if self.task_type == 'sketch':
-					r_data['look_path'] = r_look
-				else:
-					r_data['look_path'] = r_push
-				'''
-				for branch in end_log['branch']:
-					branch_dict = dict()
-					branch_dict['push_path'] = r_push[branch]
-					if self.task_type == 'sketch':
-						branch_dict['look_path'] = r_look[branch]
-					else:
-						branch_dict['look_path'] = r_push[branch]
-					r_data[branch] = branch_dict
-				'''
-			else:
-				b, r = self._template_get_push_path(self, version=version)
-				if not b:
-					return(b,r)
-				r_data = r
-		else:
-			return(False, 'Push version missing!')
-		
-		return(True, (r_data, version))
-		
-	# путь к указанной пуш версии на локальном сервере.
-	# version (int / str) - номер версии
-	# current_artist (artist) - текущий пользователь, если не передавать, будет сделано get_user
-	# return для sketch - (True, {словарь - ключи: типы путей "look_path" или "push_path": значение словарь - пути по веткам}) для остальных - (True, path) - или (false, comment)
-	def get_version_push_file_path(self, version, current_artist=False):
-		pass
-		# 0 - current_artist
-		# 1 - игнор аутсорс
-		# 2 - получение push лога этой версии
-		# 3 - получение путей
-		
-		# (0) artist
-		if not current_artist:
-			current_artist = artist()
-			b, r = current_artist.get_user()
-			if not b:
-				return(b,r)
-		
-		# (1)
-		if current_artist.outsource:
-			return(False, 'This function is not available on outsourcing!')
-		
-		# (2)
-		b, r = log(self).read_log(action='push')
-		if not b:
-			return(b, r)
-		version_log = False
-		for item in r[0]: # r[0] - это лог лист
-			if int(item['version']) == int(version):
-				version_log = item
-		if not version_log:
-			return(False, 'The push log of this version "%s" was not found' % version)
-		
-		# (3)
-		if self.task_type in self.multi_publish_task_types:
-			pass
-			r_data = dict()
-			# -- push path
-			b, r_push = self._template_get_push_path(self, version=version, branches=version_log['branch'], look=False)
-			if not b:
-				return(b,r_push)
-			# -- look path
-			b, r_look = self._template_get_push_path(self, version=version, branches=version_log['branch'], look=True)
-			if not b:
-				return(b,r_look)
-			#
-			r_data['push_path'] = r_push
-			if self.task_type in self.multi_publish_task_types:
-				r_data['look_path'] = r_look
-			else:
-				r_data['look_path'] = r_push
-			'''
-			for branch in version_log['branch']:
-				branch_dict = dict()
-				branch_dict['push_path'] = r_push[branch]
-				if self.task_type == 'sketch':
-					branch_dict['look_path'] = r_look[branch]
-				else:
-					branch_dict['look_path'] = r_push[branch]
-				r_data[branch] = branch_dict
-			'''
-		else:
-			b, r = self._template_get_push_path(self, version=version)
-			if not b:
-				return(b,r)
-			r_data = r
-		
-		return(True, r_data)
-	
-	# push последней или указанной work версии
-	# version (bool/ str / int) - версия коммит источника для push (не для sketch)
-	# current_artist (artist) - текущий пользователь, если не передавать, будет сделано get_user
-	# return для скетч - (True, ({словарь с ключами: source_path, source_versions, push_path, look_path - значения словари по веткам}, version) для остальных (True, ((source_path, new_path), version))
-	def get_new_push_file_path(self, version=False, current_artist=False):
-		pass
-		# 0 - test artist
-		# 1 - чтение push лога
-		# 2 - новый номер версии
-		# 2.0 - чтение pull-commit лога
-		# 3 - шаблонный путь для sketch
-		# 3.1 - пути к источникам (для каждой ветки)
-		# 3.2 - проверка на совпадение версий коммитов в последнем пуше с версиями источника.
-		# 3.3 - составление новых push путей.
-		# 4 - для не скетч
-		# 4.1 - путь к источнику
-		# 4.2 - проверка на совпадение версии коммита в последнем пуше с версией источника.
-		# 4.3 - путь до нового push
-	
-		# (0) artist
-		if not current_artist:
-			current_artist = artist()
-			b, r = current_artist.get_user()
-			if not b:
-				return(b,r)
-		#
-		if current_artist.outsource:
-			return(False, 'This function is not available on outsourcing!')
-	
-		# (1)
-		b, r = log(self).read_log(action=['push'])
-		if not b:
-			return(b, r)
-		log_list = r[0]
-		
-		# (2)
-		if log_list:
-			end_push_log = log_list[-1:][0]
-			new_version = int(end_push_log['version']) + 1
-		else:
-			end_push_log = dict()
-			new_version = 0
-		b, str_new_version = self._template_version_num(new_version)
-		if not b:
-			return(b, str_new_version)
-		
-		# (2.0)
-		b, r = log(self).read_log(action=['commit', 'pull'])
-		if not b:
-			return(b, r)
-		work_log_list = r[0]
-		#
-		if not work_log_list:
-			return(False, 'Not "commit" or "pull" version!')
-		end_work_log = work_log_list[-1:][0]
-		
-		# (3)
-		if self.task_type in self.multi_publish_task_types:
-			pass
-			# (3.1)
-			# -- clean branches
-			branches = list()
-			for branch in r[1]:
-				if not '#' in branch:
-					branches.append(branch)
-			# -- get source path
-			source_path = dict()
-			source_versions = dict()
-			for branch in branches:
-				for i in sorted(range(0, len(work_log_list)), reverse=True):
-					log_=work_log_list[-(i+1):][0]
-					if log_['branch']!=branch:
-						continue
-					b,r = self.get_version_work_file_path(log_['version'])
-					if not b:
-						return(b, r)
-					source_path[branch] = r
-					source_versions[branch] = log_['version']
-			# (3.2)
-			if end_push_log:
-				if sorted(end_push_log['branch'])==sorted(branches):
-					overlap = list()
-					for i , branch in enumerate(end_push_log['branch']):
-						#print('*'*5, end_push_log['source'][i], source_versions[branch])
-						if end_push_log['source'][i] == source_versions[branch]:
-							overlap.append(True)
-						else:
-							overlap.append(False)
-					if not False in overlap:
-						return(False, 'Latest commit version matches the latest push version!')
-			# (3.3)
-			b ,r = self._template_get_push_path(self, version=new_version, branches=branches, look=False)
-			if not b:
-				return(b, r)
-			push_path = r
-			b ,r = self._template_get_push_path(self, version=new_version, branches=branches, look=True)
-			if not b:
-				return(b, r)
-			look_path = r
-			#
-			r_data = dict()
-			r_data['source_path']=source_path
-			r_data['source_versions']=source_versions
-			r_data['push_path']=push_path
-			r_data['look_path']=look_path
-			return(True, (r_data, str_new_version))
-		# (4)
-		else:
-			pass
-			# (4.1)
-			if version:
-				b, r = self._template_version_num(version)
-				if not b:
-					return(b, r)
-				else:
-					version=r
-				b, r = self.get_version_work_file_path(version)
-				if not b:
-					return(b, r)
-				source_path = r
-				source_version = version
-			else:
-				#end_work_log = work_log_list[-1:][0]
-				b, r = self.get_version_work_file_path(end_work_log['version'])
-				if not b:
-					return(b, r)
-				source_path = r
-				source_version = end_work_log['version']
-			# (4.2)
-			b, str_source_version = self._template_version_num(source_version)
-			if not b:
-				return (b, str_source_version)
-			if end_push_log and str_source_version == end_push_log['source']:
-				return(False, 'This commit version "%s" matches the latest push version!' % str_source_version)
-			# (4.3)
-			b, r = self._template_get_push_path(self, version=new_version)
-			if not b:
-				return(b, r)
-			else:
-				return(True, (source_path, str_source_version, end_work_log['branch'], r, str_new_version))
-	
-	# Publish пути
-	# version (int / str) - номер publish версии
-	# branches (bool / list) - список веток данного паблиша, для мультипаблиша.
-	# version_log (bool / dict) - словарь лога данной версии, если его передавать, то branches и version не имеют смысла.
-	# return (True, path или dict(пути по веткам)) или (False, comment)
-	def get_version_publish_file_path(self, version=False, branches=False, version_log=False):
-		pass
-		# (1)
-		if version_log:
-			version = version_log['version']
-			branches = version_log['branch']
-		elif (version is False or version is None):
-			return(False, 'No version specified!')
-		else:
-			if not branches:
-				b, publish_logs = log(self).read_log(action='publish')
-				if not b:
-					return(b, publish_logs)
-				#
-				if not publish_logs[0]:
-					return(False, 'No exists publish version!')
-				#
-				for log_ in publish_logs[0]:
-					if int(log_['version']) == int(version):
-						branches = log_['branch']
-				if not branches:
-					return(False, 'No exists publish version - "%s" !' % version)
-	
-		# (2)
-		if self.task_type in self.multi_publish_task_types:
-			pass
-			r_dict = dict()
-			#
-			b, publish_path = self._template_get_publish_path(self, version=version, branches=branches)
-			if not b:
-				return(b, publish_path)
-			r_dict['publish_path'] = publish_path
-			#
-			b, look_path = self._template_get_publish_path(self, version=version, branches=branches, look=True)
-			if not b:
-				return(b, look_path)
-			r_dict['look_path'] = look_path
-			return(True, r_dict)
-		else:
-			pass
-			b, r = self._template_get_publish_path(self, version)
-			if not b:
-				return(b, r)
-			else:
-				if not os.path.exists(r):
-					return(False, 'The path "%s" not exists!' % r)
-				else:
-					return(b, r)
-	
-	# пути к top версии паблиш файлов
-	# return (True, path или dict(пути по веткам)) или (False, comment)
-	def get_final_publish_file_path(self):
-		pass
-		# 1 - read the final publish log, get final publish version
-		# 2 - get template path
-		
-		# (1)
-		b, publish_logs = log(self).read_log(action='publish')
-		if not b:
-			return(b, publish_logs)
-		
-		if publish_logs[0]:
-			end_log = publish_logs[0][-1:][0]
-		else:
-			return(False, 'No exists publish version!')
-		
-		# (2)
-		if self.task_type in self.multi_publish_task_types:
-			pass
-			branches = end_log['branch']
-			r_dict = dict()
-			#
-			b, publish_path = self._template_get_publish_path(self, branches=branches)
-			if not b:
-				return(b, publish_path)
-			r_dict['publish_path'] = publish_path
-			#
-			b, look_path = self._template_get_publish_path(self, branches=branches, look=True)
-			if not b:
-				return(b, look_path)
-			r_dict['look_path'] = look_path
-			#
-			return(True, (r_dict, end_log['version']))
-		else:
-			pass
-			b, r = self._template_get_publish_path(self)
-			if not b:
-				return(b, r)
-			else:
-				if not os.path.exists(r):
-					return(False, 'The path "%s" not exists!' % r)
-				else:
-					return(b, (r, end_log['version']))
-	
-	# пути для новых паблиш файлов: и top и версию
-	# republish (bool) - репаблиш или нет.
-	# source_log (bool / dict) - лог источника для паблиша (push или publish), при наличие этого лога версия source_version передавать не имеет смысла.
-	# source_version (bool / str) - версия исходника (пуш, паблиш) если False - последняя версия.
-	# return: (true, (dict_path, version)) или (False, comment), структура dict_path: ключи - 'top_path', 'version_path', 'top_look_path', 'version_look_path', 'source_look_path', 'source_path'   значения - пути или словари путей по веткам.
-	def get_new_publish_file_path(self, republish=False, source_log=False, source_version=False):
-		pass
-		# 1 - read the final publish log, get final publish version
-		# 2 - получение branches и путей исходника.
-		# 3 - соурс пути
-		# 4 - новые пути
-		
-		# (1)
-		old_source = False
-		b, publish_logs = log(self).read_log(action='publish')
-		if not b:
-			return(b, publish_logs)
-		
-		if publish_logs[0]:
-			end_log = publish_logs[0][-1:][0]
-			version = int(end_log['version']) + 1
-			old_source = int(end_log['source'])
-		else:
-			version=0
-			
-		# (2)
-		# -- branches - получаем не разделяя тип задачи, он в любом случае будет.
-		if source_log:
-			branches = source_log['branch']
-			source_version = source_log['version']
-			if republish:
-				source = source_log['source']
-			else:
-				source = source_log['version']
-		else:
-			branches = list()
-			source = str()
-			if republish:
-				pass
-				if publish_logs[0]:
-					#
-					for log_ in publish_logs[0]:
-						if int(log_['version']) == int(source_version):
-							branches = log_['branch']
-							source = log_['source']
-							#source = source_version
-				else:
-					return(False, 'No exists pulish version!')
-			else:
-				pass
-				# -- read push logs
-				b, push_logs = log(self).read_log(action='push')
-				if not b:
-					return(b, push_logs)
-				#
-				if push_logs[0]:
-					if not source_version is False and not source_version is None:
-						for log_ in push_logs[0]:
-							if int(log_['version']) == int(source_version):
-								branches = log_['branch']
-								#source = log_['source']
-								source = source_version
-					else:
-						branches = push_logs[0][-1:][0]['branch']
-						source = push_logs[0][-1:][0]['version']
-				else:
-					return(False, 'No exists push version!')
-			#
-			if self.task_type in self.multi_publish_task_types and not branches:
-				return(False, 'No exists source (push or pulish version)!')
-			if source is False or source is None:
-				return(False, 'No exists source (push or pulish version)!')
-			
-		if not old_source is False and old_source==int(source):
-			print('source: %s, old_source: %s' % (str(source), str(old_source)))
-			return(False, 'Source of past publishers coincides with new source of publishers!')
-			
-		# (3)
-		source_look_path = False
-		source_path = False
-		if republish:
-			b, source_path = self.get_version_publish_file_path(version=source_version, branches=branches)
-			if not b:
-				return(b, source_path)
-			if self.task_type in self.multi_publish_task_types:
-				source_look_path = source_path['look_path']
-				source_path = source_path['publish_path']
-		else:
-			if not source_version is False and not source_version is None:
-				b, source_path = self.get_version_push_file_path(source_version)
-			else:
-				b, source_path = self.get_final_push_file_path()
-				source_path = source_path[0]
-			if not b:
-				return(b, source_path)
-			if self.task_type in self.multi_publish_task_types:
-				source_look_path = source_path['look_path']
-				source_path = source_path['push_path']
-		# (4)
-		if self.task_type in self.multi_publish_task_types:
-			pass
-			#
-			b, r_top = self._template_get_publish_path(self, branches=branches)
-			if not b:
-				return(b, r_top)
-			#
-			b, look_top = self._template_get_publish_path(self, branches=branches, look=True)
-			if not b:
-				return(b, look_top)
-			#
-			b, r_version = self._template_get_publish_path(self, version, branches=branches)
-			if not b:
-				return(b, r_version)
-			#
-			b, look_version = self._template_get_publish_path(self, version, branches=branches, look=True)
-			if not b:
-				return(b, look_version)
-			#
-			return(True, ({'top_path': r_top, 'top_look_path': look_top, 'version_path': r_version, 'version_look_path': look_version, 'source_look_path':source_look_path, 'source_path':source_path}, version, source, branches))
-		else:
-			pass
-			b, r_top = self._template_get_publish_path(self)
-			if not b:
-				return(b, r_top)
-			b, r_version = self._template_get_publish_path(self, version)
-			if not b:
-				return(b, r_version)
-			#
-			return(True, ({'top_path': r_top, 'version_path': r_version, 'source_path': source_path}, version, source))
-	
-	# old
-	
-	# task - должен быть инициализирован
-	def get_final_file_path(self, current_artist=False): # v2
-		pass
-		activity_path = NormPath(os.path.join(self.asset.path, self.activity))
-		
-		if not os.path.exists(activity_path):
-			try:
-				os.mkdir(activity_path)
-			except:
-				print(activity_path)
-				return(False, 'in task().get_final_file_path() Can not create activity dir!')
-		
-		# - get folder list
-		folders_16 = os.listdir(activity_path)
-		folders = []
-		
-		if len(folders_16)==0:
-			return(True, None, self.asset.path)
-		
-		# - 16 to 10
-		for obj_ in folders_16:
-			folders.append(int(obj_, 16))
-		
-		i = max(folders)
-		while i > -1:
-			hex_ = hex(i).replace('0x', '')
-			num = 4 - len(hex_)
-			hex_num = '0'*num + hex_
-			
-			final_file = NormPath(os.path.join(activity_path, hex_num, '%s%s' % (self.asset.name, self.extension)))
-			if os.path.exists(final_file):
-				return(True, final_file, self.asset.path)
-			i = i-1
-		
-		return(True, None, self.asset.path)
-	
-	# asset - должен быит инициализирован
-	# task_data (dict) - требуется если не инициализирован task
-	# version (str) - hex 4 символа
-	def get_version_file_path(self, version, task_data=False): # v2
-		asset_path = self.asset.path
-		if not task_data:
-			asset_type = self.asset.type
-			activity = self.activity
-			asset = self.asset.name
-			extension = self.extension
-		else:
-			asset_type = task_data['asset_type']
-			activity = task_data['activity']
-			asset = task_data['asset_name']
-			extension = task_data['extension']
-				
-		activity_path = NormPath(os.path.join(asset_path, activity))
-		
-		version_file = NormPath(os.path.join(activity_path, version, '%s%s' % (asset, extension)))
-		
-		if os.path.exists(version_file):
-			return(True, version_file)
-		else:
-			return(False, 'Not Exists File!')
-	
-	# asset - должен быит инициализирован
-	# task_data (dict) - требуется если не инициализирован task
-	def get_new_file_path(self, task_data=False): # v2
-		pass
-		if not task_data:
-			asset_type = self.asset.type
-			activity = self.activity
-			asset = self.asset.name
-			extension = self.extension
-		else:
-			asset_type = task_data['asset_type']
-			activity = task_data['activity']
-			asset = task_data['asset_name']
-			extension = task_data['extension']
-		# get final file
-		result = self.get_final_file_path(task_data)
-		#final_file = None
-		if not result[0]:
-			return(False, result[1])
-			
-		final_file = result[1]
-		asset_path = result[2]
-		
-		# get activity path
-		activity_path = NormPath(os.path.join(asset_path, activity))
-		# make activity folder
-		if not os.path.exists(activity_path):
-			os.mkdir(activity_path)
-		
-		if final_file == None:
-			new_dir_path = NormPath(os.path.join(activity_path, '0000'))
-			new_file_path = NormPath(os.path.join(new_dir_path, '%s%s' % (asset, extension)))
-			
-		else:
-			ff_split = final_file.replace('\\','/').split('/')
-			new_num_dec = int(ff_split[len(ff_split) - 2], 16) + 1
-			new_num_hex = hex(new_num_dec).replace('0x', '')
-			if len(new_num_hex)<4:
-				for i in range(0, (4 - len(new_num_hex))):
-					new_num_hex = '0' + new_num_hex
-			
-			new_dir_path = NormPath(os.path.join(activity_path, new_num_hex))
-			new_file_path = NormPath(os.path.join(new_dir_path, '%s%s' % (asset, extension)))
-		
-		return(True, (new_dir_path, new_file_path))
-	
-	# asset - должен быит инициализирован
-	# activity (str)
-	def get_publish_file_path(self, activity): # v2
-		pass
-		# get task_data
-		result = self.get_list(asset_id=self.asset.id)
-		if not result[0]:
-			return(False, result[1])
-			
-		task_data = None
-		for td in result[1]:
-			if td['activity'] == activity:
-				task_data = td
-				break
-				
-		if not task_data:
-			return(False, 'No Found Task with this activity: "%s"!' % activity)
-		
-		# -- -- get publish dir
-		publish_dir = NormPath(os.path.join(self.asset.path, self.publish_folder_name))
-		if not os.path.exists(publish_dir):
-			return(False, 'in task.get_publish_file_path() - Not Publish Folder! (%s)' % publish_dir)
-		# -- -- get activity_dir
-		activity_dir = NormPath(os.path.join(publish_dir, task_data['activity']))
-		if not os.path.exists(activity_dir):
-			return(False, 'in task.get_publish_file_path() - Not Publish/Activity Folder! (%s)' % activity_dir)
-		# -- -- get file_path
-		file_path = NormPath(os.path.join(activity_dir, '%s%s' % (self.asset.name, task_data['extension'])))
-		if not os.path.exists(file_path):
-			print('#'*5, file_path)
-			return(False, 'Publish/File Not Found!')
-			
-		return(True, file_path)
-	
-	# вызов одноимённого хука
-	def _pre_commit(self, work_path, save_path):
-		return(True, 'Ok!')
+    # обёртка на studio._template_get_work_path()
+    # получение шаблонного пути версии данной задачи
+    # version (int / str) - номер версии
+    # return - (True, path) - или (false, comment)
+    def get_version_work_file_path(self, version):
+        b, r = self._template_get_work_path(self, version)
+        if not b:
+            return(b, r)
+        else:
+            #print(r)
+            if not os.path.exists(r):
+                return(False, 'The path "%s" not exists!' % r)
+            else:
+                return(True, r)
 
-	# вызов одноимённого хука
-	def _post_commit(self, work_path, save_path):
-		return(True, 'Ok!')
-	
-	# запись новой рабочей версии в work директорию. заполнение task.time, task.full_time, artist_log.full_time.
-	# work_path (str) - путь к текущему рабочему файлу
-	# description (unicode) - коммент
-	# branch (unicode) - наименование ветки, если не передавать - то master
-	# artist_ob (artist) - если не передовать, то будет выполнен get_user()
-	# return (True, path - путь до сохранённого файла) или (False, comment)
-	def commit(self, work_path, description, branch=False, artist_ob=False):
-		pass
-		# 0 - input data
-		# 1 - get save_path
-		# 2 - pre_commit
-		# 3 - make dirs
-		# 4 - copy file
-		# 5 - write log
-		# 6 - post_commit
-		
-		# (0)
-		if not description:
-			return(False, 'No description!')
-		if not branch:
-			branch = 'master'
-		if not artist_ob:
-			artist_ob = artist()
-			bool_, r_data = artist_ob.get_user()
-			if not bool_:
-				return(bool_, r_data)
-		
-		# (1)
-		b, r = self.get_new_work_file_path()
-		if not b:
-			return(b, r)
-		save_path = r[0]
-		version = r[1]
-		
-		# (2)
-		b, r = self._pre_commit(work_path, save_path)
-		if not b:
-			return(b, r)
-		
-		# (3)
-		version_dir_path = os.path.dirname(save_path)
-		if not os.path.exists(version_dir_path):
-			os.makedirs(version_dir_path)
-			
-		# (4)
-		# (4.1)
-		if not os.path.exists(work_path):
-			return('The source path "%s" not exists!' % work_path)
-		# (4.2)
-		try:
-			extension = '.%s' % work_path.split('.')[-1:][0]
-		except:
-			return(False, 'Source file "%s" missing extension' % work_path)
-		# (4.3)
-		if extension != self.extension:
-			return(False, 'Source file extension(%s) does not match task extension(%s)' % (extension, self.extension))
-		# (4.4)
-		shutil.copyfile(work_path, save_path)
-		
-		# (5)
-		# (5.0)
-		commit_time = datetime.datetime.now()
-		delta = commit_time - self.open_time
-		self.open_time = commit_time
-		
-		# (5.1)
-		delta_seconds = float(delta.total_seconds())
-		logs_keys = {
-		'action': 'commit',
-		'description': description,
-		'branch': branch,
-		'version': version,
-		'time': delta_seconds,
-		}
-		# (5.2)
-		result = log(self).write_log(logs_keys,  artist_ob=artist_ob)
-		if not result[0]:
-			return(False, result[1])
-		# (5.3)
-		if not self.time:
-			self.time = {artist_ob.nik_name:delta_seconds}
-		elif not artist_ob.nik_name in self.time:
-			self.time[artist_ob.nik_name] = delta_seconds
-		else:
-			old_time = self.time[artist_ob.nik_name]
-			self.time[artist_ob.nik_name] = old_time + delta_seconds
-		b, r = self.changes_without_a_change_of_status('time', self.time)
-		if not b:
-			return(b, r)
-		# (5.4)
-		if not self.full_time:
-			self.full_time = delta_seconds
-		else:
-			self.full_time = self.full_time + delta_seconds
-		b, r = self.changes_without_a_change_of_status('full_time', self.full_time)
-		if not b:
-			return(b, r)
-		# (5.5)
-		b, r = log(self).artist_add_full_time(delta_seconds)
-		if not b:
-			return(b, r)
-		
-		# (6)
-		b, r = self._post_commit(work_path, save_path)
-		if not b:
-			return(b, r)
-		
-		return(True, save_path)
-	
-	# запуск файлов редакторами или вьювером, создание tmp копии файла.
-	# path (str) - путь до оригинального файла.
-	# viewer (bool) - если True - открытие вьювером по оригинальному пути.
-	# -- если False - открытие редактором tmp копии файла.
-	def run_file(self, path, viewer=False):
-		if viewer:
-			soft = {'Linux':'xdg-open',
-				'Windows':'explorer',
-				'Darwin':'open'}[platform.system()]
-			if soft:
-				# run from tmp_path
-				try:
-					subprocess.run([soft, path])
-				except Exception as e:
-					print('*'*5)
-					print(e)
-					try:
-						subprocess.call([soft, path])
-					except Exception as e:
-						return(False, str(e))
-				return(True, path)
-			else:
-				return(False, 'System not defined!')
-		else:
-			# get soft
-			soft = self.soft_data.get(self.extension)
-			if not soft:
-				return(False, 'No application found for this extension "%s"' % self.extension)
-			
-			# get tmp_path
-			if not os.path.exists(self.tmp_folder):
-				return(False, 'Tmp directory is not defined!')
-			new_name = '%s_%s%s' % (os.path.basename(path).split('.')[0], uuid.uuid4().hex, self.extension)
-			tmp_path = NormPath(os.path.join(self.tmp_folder, new_name))
-			
-			# copy to tmp_path
-			shutil.copyfile(path, tmp_path)
-			
-			# run from tmp_path
-			try:
-				subprocess.run([soft, tmp_path])
-			except Exception as e:
-				print('*'*5)
-				print(e)
-				try:
-					subprocess.call([soft, tmp_path])
-				except Exception as e:
-					return(False, str(e))
-			return(True, tmp_path)
-	
-	# look какой-либо версии файла для менеджеров (push, publish версии).
-	# action (str) - экшен из [push, publish]
-	# version (bool / str / int) - версия, если False - то открывается последняя.
-	# launch (bool) - False - возвращает только путь, иначе запуск редактором по расширению (для не скетч).
-	# -- note -- для скетч - запуска не делается - возвращаются пути.
-	# return (True, path) или (False, comment)
-	def look(self, action='push', version=False, launch=True):
-		pass
-		# 1 - получение пути / запуск
-		# 2 - открытие или возврат пути
-		
-		# (1)
-		if action == 'push':
-			pass
-			if not version is False:
-				b, r = self.get_version_push_file_path(version)
-			else:
-				b, r = self.get_final_push_file_path()
-			if not b:
-				return(b, r)
-		elif action == 'publish':
-			pass
-			if not version is False:
-				b, r = self.get_version_publish_file_path(version=version)
-			else:
-				b, r = self.get_final_publish_file_path()
-			if not b:
-				return(b, r)
-		
-		# (2)
-		if self.task_type in self.multi_publish_task_types or not launch:
-			pass
-			return(True, r)
-		else:
-			pass
-			if not version is False:
-				path = r
-			else:
-				path = r[0]
-			b, r = self.run_file(path)
-			if not b:
-				return(b, r)
-			else:
-				return(True, path)
-	
-	# откроет файл в приложении - согласно расширению. заполнение: task.open_time, task.start; выполнение log.artist_start_log(), 
-	# look (bool) - если True - то статусы меняться не будут, если False - то статусы меняться будут.
-	# current_artist (artist) - если не передавать, то в случае look=False - будет выполняться get_user() - лишнее обращение к БД.
-	# tasks (dict) - словарь задачь данного артиста по именам. - нужен для случая когда look=False, при отсутствии будет считан - лишнее обращение к БД.
-	# input_task (task) - входящая задача - для open_from_input - если передавать - то имеется ввиду открытие из активити входящей задачи.
-	# open_path (unicode/str) - путь к файлу - указывается для open_from_file
-	# launch (bool) - если True - то будет произведён запуск приложением, которое установлено в соответствии с данным расширением файла (для универсальной юзерской панели и для менеджерской панели, при открытии на проверку), если False - то запуска не будет, но все смены статусов произойдут и будет возвращён путь к файлу.
-	def open_file(self, look=False, current_artist=False, tasks=False, input_task=False, open_path=False, version=False, launch=True):
-		pass
-		
-		# (1) ***** CHANGE STATUS
-		if not look:
-			if not current_artist:
-				current_artist = artist()
-				b, r = current_artist.get_user()
-				if not b:
-					return(b,r)
-			if not tasks:
-				b, r = current_artist.get_working_tasks(self.asset.project, statuses = self.working_statuses)
-				if not b:
-					return(b,r)
-				tasks = r
-			if self.status != 'work':
-				pass
-				# statuses
-				change_statuses = [(self, 'work'),]
-				for task_name in tasks:
-					if tasks[task_name].status == 'work':
-						change_statuses.append((tasks[task_name], 'pause',))
-			
-				result = self.change_work_statuses(change_statuses)
-				if not result[0]:
-					return(False, result[1])
-				else:
-					pass
-				
-				# readers
-				if self.readers:
-					for nik_name in self.readers:
-						if nik_name == 'first_reader':
-							continue
-						else:
-							self.readers[nik_name] = 0
-					
-					# edit db	
-					table_name = '"%s:%s"' % (self.asset.id, self.tasks_t)
-					read_ob = self.asset.project
-					update_data = {'readers': self.readers}
-					where = {'task_name': self.task_name}
-					bool_, return_data = database().update('project', read_ob, table_name, self.tasks_keys, update_data, where, table_root=self.tasks_db)
-					if not bool_:
-						return(bool_, return_data)
-			# (1.1) time log
-			self.open_time = datetime.datetime.now()
-			# start
-			if not self.start:
-				# task.start
-				b, r = self.changes_without_a_change_of_status('start', self.open_time)
-				if not b:
-					return(b, r)
-				self.start = self.open_time
-				# artist_log - start
-				log(self).artist_start_log(artist_ob=current_artist)
-		
-		# (2) ope path
-		task_ob = self
-		if input_task:
-			if input_task.extension == self.extension:
-				task_ob = input_task
-			else:
-				return(False, 'Incorrect extension of incoming task!')
-		
-		if not open_path:
-			if version:
-				#result = task_ob.get_version_file_path(version)
-				b, r = task_ob.get_version_work_file_path(version)
-				if not b:
-					return(b, r)
-				else:
-					open_path = r
-					#print('*** %s %s' % (version, open_path))
-			else:
-				#result = task_ob.get_final_file_path()
-				b, r = task_ob.get_final_work_file_path()
-				if not b:
-					return(b, r)
-				else:
-					open_path = r[0]
-			#if not result[0]:
-				#return(False, result[1])
-			#open_path = result[1]
-		
-			if not open_path:
-				'''
-				if task_ob.extension in self.NOT_USED_EXTENSIONS:
-					empty_root = os.path.dirname(__file__)
-					open_path = os.path.join(empty_root, 'empty_files', 'empty%s' % task_ob.extension)
-				else:
-					return(False, 'No found saved version!')
-				'''
-				global_empty_path = NormPath(os.path.join(os.path.dirname(__file__), self.EMPTY_FILES_DIR_NAME, 'empty%s' % task_ob.extension))
-				user_empty_path = NormPath(os.path.join(os.path.expanduser('~'), self.init_folder, self.EMPTY_FILES_DIR_NAME, 'empty%s' % task_ob.extension))
-				print('*'*5, global_empty_path, os.path.exists(global_empty_path))
-				print('*'*5, user_empty_path, os.path.exists(user_empty_path))
-				#
-				for path in [user_empty_path, global_empty_path]:
-					if not os.path.exists(path):
-						continue
-					else:
-						open_path = path
-						break
-				#
-				if not open_path:
-					return(False, 'No found saved version!')
-					
-		# get tmp_file_path
-		tmp_file_name = '%s_%s%s' % (task_ob.task_name.replace(':','_', 2), hex(random.randint(0, 1000000000)).replace('0x', ''), task_ob.extension)
-		tmp_file_path = os.path.join(self.tmp_folder, tmp_file_name)
-		# copy file to tmp
-		#print(open_path)
-		#print(tmp_file_path)
-		#return(True, 'Ok')
-		shutil.copyfile(open_path, tmp_file_path)
-		
-		# (3) open file
-		if launch:
-			soft = self.soft_data.get(task_ob.extension)
-			if not soft:
-				return(False, 'No application found for this extension "%s"' % task_ob.extension)
-			cmd = '"%s" "%s"' % (soft, tmp_file_path)
-			subprocess.Popen(cmd, shell = True)
-			
-		return(True, tmp_file_path)
-	
-	# вызов одноимённого хука
-	def _pre_push(self):
-		return(True, 'Ok!')
+    # создание пути для новой commit или pull версии файла.
+    # return - (True, (path, version)) или (False, comment)
+    def get_new_work_file_path(self):
+        pass
+        # 1 - чтение commit + pull логов
+        # 2 - новый номер версии
+        # 3 - шаблонный путь
 
-	# вызов одноимённого хука
-	def _post_push(self):
-		return(True, 'Ok!')
-	
-	# make version of push at server of studio.
-	# version (str/int) - версия которая пушится, не имеет смысла для мультипуша (sketch) там только из последней версии.
-	# return (True, message) или (False, message)
-	def push(self, description, version=False, current_artist=False):
-		pass
-		# 0 - input data
-		# 0.1 - получение путей 
-		# 1 - studio
-		# 2 - sketch
-		# 2.0 - создание директории версии
-		# 2.1 - копирование файлов
-		# 2.2 - лук версия
-		# 2.3 - запись лога
-		# 3 - не sketch
-		# 4 - аутсорс
-		# 5 - sketch
-		# 6 - не sketch
-		
-		# (0)
-		if not description:
-			return(False, 'Missing description!')
-		if not current_artist:
-			current_artist = artist()
-			b, r = current_artist.get_user()
-			if not b:
-				return(b,r)
-		# (0.1)
-		b, r = self.get_new_push_file_path(version=version, current_artist=current_artist)
-		if not b:
-			return(b, r)
-		#
-		#for k in r[0]:
-			#print('*** %s - %s' % (k, str(r[0][k])))
-		#print(r[1])
-		
-		# (1)
-		b,r_data = self._pre_push()
-		if not b:
-			return(b, r_data)
-		
-		if not current_artist.outsource:
-			# (2)
-			if self.task_type in self.multi_publish_task_types:
-				pass
-				branches = list()
-				source_versions = list()
-				new_version = r[1]
-				for branch in r[0]['source_path']:
-					pass
-					# (2.0)
-					source_path = r[0]['source_path'][branch]
-					push_path = r[0]['push_path'][branch]
-					look_path = r[0]['look_path'][branch]
-					version_dir_path = os.path.dirname(push_path)
-					#print(version_dir_path)
-					if not os.path.exists(version_dir_path):
-						os.makedirs(version_dir_path)
-					# (2.1)
-					shutil.copyfile(source_path, push_path)
-					# (2.2)
-					cmd = '%s %s %s' % (os.path.normpath(self.convert_exe), push_path, look_path)
-					cmd2 = '\"%s\" \"%s\" \"%s\"' % (os.path.normpath(self.convert_exe), push_path, look_path)
-					try:
-						os.system(cmd)
-					except Exception as e:
-						print(e)
-						try:
-							os.system(cmd2)
-						except Exception as e:
-							print(e)
-					branches.append(branch)
-					source_versions.append(r[0]['source_versions'][branch])
-				# (2.3)
-				log_data = dict()
-				log_data['branch'] = branches
-				log_data['source'] = source_versions
-				log_data['action'] = 'push'
-				log_data['description'] = description
-				log_data['version'] = r[1]
-				b, r = log(self).write_log(log_data, artist_ob=current_artist)
-				if not b:
-					return(b,r)
-			# (3)
-			else:
-				pass
-				# (3.0)
-				source_path = r[0]
-				source_version = r[1]
-				source_branch = r[2]
-				push_path = r[3]
-				new_version = r[4]
-				#return(False, 'source - %s\npush - %s' % (source_path, push_path))
-				version_dir_path = os.path.dirname(push_path)
-				if not os.path.exists(version_dir_path):
-					os.makedirs(version_dir_path)
-				# (3.1)
-				shutil.copyfile(source_path, push_path)
-				# (3.3)
-				log_data = dict()
-				log_data['branch'] = source_branch
-				log_data['source'] = source_version
-				log_data['action'] = 'push'
-				log_data['description'] = description
-				log_data['version'] = new_version
-				b, r = log(self).write_log(log_data, artist_ob=current_artist)
-				if not b:
-					return(b,r)
-				
-		# (4)
-		else:
-			# (5)
-			if self.task_type in self.multi_publish_task_types:
-				pass
-			# (6)
-			else:
-				pass
-			
-		b,r_data = self._post_push()
-		if not b:
-			return(b, r_data)
-		
-		return(True, 'Created a new Push version with number: %s' % new_version)
-	
-	# вызов одноимённого хука
-	def _pre_publish(self):
-		return(True, 'Ok!')
+        # (1)
+        b, r = log(self).read_log(action=['commit', 'pull'])
+        if not b:
+            return(b, r)
+        
+        # (2)
+        if r[0]:
+            log_list = r[0]
+            end_log = log_list[-1:][0]
+            version = int(end_log['version']) + 1
+        else:
+            b, version = self._template_version_num(0)
+            if not b:
+                return(b, version)
+        
+        # (3)
+        b, r = self._template_get_work_path(self, version=version)
+        if not b:
+            return(b, r)
+        else:
+            return(True, (r, version))
+        
+    # Push пути
+            
+    # путь к последней существующей пуш версии на локальном сервере.
+    # current_artist (artist) - текущий пользователь, если не передавать, будет сделано get_user
+    # return для sketch - (True, ({словарь - ключи: типы путей "look_path" или "push_path": значение словарь - пути по веткам}, version)) для остальных - (True, (path, version)) - или (false, comment)
+    def get_final_push_file_path(self, current_artist=False):
+        pass
+        # 0 - current_artist
+        # 1 - игнор аутсорс
+        # 2 - чтение пуш лога
+        # 3 - получение путей
+                
+        # (0) artist
+        if not current_artist:
+            current_artist = artist()
+            b, r = current_artist.get_user()
+            if not b:
+                return(b,r)
+        
+        # (1)
+        if current_artist.outsource:
+            return(False, 'This function is not available on outsourcing!')
+        
+        # (2)
+        b, r = log(self).read_log(action='push')
+        if not b:
+            return(b, r)
+        log_list = r[0]
+        if log_list:
+            end_log = log_list[-1:][0]
+        else:
+            return(False, 'Push versions not found!')
+        
+        # (3)
+        if end_log:
+            version = end_log['version']
+            if self.task_type in self.multi_publish_task_types:
+                pass
+                r_data = dict()
+                # -- push path
+                b, r_push = self._template_get_push_path(self, version=version, branches=end_log['branch'], look=False)
+                if not b:
+                    return(b,r_push)
+                # -- look path
+                b, r_look = self._template_get_push_path(self, version=version, branches=end_log['branch'], look=True)
+                if not b:
+                    return(b,r_look)
+                #
+                r_data['push_path'] = r_push
+                if self.task_type == 'sketch':
+                    r_data['look_path'] = r_look
+                else:
+                    r_data['look_path'] = r_push
+                '''
+                for branch in end_log['branch']:
+                    branch_dict = dict()
+                    branch_dict['push_path'] = r_push[branch]
+                    if self.task_type == 'sketch':
+                        branch_dict['look_path'] = r_look[branch]
+                    else:
+                        branch_dict['look_path'] = r_push[branch]
+                    r_data[branch] = branch_dict
+                '''
+            else:
+                b, r = self._template_get_push_path(self, version=version)
+                if not b:
+                    return(b,r)
+                r_data = r
+        else:
+            return(False, 'Push version missing!')
+        
+        return(True, (r_data, version))
+        
+    # путь к указанной пуш версии на локальном сервере.
+    # version (int / str) - номер версии
+    # current_artist (artist) - текущий пользователь, если не передавать, будет сделано get_user
+    # return для sketch - (True, {словарь - ключи: типы путей "look_path" или "push_path": значение словарь - пути по веткам}) для остальных - (True, path) - или (false, comment)
+    def get_version_push_file_path(self, version, current_artist=False):
+        pass
+        # 0 - current_artist
+        # 1 - игнор аутсорс
+        # 2 - получение push лога этой версии
+        # 3 - получение путей
+        
+        # (0) artist
+        if not current_artist:
+            current_artist = artist()
+            b, r = current_artist.get_user()
+            if not b:
+                return(b,r)
+        
+        # (1)
+        if current_artist.outsource:
+            return(False, 'This function is not available on outsourcing!')
+        
+        # (2)
+        b, r = log(self).read_log(action='push')
+        if not b:
+            return(b, r)
+        version_log = False
+        for item in r[0]: # r[0] - это лог лист
+            if int(item['version']) == int(version):
+                version_log = item
+        if not version_log:
+            return(False, 'The push log of this version "%s" was not found' % version)
+        
+        # (3)
+        if self.task_type in self.multi_publish_task_types:
+            pass
+            r_data = dict()
+            # -- push path
+            b, r_push = self._template_get_push_path(self, version=version, branches=version_log['branch'], look=False)
+            if not b:
+                return(b,r_push)
+            # -- look path
+            b, r_look = self._template_get_push_path(self, version=version, branches=version_log['branch'], look=True)
+            if not b:
+                return(b,r_look)
+            #
+            r_data['push_path'] = r_push
+            if self.task_type in self.multi_publish_task_types:
+                r_data['look_path'] = r_look
+            else:
+                r_data['look_path'] = r_push
+            '''
+            for branch in version_log['branch']:
+                branch_dict = dict()
+                branch_dict['push_path'] = r_push[branch]
+                if self.task_type == 'sketch':
+                    branch_dict['look_path'] = r_look[branch]
+                else:
+                    branch_dict['look_path'] = r_push[branch]
+                r_data[branch] = branch_dict
+            '''
+        else:
+            b, r = self._template_get_push_path(self, version=version)
+            if not b:
+                return(b,r)
+            r_data = r
+        
+        return(True, r_data)
 
-	# вызов одноимённого хука
-	def _post_publish(self):
-		return(True, 'Ok!')
-	
-	# паблиш: перекладывание файлов, запись лога.
-	# description (str) - не обязательный параметр, при отсутствии составляется автоматически - техническое описание: что, откуда, куда.
-	# source_version (int, str) - версия push или publish при репаблише, если False при паблише - то паблиш из последней пуш версии.
-	# source_log (bool / dict) - лог версии источника, при его наличии source_version не имеет смысла.
-	# current_artist (artist) - если не передавать, то будет выполняться get_user() - лишнее обращение к БД.
-	def publish_task(self, description=False, republish=False, source_version=False, source_log=False, current_artist=False):
-		pass
-		# 0 - input data
-		# 1 - получение путей
-		# 1.1 - сосотавление description
-		# 2 - pre_publish
-		# 3 - publish
-		# 3.1 - удаление прошлой top версии
-		# 3.2 - копирование файлов
-		# 3,3 - запись лога
-		# 4 - post_publish
-		
-		# (0)
-		# (0.1)
-		if not current_artist:
-			current_artist = artist()
-			b, r = current_artist.get_user()
-			if not b:
-				return(b,r)
-		# (0.2)
-		if current_artist.outsource:
-			return(False, 'This procedure is not performed on outsourcing!')
-		
-		# (1)
-		b, r = self.get_new_publish_file_path(republish=republish, source_version=source_version, source_log=source_log)
-		if not b:
-			return(b, r)
-		
-		#for i in r:
-			#print(i)
-			
-		# (1.1)
-		if not description:
-			if republish:
-				description = 'republish from %s' % str(r[2])
-			else:
-				description = 'publish from %s' % str(r[2])
-		
-		print(description)
-		
-		# --
-		pass
-		
-		# (2)
-		b, r_data = self._pre_publish()
-		if not b:
-			return(b, r_data)
-		
-		# (3)
-		# (3.1)
-		pass
-		if self.task_type in self.multi_publish_task_types:
-			publish_dir = os.path.dirname(r[0]['top_path'][r[0]['top_path'].keys()[0]])
-		else:
-			publish_dir = os.path.dirname(r[0]['top_path'])
-		#
-		if os.path.exists(publish_dir):
-			for name in os.listdir(publish_dir):
-				path_file = os.path.join(publish_dir, name)
-				if os.path.isfile(path_file):
-					os.remove(path_file)
-		
-		# (3.2)
-		# -- mk dir
-		if self.task_type in self.multi_publish_task_types:
-			version_dir = os.path.dirname(r[0]['version_path'][r[0]['version_path'].keys()[0]])
-		else:
-			version_dir = os.path.dirname(r[0]['version_path'])
-		if not os.path.exists(version_dir):
-			os.makedirs(version_dir)
-		# -- copy files
-		if self.task_type in self.multi_publish_task_types:
-			for branch in r[0]['source_path']:
-				shutil.copyfile(r[0]['source_path'][branch], r[0]['top_path'][branch])
-				shutil.copyfile(r[0]['source_path'][branch], r[0]['version_path'][branch])
-				shutil.copyfile(r[0]['source_look_path'][branch], r[0]['top_look_path'][branch])
-				shutil.copyfile(r[0]['source_look_path'][branch], r[0]['version_look_path'][branch])
-		else:
-			#print(r[0])
-			#return(0,'epte!')
-			shutil.copyfile(r[0]['source_path'], r[0]['top_path'])
-			shutil.copyfile(r[0]['source_path'], r[0]['version_path'])
-			
-		# (3.3)
-		# -- write log
-		new_log_keys = dict()
-		new_log_keys['action'] = 'publish'
-		new_log_keys['version'] = r[1]
-		new_log_keys['description']=description
-		if self.task_type in self.multi_publish_task_types:
-			new_log_keys['branch']=r[3]
-		new_log_keys['source']=r[2]
-		#print(new_log_keys)
-		
-		b, r_data = log(self).write_log(new_log_keys, artist_ob=current_artist)
-		if not b:
-			return(b, r_data)
-		
-		# (4)
-		b, r_data = self._post_publish()
-		if not b:
-			return(b, r_data)
-		
-		return(True, 'Created a new Publish version with number: %s' % r[1])
-		
-	# локальная запись новой рабочей версии файла
-	# description (str) - комментарий к версии
-	# current_file (unicode/str) - текущее местоположение рабочего файла (как правило в темп)
-	# current_artist (artist) - если не передавать, то будет выполняться get_user() - лишнее обращение к БД.
-	# return(True, new_file_path) или (False, comment)
-	def push_file(self, description, current_file, current_artist=False):
-		pass
-		
-		# (1) test data
-		if not current_artist:
-			current_artist = artist()
-			b, r = current_artist.get_user()
-			if not b:
-				return(b,r)
-		# -- 
-		if not os.path.exists(current_file):
-			return(False, 'Current file not found: %s' % current_file)
-		
-		#return(False, current_file)
-	
-		# (2) COPY to ACtTIVITY
-		result = self.get_new_file_path()
-		if not result[0]:
-			return(False, result[1])
-		
-		new_dir_path, new_file_path = result[1]
-		
-		# -- make version folder
-		if not os.path.exists(new_dir_path):
-			os.mkdir(new_dir_path)
-		
-		# copy file
-		shutil.copyfile(current_file, new_file_path)
-		
-		#print('#'*25, new_file_path)
-		
-		# (3) ****** LOG
-		logs_keys = {
-		'action': 'push',
-		'description': description,
-		'version': os.path.basename(new_dir_path),
-		}
-		
-		#print(logs_keys, current_artist.nik_name)
-		
-		result = log(self).write_log(logs_keys, current_artist)
-		if not result[0]:
-			return(False, result[1])
-		
-		#print('%'*25)
-		
-		return(True, new_file_path)
-		
-	
-	# **************************** CACHE  ( file path ) ****************************
-	# ob_name (str) - имя 3d объекта
-	# activity (str) - по умолчанию cache (для blender) - для других программ может быть другим, например "maya_cache"
-	# extension (str) - расширение файла кеша.
-	# task_data (dict) - изменяемая задача, если False - значит предполагается, что task инициализирован.
-	def get_versions_list_of_cache_by_object(self, ob_name, activity = 'cache', extension = '.pc2', task_data=False): # v2 *** без тестов
-		pass
-		# 1 - получение task_data
-		# (1)
-		if not task_data:
-			task_data={}
-			for key in self.tasks_keys:
-				exec('task_data["%s"] = self.%s' % (key, key))
-		
-		asset_path = task_data['asset_path']
-		
-		folder_name = activity
-		activity_path = NormPath(os.path.join(asset_path, folder_name))
-		activity_path = NormPath(activity_path)
-		cache_dir_path = NormPath(os.path.join(asset_path, folder_name, ob_name))
-		
-		if not os.path.exists(cache_dir_path):
-			return(False, 'No Found Cache Directory!')
-			
-		# - get folders list
-		folders_16 = os.listdir(cache_dir_path)
-		dec_nums = []
-		tech_anim_cache_versions_list = []
-		
-		if not folders_16:
-			return(False, 'No Found Cache Versions!')
-			
-		for num in folders_16:
-			dec_nums.append(int(num, 16))
-			
-		dec_nums.sort()
-		
-		for i in dec_nums:
-			number = None
-			for num in folders_16:
-				if i == int(num, 16):
-					number = num
-					break
-			path = os.path.join(cache_dir_path, number, (ob_name + extension))
-			path = NormPath(path)
-			if number:
-				if os.path.exists(path):
-					tech_anim_cache_versions_list.append((str(i), ob_name, path))
-				else:
-					continue
-				
-		if tech_anim_cache_versions_list:
-			return(True, tech_anim_cache_versions_list)
-		else:
-			return(False, 'No Found Cache Versions! *')
-		
-	# cache_dir_name (str) - "asset_name + '_' + ob_name"
-	# activity (str) - по умолчанию cache (для blender) - для других программ может быть другим, например "maya_cache"
-	# extension (str) - расширение файла кеша.
-	# task_data (dict) - изменяемая задача, если False - значит предполагается, что task инициализирован.
-	def get_final_cache_file_path(self, cache_dir_name, activity = 'cache', extension = '.pc2', task_data=False): # v2 *** без тестов
-		pass
-		# 1 - получение task_data
-		# (1)
-		if not task_data:
-			task_data={}
-			for key in self.tasks_keys:
-				exec('task_data["%s"] = self.%s' % (key, key))
-		
-		asset_path = task_data['asset_path']
-		
-		folder_name = activity
-		activity_path = NormPath(os.path.join(asset_path, folder_name))
-		activity_path = NormPath(activity_path)
-		cache_dir_path = NormPath(os.path.join(asset_path, folder_name, cache_dir_name))
-		cache_dir_path = NormPath(cache_dir_path)
-		
-		#print(cache_dir_path)
-		
-		if not os.path.exists(activity_path):
-			os.mkdir(activity_path)
-		if not os.path.exists(cache_dir_path):
-			os.mkdir(cache_dir_path)
-		
-		# - get folder list
-		folders_16 = os.listdir(cache_dir_path)
-		folders = []
-		
-		if len(folders_16)==0:
-			return(False, 'No Found Chache! *1')
-		
-		# - 16 to 10
-		for obj_ in folders_16:
-			folders.append(int(obj_, 16))
-		
-		i = max(folders)
-		while i > -1:
-			hex_ = hex(i).replace('0x', '')
-			num = 4 - len(hex_)
-			hex_num = '0'*num + hex_
-			
-			final_file = NormPath(os.path.join(cache_dir_path, hex_num, (cache_dir_name + extension)))
-			if os.path.exists(final_file):
-				return(True, final_file)
-			i = i-1
-		
-		return(False, 'No Found Chache! *2')
-		
-	# cache_dir_name (str) - "asset_name + '_' + ob_name"
-	# activity (str) - по умолчанию cache (для blender) - для других программ может быть другим, например "maya_cache"
-	# extension (str) - расширение файла кеша.
-	# task_data (dict) - изменяемая задача, если False - значит предполагается, что task инициализирован.
-	def get_new_cache_file_path(self, cache_dir_name, activity = 'cache', extension = '.pc2', task_data=False): # v2 *** без тестов
-		pass
-		# 1 - получение task_data
-		# (1)
-		if not task_data:
-			task_data={}
-			for key in self.tasks_keys:
-				exec('task_data["%s"] = self.%s' % (key, key))
-		
-		# get final file
-		result = self.get_final_cache_file_path(cache_dir_name, activity = activity, extension = extension, task_data=task_data)
-		#final_file = None
-		if not result[0]:
-			if result[1] == 'No Found Chache! *1' or result[1] == 'No Found Chache! *2':
-				final_file = None
-			else:
-				return(False, result[1])
-		else:
-			final_file = result[1]
-		asset_path = task_data['asset_path']
-		
-		# get activity path
-		folder_name = activity
-		activity_path = NormPath(os.path.join(asset_path, folder_name, cache_dir_name))
-		
-		# make activity folder
-		if not os.path.exists(activity_path):
-			os.mkdir(activity_path)
-		
-		if final_file == None:
-			new_dir_path = NormPath(os.path.join(activity_path, '0000'))
-			new_file_path = NormPath(os.path.join(new_dir_path, (cache_dir_name + extension)))
-			
-		else:
-			ff_split = final_file.replace('\\','/').split('/')
-			new_num_dec = int(ff_split[len(ff_split) - 2], 16) + 1
-			new_num_hex = hex(new_num_dec).replace('0x', '')
-			if len(new_num_hex)<4:
-				for i in range(0, (4 - len(new_num_hex))):
-					new_num_hex = '0' + new_num_hex
-			
-			new_dir_path = NormPath(os.path.join(activity_path, new_num_hex))
-			new_file_path = NormPath(os.path.join(new_dir_path, (cache_dir_name + extension)))
-		
-		
-		# make version dir
-		if not os.path.exists(new_dir_path):
-			os.mkdir(new_dir_path)
-		
-				 
-		return(True, (new_dir_path, new_file_path))
-		
-	# version (str) - hex 4 символа
-	# cache_dir_name (str) - "asset_name + '_' + ob_name"
-	# activity (str) - по умолчанию cache (для blender) - для других программ может быть другим, например "maya_cache"
-	# extension (str) - расширение файла кеша.
-	# task_data (dict) - изменяемая задача, если False - значит предполагается, что task инициализирован.
-	def get_version_cache_file_path(self, version, cache_dir_name, activity = 'cache', extension = '.pc2', task_data=False): # v2 *** без тестов
-		pass
-		# 1 - получение task_data
-		# (1)
-		if not task_data:
-			task_data={}
-			for key in self.tasks_keys:
-				exec('task_data["%s"] = self.%s' % (key, key))
-		
-		asset_path = task_data['asset_path']
-		
-		folder_name = activity
-		activity_path = NormPath(os.path.join(asset_path, folder_name, cache_dir_name))
-		
-		version_file = NormPath(os.path.join(activity_path, version, (cache_dir_name + extension)))
-		
-		if os.path.exists(version_file):
-			return(True, version_file)
-		else:
-			return(False, 'Not Exists File!')
-		
-	# ************************ CHANGE STATUS ******************************** end
-		
-	def add_task(self, project_name, task_key_data): # не обнаружено использование
-		pass
-		# other errors test
-		result = self.get_project(project_name)
-		if not result[0]:
-			return(False, result[1])
-			
-		# test exists ASSET  self.assets_list
-		asset_name = task_key_data['asset']
-		if not asset_name in self.assets_list:
-			# self.print_log('')
-			return False, 'not_asset'
-			
-		# test required parameters
-		for i in range(0, 3):
-			try:
-				data = task_key_data[self.tasks_keys[i][0]]
-			except:
-				return False, 'required'
-		#########		
-		# get Autsource status
-		# -- get artist
-		outsource = None
-		artist_name = task_key_data['artist']
-		if artist_name:
-			artist_data = artist().read_artist({'nik_name':artist_name})
-			if artist_data[0]:
-				if artist_data[1][0]['outsource'] == '1':
-					outsource = True
-		#########
-				
-		# set STATUS
-		try:
-			if task_key_data['input'] == '':
-				######
-				if outsource:
-					task_key_data['status'] = "ready_to_send"
-				else:
-					task_key_data['status'] = "ready"
-				######
-			else:
-				input_task_data = self._read_task(project_name, task_key_data['input'], ('status',))
-				if input_task_data[0]:
-					if input_task_data[1]['status'] == 'done':
-						######
-						if outsource:
-							task_key_data['status'] = "ready_to_send"
-						else:
-							task_key_data['status'] = "ready"
-						######
-					else:
-						task_key_data['status'] = "null"
-				else:
-					#'not_task_name'
-					task_key_data['status'] = "null"
-		except:
-			######
-			if outsource:
-				task_key_data['status'] = "ready_to_send"
-			else:
-				task_key_data['status'] = "ready"
-			######
-				
-		#
-		table = '\"' + asset_name + ':' + self.tasks_t + '\"'
-		string = "insert into " + table + " values"
-		values = '('
-		data = []
-		for i, key in enumerate(self.tasks_keys):
-			if i< (len(self.tasks_keys) - 1):
-				values = values + '?, '
-			else:
-				values = values + '?'
-			if key[0] in task_key_data:
-				data.append(task_key_data[key[0]])
-			else:
-				if key[1] == 'real':
-					data.append(0.0)
-				elif key[1] == 'timestamp':
-					data.append(None)
-				else:
-					data.append('')
-					
-		values = values + ')'
-		data = tuple(data)
-		string = string + values
-		
-		# write task to db
-		conn = sqlite3.connect(self.tasks_path, detect_types=sqlite3.PARSE_DECLTYPES|sqlite3.PARSE_COLNAMES)
-		conn.row_factory = sqlite3.Row
-		c = conn.cursor()
-		
-		# exists table
-		try:
-			str_ = 'select * from ' + table
-			c.execute(str_)
-			# unicum task_name test
-			r = c.fetchall()
-			for row in r:
-				if row['task_name'] == task_key_data['task_name']:
-					conn.close()
-					return False, 'overlap'
-		except:
-			string2 = "CREATE TABLE " + table + " ("
-			for i,key in enumerate(self.tasks_keys):
-				if i == 0:
-					string2 = string2 + key[0] + ' ' + key[1]
-				else:
-					string2 = string2 + ', ' + key[0] + ' ' + key[1]
-			string2 = string2 + ')'
-			#print(string2)
-			c.execute(string2)
-		
-		# add task
-		c.execute(string, data)
-		conn.commit()
-		conn.close()
-		return True, 'ok'
-	
-	def edit_task(self, project_name, task_key_data): # не обнаружено использование
-		pass
-		# other errors test
-		result = self.get_project(project_name)
-		if not result[0]:
-			return(False, result[1])
-			
-		# test exists ASSET  asset
-		asset_name = task_key_data['task_name'].split(':')[0]
-		if not asset_name in self.assets_list:
-			# self.print_log('')
-			return False, 'not_asset'
-		
-		# test task_name
-		try:
-			task_name = (task_key_data['task_name'],)
-		except:
-			return False, 'not task_name'
-			
-		######     ==  COONNECT DATA BASE
-		conn = sqlite3.connect(self.tasks_path, detect_types=sqlite3.PARSE_DECLTYPES|sqlite3.PARSE_COLNAMES)
-		conn.row_factory = sqlite3.Row
-		c = conn.cursor()
-		table = '\"' + asset_name + ':' + self.tasks_t + '\"'
-			
-		######     == get current data
-		command =  'SELECT * FROM ' + table + ' WHERE task_name = ?'
-		c.execute(command, task_name)
-		current_task_data = c.fetchone()
-		#print('***** current name: ', current_task_data['artist'], 'new name:', task_key_data['artist'])
-		
-		#conn.close()
-		#return
-		######
-			
-		#########	 == get Autsource Status	
-		# -- get artist
-		outsource = None
-		artist_name = None
-		try:
-			artist_name = task_key_data['artist']
-		except:
-			artist_name = current_task_data['artist']
-		if artist_name:
-			artist_data = artist().read_artist({'nik_name':artist_name})
-			if artist_data[0]:
-				if artist_data[1][0]['outsource'] == 1:
-					outsource = True
-		#########
-		
-		#########   == get Input Status
-		input_status = None
-		input_task_name = ''
-		try:
-			input_task_name = task_key_data['input']
-		except:
-			input_task_name = current_task_data['input']
-		input_task_data = self._read_task(project_name, input_task_name, ['status'])
-		if input_task_data[0]:
-			input_status = input_task_data[1]['status']
-		elif not input_task_data[0] and input_task_data[1] == 'not_task_name':
-			input_status = 'done'
-			
-		
-		######### self.working_statuses self.end_statuses
-		
-		# CHANGE STATUS
-		try:
-			task_key_data['status']
-		except:
-			pass
-		else:
-			if not (input_status in self.end_statuses):
-				task_key_data['status'] = "null"
-			elif task_key_data['status'] == "ready" and outsource:
-				task_key_data['status'] = "ready_to_send"
-			elif task_key_data['status'] == "work" and outsource:
-				task_key_data['status'] = "work_to_outsorce"
-			elif task_key_data['status'] == "work_to_outsorce" and not outsource:
-				task_key_data['status'] = "work"
-			elif task_key_data['status'] == "null" and (input_status in self.end_statuses) and outsource:
-				task_key_data['status'] = "ready_to_send"
-			elif task_key_data['status'] == "null" and (input_status in self.end_statuses) and (not outsource):
-				task_key_data['status'] = "ready"
-			# SET OUTPUT STATUS
-			elif task_key_data['status'] in self.end_statuses:
-				#print('w'*25, task_key_data['status'])
-				self.edit_status_to_output(project_name, task_key_data['task_name'])
-			
-			if (current_task_data['status'] in self.end_statuses) and (task_key_data['status'] not in self.end_statuses):
-				self.edit_status_to_output(project_name, task_key_data['task_name'], new_status = task_key_data['status'])
-			
-		# write task to db
-		'''
-		conn = sqlite3.connect(self.tasks_path, detect_types=sqlite3.PARSE_DECLTYPES|sqlite3.PARSE_COLNAMES)
-		c = conn.cursor()
-		table = '\"' + asset_name + ':' + self.tasks_t + '\"'
-		'''
-		# edit db
-		data_from_input_task = (False,)
-		string = 'UPDATE ' +  table + ' SET '
-		for key in task_key_data:
-			if not key == 'task_name' or key == 'asset' or key == 'sctivity':
-				if key == 'price':
-					string = string + ' ' + key + ' = ' + str(task_key_data[key]) + ','
-				else:
-					if task_key_data[key] == None:
-						string = string + ' ' + key + ' = null,'
-					else:
-						string = string + ' ' + key + ' = \"' + task_key_data[key] + '\",'
-				'''
-				elif key == 'status' and task_key_data['status'] == 'done':
-					######
-					continue
-					self.edit_status_to_output(project_name, task_key_data['task_name'])
-					string = string + ' ' + key + ' = \"' + task_key_data[key] + '\",'
-				elif key == 'input':
-					######
-					continue
-					data_from_input_task = self._read_task(project_name, task_key_data['input'], ('status',))
-					string = string + ' ' + key + ' = \"' + task_key_data[key] + '\",'
-				
-				else:
-					if task_key_data[key] == None:
-						string = string + ' ' + key + ' = null,'
-					else:
-						string = string + ' ' + key + ' = \"' + task_key_data[key] + '\",'
-				'''		
-		######   == exchange key 'status'	from exchange input task
-		'''
-		if data_from_input_task[0]:
-			if (data_from_input_task[1]['status'] == 'done') and (this_status == 'null'):
-				string = string + ' status = \"ready\",'
-			elif data_from_input_task[1]['status'] != 'done':
-				string = string + ' status = \"null\",'
-		'''
-		######
-		
-		# -- >>
-		string = string + ' WHERE task_name = \"' + task_key_data['task_name'] + '\"'
-		string = string.replace(', WHERE', ' WHERE')
-		#print(string)
-		
-		c.execute(string)
-		conn.commit()
-		conn.close()
-		
-		return(True, 'ok')
-	
-	def edit_status_to_output(self, project_name, task_name, new_status = None): # не обнаружено использование
-		asset_name = task_name.split(':')[0]
-		table = '\"' + asset_name + ':' + self.tasks_t + '\"'
-		data = (task_name,)
-		string = 'SELECT * FROM ' + table + ' WHERE input = ?'
-		
-		try:
-			conn = sqlite3.connect(self.tasks_path, detect_types=sqlite3.PARSE_DECLTYPES|sqlite3.PARSE_COLNAMES)
-		except:
-			return(False, 'studio.project.asset.task.edit_status_to_output() -> the database can not be read!')
-				
-		conn.row_factory = sqlite3.Row
-		c = conn.cursor()
-		
-		c.execute(string, data)
-		rows = c.fetchall()
-		
-		for row in rows:
-			#print row['task_name']
-			# get artist_status
-			'''
-			if int(artist().read_artist({'nik_name':row['artist']})[1][0]['outsource']):
-				print '###########################################', row['artist']
-			'''
-			if not new_status:
-				if row['status'] == 'null':
-					if artist().read_artist({'nik_name':row['artist']})[1][0]['outsource'] == 1:
-						string2 = 'UPDATE ' +  table + ' SET status = \"ready_to_send\" WHERE task_name = \"' + row['task_name'] + '\"'
-					else:	
-						string2 = 'UPDATE ' +  table + ' SET status = \"ready\" WHERE task_name = \"' + row['task_name'] + '\"'
-					c.execute(string2)
-			elif new_status not in self.end_statuses and row['status'] != 'close':
-				string2 = 'UPDATE ' +  table + ' SET status = \"null\" WHERE task_name = \"' + row['task_name'] + '\"'
-				c.execute(string2)
-			
-		conn.commit()
-		conn.close()
-		
-		return True, 'ok'
-	'''
-	def _read_task(self, project_name, task_name, keys):
-		if keys == 'all':
-			new_keys = []
-			for key in self.tasks_keys:
-				new_keys.append(key[0])
-			keys = new_keys
-			
-		# other errors test
-		result = self.get_project(project_name)
-		if not result[0]:
-			return(False, result[1])
-		
-		# read tasks
-		conn = sqlite3.connect(self.tasks_path, detect_types=sqlite3.PARSE_DECLTYPES|sqlite3.PARSE_COLNAMES)
-		conn.row_factory = sqlite3.Row
-		c = conn.cursor()
-		
-		asset_name = task_name.split(':')[0]
-		table = '\"' + asset_name + ':' + self.tasks_t + '\"'
-		string = 'select * from ' + table + ' WHERE task_name = \"' + task_name + '\"'
-		
-		try:
-			c.execute(string)
-			row = c.fetchone()
-		except:
-			conn.close()
-			#return(False, ('can_not_read_asset', string))
-			return(False, string)
-		conn.close()
-		
-		if not row:
-			return(False, 'not_task_name')
-				
-		data = {}
-		for key in keys:
-			data[key] = row[key]
-			
-		return(True, data)
-	'''
-		
-	'''	
-	def change_status_by_open_task(self, project_name, task_name, artist):
-		self.edit_task(self, project_name, {'task_name': task_name, 'status': 'work'})
-	'''
-	
-	
-	# **************** Task NEW  METODS ******************
-	
-	# объект asset, передаваемый в task должен быть инициализирован.
-	# list_of_tasks (list) - список задачь (словари по tasks_keys, обязательные параметры: task_name).
-	def create_tasks_from_list(self, list_of_tasks): #v2
-		asset_name = self.asset.name #asset_data['name']
-		asset_id = self.asset.id #asset_data['id']
-		#asset_path = self.asset.path #asset_data['path']
-		
-		# 1-создаём таблицу если нет
-		# 2-читаем список имён существующих задач в exists_tasks
-		# 3-пробегаем по списку list_of_tasks - если есть имена из exists_tasks - записываем их в conflicting_names
-		# --3.1 если conflicting_names не пустой - то (return False, 'Matching names, look at the terminal!'); print(conflicting_names)
-		# --3.2 если task_name или activity вообще остутсвуют - ошибка
-		# 4-создаём задачи
-		# --4.1 заполняем недостающие поля: outsource=0, priority
-		# --4.2 запись базы данных.
-		
-		table_name = '"%s:%s"' % ( asset_id, self.tasks_t)
-		# 1
-		bool_, return_data = database().create_table('project', self.asset.project, table_name, self.tasks_keys, table_root = self.tasks_db)
-		if not bool_:
-			return(bool_, return_data)
-		# 2
-		exists_tasks = []
-		bool_, return_data = database().read('project', self.asset.project, table_name, self.tasks_keys, table_root=self.tasks_db)
-		if not bool_:
-			return(bool_, return_data)
-		for task_ in return_data:
-			exists_tasks.append(task_['task_name'])
-		# 3
-		conflicting_names = []
-		for task_ in list_of_tasks:
-			if task_.get('task_name') in exists_tasks:
-				conflicting_names.append(task_['task_name'])
-			# 3.2
-			elif not task_.get('task_name'):
-				print('#'*5, task_)
-				return(False, 'in create_tasks_from_list() \n The task does not specify the "name"! Look the terminal')
-			elif not task_.get('activity') and task_.get('task_type') != 'service':
-				print('#'*5, task_)
-				return(False, 'in create_tasks_from_list() \n The task does not specify the "activity"! Look the terminal')
-		# 3.1
-		if conflicting_names:
-			print('#'*5, 'in create_tasks_from_list()')
-			print('#'*5, 'Matching names: ', conflicting_names)
-			return(False, 'in create_tasks_from_list() \n Matching names found! Look the terminal')
-		
-		# 4
-		for task_keys in list_of_tasks:
-			# 4.1
-			if not task_keys.get('priority'):
-				if not self.asset.priority:
-					task_keys['priority'] = 0
-				else:
-					task_keys['priority'] = self.asset.priority
-			task_keys['outsource'] = 0
-			# 4.2
-			bool_, return_data = database().insert('project', self.asset.project, table_name, self.tasks_keys, task_keys, table_root=self.tasks_db)
-			if not bool_:
-				return(bool_, return_data)
-		'''
-		# Other errors test
-		result = self.get_project(project_name)
-		if not result[0]:
-			return(False, result[1])
-			
-		# Connect to db
-		conn = sqlite3.connect(self.tasks_path, detect_types=sqlite3.PARSE_DECLTYPES|sqlite3.PARSE_COLNAMES)
-		conn.row_factory = sqlite3.Row
-		c = conn.cursor()
-		
-		# Exists table
-		table = '\"' + asset_id + ':' + self.tasks_t + '\"'
-		try:
-			str_ = 'select * from ' + table
-			c.execute(str_)
-			
-		except:
-			string2 = "CREATE TABLE " + table + " ("
-			for i,key in enumerate(self.tasks_keys):
-				if i == 0:
-					string2 = string2 + key[0] + ' ' + key[1]
-				else:
-					string2 = string2 + ', ' + key[0] + ' ' + key[1]
-			string2 = string2 + ')'
-			#print(string2)
-			c.execute(string2)
-			
-		# Get exists_tasks
-		exists_tasks = []
-		str_ = 'select * from ' + table
-		c.execute(str_)
-		for row in c.fetchall():
-			exists_tasks.append(row['task_name'])
-		
-		# Crete Tasks
-		for task_keys in list_of_tasks:
-			# ***************** tests *************
-			try:
-				if not task_keys['asset']:
-					task_keys['asset'] = asset_name
-				if not task_keys['asset_id']:
-					task_keys['asset_id'] = asset_id
-				if not task_keys['asset_path']:
-					task_keys['asset_path'] = asset_path
-			except:
-				task_keys['asset'] = asset_name
-				task_keys['asset_id'] = asset_id
-				task_keys['asset_path'] = asset_path
-				
-			# task autsource
-			task_keys['outsource'] = '0'
-				
-			# test task['Task_Name']
-			try:
-				if not task_keys['task_name']:
-					conn.close()
-					return(False, 'Not Task_Name!')
-				else:
-					if task_keys['task_name'] in exists_tasks:
-						conn.close()
-						return(False, (task_keys['task_name'] + ' already exists!'))
-			except:
-				conn.close()
-				return(False, 'Not Task_Name!')
-				
-			# test task['Activity']
-			if task_keys['task_type'] != 'service':
-				try:
-					if not task_keys['activity']:
-						conn.close()
-						return(False, 'activity!')
-				except:
-					conn.close()
-					return(False, 'activity!')
-			
-			# ***************** tests end *************
-			
-			#
-			string = "insert into " + table + " values"
-			values = '('
-			data = []
-			for i, key in enumerate(self.tasks_keys):
-				if i< (len(self.tasks_keys) - 1):
-					values = values + '?, '
-				else:
-					values = values + '?'
-				if key[0] in task_keys:
-					data.append(task_keys[key[0]])
-				else:
-					if key[1] == 'real':
-						data.append(0.0)
-					elif key[1] == 'timestamp':
-						data.append(None)
-					else:
-						data.append('')
-						
-			values = values + ')'
-			data = tuple(data)
-			string = string + values
-			
-			# add task
-			c.execute(string, data)
-			
-		conn.commit()
-		conn.close()
-		'''
-		return(True, 'ok')
-	
-	# объект asset, передаваемый в task должен быть инициализирован.
-	# обязательные поля в task_data: activity, task_name, task_type, extension
-	def add_single_task(self, task_data): # asset_id=False # v2
-		pass
-		# 0 - проверка обязательных полей.
-		# 1 - проверка уникальности имени.
-		# 2 - назначение данных из ассета.
-		# 3 - создание задачи. insert
-		# 4 - внесение данной задачи в список output входящей задачи. change_input()
-		# 5 - внесение данной задачи в список input исходящей задачи. change_input()
-		
-		# (0) required fields
-		for field in ['activity','task_name','task_type', 'extension']:
-			if not task_data.get('%s' % field):
-				return(False, 'Not specified the "%s"!' % field)
-			
-		# (1)
-		for td in self.get_list()[1]:
-			if td.task_name == task_data['task_name']:
-				return(False, 'Task with this name: "%s" already exists!' % task_data['task_name'])
-			
-		# (2)
-		# -- priority
-		if not task_data.get('priority'):
-			task_data['priority'] = self.asset.priority
-		# -- output
-		output_task_name = False
-		if task_data.get('output'):
-			output_task_name = task_data.get('output')[0]
-			task_data['output'].append('%s:final' % self.asset.name)
-		else:
-			task_data['output'] = ['%s:final' % self.asset.name]
-		# -- input
-		input_task_name = False
-		if task_data.get('input'):
-			input_task_name = task_data.get('input')
-			#task_data['input']= ''
-		else:
-			task_data['input'] = ''
-		#
-		#other_fields = [
-			#'artist',
-			#'planned_time',
-			#'time',
-			#'supervisor',
-			#'price',
-			#'specification',
-			#]
-		#
-		task_data['status'] = 'ready'
-		task_data['outsource'] = 0
-		task_data['season'] = self.asset.season
-		#task_data['asset_name'] = self.asset.name
-		#task_data['asset_id'] = self.asset.id
-		#task_data['asset_type'] = self.asset.type
-		
-		# (3)
-		table_name = '"%s:%s"' % ( self.asset.id, self.tasks_t)
-		bool_, return_data = database().insert('project', self.asset.project, table_name, self.tasks_keys, task_data, table_root=self.tasks_db)
-		if not bool_:
-			return(bool_, return_data)
-		
-		new_task = self.init_by_keys(task_data, new=True)
-		
-		# (4)
-		if input_task_name:
-			bool_, return_data = new_task.change_input(input_task_name)
-			if not bool_:
-				return(bool_, return_data)
-		
-		# (5)
-		if output_task_name:
-			output_task = self.init(output_task_name)
-			
-			# --
-			bool_, return_data = output_task.change_input(new_task.task_name)
-			if not bool_:
-				return(bool_, return_data)
-		
-		'''
-		# get table
-		table = '\"' + task_data['asset_id'] + ':' + self.tasks_t + '\"'
-			
-		# Connect to db
-		conn = sqlite3.connect(self.tasks_path, detect_types=sqlite3.PARSE_DECLTYPES|sqlite3.PARSE_COLNAMES)
-		conn.row_factory = sqlite3.Row
-		c = conn.cursor()
-		
-		# ***************** get current task_status
-		if not task_data['input']:
-			task_data['status'] = 'ready'
-		else:
-			#get_input_string = 'SELECT * FROM ' + table + ' WHERE task_name = ?'
-			get_input_string = 'SELECT * FROM ' + table
-			#data = (task_data['input'],)
-			#c.execute(get_input_string, data)
-			c.execute(get_input_string)
-			row = None
-			#names = []
-			for row_ in c.fetchall():
-				#names.append(row_['task_name'])
-				#print(row_)
-				if task_data['task_name'] == row_['task_name']:
-					conn.close()
-					return(False, 'Thi Task_Name Already Exists!')
-				if row_['task_name'] == task_data['input']:
-					row = row_
-			#print(row['status'])
-			if row['status'] in self.end_statuses:
-				task_data['status'] = 'ready'
-			else:
-				task_data['status'] = 'null'
-				
-			# ***************** add this task to output to input task
-			input_task_data = dict(row)
-			new_output_list = json.loads(input_task_data['output'])
-			new_output_list.append(task_data['task_name'])
-			input_task_data['output'] = json.dumps(new_output_list)
-			#print(input_task_data['output'])
-			
-			new_output_string = string = 'UPDATE ' +  table + ' SET  output  = ? WHERE task_name = ?'
-			data = (input_task_data['output'],input_task_data['task_name'])
-			c.execute(new_output_string, data)
-			
-		# ***************** insert TASK_
-		insert_string = "insert into " + table + " values"
-		values = '('
-		data = []
-		for i, key in enumerate(self.tasks_keys):
-			if i< (len(self.tasks_keys) - 1):
-				values = values + '?, '
-			else:
-				values = values + '?'
-			if key[0] in task_data:
-				data.append(task_data[key[0]])
-			else:
-				if key[1] == 'real':
-					data.append(0.0)
-				elif key[1] == 'timestamp':
-					data.append(None)
-				else:
-					data.append('')
-			#print '>>> ', key[0], data[len(data) - 1]
-					
-		values = values + ')'
-		data = tuple(data)
-		insert_string = insert_string + values
-		c.execute(insert_string, data)
-		
-		# ***************** To OUTPUTS 
-		old_status = None
-		output_row = None
-		old_input = None
-		if output_task_name:
-			# get output_task_data
-			get_output_string = 'SELECT * FROM ' + table + ' WHERE task_name = ?'
-			data = (output_task_name,)
-			c.execute(get_output_string, data)
-			output_row = c.fetchone()
-			old_status = output_row['status']
-			old_input = output_row['input']
-						
-			# edit input,status to output_task
-			string = 'UPDATE ' +  table + ' SET  input  = ?, status = ? WHERE task_name = ?'
-			data = (task_data['task_name'],'null', output_task_name)
-			c.execute(string, data)
-			
-			
-			# edit output_list to old_input
-			if old_input:
-				old_input_row = None
-				string = 'SELECT * FROM ' + table + ' WHERE task_name = ?'
-				data = (old_input,)
-				c.execute(string, data)
-				old_input_row = c.fetchone()
-				old_input_output = json.loads(old_input_row['output'])
-				old_input_output.remove(output_task_name)
-				# -- update
-				string = 'UPDATE ' +  table + ' SET  output  = ? WHERE task_name = ?'
-				data = (json.dumps(old_input_output), old_input)
-				c.execute(string, data)
-			
-		conn.commit()
-		conn.close()
-			
-		if old_input:
-			# change status to output
-			if (old_status != 'close') and (old_status in self.end_statuses):
-				#print('change status')
-				self._this_change_from_end(project_name, dict(output_row))
-		'''
-				
-		return(True, 'Ok')
-	
-	# asset_id (str) - требуется если объект asset, передаваемый в task не инициализирован.
-	# task_status (str) - фильтр по статусам задач.
-	# artist (str) - фильтр по имени.
-	def get_list(self, asset_id=False, task_status = False, artist = False): # v2
-		if asset_id:
-			table_name = '"%s:%s"' % ( asset_id, self.tasks_t)
-		else:
-			table_name = '"%s:%s"' % ( self.asset.id, self.tasks_t)
-		if task_status or artist:
-			where = {}
-			if task_status and task_status in self.task_status:
-				#where = {'status': task_status.lower()}
-				where['status'] = task_status.lower()
-			elif task_status and not task_status in self.task_status:
-				return(False, 'Wrong status "%s"' % task_status)
-			if artist:
-				where['artist'] = artist
-		else:
-			where = False
-		bool_, return_data = database().read('project', self.asset.project, table_name, self.tasks_keys, where=where, table_root=self.tasks_db)
-		
-		if not bool_:
-			return(bool_, return_data)
-		
-		tasks_ob = []
-		for td in return_data:
-			td['asset_path'] = self.asset.path
-			tasks_ob.append(self.init_by_keys(td))
-		
-		return(True, tasks_ob)
-		
-	# возвращает задачи (словари) по списку имён задачь, из различных ассетов.
-	# self.asset.project - инициализирован
-	# assets_data (dict) - dict{asset_name: {asset_data},...} словарь всех ассетов (всех типов) по именам
-	# task_name_list (list) - список имён задач.
-	def get_tasks_by_name_list(self, task_name_list, assets_data = False): # v2
-		pass
-		# (1) получение assets_data
-		if not assets_data:
-			result = self.asset.get_dict_by_name_by_all_types()
-			if not result[0]:
-				return(False, 'in task.get_tasks_by_name_list():\n%s' % result[1])
-			else:
-				assets_data = result[1]
-		# (2) чтение БД
-		level = 'project'
-		read_ob = self.asset.project
-		table_root = self.tasks_db
-		keys = self.tasks_keys
-		task_data_dict = {}
-		#
-		for task_name in task_name_list:
-			#
-			asset_id = assets_data[task_name.split(':')[0]].id
-			table_name = '"%s:%s"' % (asset_id, self.tasks_t)
-			where = {'task_name': task_name}
-			#
-			bool_, return_data = database().read(level, read_ob, table_name, keys, where=where, table_root=table_root)
-			if not bool_:
-				return(bool_, return_data)
-			if return_data:
-				return_data[0]['asset_path'] = assets_data[task_name.split(':')[0]].path
-				r_task = task(assets_data[task_name.split(':')[0]])
-				task_data_dict[task_name] = r_task.init_by_keys(return_data[0])
-		
-		return(True, task_data_dict)
-	
-	# self.asset.project - должен быть инициализирован
-	# new_activity (str)
-	def change_activity(self, new_activity): # v2
-		pass
-		# (2) проверка валидации new_activity
-		if not new_activity in self.asset.ACTIVITY_FOLDER[self.asset.type]:
-			return(False, 'Incorrect activity: "%s"' % new_activity)
-		# (3) запись БД
-		table_name = '"%s:%s"' % (self.asset.id, self.tasks_t)
-		read_ob = self.asset.project
-		update_data = {'activity':new_activity}
-		where = {'task_name':self.task_name}
-		#
-		bool_, return_data = database().update('project', read_ob, table_name, self.tasks_keys, update_data, where, table_root=self.tasks_db)
-		# запись нового активити в поле объекта, если он инициализирован
-		if bool_ :
-			self.activity = new_activity
-		return(bool_, return_data)
-	
-	# self.asset.project - должен быть инициализирован
-	# new_price (float)
-	def change_price(self, new_price): # v2
-		pass
-		#
-		table_name = '"%s:%s"' % (self.asset.id, self.tasks_t)
-		read_ob = self.asset.project
-		update_data = {'price': new_price}
-		where = {'task_name':self.task_name}
-		#
-		bool_, return_data = database().update('project', read_ob, table_name, self.tasks_keys, update_data, where, table_root=self.tasks_db)
-		# запись новой цены в поле объекта, если он инициализирован
-		if bool_ :
-			self.price = new_price
-		return(bool_, return_data)
-		
-	# key (str) - ключ для которого идёт замена
-	# new_data (по типу ключа) - данные на замену
-	def changes_without_a_change_of_status(self, key, new_data): # v2
-		changes_keys = [
-		'activity',
-		'task_type',
-		'season',
-		'price',
-		'specification',
-		'extension',
-		'start',
-		'end',
-		'time',
-		'full_time',
-		'deadline',
-		'planned_time',
-		'level',
-		]
-		if not key in changes_keys:
-			return(False, 'This key invalid! You can only edit keys from this list: %s' % json.dumps(changes_keys))
-		
-		#
-		read_ob = self.asset.project
-		table_name = '"%s:%s"' % (self.asset.id, self.tasks_t)
-		update_data = {key: new_data}
-		where = {'task_name': self.task_name}
-		bool_, r_data = database().update('project', read_ob, table_name, self.tasks_keys, update_data, where, table_root=self.tasks_db)
-		if not bool_:
-			return(bool_, r_data)
-		# запись новых данных в поле объекта, если он инициализирован
-		setattr(self, key, new_data)
+    # push последней или указанной work версии
+    # version (bool/ str / int) - версия коммит источника для push (не для sketch)
+    # current_artist (artist) - текущий пользователь, если не передавать, будет сделано get_user
+    # return для скетч - (True, ({словарь с ключами: source_path, source_versions, push_path, look_path - значения словари по веткам}, version) для остальных (True, ((source_path, new_path), version))
+    def get_new_push_file_path(self, version=False, current_artist=False):
+        pass
+        # 0 - test artist
+        # 1 - чтение push лога
+        # 2 - новый номер версии
+        # 2.0 - чтение pull-commit лога
+        # 3 - шаблонный путь для sketch
+        # 3.1 - пути к источникам (для каждой ветки)
+        # 3.2 - проверка на совпадение версий коммитов в последнем пуше с версиями источника.
+        # 3.3 - составление новых push путей.
+        # 4 - для не скетч
+        # 4.1 - путь к источнику
+        # 4.2 - проверка на совпадение версии коммита в последнем пуше с версией источника.
+        # 4.3 - путь до нового push
 
-		return(True, 'Ok!')
-	
-	# принудительная перезапись какого либо поля в таблице базы данных текущей задачи, без каких либо изменений во взаимосвязях.
-	# key (str) - изменяемое поле в таблице из studio.tasks_keys (имя колонки)
-	# new_data (в зависимости от типа данных данной колонки) - новое значение.
-	def __change_data(self, key, new_data): # v2
-		pass
-		#
-		read_ob = self.asset.project
-		table_name = '"%s:%s"' % (self.asset.id, self.tasks_t)
-		update_data = {key: new_data}
-		where = {'task_name': self.task_name}
-		bool_, r_data = database().update('project', read_ob, table_name, self.tasks_keys, update_data, where, table_root=self.tasks_db)
-		if not bool_:
-			return(bool_, r_data)
-		
-		# запись новых данных в поле объекта.
-		setattr(self, key, new_data)
-		
-		return(True, 'Ok!')
-	
-	# добавление читателей к текущей задаче
-	# add_readers_list (list) - список никнеймов проверяющих (читателей)
-	def add_readers(self, add_readers_list): # v2 *** тестилось без смены статуса.
-		pass
-		# ? - проверять ли актуальность списка читателей.
-		# 2 - чтение словаря 'readers' и определение change_status
-		# 3 - определение update_data
-		# 4 - редактирование данного объекта задачи.
-		# 5 - перезапись задачи
-		# 6 - смена исходящих статусов если change_status=True
-		# 7 - запись изменеий в artist.checking_tasks
-		
-		#
-		if not isinstance(add_readers_list, list) and not isinstance(add_readers_list, tuple):
-			return(False, '###\nin task.add_readers()\nInvalid type of "add_readers_list": "%s"' % add_readers_list.__class__.__name__)
-		
-		change_status = False
-		readers_dict = {}
-		
-		# (2)
-		readers_dict = self.readers
-		if self.status == 'done':
-			change_status = True
-		
-		for artist_name in add_readers_list:
-			readers_dict[artist_name] = 0
-			
-		# (3)
-		new_status = False
-		if change_status:
-			new_status = 'checking'
-			update_data = {'status': new_status, 'readers': readers_dict}
+        # (0) artist
+        if not current_artist:
+            current_artist = artist()
+            b, r = current_artist.get_user()
+            if not b:
+                return(b,r)
+        #
+        if current_artist.outsource:
+            return(False, 'This function is not available on outsourcing!')
 
-		else:
-			update_data = {'readers': readers_dict}
-					
-		# (4)
-		self.readers = readers_dict
-		if new_status:
-			self.status = new_status
-		
-		# (5)
-		read_ob = self.asset.project
-		table_name = '"%s:%s"' % (self.asset.id, self.tasks_t)
-		keys = self.tasks_keys
-		where = {'task_name': self.task_name}
-		#
-		bool_, r_data = database().update('project', read_ob, table_name, keys, update_data, where, table_root=self.tasks_db)
-		if not bool_:
-			return(bool_, r_data)
-		
-		# (6) change output statuses
-		if change_status:
-			bool_, r_data = self._this_change_from_end()
-			if not bool_:
-				return(bool_, r_data)
-			
-		# (7)
-		for artist_name in add_readers_list:
-			artist_ob = artist().init(artist_name)
-			if not artist_ob.checking_tasks:
-				artist_ob.checking_tasks = {}
-			if not self.asset.project.name in artist_ob.checking_tasks.keys():
-				artist_ob.checking_tasks[self.asset.project.name] = []
-			if not self.task_name in artist_ob.checking_tasks[self.asset.project.name]:
-				artist_ob.checking_tasks[self.asset.project.name].append(self.task_name)
-			b, r = artist_ob.edit_artist({'checking_tasks': artist_ob.checking_tasks}, current_user='force')
-			if not b:
-				print('*'*5, r)
-				continue		
-		
-		return(True, readers_dict, change_status)
-	
-	# nik_name (str) - никнейм артиста
-	def make_first_reader(self, nik_name): # v2
-		pass
-		# ? - проверять ли актуальность читателя.
-		
-		# 2 - чтение словаря 'readers'
-		# 3 - редактирование задачи в случае если она инициализирована.
-		# 4 - перезапись задачи
-		# 5 - редактирование artist.checking_tasks
-		
-		#
-		# (1)
-				
-		# (2)
-		readers_dict = self.readers
-		readers_dict['first_reader'] = nik_name
-		
-		# (3)
-		self.readers = readers_dict
-			
-		# (4)
-		read_ob = self.asset.project
-		table_name = '"%s:%s"' % (self.asset.id, self.tasks_t)
-		keys = self.tasks_keys
-		where = {'task_name': self.task_name}
-		#
-		update_data = {'readers': readers_dict}
-		#
-		bool_, r_data = database().update('project', read_ob, table_name, keys, update_data, where, table_root=self.tasks_db)
-		if not bool_:
-			return(bool_, r_data)
-		
-		# (5)
-		artist_ob = artist().init(nik_name)
-		if not artist_ob.checking_tasks:
-			artist_ob.checking_tasks = {}
-		if not self.asset.project.name in artist_ob.checking_tasks.keys():
-				artist_ob.checking_tasks[self.asset.project.name] = []
-		if not self.task_name in artist_ob.checking_tasks[self.asset.project.name]:
-				artist_ob.checking_tasks[self.asset.project.name].append(self.task_name)
-		b, r = artist_ob.edit_artist({'checking_tasks': artist_ob.checking_tasks}, current_user='force')
-		if not b:
-			print('*'*5, r)
-		
-		return(True, readers_dict)
-	
-	# remove_readers_list (list) - список никнеймов удаляемых из списка читателей
-	def remove_readers(self, remove_readers_list): # v2
-		pass
-		# 1 - получение task_data
-		# 2 - чтение БД - readers_dict
-		# 3 - очистка списка читателей
-		# 4 - определение изменения статуса
-		# 5 - запись изменения readers в БД
-		# 6 - в случае если данная задача инициализирована - внесение в неё изменений.
-		# 7 - в случае изменения статуса - изменение статуса исходящих задачь.
-		# 8 - редактирование artist.checking_tasks
+        # (1)
+        b, r = log(self).read_log(action=['push'])
+        if not b:
+            return(b, r)
+        log_list = r[0]
+        
+        # (2)
+        if log_list:
+            end_push_log = log_list[-1:][0]
+            new_version = int(end_push_log['version']) + 1
+        else:
+            end_push_log = dict()
+            new_version = 0
+        b, str_new_version = self._template_version_num(new_version)
+        if not b:
+            return(b, str_new_version)
+        
+        # (2.0)
+        b, r = log(self).read_log(action=['commit', 'pull'])
+        if not b:
+            return(b, r)
+        work_log_list = r[0]
+        #
+        if not work_log_list:
+            return(False, 'Not "commit" or "pull" version!')
+        end_work_log = work_log_list[-1:][0]
+        
+        # (3)
+        if self.task_type in self.multi_publish_task_types:
+            pass
+            # (3.1)
+            # -- clean branches
+            branches = list()
+            for branch in r[1]:
+                if not '#' in branch:
+                    branches.append(branch)
+            # -- get source path
+            source_path = dict()
+            source_versions = dict()
+            for branch in branches:
+                for i in sorted(range(0, len(work_log_list)), reverse=True):
+                    log_=work_log_list[-(i+1):][0]
+                    if log_['branch']!=branch:
+                        continue
+                    b,r = self.get_version_work_file_path(log_['version'])
+                    if not b:
+                        return(b, r)
+                    source_path[branch] = r
+                    source_versions[branch] = log_['version']
+            # (3.2)
+            if end_push_log:
+                if sorted(end_push_log['branch'])==sorted(branches):
+                    overlap = list()
+                    for i , branch in enumerate(end_push_log['branch']):
+                        #print('*'*5, end_push_log['source'][i], source_versions[branch])
+                        if end_push_log['source'][i] == source_versions[branch]:
+                            overlap.append(True)
+                        else:
+                            overlap.append(False)
+                    if not False in overlap:
+                        return(False, 'Latest commit version matches the latest push version!')
+            # (3.3)
+            b ,r = self._template_get_push_path(self, version=new_version, branches=branches, look=False)
+            if not b:
+                return(b, r)
+            push_path = r
+            b ,r = self._template_get_push_path(self, version=new_version, branches=branches, look=True)
+            if not b:
+                return(b, r)
+            look_path = r
+            #
+            r_data = dict()
+            r_data['source_path']=source_path
+            r_data['source_versions']=source_versions
+            r_data['push_path']=push_path
+            r_data['look_path']=look_path
+            return(True, (r_data, str_new_version))
+        # (4)
+        else:
+            pass
+            # (4.1)
+            if version:
+                b, r = self._template_version_num(version)
+                if not b:
+                    return(b, r)
+                else:
+                    version=r
+                b, r = self.get_version_work_file_path(version)
+                if not b:
+                    return(b, r)
+                source_path = r
+                source_version = version
+            else:
+                #end_work_log = work_log_list[-1:][0]
+                b, r = self.get_version_work_file_path(end_work_log['version'])
+                if not b:
+                    return(b, r)
+                source_path = r
+                source_version = end_work_log['version']
+            # (4.2)
+            b, str_source_version = self._template_version_num(source_version)
+            if not b:
+                return (b, str_source_version)
+            if end_push_log and str_source_version == end_push_log['source']:
+                return(False, 'This commit version "%s" matches the latest push version!' % str_source_version)
+            # (4.3)
+            b, r = self._template_get_push_path(self, version=new_version)
+            if not b:
+                return(b, r)
+            else:
+                return(True, (source_path, str_source_version, end_work_log['branch'], r, str_new_version))
 
-		change_status = False
-		readers_dict = {}
-		
-		# (1)
-		
-		# (2)
-		readers_dict = self.readers
-				
-		# (3) remove artists
-		for artist_name in remove_readers_list:
-			try:
-				del readers_dict[artist_name]
-			except:
-				pass
-			if artist_name == readers_dict.get('first_reader'):
-				del readers_dict['first_reader']
-		
-		# (4) get change status
-		if self.status in ['checking']:
-			change_status = True
-		if not readers_dict:
-			change_status = False
-		else:
-			for artist_name in readers_dict:
-				if readers_dict[artist_name] == 0:
-					change_status = False
-					break
-		
-		# (5) edit db
-		read_ob = self.asset.project
-		table_name = '"%s:%s"' % (self.asset.id, self.tasks_t)
-		keys = self.tasks_keys
-		where = {'task_name': self.task_name}
-		#
-		new_status = False
-		if change_status:
-			new_status = 'done'
-			update_data = {'status': new_status, 'readers': readers_dict}
-		else:
-			update_data = {'readers': readers_dict}
-		bool_, r_data = database().update('project', read_ob, table_name, keys, update_data, where, table_root=self.tasks_db)
-		if not bool_:
-			return(bool_, r_data)
-		
-		# (6)
-		self.readers = readers_dict
-		if new_status:
-			self.status = new_status
-		
-		# (7) change output statuses
-		if change_status:
-			result = self._this_change_to_end()
-			if not result[0]:
-				return(False, result[1])
-			
-		# (8)
-		for artist_name in remove_readers_list:
-			artist_ob = artist().init(artist_name)
-			if not artist_ob.checking_tasks or not artist_ob.checking_tasks.get(self.asset.project.name):
-				continue
-			if self.task_name in artist_ob.checking_tasks[self.asset.project.name]:
-				artist_ob.checking_tasks[self.asset.project.name].remove(self.task_name)
-			b, r = artist_ob.edit_artist({'checking_tasks': artist_ob.checking_tasks}, current_user='force')
-			if not b:
-				print('*'*5, r)
-				continue
-		
-		return(True, readers_dict, change_status)
-		
-	# new_artist (str/artist) - nik_name или artist - объект
-	def change_artist(self, new_artist): # v2  !!!!! возможно надо рассмотреть варианты когда меняется артист в завершённых статусах задачь.
-		pass
-		# 1 - получение task_data.
-		# 2 - чтение нового и старого артиста и определение аутсорсер новый или нет.
-		# 3 - чтение outsource - изменяемой задачи.
-		# 4 - определение нового статуса задачи
-		# 5 - внесение изменений в БД
-		# 6 - если task инициализирована - внеси в неё изменения.
-		# 7 - переписывание поля "working_tasks" артистов (нового и старого)
-		
-		#print('*** new artist: ', new_artist)
-		
-		# (1)
-		        
-		#print('### task_data["outsource"].type = %s, value = %s' % (task_data["outsource"].__class__.__name__, str(task_data["outsource"])))
-		
-		# --------------- edit Status ------------
-		new_status = None
-				
-		# (2) get artist outsource
-		artist_outsource = False
-		new_artist_ob = None
-		old_artist_ob = None
-		# -- old artist
-		if self.artist:
-			old_artist_ob = artist().init(self.artist)
-		# -- new artist
-		if new_artist and (isinstance(new_artist, str) or isinstance(new_artist, unicode)):
-			result = artist().read_artist({'nik_name':new_artist})
-			if not result[0]:
-				return(False, result[1])
-			else:
-				new_artist_ob = result[1][0]
-			if new_artist_ob.outsource:
-				artist_outsource = new_artist_ob.outsource
-		elif new_artist and isinstance(new_artist, artist):
-			new_artist_ob = new_artist
-			artist_outsource = new_artist_ob.outsource
-			new_artist = new_artist_ob.nik_name
-		else:
-			new_artist = ''
-		# тест на совпадение нового и старого артиста
-		if old_artist_ob and new_artist_ob and old_artist_ob.nik_name == new_artist_ob.nik_name:
-			return(False, 'This artist "%s" has already been assigned to this task.' % new_artist_ob.nik_name)
-		
-		# затыка
-		if artist_outsource is None:
-			artist_outsource = 0
-		#print('*** artist_outsource: %s' % str(artist_outsource))
-			
-		# (3) get task_outsource
-		task_outsource = self.outsource
-				
-		# (4) get new status
-		if self.status in self.VARIABLE_STATUSES:
-			#print('****** in variable')
-			if not new_artist :
-				new_status = 'ready'
-			elif (not self.artist) or (not task_outsource):
-				#print('****** start not outsource')
-				if artist_outsource:
-					new_status = self.CHANGE_BY_OUTSOURCE_STATUSES['to_outsource'][self.status]
-				else:
-					pass
-					#print('****** artist not outsource')
-			elif task_outsource and (not artist_outsource):
-				#print('****** to studio 1')
-				new_status = self.CHANGE_BY_OUTSOURCE_STATUSES['to_studio'][self.status]
-			else:
-				#print('****** start outsource')
-				if not artist_outsource:
-					new_status = self.CHANGE_BY_OUTSOURCE_STATUSES['to_studio'][self.status]
-				else:
-					pass
-					#print('****** artist outsource')
-		else:
-			pass
-			#print('****** not in variable')
-		#print('*** new_status: %s' % str(new_status))
-			
-		# (5)
-		read_ob = self.asset.project
-		table_name = '"%s:%s"' % (self.asset.id, self.tasks_t)
-		keys = self.tasks_keys
-		where = {'task_name': self.task_name}
-		if new_status:
-			update_data = {'artist': new_artist, 'outsource': int(artist_outsource), 'status':new_status}
-		else:
-			update_data = {'artist': new_artist, 'outsource': int(artist_outsource)}
-		bool_, r_data = database().update('project', read_ob, table_name, keys, update_data, where, table_root=self.tasks_db)
-		
-		#print('*'*25, update_data, bool_)
-		
-		if not bool_:
-			return(bool_, r_data)
-		
-		# (6)
-		if new_status:
-			self.status = new_status
-			self.outsource = int(artist_outsource)
-			self.artist = new_artist
-		else:
-			self.outsource = int(artist_outsource)
-			self.artist = new_artist
-			
-		# (7)
-		#print(old_artist_ob, new_artist_ob)
-		
-		# -- old
-		if old_artist_ob and  old_artist_ob.working_tasks.get(self.asset.project.name) and self.task_name in old_artist_ob.working_tasks[self.asset.project.name]:
-			old_artist_ob.working_tasks[self.asset.project.name].remove(self.task_name)
-			b, r = old_artist_ob.edit_artist({'working_tasks': old_artist_ob.working_tasks}, current_user='force')
-			if not b:
-				print('*'*5, r)
-				#return(r)
-		# -- new
-		if new_artist:
-			if not new_artist_ob.working_tasks:
-				new_artist_ob.working_tasks = {}
-			if not self.asset.project.name in new_artist_ob.working_tasks.keys():
-				new_artist_ob.working_tasks[self.asset.project.name] = []
-			if not self.task_name in new_artist_ob.working_tasks[self.asset.project.name]:
-				new_artist_ob.working_tasks[self.asset.project.name].append(self.task_name)
-			b, r = new_artist_ob.edit_artist({'working_tasks': new_artist_ob.working_tasks}, current_user='force')
-			if not b:
-				print('*'*5, r)
-				#return(r)
-			
-		return(True, (new_status, int(artist_outsource)))
-		
-	# new_input (bool/str) - имя новой входящей задачи или False
-	# предполагается, что task инициализирован и меняем инпут данной задачи.
-	def change_input(self, new_input): # v2 *** тестилось без смены статуса.
-		pass
-		# 1 - получение task_data, task_outsource, old_input_task, new_input_task, new_status, list_output_old, list_output_new
-		# 2 - перезапись БД
-		# 3 - подготовка return_data
-		
-		# (1)
-		if new_input:
-			if self.output and new_input in self.output:
-				return(False, 'Outgoing task cannot be added to input!')
-		
-		# get old inputs tasks data (task instance)
-		old_input_task = None
-		if self.input:
-			old_input_task = self.init(self.input)
-		
-		# get new inputs task data (task instance)
-		new_input_task = None
-		if new_input:
-			new_input_task = self.init(new_input)
-		
-		# ???
-		# change status
-		new_status = self._from_input_status(new_input_task)
-		if self.status in self.end_statuses and not new_status in self.end_statuses:
-			self._this_change_from_end()
-				
-		# change outputs
-		# -- in old input
-		list_output_old = None # output бывшей входящей задачи
-		if old_input_task:
-			list_output_old = old_input_task.output
-			if self.task_name in list_output_old:
-				list_output_old.remove(self.task_name)
-			
-		# -- in new input
-		list_output_new = None
-		if new_input_task:
-			if not new_input_task.output:
-				list_output_new = []
-			else:
-				list_output_new = new_input_task.output
-			list_output_new.append(self.task_name)
-			
-		# prints
-		#if new_input_task:
-			#print('new input: %s' % new_input_task.task_name)
-		#else:
-			#print('new input: %s' % new_input_task)
-		#if old_input_task:
-			#print('old input: %s' % old_input_task.task_name)
-		#print('new status: %s' % new_status)
-		#print('list_output_old:' , list_output_old)
-		#print('list_output_new:' , list_output_new)
-		#return(True, 'Be!')
-		
-		# (2)
-		# change data
-		if new_input_task:
-			if list_output_new:
-				new_input_task.__change_data('output', list_output_new)
-			self.__change_data('input', new_input_task.task_name)
-		else:
-			self.__change_data('input', '')
-		#
-		if old_input_task and list_output_old:
-			old_input_task.__change_data('output', list_output_old)
-		#
-		if new_status:
-			self.__change_data('status', new_status)
-		
-		# (3)
-		return(True, (new_status, old_input_task, new_input_task))
-		
-	# task_data (dict) - изменяемая задача, если False - значит предполагается, что task инициализирован.
-	def accept_task(self): # v2
-		pass
-		# 1 - получение task_data,
-		# 2 - перезапись БД задачи
-		# 3 - изменение статусов исходящих задачь
-		# 4 - запись task лога
-		# 5 - запись artist_task_log
-		# 6 - внесение изменений в объект если он инициализирован
-		
-		# (1)
-		
-		'''
-		# (-) publish
-		#result = lineyka_publish.publish().publish(project_name, task_data)
-		result = self.publish.publish(self) # ???????????????????????????????????????????????? переработать
-		if not result[0]:
-			return(False, result[1])
-		'''
-		
-		# (2)
-		read_ob = self.asset.project
-		table_name = '"%s:%s"' % (self.asset.id, self.tasks_t)
-		keys = self.tasks_keys
-		update_data = {'readers':{}, 'status':'done'}
-		where = {'task_name': self.task_name}
-		bool_, r_data = database().update('project', read_ob, table_name, keys, update_data, where, table_root=self.tasks_db)
-		if not bool_:
-			return(bool_, r_data)
-		
-		# (3) change output statuses
-		result = self._this_change_to_end()
-		if not result[0]:
-			return(False, result[1])
-		
-		# (4)
-		log_keys = {
-		'description': 'accept',
-		'action': 'done',
-		}
-		b, r = log(self).write_log(log_keys)
-		if not b:
-			return(b, r)
-		
-		# (5)
-		artist_log_keys = {
-		'price': self.price,
-		'finish': datetime.datetime.now(),
-		}
-		b, r = log(self).artist_write_log(artist_log_keys)
-		if not b:
-			return(b, r)
-		
-		# (6)
-		self.status = 'done'
-		self.readers = {} # ???
-			
-		return(True, 'Ok!')
-	
-	# приём задачи текущим ридером
-	# current_artist (artist) - экземпляр класса артист, должен быть инициализирован - artist.get_user()
-	def readers_accept_task(self, current_artist): # v2
-		pass
-		# 0 - проверка, чтобы current_artist был экземпляром класса artist
-		# 1 - изменения в readers, определение change_status
-		# 2 - запись лога
-		# 3 - accept_task()
-		# 4 - внесение изменений в объект.
-		
-		# (0)
-		if not isinstance(current_artist, artist):
-			return(False, 'in task.readers_accept_task() - "current_artist" must be an instance of "artist" class, and not "%s"' % current_artist.__class__.__name__)
-		
-		# (1)
-		change_status = True
-		readers = self.readers
-		if current_artist.nik_name in readers:
-			readers[current_artist.nik_name] = 1
-		else:
-			return(False, 'Current user is not a reader of this task!')
-		#
-		for key in readers:
-			if key == 'first_reader':
-				continue
-			elif readers[key] == 0:
-				change_status = False
-				break
-			
-		# (2)
-		log_keys = {
-		'description': 'reader_accept',
-		'action': 'reader_accept',
-		}
-		b, r = log(self).write_log(log_keys)
-		if not b:
-			return(b, r)
-		
-		# (3)
-		if change_status:
-			b ,r = self.accept_task()
-			if not b:
-				return(b, r)
-		
-		# (-) -- publish
-		'''
-		if change_status:
-			result = self.publish.publish(self)
-			if not result[0]:
-				return(False, result[1])
-				
-		# (-)
-		read_ob = self.asset.project
-		table_name = '"%s:%s"' % (self.asset.id, self.tasks_t)
-		keys = self.tasks_keys
-		if change_status:
-			update_data = {'readers':readers, 'status':'done'}
-		else:
-			update_data = {'readers':readers}
-		where = {'task_name': self.task_name}
-		bool_, r_data = database().update('project', read_ob, table_name, keys, update_data, where, table_root=self.tasks_db)
-		if not bool_:
-			return(bool_, r_data)
-		
-		# (-) change output statuses
-		if change_status:
-			# -- change output statuses
-			result = self._this_change_to_end()
-			if not result[0]:
-				return(False, result[1])
-		'''
-		# (4)
-		self.readers = readers
-		if change_status:
-			self.status = 'done'
-		
-		return(True, 'Ok')
-	
-	# 
-	def close_task(self): # v2
-		pass
-		# 1 - получение task_data
-		# 2 - запись изменений задачи в БД
-		# 3 - изменение статусов исходящих задачь
-		# 4 - запись лога
-		# 5 - внесение изменений в объект если он инициализирован
-		
-		# (1)
-						
-		# (2)
-		read_ob = self.asset.project
-		table_name = '"%s:%s"' % (self.asset.id, self.tasks_t)
-		keys = self.tasks_keys
-		update_data = {'status':'close'}
-		where = {'task_name': self.task_name}
-		bool_, r_data = database().update('project', read_ob, table_name, keys, update_data, where, table_root=self.tasks_db)
-		if not bool_:
-			return(bool_, r_data)
-				
-		# (3) change output statuses
-		result = self._this_change_to_end()
-		if not result[0]:
-			return(False, result[1])
-		
-		# (4)
-		log_keys = {
-		'description': 'close',
-		'action': 'close',
-		}
-		b, r = log(self).write_log(log_keys)
-		if not b:
-			return(b, r)
-		
-		# (5)
-		self.status = 'close'
-			
-		return(True, 'Ok!')
-	
-	# task должен быть инициализирован.
-	# task_data (dict) - изменяемая задача, если False - значит предполагается, что task инициализирован.
-	# current_user (artist) - экземпляр класса артист, должен быть инициализирован - artist.get_user() - если False - то чат проверятся не будет (для тех нужд)
-	def rework_task(self, current_user): # v2 ** продолжение возможно только после редактирования chat().read_the_chat()
-		pass
-		# 1 - get exists chat
-		# 2 - edit readers
-		# 3 - write db
-		# 4 - запись лога
-		# 5 - edit self.status
-		
-		# (1)
-		if current_user:
-			if not isinstance(current_user, artist):
-				return(False, 'in task.rework_task() - "current_user" must be an instance of "artist" class, and not "%s"' % current_user.__class__.__name__)
-			exists_chat = False
-			result = chat(self).read_the_chat()
-			if not result[0]:
-				return(False, 'No chat messages! To send for rework, you must specify the reason in the chat.')
-			
-			delta = datetime.timedelta(minutes = 45)
-			now_time = datetime.datetime.now()
-			for topic in result[1]:
-				if topic['author'] == current_user.nik_name:
-					if (now_time - topic['date_time']) <= delta:
-						exists_chat = True
-						break
-						
-			if not exists_chat:
-				return(False, 'No chat messages or no fresh (30 minutes) messages! To send for rework, you must specify the reason in the chat.')
-		
-		# (2)
-		if self.readers:
-			for nik_name in self.readers:
-				if nik_name == 'first_reader':
-					continue
-				self.readers[nik_name] = 0
-		
-		# (3)
-		read_ob = self.asset.project
-		table_name = '"%s:%s"' % (self.asset.id, self.tasks_t)
-		keys = self.tasks_keys
-		update_data = {'status':'recast', 'readers': self.readers}
-		where = {'task_name': self.task_name}
-		bool_, r_data = database().update('project', read_ob, table_name, keys, update_data, where, table_root=self.tasks_db)
-		if not bool_:
-			return(bool_, r_data)
-		
-		# (4)
-		log_keys = {
-		'description': 'recast',
-		'action': 'recast',
-		}
-		b, r = log(self).write_log(log_keys)
-		if not b:
-			return(b, r)
-		
-		# (5)
-		self.status = 'recast'
-		
-		return(True, 'Ok!')
-	
-	# task_data (dict) - изменяемая задача, если False - значит предполагается, что task инициализирован.
-	def return_a_job_task(self): # v2
-		pass
-		# 1 - получение task_data,
-		# 2 - чтение входящей задачи
-		# 3 - получение статуса на основе статуса входящей задачи.
-		# 4 - внесение изменений в БД
-		# 5 - запись лога
-		# 6 - изменение статусов исходящих задач
-		
-		# (2)
-		input_task = False
-		if self.input:
-			input_task = self.init(self.input)
-		
-		# (3)
-		self.status = 'null'
-		new_status = self._from_input_status(input_task)
-		#return(True, new_status)
-		
-		# (4)
-		read_ob = self.asset.project
-		table_name = '"%s:%s"' % (self.asset.id, self.tasks_t)
-		keys = self.tasks_keys
-		update_data = {'readers':{}, 'status':new_status}
-		where = {'task_name': self.task_name}
-		bool_, r_data = database().update('project', read_ob, table_name, keys, update_data, where, table_root=self.tasks_db)
-		if not bool_:
-			return(bool_, r_data)
-		
-		# (5)
-		log_keys = {
-		'description': 'return a job',
-		'action': 'return_a_job',
-		}
-		b, r = log(self).write_log(log_keys)
-		if not b:
-			return(b, r)
-		
-		# (6) change output statuses
-		result = self._this_change_from_end()
-		if not result[0]:
-			return(False, result[1])
-		else:
-			return(True, new_status)
-			
-	# change_statuses (list) - [(task_ob, new_status), ...]
-	# тупо смена статусов в пределах рабочих, что не приводит к смене статусов исходящих задач.
-	# task.asset инициализирован
-	def change_work_statuses(self, change_statuses): # v2
-		table_name = '"%s:%s"' % (self.asset.id, self.tasks_t)
-		return_data_ = {}
-		for data in change_statuses:
-			task_ob = data[0]
-			new_status = data[1]
-			#
-			if new_status not in (self.working_statuses + ['checking']):
-				continue
-			#
-			update_data = {'status': new_status}
-			where = {'task_name': task_ob.task_name}
-			bool_, return_data = database().update('project', self.asset.project, table_name, self.tasks_keys, update_data, where, table_root=self.tasks_db)
-			if not bool_:
-				return(False, return_data)
-			#
-			task_ob.status = new_status
-			#
-			return_data_[task_ob.task_name] = new_status
-			
-		return(True, return_data_)
-	
-	# отправка текущей задачи на проверку
-	# обёртка на task.change_work_statuses()
-	# задача должна быть инициализирована
-	def to_checking(self):
-		b, r = self.change_work_statuses([(self, 'checking')])
-		if not b:
-			return(b, r)
-		else:
-			pass
-			#
-			log_keys = {
-			'description': 'report',
-			'action': 'report',
-			}
-			b, r = log(self).write_log(log_keys)
-			if not b:
-				return(b, r)
-			#
-			self.status = 'checking'
-			return(True, 'Ok!')
-	
-	# task_name (str) - имя задачи
-	# возврат словаря задачи (по ключам из tasks_keys, чтение БД) по имени задачи. если нужен объект используем task.init(name)
-	def _read_task(self, task_name): # v2
-		pass
-		# 1 - get asset_id, other_asset
-		# 2 - read task_data
-		# 3 - return
-		
-		# (1)
-		other_asset=False
-		
-		if self.asset.name == task_name.split(':')[0]: # задача из данного ассета
-			asset_id = self.asset.id
-		# asset_path
-		else: # задача из другого ассета
-			other_asset = self.asset.init(task_name.split(':')[0])
-			asset_id = other_asset.id
-		
-		# (2) read task
-		table_name = '"%s:%s"' % (asset_id, self.tasks_t)
-		where={'task_name': task_name}
-		
-		# -- read
-		bool_, return_data = database().read('project', self.asset.project, table_name, self.tasks_keys , where=where, table_root=self.tasks_db)
-		if not bool_:
-			return(bool_, return_data)
-		if not return_data:
-			return(False, 'Not Found task whith name "%s"!' % task_name)
-		
-		task_data = return_data[0]
-		
-		# (3)
-		return (True, (task_data, other_asset))
-		'''
-		if not other_asset:
-			return(True, self.init_by_keys(task_data))
-		else:
-			task_ob = task(other_asset)
-			task_ob.init_by_keys(task_data, new=False)
-			return(True, task_ob)
-		'''
-	
-	# input_task_list (list) - список задач (объекты)
-	def _service_add_list_to_input(self, input_task_list): # v2
-		pass
-		# 0 - получение task_data.
-		# 1 - проверка на srvice
-		# 2 - получение данных для перезаписи инпута данной задачи и аутпутов новых входящих задач.
-		# 3 - изменение статуса данной задачи.
-		# 4 - внесение изменений в БД по данной задаче.
-		# 5 - внесение изменений в БД по входящим задачам.
-		# 6 - внесение изменений в объект, если он инициализирован
-		
-		# (0)
-						
-		# (1)
-		if self.task_type != 'service':
-			description = 'In task._service_add_list_to_input() - incorrect type!\nThe type of task to be changed must be "service".\nThis type: "%s"' % self.task_type
-			return(False, description)
-		
-		# (2)
-		# add input list
-		# -- get_input_list
-		overlap_list = []
-		inputs = []
-		done_statuses = []
-		rebild_input_task_list = []
-		for task_ob in input_task_list:
-			# -- get inputs list
-			if self.input:
-				ex_inputs = []
-				try:
-					ex_inputs = self.input
-				except:
-					pass
-				if task_ob.task_name in ex_inputs:
-					overlap_list.append(task_ob.task_name)
-					continue
-			inputs.append(task_ob.task_name)
-			# -- get done statuses
-			done_statuses.append(task_ob.status in self.end_statuses)
-			
-			# edit outputs
-			if task_ob.output:
-				ex_outputs = []
-				try:
-					ex_outputs = task_ob.output
-				except:
-					pass
-				ex_outputs.append(self.task_name)
-				task_ob.output = ex_outputs
-			else:
-				this_outputs = []
-				this_outputs.append(self.task_name)
-				task_ob.output = this_outputs
-				
-			rebild_input_task_list.append(task_ob)
-			
-		if not self.input:
-			self.input = inputs
-		else:
-			ex_inputs = []
-			try:
-				ex_inputs = self.input
-			except:
-				pass
-			self.input = ex_inputs + inputs
-		
-		# (3) change status
-		if self.status in self.end_statuses:
-			if False in done_statuses:
-				self.status = 'null'
-				self._this_change_from_end()
-				
-		# (4)
-		read_ob = self.asset.project
-		table_name = '"%s:%s"' % (self.asset.id, self.tasks_t)
-		keys = self.tasks_keys
-		update_data = {'input':self.input, 'status':self.status}
-		where = {'task_name': self.task_name}
-		bool_, r_data = database().update('project', read_ob, table_name, keys, update_data, where, table_root=self.tasks_db)
-		if not bool_:
-			return(bool_, r_data)
-		
-		# (5)
-		append_task_name_list = []
-		for task_ob in rebild_input_task_list:
-			if not task_ob.task_name in overlap_list:
-				table_name = '"%s:%s"' % (task_ob.asset.id, self.tasks_t)
-				update_data = {'output':task_ob.output}
-				where = {'task_name': task_ob.task_name}
-				append_task_name_list.append(task_ob.task_name)
-				bool_, r_data = database().update('project', read_ob, table_name, keys, update_data, where, table_root=self.tasks_db)
-				if not bool_:
-					return(bool_, r_data)
-				
-		# (6)
-		#self.status = task_data['status']
-		#self.input = task_data['input']
-		
-		return(True, (self.status, append_task_name_list))
-		
-	# asset_list (list) - подсоединяемые ассеты (словари, или объекты)
-	# task_data (dict) - изменяемая задача, если False - значит предполагается, что task инициализирован
-	def _service_add_list_to_input_from_asset_list(self, asset_list, task_data=False): # v2
-		pass
-		# 1 - получение task_data.
-		# 2 - проверка на srvice
-		# 3 - получение списка задачь для добавления в инпут
-		
-		# (1)
-		if not task_data:
-			task_data={}
-			for key in self.tasks_keys:
-				exec('task_data["%s"] = self.%s' % (key, key))
-				
-		# (2)
-		if task_data['task_type'] != 'service':
-			description = 'In task._service_add_list_to_input_from_asset_list() - incorrect type!\nThe type of task to be changed must be "service".\nThis type: "%s"' % task_data['task_type']
-			return(False, description)
-		
-		# (3)
-		final_tasks_list = []
-		#types = {'obj':'model', 'char':'rig'}
-		types = {'mesh':'model', 'group':'model',  'rig':'rig'}
-		for ast in asset_list:
-			if isinstance(ast, dict):
-				ast_ob = asset(self.asset.project)
-				ast_ob.init_by_keys(ast, new=False)
-			elif isinstance(ast, asset):
-				ast_ob = ast
-			else:
-				continue
-			tsk_ob = task(ast_ob)
-			#if task_data['asset_type'] in ['location', 'shot_animation'] and ast_ob.type in types:
-			if task_data['asset_type'] in ['location', 'shot_animation'] and ast_ob.type=='object':
-				pass
-				#activity = types[ast_ob.type]
-				activity = types[ast_ob.loading_type]
-				bool_, task_list = tsk_ob.get_list()
-				if not bool_:
-					return(bool_, task_list)
-				#
-				td_dict = {}
-				for td in task_list:
-					td_dict[td['task_name']] = td
-				#
-				for td in task_list:
-					if td.get('activity') == activity:
-						if not td.get('input') or td_dict[td['input']]['activity'] != activity:
-								final_tasks_list.append(td)
-			else:
-				task_name = (ast_ob.name + ':final')
-				td = tsk_ob.init(task_name)
-				final_tasks_list.append(td)
-		'''
-		# edit db
-		# -- Connect to db
-		conn = sqlite3.connect(self.tasks_path, detect_types=sqlite3.PARSE_DECLTYPES|sqlite3.PARSE_COLNAMES)
-		conn.row_factory = sqlite3.Row
-		c = conn.cursor()
-		
-		# get task list
-		final_tasks_list = []
-		for asset in asset_list:
-			if task_data['asset_type'] in ['location', 'shot_animation'] and asset['type'] in ['obj', 'char']:
-				activity = None
-				if asset['type'] == 'obj':
-					activity = 'model'
-				elif asset['type'] == 'char':
-					activity = 'rig'
-				
-				# get all task data
-				table = '\"' + asset['id'] + ':' + self.tasks_t + '\"'
-				string = 'select * from ' + table
-				try:
-					c.execute(string)
-				except:
-					print(('Not exicute in _service_add_list_to_input_from_asset_list -> ' + asset['name']))
-					continue
-				else:
-					td_dict = {}
-					rows = c.fetchall()
-					for td in rows:
-						td_dict[td['task_name']] = td
-						
-					for td in rows:
-						if td['activity'] == activity:
-							if not dict(td).get('input') or td_dict[td['input']]['activity'] != activity:
-								final_tasks_list.append(td)
-			
-			else:
-				task_name = (asset['name'] + ':final')
-				
-				table = '\"' + asset['id'] + ':' + self.tasks_t + '\"'
-				string = 'select * from ' + table + ' WHERE task_name = \"' + task_name + '\"'
-				try:
-					c.execute(string)
-					final_task = dict(c.fetchone())
-					final_tasks_list.append(final_task)
-				except:
-					print(('not found task: ' + task_name))
-		
-		conn.close()
-		'''
-		
-		result = self._service_add_list_to_input(final_tasks_list, task_data)
-		if not result[0]:
-			return(False, result[1])
-		
-		#
-		if self.task_name == task_data['task_name']:
-			self.status = result[1][0]
-			for task_name in result[1][1]:
-				if not task_name in self.input:
-					self.input.append(task_name)
-		
-		return(True, result[1])
-		
-	# self.asset.project - должен быть инициализирован
-	# task_data (dict) - изменяемая задача, если False - значит предполагается, что task инициализирован.
-	# removed_tasks_list (list) - содержит словари удаляемых из инпута задач.
-	def _service_remove_task_from_input(self, removed_tasks_list, task_data=False, change_status = True): # v2
-		pass
-		# 0 - получение task_data.
-		# 1 - тест на статус сервис-не сервис.
-		# 2 - очистка списка входящих.
-		# 3 - замена статуса очищаемой задачи.
-		# 4 - удаление данной задачи из output - входящей задачи.
-		# 5 - перезепись status, input - изменяемой задачи.
-		# 6 - изменение статуса далее по цепи.
-		# 7 - внесение изменений в объект, если он инициализирован
-		
-		# (0)
-		if not task_data:
-			task_data={}
-			for key in self.tasks_keys:
-				exec('task_data["%s"] = self.%s' % (key, key))
-		
-		# (1)
-		if task_data['task_type'] != 'service':
-			description = 'In task._service_remove_task_from_input() - incorrect type!\nThe type of task being cleared, must be "service".\nThis type: "%s"' % task_data['task_type']
-			return(False, description)
-		
-		# (2)
-		# get input_list
-		input_list = task_data['input']
-		# removed input list
-		for tsk in removed_tasks_list:
-			if tsk['task_name'] in input_list:
-				input_list.remove(tsk['task_name'])
-			else:
-				print('warning! *** ', tsk['task_name'], ' not in ', input_list)
-		
-		# (3)
-		# GET STATUS
-		new_status = None
-		old_status = task_data['status']
-		assets = False
-		if old_status == 'done' or not input_list:
-			new_status = 'done'
-		else:
-			# get assets dict
-			result = self.asset.get_dict_by_name_by_all_types()
-			if not result[0]:
-				return(False, result[1])
-			assets = result[1]
-			#
-			bool_statuses = []
-			
-			for task_name in input_list:
-				bool_, r_data = self.get_tasks_by_name_list([task_name], assets_data = assets.get(task_name.split(':')[0]))
-				if not bool_:
-					print('#'*5)
-					print('in task.get_tasks_by_name_list()')
-					print('task_name - %s' % task_name)
-					print('asset_data - ', assets_data)
-					continue
-				else:
-					if r_data:
-						inp_task_data = r_data[task_name]
-					else:
-						continue
-				
-				if inp_task_data['status'] in self.end_statuses:
-					bool_statuses.append(True)
-				else:
-					bool_statuses.append(False)
-					
-			if False in bool_statuses:
-				new_status = 'null'
-			else:
-				new_status = 'done'
-		'''
-		# ****** connect to db
-		conn = sqlite3.connect(self.tasks_path, detect_types=sqlite3.PARSE_DECLTYPES|sqlite3.PARSE_COLNAMES)
-		conn.row_factory = sqlite3.Row
-		c = conn.cursor()
-		
-		assets = False
-		if old_status == 'done' or not input_list:
-			new_status = 'done'
-		else:
-			# get assets dict
-			result = self.get_dict_by_name_by_all_types(project_name)
-			if not result[0]:
-				return(False, result[1])
-			assets = result[1]
-			
-			bool_statuses = []
-			
-			for task_name in input_list:
-				try:
-					asset_id = assets[task_name.split(':')[0]]['id']
-				except:
-					print(('in from_service_remove_input_tasks incorrect key: ' + task_name.split(':')[0] + ' in ' + task_name))
-					continue
-				
-				table = '\"' + asset_id + ':' + self.tasks_t + '\"'
-				
-				string = 'select * from ' + table + ' WHERE task_name = \"' + task_name + '\"'
-				try:
-					c.execute(string)
-					inp_task_data = c.fetchone()
-				except:
-					conn.close()
-					return(False, ('in from_service_remove_input_tasks can not read ' + string))
-					
-				if inp_task_data['status'] in self.end_statuses:
-					bool_statuses.append(True)
-				else:
-					bool_statuses.append(False)
-					
-			if False in bool_statuses:
-				new_status = 'null'
-			else:
-				new_status = 'done'
-		'''	
-		# (4)
-		for tsk in removed_tasks_list:
-			output_list = tsk['output']
-			if not output_list:
-				continue
-			
-			if task_data['task_name'] in output_list:
-				output_list.remove(task_data['task_name'])
-				print('#'*5, tsk['task_name'], output_list)
-			else:
-				print('#'*5)
-				continue
-			
-			table = '"%s:%s"' % (tsk['asset_id'], self.tasks_t)
-			update_data = {'output': output_list}
-			where = {'task_name': tsk['task_name']}
-			bool_, r_data = database().update('project', self.asset.project, table, self.tasks_keys, update_data, where, table_root=self.tasks_db)
-			if not bool_:
-				return(bool_, r_data)
-			'''
-			string = 'UPDATE ' + table + ' SET output = ? WHERE task_name = ?'
-			data = (json.dumps(output_list), tsk['task_name'])
-			c.execute(string, data)
-			'''
-		# (5)
-		table = '"%s:%s"' % (task_data['asset_id'], self.tasks_t)
-		if change_status:
-			update_data = {'input': input_list, 'status':new_status}
-		else:
-			update_data = {'input': input_list}
-		where = {'task_name': task_data['task_name']}
-		bool_, r_data = database().update('project', self.asset.project, table, self.tasks_keys, update_data, where, table_root=self.tasks_db)
-		if not bool_:
-			return(bool_, r_data)
-		
-		'''
-		table = '\"' + task_data['asset_id'] + ':' + self.tasks_t + '\"'
-		string = 'UPDATE ' + table + ' SET status = ?, input = ?  WHERE task_name = ?'
-		data = (new_status, json.dumps(input_list), task_data['task_name'])
-		c.execute(string, data)
-		conn.commit()
-		conn.close()
-		'''
-		
-		# (6)
-		if change_status:
-			if old_status == 'done' and new_status == 'null':
-				self._this_change_from_end(task_data, assets = assets)
-			elif old_status == 'null' and new_status == 'done':
-				self._this_change_to_end(task_data, assets = assets)
-				
-		# (7)
-		if self.task_name == task_data['task_name']:
-			if change_status:
-				self.status = new_status
-			self.input = input_list
-		
-		# return
-		if change_status:
-			return(True, (new_status, input_list))
-		else:
-			return(True, (old_status, input_list))
-		
-	# 
-	# removed_task_data (dict) - удаляемая задача
-	# added_task_data (dict) - добавляемая задача
-	# task_data (dict) - изменяемая задача, если False - значит предполагается, что task инициализирован.
-	def _service_change_task_in_input(self, removed_task_data, added_task_data, task_data=False): # v2
-		pass
-		# 0 - получение task_data.
-		
-		# (0)
-		if not task_data:
-			task_data={}
-			for key in self.tasks_keys:
-				exec('task_data["%s"] = self.%s' % (key, key))
-		
-		# debug
-		#print(task_data['task_name'])
-		#print(removed_task_data['task_name'])
-		#print(added_task_data['task_name'])
-		
-		# remove task
-		result = self._service_remove_task_from_input([removed_task_data], task_data=task_data)
-		if not result[0]:
-			return(False, result[1])
-		
-		new_status, input_list = result[1]
-		
-		# edit task_data
-		print(task_data['input'], task_data['status'])
-		#
-		task_data['input'] = input_list
-		task_data['status'] = new_status
-		#
-		print(task_data['input'], task_data['status'])
-		
-		#print(json.dumps(task_data, sort_keys = True, indent = 4))
-		#return(False, 'Epteeeee!')
-		
-		# add task
-		result = self._service_add_list_to_input([added_task_data], task_data=task_data)
-		if not result[0]:
-			return(False, result[1])
-		
-		#
-		if self.task_name == task_data['task_name']:
-			self.status = result[1][0]
-			self.input = input_list + result[1][1]
-			
-		return(True, result[1])
-	
-	# заменяет все рид статусы задачи на 0
-	# task_data (dict) - изменяемая задача, если False - значит предполагается, что task инициализирован.
-	def task_edit_read_status_unread(self, task_data=False): # v2 ** start - не обнаружено использование
-		pass
-		# 0 - получение task_data.
-		# 1 - принудительное прочтение задачи из БД - ???????????? зачееемм!!!!!!
-		
-		# (0)
-		if not task_data:
-			task_data={}
-			for key in self.tasks_keys:
-				exec('task_data["%s"] = self.%s' % (key, key))
-				
-		# (1)
-		read_ob = self.asset.project
-		table_name = '"%s:%s"' % (task_data['asset_id'], self.tasks_t)
-		keys = self.tasks_keys
-		where = {'task_name': task_data['task_name']}
-		
-		
-		'''
-		table = '\"' + task_data['asset_id'] + ':' + self.tasks_t + '\"'
-		string = 'SELECT * FROM ' + table + ' WHERE task_name = ?'
-		data = (task_data['task_name'],)
-		
-		# connect db
-		try:
-			conn = sqlite3.connect(self.tasks_path, detect_types=sqlite3.PARSE_DECLTYPES|sqlite3.PARSE_COLNAMES)
-			conn.row_factory = sqlite3.Row
-			c = conn.cursor()
-		except:
-			return(False, 'in task_edit_read_status_unread - not connect db!')
-		
-		# read-edit data
-		c.execute(string, data)
-		task_data = dict(c.fetchone())
-		try:
-			readers = json.loads(task_data['readers'])
-			for nik_name in readers:
-				readers[nik_name] = 0
-			task_data['chat_local'] = json.dumps(readers)
-		except:
-			task_data['chat_local'] = json.dumps({})
-			
-		# write data
-		string = 'UPDATE ' + table + 'SET chat_local = ? WHERE task_name = ?'
-		data = (task_data['chat_local'], task_data['task_name'])
-		c.execute(string, data)
-		
-		conn.commit()
-		conn.close()
-		'''
-		return(True, 'Ok!')
-	
-	# заменяет все рид статусы задачи на 1
-	# self.task - должен быть инициализирован
-	def task_edit_read_status_read(self, project_name, task_data, nik_name): # v2 ** - не обнаружено использование
-		pass
-		# test project
-		result = self.get_project(project_name)
-		if not result[0]:
-			return(False, result[1])
-			
-		table = '\"' + task_data['asset_id'] + ':' + self.tasks_t + '\"'
-		string = 'SELECT * FROM ' + table + ' WHERE task_name = ?'
-		data = (task_data['task_name'],)
-		
-		# connect db
-		try:
-			conn = sqlite3.connect(self.tasks_path, detect_types=sqlite3.PARSE_DECLTYPES|sqlite3.PARSE_COLNAMES)
-			conn.row_factory = sqlite3.Row
-			c = conn.cursor()
-		except:
-			return(False, 'in task_edit_read_status_read - not connect db!')
-		
-		# read-edit data
-		c.execute(string, data)
-		task_data = dict(c.fetchone())
-		
-		readers2 = {}
-		try:
-			readers2 = json.loads(task_data['chat_local'])
-			readers2[nik_name] = 1
-		except:
-			readers2[nik_name] = 1
-		task_data['chat_local'] = json.dumps(readers2)
-		
-		# write data
-		string = 'UPDATE ' + table + 'SET chat_local = ? WHERE task_name = ?'
-		data = (task_data['chat_local'], task_data['task_name'])
-		c.execute(string, data)
-		
-		conn.commit()
-		conn.close()
-		
-		return(True, 'Ok!')
-			
+    # Publish пути
+    # version (int / str) - номер publish версии
+    # branches (bool / list) - список веток данного паблиша, для мультипаблиша.
+    # version_log (bool / dict) - словарь лога данной версии, если его передавать, то branches и version не имеют смысла.
+    # return (True, path или dict(пути по веткам)) или (False, comment)
+    def get_version_publish_file_path(self, version=False, branches=False, version_log=False):
+        pass
+        # (1)
+        if version_log:
+            version = version_log['version']
+            branches = version_log['branch']
+        elif (version is False or version is None):
+            return(False, 'No version specified!')
+        else:
+            if not branches:
+                b, publish_logs = log(self).read_log(action='publish')
+                if not b:
+                    return(b, publish_logs)
+                #
+                if not publish_logs[0]:
+                    return(False, 'No exists publish version!')
+                #
+                for log_ in publish_logs[0]:
+                    if int(log_['version']) == int(version):
+                        branches = log_['branch']
+                if not branches:
+                    return(False, 'No exists publish version - "%s" !' % version)
+
+        # (2)
+        if self.task_type in self.multi_publish_task_types:
+            pass
+            r_dict = dict()
+            #
+            b, publish_path = self._template_get_publish_path(self, version=version, branches=branches)
+            if not b:
+                return(b, publish_path)
+            r_dict['publish_path'] = publish_path
+            #
+            b, look_path = self._template_get_publish_path(self, version=version, branches=branches, look=True)
+            if not b:
+                return(b, look_path)
+            r_dict['look_path'] = look_path
+            return(True, r_dict)
+        else:
+            pass
+            b, r = self._template_get_publish_path(self, version)
+            if not b:
+                return(b, r)
+            else:
+                if not os.path.exists(r):
+                    return(False, 'The path "%s" not exists!' % r)
+                else:
+                    return(b, r)
+
+    # пути к top версии паблиш файлов
+    # return (True, path или dict(пути по веткам)) или (False, comment)
+    def get_final_publish_file_path(self):
+        pass
+        # 1 - read the final publish log, get final publish version
+        # 2 - get template path
+        
+        # (1)
+        b, publish_logs = log(self).read_log(action='publish')
+        if not b:
+            return(b, publish_logs)
+        
+        if publish_logs[0]:
+            end_log = publish_logs[0][-1:][0]
+        else:
+            return(False, 'No exists publish version!')
+        
+        # (2)
+        if self.task_type in self.multi_publish_task_types:
+            pass
+            branches = end_log['branch']
+            r_dict = dict()
+            #
+            b, publish_path = self._template_get_publish_path(self, branches=branches)
+            if not b:
+                return(b, publish_path)
+            r_dict['publish_path'] = publish_path
+            #
+            b, look_path = self._template_get_publish_path(self, branches=branches, look=True)
+            if not b:
+                return(b, look_path)
+            r_dict['look_path'] = look_path
+            #
+            return(True, (r_dict, end_log['version']))
+        else:
+            pass
+            b, r = self._template_get_publish_path(self)
+            if not b:
+                return(b, r)
+            else:
+                if not os.path.exists(r):
+                    return(False, 'The path "%s" not exists!' % r)
+                else:
+                    return(b, (r, end_log['version']))
+
+    # пути для новых паблиш файлов: и top и версию
+    # republish (bool) - репаблиш или нет.
+    # source_log (bool / dict) - лог источника для паблиша (push или publish), при наличие этого лога версия source_version передавать не имеет смысла.
+    # source_version (bool / str) - версия исходника (пуш, паблиш) если False - последняя версия.
+    # return: (true, (dict_path, version)) или (False, comment), структура dict_path: ключи - 'top_path', 'version_path', 'top_look_path', 'version_look_path', 'source_look_path', 'source_path'   значения - пути или словари путей по веткам.
+    def get_new_publish_file_path(self, republish=False, source_log=False, source_version=False):
+        pass
+        # 1 - read the final publish log, get final publish version
+        # 2 - получение branches и путей исходника.
+        # 3 - соурс пути
+        # 4 - новые пути
+        
+        # (1)
+        old_source = False
+        b, publish_logs = log(self).read_log(action='publish')
+        if not b:
+            return(b, publish_logs)
+        
+        if publish_logs[0]:
+            end_log = publish_logs[0][-1:][0]
+            version = int(end_log['version']) + 1
+            old_source = int(end_log['source'])
+        else:
+            version=0
+            
+        # (2)
+        # -- branches - получаем не разделяя тип задачи, он в любом случае будет.
+        if source_log:
+            branches = source_log['branch']
+            source_version = source_log['version']
+            if republish:
+                source = source_log['source']
+            else:
+                source = source_log['version']
+        else:
+            branches = list()
+            source = str()
+            if republish:
+                pass
+                if publish_logs[0]:
+                    #
+                    for log_ in publish_logs[0]:
+                        if int(log_['version']) == int(source_version):
+                            branches = log_['branch']
+                            source = log_['source']
+                            #source = source_version
+                else:
+                    return(False, 'No exists pulish version!')
+            else:
+                pass
+                # -- read push logs
+                b, push_logs = log(self).read_log(action='push')
+                if not b:
+                    return(b, push_logs)
+                #
+                if push_logs[0]:
+                    if not source_version is False and not source_version is None:
+                        for log_ in push_logs[0]:
+                            if int(log_['version']) == int(source_version):
+                                branches = log_['branch']
+                                #source = log_['source']
+                                source = source_version
+                    else:
+                        branches = push_logs[0][-1:][0]['branch']
+                        source = push_logs[0][-1:][0]['version']
+                else:
+                    return(False, 'No exists push version!')
+            #
+            if self.task_type in self.multi_publish_task_types and not branches:
+                return(False, 'No exists source (push or pulish version)!')
+            if source is False or source is None:
+                return(False, 'No exists source (push or pulish version)!')
+            
+        if not old_source is False and old_source==int(source):
+            print('source: %s, old_source: %s' % (str(source), str(old_source)))
+            return(False, 'Source of past publishers coincides with new source of publishers!')
+            
+        # (3)
+        source_look_path = False
+        source_path = False
+        if republish:
+            b, source_path = self.get_version_publish_file_path(version=source_version, branches=branches)
+            if not b:
+                return(b, source_path)
+            if self.task_type in self.multi_publish_task_types:
+                source_look_path = source_path['look_path']
+                source_path = source_path['publish_path']
+        else:
+            if not source_version is False and not source_version is None:
+                b, source_path = self.get_version_push_file_path(source_version)
+            else:
+                b, source_path = self.get_final_push_file_path()
+                source_path = source_path[0]
+            if not b:
+                return(b, source_path)
+            if self.task_type in self.multi_publish_task_types:
+                source_look_path = source_path['look_path']
+                source_path = source_path['push_path']
+        # (4)
+        if self.task_type in self.multi_publish_task_types:
+            pass
+            #
+            b, r_top = self._template_get_publish_path(self, branches=branches)
+            if not b:
+                return(b, r_top)
+            #
+            b, look_top = self._template_get_publish_path(self, branches=branches, look=True)
+            if not b:
+                return(b, look_top)
+            #
+            b, r_version = self._template_get_publish_path(self, version, branches=branches)
+            if not b:
+                return(b, r_version)
+            #
+            b, look_version = self._template_get_publish_path(self, version, branches=branches, look=True)
+            if not b:
+                return(b, look_version)
+            #
+            return(True, ({'top_path': r_top, 'top_look_path': look_top, 'version_path': r_version, 'version_look_path': look_version, 'source_look_path':source_look_path, 'source_path':source_path}, version, source, branches))
+        else:
+            pass
+            b, r_top = self._template_get_publish_path(self)
+            if not b:
+                return(b, r_top)
+            b, r_version = self._template_get_publish_path(self, version)
+            if not b:
+                return(b, r_version)
+            #
+            return(True, ({'top_path': r_top, 'version_path': r_version, 'source_path': source_path}, version, source))
+
+    # old
+
+    # task - должен быть инициализирован
+    def get_final_file_path(self, current_artist=False): # v2
+        pass
+        activity_path = NormPath(os.path.join(self.asset.path, self.activity))
+        
+        if not os.path.exists(activity_path):
+            try:
+                os.mkdir(activity_path)
+            except:
+                print(activity_path)
+                return(False, 'in task().get_final_file_path() Can not create activity dir!')
+        
+        # - get folder list
+        folders_16 = os.listdir(activity_path)
+        folders = []
+        
+        if len(folders_16)==0:
+            return(True, None, self.asset.path)
+        
+        # - 16 to 10
+        for obj_ in folders_16:
+            folders.append(int(obj_, 16))
+        
+        i = max(folders)
+        while i > -1:
+            hex_ = hex(i).replace('0x', '')
+            num = 4 - len(hex_)
+            hex_num = '0'*num + hex_
+            
+            final_file = NormPath(os.path.join(activity_path, hex_num, '%s%s' % (self.asset.name, self.extension)))
+            if os.path.exists(final_file):
+                return(True, final_file, self.asset.path)
+            i = i-1
+        
+        return(True, None, self.asset.path)
+
+    # asset - должен быит инициализирован
+    # task_data (dict) - требуется если не инициализирован task
+    # version (str) - hex 4 символа
+    def get_version_file_path(self, version, task_data=False): # v2
+        asset_path = self.asset.path
+        if not task_data:
+            asset_type = self.asset.type
+            activity = self.activity
+            asset = self.asset.name
+            extension = self.extension
+        else:
+            asset_type = task_data['asset_type']
+            activity = task_data['activity']
+            asset = task_data['asset_name']
+            extension = task_data['extension']
+                
+        activity_path = NormPath(os.path.join(asset_path, activity))
+        
+        version_file = NormPath(os.path.join(activity_path, version, '%s%s' % (asset, extension)))
+        
+        if os.path.exists(version_file):
+            return(True, version_file)
+        else:
+            return(False, 'Not Exists File!')
+
+    # asset - должен быит инициализирован
+    # task_data (dict) - требуется если не инициализирован task
+    def get_new_file_path(self, task_data=False): # v2
+        pass
+        if not task_data:
+            asset_type = self.asset.type
+            activity = self.activity
+            asset = self.asset.name
+            extension = self.extension
+        else:
+            asset_type = task_data['asset_type']
+            activity = task_data['activity']
+            asset = task_data['asset_name']
+            extension = task_data['extension']
+        # get final file
+        result = self.get_final_file_path(task_data)
+        #final_file = None
+        if not result[0]:
+            return(False, result[1])
+            
+        final_file = result[1]
+        asset_path = result[2]
+        
+        # get activity path
+        activity_path = NormPath(os.path.join(asset_path, activity))
+        # make activity folder
+        if not os.path.exists(activity_path):
+            os.mkdir(activity_path)
+        
+        if final_file == None:
+            new_dir_path = NormPath(os.path.join(activity_path, '0000'))
+            new_file_path = NormPath(os.path.join(new_dir_path, '%s%s' % (asset, extension)))
+            
+        else:
+            ff_split = final_file.replace('\\','/').split('/')
+            new_num_dec = int(ff_split[len(ff_split) - 2], 16) + 1
+            new_num_hex = hex(new_num_dec).replace('0x', '')
+            if len(new_num_hex)<4:
+                for i in range(0, (4 - len(new_num_hex))):
+                    new_num_hex = '0' + new_num_hex
+            
+            new_dir_path = NormPath(os.path.join(activity_path, new_num_hex))
+            new_file_path = NormPath(os.path.join(new_dir_path, '%s%s' % (asset, extension)))
+        
+        return(True, (new_dir_path, new_file_path))
+
+    # asset - должен быит инициализирован
+    # activity (str)
+    def get_publish_file_path(self, activity): # v2
+        pass
+        # get task_data
+        result = self.get_list(asset_id=self.asset.id)
+        if not result[0]:
+            return(False, result[1])
+            
+        task_data = None
+        for td in result[1]:
+            if td['activity'] == activity:
+                task_data = td
+                break
+                
+        if not task_data:
+            return(False, 'No Found Task with this activity: "%s"!' % activity)
+        
+        # -- -- get publish dir
+        publish_dir = NormPath(os.path.join(self.asset.path, self.publish_folder_name))
+        if not os.path.exists(publish_dir):
+            return(False, 'in task.get_publish_file_path() - Not Publish Folder! (%s)' % publish_dir)
+        # -- -- get activity_dir
+        activity_dir = NormPath(os.path.join(publish_dir, task_data['activity']))
+        if not os.path.exists(activity_dir):
+            return(False, 'in task.get_publish_file_path() - Not Publish/Activity Folder! (%s)' % activity_dir)
+        # -- -- get file_path
+        file_path = NormPath(os.path.join(activity_dir, '%s%s' % (self.asset.name, task_data['extension'])))
+        if not os.path.exists(file_path):
+            print('#'*5, file_path)
+            return(False, 'Publish/File Not Found!')
+            
+        return(True, file_path)
+
+    # вызов одноимённого хука
+    def _pre_commit(self, work_path, save_path):
+        return(True, 'Ok!')
+
+    # вызов одноимённого хука
+    def _post_commit(self, work_path, save_path):
+        return(True, 'Ok!')
+
+    # запись новой рабочей версии в work директорию. заполнение task.time, task.full_time, artist_log.full_time.
+    # work_path (str) - путь к текущему рабочему файлу
+    # description (unicode) - коммент
+    # branch (unicode) - наименование ветки, если не передавать - то master
+    # artist_ob (artist) - если не передовать, то будет выполнен get_user()
+    # return (True, path - путь до сохранённого файла) или (False, comment)
+    def commit(self, work_path, description, branch=False, artist_ob=False):
+        pass
+        # 0 - input data
+        # 1 - get save_path
+        # 2 - pre_commit
+        # 3 - make dirs
+        # 4 - copy file
+        # 5 - write log
+        # 6 - post_commit
+        
+        # (0)
+        if not description:
+            return(False, 'No description!')
+        if not branch:
+            branch = 'master'
+        if not artist_ob:
+            artist_ob = artist()
+            bool_, r_data = artist_ob.get_user()
+            if not bool_:
+                return(bool_, r_data)
+        
+        # (1)
+        b, r = self.get_new_work_file_path()
+        if not b:
+            return(b, r)
+        save_path = r[0]
+        version = r[1]
+        
+        # (2)
+        b, r = self._pre_commit(work_path, save_path)
+        if not b:
+            return(b, r)
+        
+        # (3)
+        version_dir_path = os.path.dirname(save_path)
+        if not os.path.exists(version_dir_path):
+            os.makedirs(version_dir_path)
+            
+        # (4)
+        # (4.1)
+        if not os.path.exists(work_path):
+            return('The source path "%s" not exists!' % work_path)
+        # (4.2)
+        try:
+            extension = '.%s' % work_path.split('.')[-1:][0]
+        except:
+            return(False, 'Source file "%s" missing extension' % work_path)
+        # (4.3)
+        if extension != self.extension:
+            return(False, 'Source file extension(%s) does not match task extension(%s)' % (extension, self.extension))
+        # (4.4)
+        shutil.copyfile(work_path, save_path)
+        
+        # (5)
+        # (5.0)
+        commit_time = datetime.datetime.now()
+        delta = commit_time - self.open_time
+        self.open_time = commit_time
+        
+        # (5.1)
+        delta_seconds = float(delta.total_seconds())
+        logs_keys = {
+        'action': 'commit',
+        'description': description,
+        'branch': branch,
+        'version': version,
+        'time': delta_seconds,
+        }
+        # (5.2)
+        result = log(self).write_log(logs_keys,  artist_ob=artist_ob)
+        if not result[0]:
+            return(False, result[1])
+        # (5.3)
+        if not self.time:
+            self.time = {artist_ob.nik_name:delta_seconds}
+        elif not artist_ob.nik_name in self.time:
+            self.time[artist_ob.nik_name] = delta_seconds
+        else:
+            old_time = self.time[artist_ob.nik_name]
+            self.time[artist_ob.nik_name] = old_time + delta_seconds
+        b, r = self.changes_without_a_change_of_status('time', self.time)
+        if not b:
+            return(b, r)
+        # (5.4)
+        if not self.full_time:
+            self.full_time = delta_seconds
+        else:
+            self.full_time = self.full_time + delta_seconds
+        b, r = self.changes_without_a_change_of_status('full_time', self.full_time)
+        if not b:
+            return(b, r)
+        # (5.5)
+        b, r = log(self).artist_add_full_time(delta_seconds)
+        if not b:
+            return(b, r)
+        
+        # (6)
+        b, r = self._post_commit(work_path, save_path)
+        if not b:
+            return(b, r)
+        
+        return(True, save_path)
+
+    # запуск файлов редакторами или вьювером, создание tmp копии файла.
+    # path (str) - путь до оригинального файла.
+    # viewer (bool) - если True - открытие вьювером по оригинальному пути.
+    # -- если False - открытие редактором tmp копии файла.
+    def run_file(self, path, viewer=False):
+        if viewer:
+            soft = {'Linux':'xdg-open',
+                'Windows':'explorer',
+                'Darwin':'open'}[platform.system()]
+            if soft:
+                # run from tmp_path
+                try:
+                    subprocess.run([soft, path])
+                except Exception as e:
+                    print('*'*5)
+                    print(e)
+                    try:
+                        subprocess.call([soft, path])
+                    except Exception as e:
+                        return(False, str(e))
+                return(True, path)
+            else:
+                return(False, 'System not defined!')
+        else:
+            # get soft
+            soft = self.soft_data.get(self.extension)
+            if not soft:
+                return(False, 'No application found for this extension "%s"' % self.extension)
+            
+            # get tmp_path
+            if not os.path.exists(self.tmp_folder):
+                return(False, 'Tmp directory is not defined!')
+            new_name = '%s_%s%s' % (os.path.basename(path).split('.')[0], uuid.uuid4().hex, self.extension)
+            tmp_path = NormPath(os.path.join(self.tmp_folder, new_name))
+            
+            # copy to tmp_path
+            shutil.copyfile(path, tmp_path)
+            
+            # run from tmp_path
+            try:
+                subprocess.run([soft, tmp_path])
+            except Exception as e:
+                print('*'*5)
+                print(e)
+                try:
+                    subprocess.call([soft, tmp_path])
+                except Exception as e:
+                    return(False, str(e))
+            return(True, tmp_path)
+
+    # look какой-либо версии файла для менеджеров (push, publish версии).
+    # action (str) - экшен из [push, publish]
+    # version (bool / str / int) - версия, если False - то открывается последняя.
+    # launch (bool) - False - возвращает только путь, иначе запуск редактором по расширению (для не скетч).
+    # -- note -- для скетч - запуска не делается - возвращаются пути.
+    # return (True, path) или (False, comment)
+    def look(self, action='push', version=False, launch=True):
+        pass
+        # 1 - получение пути / запуск
+        # 2 - открытие или возврат пути
+        
+        # (1)
+        if action == 'push':
+            pass
+            if not version is False:
+                b, r = self.get_version_push_file_path(version)
+            else:
+                b, r = self.get_final_push_file_path()
+            if not b:
+                return(b, r)
+        elif action == 'publish':
+            pass
+            if not version is False:
+                b, r = self.get_version_publish_file_path(version=version)
+            else:
+                b, r = self.get_final_publish_file_path()
+            if not b:
+                return(b, r)
+        
+        # (2)
+        if self.task_type in self.multi_publish_task_types or not launch:
+            pass
+            return(True, r)
+        else:
+            pass
+            if not version is False:
+                path = r
+            else:
+                path = r[0]
+            b, r = self.run_file(path)
+            if not b:
+                return(b, r)
+            else:
+                return(True, path)
+
+    # откроет файл в приложении - согласно расширению. заполнение: task.open_time, task.start; выполнение log.artist_start_log(), 
+    # look (bool) - если True - то статусы меняться не будут, если False - то статусы меняться будут.
+    # current_artist (artist) - если не передавать, то в случае look=False - будет выполняться get_user() - лишнее обращение к БД.
+    # tasks (dict) - словарь задачь данного артиста по именам. - нужен для случая когда look=False, при отсутствии будет считан - лишнее обращение к БД.
+    # input_task (task) - входящая задача - для open_from_input - если передавать - то имеется ввиду открытие из активити входящей задачи.
+    # open_path (unicode/str) - путь к файлу - указывается для open_from_file
+    # launch (bool) - если True - то будет произведён запуск приложением, которое установлено в соответствии с данным расширением файла (для универсальной юзерской панели и для менеджерской панели, при открытии на проверку), если False - то запуска не будет, но все смены статусов произойдут и будет возвращён путь к файлу.
+    def open_file(self, look=False, current_artist=False, tasks=False, input_task=False, open_path=False, version=False, launch=True):
+        pass
+        
+        # (1) ***** CHANGE STATUS
+        if not look:
+            if not current_artist:
+                current_artist = artist()
+                b, r = current_artist.get_user()
+                if not b:
+                    return(b,r)
+            if not tasks:
+                b, r = current_artist.get_working_tasks(self.asset.project, statuses = self.working_statuses)
+                if not b:
+                    return(b,r)
+                tasks = r
+            if self.status != 'work':
+                pass
+                # statuses
+                change_statuses = [(self, 'work'),]
+                for task_name in tasks:
+                    if tasks[task_name].status == 'work':
+                        change_statuses.append((tasks[task_name], 'pause',))
+            
+                result = self.change_work_statuses(change_statuses)
+                if not result[0]:
+                    return(False, result[1])
+                else:
+                    pass
+                
+                # readers
+                if self.readers:
+                    for nik_name in self.readers:
+                        if nik_name == 'first_reader':
+                            continue
+                        else:
+                            self.readers[nik_name] = 0
+                    
+                    # edit db	
+                    table_name = '"%s:%s"' % (self.asset.id, self.tasks_t)
+                    read_ob = self.asset.project
+                    update_data = {'readers': self.readers}
+                    where = {'task_name': self.task_name}
+                    bool_, return_data = database().update('project', read_ob, table_name, self.tasks_keys, update_data, where, table_root=self.tasks_db)
+                    if not bool_:
+                        return(bool_, return_data)
+            # (1.1) time log
+            self.open_time = datetime.datetime.now()
+            # start
+            if not self.start:
+                # task.start
+                b, r = self.changes_without_a_change_of_status('start', self.open_time)
+                if not b:
+                    return(b, r)
+                self.start = self.open_time
+                # artist_log - start
+                log(self).artist_start_log(artist_ob=current_artist)
+        
+        # (2) ope path
+        task_ob = self
+        if input_task:
+            if input_task.extension == self.extension:
+                task_ob = input_task
+            else:
+                return(False, 'Incorrect extension of incoming task!')
+        
+        if not open_path:
+            if version:
+                #result = task_ob.get_version_file_path(version)
+                b, r = task_ob.get_version_work_file_path(version)
+                if not b:
+                    return(b, r)
+                else:
+                    open_path = r
+                    #print('*** %s %s' % (version, open_path))
+            else:
+                #result = task_ob.get_final_file_path()
+                b, r = task_ob.get_final_work_file_path()
+                if not b:
+                    return(b, r)
+                else:
+                    open_path = r[0]
+            #if not result[0]:
+                #return(False, result[1])
+            #open_path = result[1]
+        
+            if not open_path:
+                '''
+                if task_ob.extension in self.NOT_USED_EXTENSIONS:
+                    empty_root = os.path.dirname(__file__)
+                    open_path = os.path.join(empty_root, 'empty_files', 'empty%s' % task_ob.extension)
+                else:
+                    return(False, 'No found saved version!')
+                '''
+                global_empty_path = NormPath(os.path.join(os.path.dirname(__file__), self.EMPTY_FILES_DIR_NAME, 'empty%s' % task_ob.extension))
+                user_empty_path = NormPath(os.path.join(os.path.expanduser('~'), self.init_folder, self.EMPTY_FILES_DIR_NAME, 'empty%s' % task_ob.extension))
+                print('*'*5, global_empty_path, os.path.exists(global_empty_path))
+                print('*'*5, user_empty_path, os.path.exists(user_empty_path))
+                #
+                for path in [user_empty_path, global_empty_path]:
+                    if not os.path.exists(path):
+                        continue
+                    else:
+                        open_path = path
+                        break
+                #
+                if not open_path:
+                    return(False, 'No found saved version!')
+                    
+        # get tmp_file_path
+        tmp_file_name = '%s_%s%s' % (task_ob.task_name.replace(':','_', 2), hex(random.randint(0, 1000000000)).replace('0x', ''), task_ob.extension)
+        tmp_file_path = os.path.join(self.tmp_folder, tmp_file_name)
+        # copy file to tmp
+        #print(open_path)
+        #print(tmp_file_path)
+        #return(True, 'Ok')
+        shutil.copyfile(open_path, tmp_file_path)
+        
+        # (3) open file
+        if launch:
+            soft = self.soft_data.get(task_ob.extension)
+            if not soft:
+                return(False, 'No application found for this extension "%s"' % task_ob.extension)
+            cmd = '"%s" "%s"' % (soft, tmp_file_path)
+            subprocess.Popen(cmd, shell = True)
+            
+        return(True, tmp_file_path)
+
+    # вызов одноимённого хука
+    def _pre_push(self):
+        return(True, 'Ok!')
+
+    # вызов одноимённого хука
+    def _post_push(self):
+        return(True, 'Ok!')
+
+    # make version of push at server of studio.
+    # version (str/int) - версия которая пушится, не имеет смысла для мультипуша (sketch) там только из последней версии.
+    # return (True, message) или (False, message)
+    def push(self, description, version=False, current_artist=False):
+        pass
+        # 0 - input data
+        # 0.1 - получение путей 
+        # 1 - studio
+        # 2 - sketch
+        # 2.0 - создание директории версии
+        # 2.1 - копирование файлов
+        # 2.2 - лук версия
+        # 2.3 - запись лога
+        # 3 - не sketch
+        # 4 - аутсорс
+        # 5 - sketch
+        # 6 - не sketch
+        
+        # (0)
+        if not description:
+            return(False, 'Missing description!')
+        if not current_artist:
+            current_artist = artist()
+            b, r = current_artist.get_user()
+            if not b:
+                return(b,r)
+        # (0.1)
+        b, r = self.get_new_push_file_path(version=version, current_artist=current_artist)
+        if not b:
+            return(b, r)
+        #
+        #for k in r[0]:
+            #print('*** %s - %s' % (k, str(r[0][k])))
+        #print(r[1])
+        
+        # (1)
+        b,r_data = self._pre_push()
+        if not b:
+            return(b, r_data)
+        
+        if not current_artist.outsource:
+            # (2)
+            if self.task_type in self.multi_publish_task_types:
+                pass
+                branches = list()
+                source_versions = list()
+                new_version = r[1]
+                for branch in r[0]['source_path']:
+                    pass
+                    # (2.0)
+                    source_path = r[0]['source_path'][branch]
+                    push_path = r[0]['push_path'][branch]
+                    look_path = r[0]['look_path'][branch]
+                    version_dir_path = os.path.dirname(push_path)
+                    #print(version_dir_path)
+                    if not os.path.exists(version_dir_path):
+                        os.makedirs(version_dir_path)
+                    # (2.1)
+                    shutil.copyfile(source_path, push_path)
+                    # (2.2)
+                    cmd = '%s %s %s' % (os.path.normpath(self.convert_exe), push_path, look_path)
+                    cmd2 = '\"%s\" \"%s\" \"%s\"' % (os.path.normpath(self.convert_exe), push_path, look_path)
+                    try:
+                        os.system(cmd)
+                    except Exception as e:
+                        print(e)
+                        try:
+                            os.system(cmd2)
+                        except Exception as e:
+                            print(e)
+                    branches.append(branch)
+                    source_versions.append(r[0]['source_versions'][branch])
+                # (2.3)
+                log_data = dict()
+                log_data['branch'] = branches
+                log_data['source'] = source_versions
+                log_data['action'] = 'push'
+                log_data['description'] = description
+                log_data['version'] = r[1]
+                b, r = log(self).write_log(log_data, artist_ob=current_artist)
+                if not b:
+                    return(b,r)
+            # (3)
+            else:
+                pass
+                # (3.0)
+                source_path = r[0]
+                source_version = r[1]
+                source_branch = r[2]
+                push_path = r[3]
+                new_version = r[4]
+                #return(False, 'source - %s\npush - %s' % (source_path, push_path))
+                version_dir_path = os.path.dirname(push_path)
+                if not os.path.exists(version_dir_path):
+                    os.makedirs(version_dir_path)
+                # (3.1)
+                shutil.copyfile(source_path, push_path)
+                # (3.3)
+                log_data = dict()
+                log_data['branch'] = source_branch
+                log_data['source'] = source_version
+                log_data['action'] = 'push'
+                log_data['description'] = description
+                log_data['version'] = new_version
+                b, r = log(self).write_log(log_data, artist_ob=current_artist)
+                if not b:
+                    return(b,r)
+                
+        # (4)
+        else:
+            # (5)
+            if self.task_type in self.multi_publish_task_types:
+                pass
+            # (6)
+            else:
+                pass
+            
+        b,r_data = self._post_push()
+        if not b:
+            return(b, r_data)
+        
+        return(True, 'Created a new Push version with number: %s' % new_version)
+
+    # вызов одноимённого хука
+    def _pre_publish(self):
+        return(True, 'Ok!')
+
+    # вызов одноимённого хука
+    def _post_publish(self):
+        return(True, 'Ok!')
+
+    # паблиш: перекладывание файлов, запись лога.
+    # description (str) - не обязательный параметр, при отсутствии составляется автоматически - техническое описание: что, откуда, куда.
+    # source_version (int, str) - версия push или publish при репаблише, если False при паблише - то паблиш из последней пуш версии.
+    # source_log (bool / dict) - лог версии источника, при его наличии source_version не имеет смысла.
+    # current_artist (artist) - если не передавать, то будет выполняться get_user() - лишнее обращение к БД.
+    def publish_task(self, description=False, republish=False, source_version=False, source_log=False, current_artist=False):
+        pass
+        # 0 - input data
+        # 1 - получение путей
+        # 1.1 - сосотавление description
+        # 2 - pre_publish
+        # 3 - publish
+        # 3.1 - удаление прошлой top версии
+        # 3.2 - копирование файлов
+        # 3,3 - запись лога
+        # 4 - post_publish
+        
+        # (0)
+        # (0.1)
+        if not current_artist:
+            current_artist = artist()
+            b, r = current_artist.get_user()
+            if not b:
+                return(b,r)
+        # (0.2)
+        if current_artist.outsource:
+            return(False, 'This procedure is not performed on outsourcing!')
+        
+        # (1)
+        b, r = self.get_new_publish_file_path(republish=republish, source_version=source_version, source_log=source_log)
+        if not b:
+            return(b, r)
+        
+        #for i in r:
+            #print(i)
+            
+        # (1.1)
+        if not description:
+            if republish:
+                description = 'republish from %s' % str(r[2])
+            else:
+                description = 'publish from %s' % str(r[2])
+        
+        print(description)
+        
+        # --
+        pass
+        
+        # (2)
+        b, r_data = self._pre_publish()
+        if not b:
+            return(b, r_data)
+        
+        # (3)
+        # (3.1)
+        pass
+        if self.task_type in self.multi_publish_task_types:
+            publish_dir = os.path.dirname(r[0]['top_path'][r[0]['top_path'].keys()[0]])
+        else:
+            publish_dir = os.path.dirname(r[0]['top_path'])
+        #
+        if os.path.exists(publish_dir):
+            for name in os.listdir(publish_dir):
+                path_file = os.path.join(publish_dir, name)
+                if os.path.isfile(path_file):
+                    os.remove(path_file)
+        
+        # (3.2)
+        # -- mk dir
+        if self.task_type in self.multi_publish_task_types:
+            version_dir = os.path.dirname(r[0]['version_path'][r[0]['version_path'].keys()[0]])
+        else:
+            version_dir = os.path.dirname(r[0]['version_path'])
+        if not os.path.exists(version_dir):
+            os.makedirs(version_dir)
+        # -- copy files
+        if self.task_type in self.multi_publish_task_types:
+            for branch in r[0]['source_path']:
+                shutil.copyfile(r[0]['source_path'][branch], r[0]['top_path'][branch])
+                shutil.copyfile(r[0]['source_path'][branch], r[0]['version_path'][branch])
+                shutil.copyfile(r[0]['source_look_path'][branch], r[0]['top_look_path'][branch])
+                shutil.copyfile(r[0]['source_look_path'][branch], r[0]['version_look_path'][branch])
+        else:
+            #print(r[0])
+            #return(0,'epte!')
+            shutil.copyfile(r[0]['source_path'], r[0]['top_path'])
+            shutil.copyfile(r[0]['source_path'], r[0]['version_path'])
+            
+        # (3.3)
+        # -- write log
+        new_log_keys = dict()
+        new_log_keys['action'] = 'publish'
+        new_log_keys['version'] = r[1]
+        new_log_keys['description']=description
+        if self.task_type in self.multi_publish_task_types:
+            new_log_keys['branch']=r[3]
+        new_log_keys['source']=r[2]
+        #print(new_log_keys)
+        
+        b, r_data = log(self).write_log(new_log_keys, artist_ob=current_artist)
+        if not b:
+            return(b, r_data)
+        
+        # (4)
+        b, r_data = self._post_publish()
+        if not b:
+            return(b, r_data)
+        
+        return(True, 'Created a new Publish version with number: %s' % r[1])
+        
+    # локальная запись новой рабочей версии файла
+    # description (str) - комментарий к версии
+    # current_file (unicode/str) - текущее местоположение рабочего файла (как правило в темп)
+    # current_artist (artist) - если не передавать, то будет выполняться get_user() - лишнее обращение к БД.
+    # return(True, new_file_path) или (False, comment)
+    def push_file(self, description, current_file, current_artist=False):
+        pass
+        
+        # (1) test data
+        if not current_artist:
+            current_artist = artist()
+            b, r = current_artist.get_user()
+            if not b:
+                return(b,r)
+        # -- 
+        if not os.path.exists(current_file):
+            return(False, 'Current file not found: %s' % current_file)
+        
+        #return(False, current_file)
+
+        # (2) COPY to ACtTIVITY
+        result = self.get_new_file_path()
+        if not result[0]:
+            return(False, result[1])
+        
+        new_dir_path, new_file_path = result[1]
+        
+        # -- make version folder
+        if not os.path.exists(new_dir_path):
+            os.mkdir(new_dir_path)
+        
+        # copy file
+        shutil.copyfile(current_file, new_file_path)
+        
+        #print('#'*25, new_file_path)
+        
+        # (3) ****** LOG
+        logs_keys = {
+        'action': 'push',
+        'description': description,
+        'version': os.path.basename(new_dir_path),
+        }
+        
+        #print(logs_keys, current_artist.nik_name)
+        
+        result = log(self).write_log(logs_keys, current_artist)
+        if not result[0]:
+            return(False, result[1])
+        
+        #print('%'*25)
+        
+        return(True, new_file_path)
+        
+
+    # **************************** CACHE  ( file path ) ****************************
+    # ob_name (str) - имя 3d объекта
+    # activity (str) - по умолчанию cache (для blender) - для других программ может быть другим, например "maya_cache"
+    # extension (str) - расширение файла кеша.
+    # task_data (dict) - изменяемая задача, если False - значит предполагается, что task инициализирован.
+    def get_versions_list_of_cache_by_object(self, ob_name, activity = 'cache', extension = '.pc2', task_data=False): # v2 *** без тестов
+        pass
+        # 1 - получение task_data
+        # (1)
+        if not task_data:
+            task_data={}
+            for key in self.tasks_keys:
+                exec('task_data["%s"] = self.%s' % (key, key))
+        
+        asset_path = task_data['asset_path']
+        
+        folder_name = activity
+        activity_path = NormPath(os.path.join(asset_path, folder_name))
+        activity_path = NormPath(activity_path)
+        cache_dir_path = NormPath(os.path.join(asset_path, folder_name, ob_name))
+        
+        if not os.path.exists(cache_dir_path):
+            return(False, 'No Found Cache Directory!')
+            
+        # - get folders list
+        folders_16 = os.listdir(cache_dir_path)
+        dec_nums = []
+        tech_anim_cache_versions_list = []
+        
+        if not folders_16:
+            return(False, 'No Found Cache Versions!')
+            
+        for num in folders_16:
+            dec_nums.append(int(num, 16))
+            
+        dec_nums.sort()
+        
+        for i in dec_nums:
+            number = None
+            for num in folders_16:
+                if i == int(num, 16):
+                    number = num
+                    break
+            path = os.path.join(cache_dir_path, number, (ob_name + extension))
+            path = NormPath(path)
+            if number:
+                if os.path.exists(path):
+                    tech_anim_cache_versions_list.append((str(i), ob_name, path))
+                else:
+                    continue
+                
+        if tech_anim_cache_versions_list:
+            return(True, tech_anim_cache_versions_list)
+        else:
+            return(False, 'No Found Cache Versions! *')
+        
+    # cache_dir_name (str) - "asset_name + '_' + ob_name"
+    # activity (str) - по умолчанию cache (для blender) - для других программ может быть другим, например "maya_cache"
+    # extension (str) - расширение файла кеша.
+    # task_data (dict) - изменяемая задача, если False - значит предполагается, что task инициализирован.
+    def get_final_cache_file_path(self, cache_dir_name, activity = 'cache', extension = '.pc2', task_data=False): # v2 *** без тестов
+        pass
+        # 1 - получение task_data
+        # (1)
+        if not task_data:
+            task_data={}
+            for key in self.tasks_keys:
+                exec('task_data["%s"] = self.%s' % (key, key))
+        
+        asset_path = task_data['asset_path']
+        
+        folder_name = activity
+        activity_path = NormPath(os.path.join(asset_path, folder_name))
+        activity_path = NormPath(activity_path)
+        cache_dir_path = NormPath(os.path.join(asset_path, folder_name, cache_dir_name))
+        cache_dir_path = NormPath(cache_dir_path)
+        
+        #print(cache_dir_path)
+        
+        if not os.path.exists(activity_path):
+            os.mkdir(activity_path)
+        if not os.path.exists(cache_dir_path):
+            os.mkdir(cache_dir_path)
+        
+        # - get folder list
+        folders_16 = os.listdir(cache_dir_path)
+        folders = []
+        
+        if len(folders_16)==0:
+            return(False, 'No Found Chache! *1')
+        
+        # - 16 to 10
+        for obj_ in folders_16:
+            folders.append(int(obj_, 16))
+        
+        i = max(folders)
+        while i > -1:
+            hex_ = hex(i).replace('0x', '')
+            num = 4 - len(hex_)
+            hex_num = '0'*num + hex_
+            
+            final_file = NormPath(os.path.join(cache_dir_path, hex_num, (cache_dir_name + extension)))
+            if os.path.exists(final_file):
+                return(True, final_file)
+            i = i-1
+        
+        return(False, 'No Found Chache! *2')
+        
+    # cache_dir_name (str) - "asset_name + '_' + ob_name"
+    # activity (str) - по умолчанию cache (для blender) - для других программ может быть другим, например "maya_cache"
+    # extension (str) - расширение файла кеша.
+    # task_data (dict) - изменяемая задача, если False - значит предполагается, что task инициализирован.
+    def get_new_cache_file_path(self, cache_dir_name, activity = 'cache', extension = '.pc2', task_data=False): # v2 *** без тестов
+        pass
+        # 1 - получение task_data
+        # (1)
+        if not task_data:
+            task_data={}
+            for key in self.tasks_keys:
+                exec('task_data["%s"] = self.%s' % (key, key))
+        
+        # get final file
+        result = self.get_final_cache_file_path(cache_dir_name, activity = activity, extension = extension, task_data=task_data)
+        #final_file = None
+        if not result[0]:
+            if result[1] == 'No Found Chache! *1' or result[1] == 'No Found Chache! *2':
+                final_file = None
+            else:
+                return(False, result[1])
+        else:
+            final_file = result[1]
+        asset_path = task_data['asset_path']
+        
+        # get activity path
+        folder_name = activity
+        activity_path = NormPath(os.path.join(asset_path, folder_name, cache_dir_name))
+        
+        # make activity folder
+        if not os.path.exists(activity_path):
+            os.mkdir(activity_path)
+        
+        if final_file == None:
+            new_dir_path = NormPath(os.path.join(activity_path, '0000'))
+            new_file_path = NormPath(os.path.join(new_dir_path, (cache_dir_name + extension)))
+            
+        else:
+            ff_split = final_file.replace('\\','/').split('/')
+            new_num_dec = int(ff_split[len(ff_split) - 2], 16) + 1
+            new_num_hex = hex(new_num_dec).replace('0x', '')
+            if len(new_num_hex)<4:
+                for i in range(0, (4 - len(new_num_hex))):
+                    new_num_hex = '0' + new_num_hex
+            
+            new_dir_path = NormPath(os.path.join(activity_path, new_num_hex))
+            new_file_path = NormPath(os.path.join(new_dir_path, (cache_dir_name + extension)))
+        
+        
+        # make version dir
+        if not os.path.exists(new_dir_path):
+            os.mkdir(new_dir_path)
+        
+                    
+        return(True, (new_dir_path, new_file_path))
+        
+    # version (str) - hex 4 символа
+    # cache_dir_name (str) - "asset_name + '_' + ob_name"
+    # activity (str) - по умолчанию cache (для blender) - для других программ может быть другим, например "maya_cache"
+    # extension (str) - расширение файла кеша.
+    # task_data (dict) - изменяемая задача, если False - значит предполагается, что task инициализирован.
+    def get_version_cache_file_path(self, version, cache_dir_name, activity = 'cache', extension = '.pc2', task_data=False): # v2 *** без тестов
+        pass
+        # 1 - получение task_data
+        # (1)
+        if not task_data:
+            task_data={}
+            for key in self.tasks_keys:
+                exec('task_data["%s"] = self.%s' % (key, key))
+        
+        asset_path = task_data['asset_path']
+        
+        folder_name = activity
+        activity_path = NormPath(os.path.join(asset_path, folder_name, cache_dir_name))
+        
+        version_file = NormPath(os.path.join(activity_path, version, (cache_dir_name + extension)))
+        
+        if os.path.exists(version_file):
+            return(True, version_file)
+        else:
+            return(False, 'Not Exists File!')
+        
+    # ************************ CHANGE STATUS ******************************** end
+        
+    def add_task(self, project_name, task_key_data): # не обнаружено использование
+        pass
+        # other errors test
+        result = self.get_project(project_name)
+        if not result[0]:
+            return(False, result[1])
+            
+        # test exists ASSET  self.assets_list
+        asset_name = task_key_data['asset']
+        if not asset_name in self.assets_list:
+            # self.print_log('')
+            return False, 'not_asset'
+            
+        # test required parameters
+        for i in range(0, 3):
+            try:
+                data = task_key_data[self.tasks_keys[i][0]]
+            except:
+                return False, 'required'
+        #########		
+        # get Autsource status
+        # -- get artist
+        outsource = None
+        artist_name = task_key_data['artist']
+        if artist_name:
+            artist_data = artist().read_artist({'nik_name':artist_name})
+            if artist_data[0]:
+                if artist_data[1][0]['outsource'] == '1':
+                    outsource = True
+        #########
+                
+        # set STATUS
+        try:
+            if task_key_data['input'] == '':
+                ######
+                if outsource:
+                    task_key_data['status'] = "ready_to_send"
+                else:
+                    task_key_data['status'] = "ready"
+                ######
+            else:
+                input_task_data = self._read_task(project_name, task_key_data['input'], ('status',))
+                if input_task_data[0]:
+                    if input_task_data[1]['status'] == 'done':
+                        ######
+                        if outsource:
+                            task_key_data['status'] = "ready_to_send"
+                        else:
+                            task_key_data['status'] = "ready"
+                        ######
+                    else:
+                        task_key_data['status'] = "null"
+                else:
+                    #'not_task_name'
+                    task_key_data['status'] = "null"
+        except:
+            ######
+            if outsource:
+                task_key_data['status'] = "ready_to_send"
+            else:
+                task_key_data['status'] = "ready"
+            ######
+                
+        #
+        table = '\"' + asset_name + ':' + self.tasks_t + '\"'
+        string = "insert into " + table + " values"
+        values = '('
+        data = []
+        for i, key in enumerate(self.tasks_keys):
+            if i< (len(self.tasks_keys) - 1):
+                values = values + '?, '
+            else:
+                values = values + '?'
+            if key[0] in task_key_data:
+                data.append(task_key_data[key[0]])
+            else:
+                if key[1] == 'real':
+                    data.append(0.0)
+                elif key[1] == 'timestamp':
+                    data.append(None)
+                else:
+                    data.append('')
+                    
+        values = values + ')'
+        data = tuple(data)
+        string = string + values
+        
+        # write task to db
+        conn = sqlite3.connect(self.tasks_path, detect_types=sqlite3.PARSE_DECLTYPES|sqlite3.PARSE_COLNAMES)
+        conn.row_factory = sqlite3.Row
+        c = conn.cursor()
+        
+        # exists table
+        try:
+            str_ = 'select * from ' + table
+            c.execute(str_)
+            # unicum task_name test
+            r = c.fetchall()
+            for row in r:
+                if row['task_name'] == task_key_data['task_name']:
+                    conn.close()
+                    return False, 'overlap'
+        except:
+            string2 = "CREATE TABLE " + table + " ("
+            for i,key in enumerate(self.tasks_keys):
+                if i == 0:
+                    string2 = string2 + key[0] + ' ' + key[1]
+                else:
+                    string2 = string2 + ', ' + key[0] + ' ' + key[1]
+            string2 = string2 + ')'
+            #print(string2)
+            c.execute(string2)
+        
+        # add task
+        c.execute(string, data)
+        conn.commit()
+        conn.close()
+        return True, 'ok'
+
+    def edit_task(self, project_name, task_key_data): # не обнаружено использование
+        pass
+        # other errors test
+        result = self.get_project(project_name)
+        if not result[0]:
+            return(False, result[1])
+            
+        # test exists ASSET  asset
+        asset_name = task_key_data['task_name'].split(':')[0]
+        if not asset_name in self.assets_list:
+            # self.print_log('')
+            return False, 'not_asset'
+        
+        # test task_name
+        try:
+            task_name = (task_key_data['task_name'],)
+        except:
+            return False, 'not task_name'
+            
+        ######     ==  COONNECT DATA BASE
+        conn = sqlite3.connect(self.tasks_path, detect_types=sqlite3.PARSE_DECLTYPES|sqlite3.PARSE_COLNAMES)
+        conn.row_factory = sqlite3.Row
+        c = conn.cursor()
+        table = '\"' + asset_name + ':' + self.tasks_t + '\"'
+            
+        ######     == get current data
+        command =  'SELECT * FROM ' + table + ' WHERE task_name = ?'
+        c.execute(command, task_name)
+        current_task_data = c.fetchone()
+        #print('***** current name: ', current_task_data['artist'], 'new name:', task_key_data['artist'])
+        
+        #conn.close()
+        #return
+        ######
+            
+        #########	 == get Autsource Status	
+        # -- get artist
+        outsource = None
+        artist_name = None
+        try:
+            artist_name = task_key_data['artist']
+        except:
+            artist_name = current_task_data['artist']
+        if artist_name:
+            artist_data = artist().read_artist({'nik_name':artist_name})
+            if artist_data[0]:
+                if artist_data[1][0]['outsource'] == 1:
+                    outsource = True
+        #########
+        
+        #########   == get Input Status
+        input_status = None
+        input_task_name = ''
+        try:
+            input_task_name = task_key_data['input']
+        except:
+            input_task_name = current_task_data['input']
+        input_task_data = self._read_task(project_name, input_task_name, ['status'])
+        if input_task_data[0]:
+            input_status = input_task_data[1]['status']
+        elif not input_task_data[0] and input_task_data[1] == 'not_task_name':
+            input_status = 'done'
+            
+        
+        ######### self.working_statuses self.end_statuses
+        
+        # CHANGE STATUS
+        try:
+            task_key_data['status']
+        except:
+            pass
+        else:
+            if not (input_status in self.end_statuses):
+                task_key_data['status'] = "null"
+            elif task_key_data['status'] == "ready" and outsource:
+                task_key_data['status'] = "ready_to_send"
+            elif task_key_data['status'] == "work" and outsource:
+                task_key_data['status'] = "work_to_outsorce"
+            elif task_key_data['status'] == "work_to_outsorce" and not outsource:
+                task_key_data['status'] = "work"
+            elif task_key_data['status'] == "null" and (input_status in self.end_statuses) and outsource:
+                task_key_data['status'] = "ready_to_send"
+            elif task_key_data['status'] == "null" and (input_status in self.end_statuses) and (not outsource):
+                task_key_data['status'] = "ready"
+            # SET OUTPUT STATUS
+            elif task_key_data['status'] in self.end_statuses:
+                #print('w'*25, task_key_data['status'])
+                self.edit_status_to_output(project_name, task_key_data['task_name'])
+            
+            if (current_task_data['status'] in self.end_statuses) and (task_key_data['status'] not in self.end_statuses):
+                self.edit_status_to_output(project_name, task_key_data['task_name'], new_status = task_key_data['status'])
+            
+        # write task to db
+        '''
+        conn = sqlite3.connect(self.tasks_path, detect_types=sqlite3.PARSE_DECLTYPES|sqlite3.PARSE_COLNAMES)
+        c = conn.cursor()
+        table = '\"' + asset_name + ':' + self.tasks_t + '\"'
+        '''
+        # edit db
+        data_from_input_task = (False,)
+        string = 'UPDATE ' +  table + ' SET '
+        for key in task_key_data:
+            if not key == 'task_name' or key == 'asset' or key == 'sctivity':
+                if key == 'price':
+                    string = string + ' ' + key + ' = ' + str(task_key_data[key]) + ','
+                else:
+                    if task_key_data[key] == None:
+                        string = string + ' ' + key + ' = null,'
+                    else:
+                        string = string + ' ' + key + ' = \"' + task_key_data[key] + '\",'
+                '''
+                elif key == 'status' and task_key_data['status'] == 'done':
+                    ######
+                    continue
+                    self.edit_status_to_output(project_name, task_key_data['task_name'])
+                    string = string + ' ' + key + ' = \"' + task_key_data[key] + '\",'
+                elif key == 'input':
+                    ######
+                    continue
+                    data_from_input_task = self._read_task(project_name, task_key_data['input'], ('status',))
+                    string = string + ' ' + key + ' = \"' + task_key_data[key] + '\",'
+                
+                else:
+                    if task_key_data[key] == None:
+                        string = string + ' ' + key + ' = null,'
+                    else:
+                        string = string + ' ' + key + ' = \"' + task_key_data[key] + '\",'
+                '''		
+        ######   == exchange key 'status'	from exchange input task
+        '''
+        if data_from_input_task[0]:
+            if (data_from_input_task[1]['status'] == 'done') and (this_status == 'null'):
+                string = string + ' status = \"ready\",'
+            elif data_from_input_task[1]['status'] != 'done':
+                string = string + ' status = \"null\",'
+        '''
+        ######
+        
+        # -- >>
+        string = string + ' WHERE task_name = \"' + task_key_data['task_name'] + '\"'
+        string = string.replace(', WHERE', ' WHERE')
+        #print(string)
+        
+        c.execute(string)
+        conn.commit()
+        conn.close()
+        
+        return(True, 'ok')
+
+    def edit_status_to_output(self, project_name, task_name, new_status = None): # не обнаружено использование
+        asset_name = task_name.split(':')[0]
+        table = '\"' + asset_name + ':' + self.tasks_t + '\"'
+        data = (task_name,)
+        string = 'SELECT * FROM ' + table + ' WHERE input = ?'
+        
+        try:
+            conn = sqlite3.connect(self.tasks_path, detect_types=sqlite3.PARSE_DECLTYPES|sqlite3.PARSE_COLNAMES)
+        except:
+            return(False, 'studio.project.asset.task.edit_status_to_output() -> the database can not be read!')
+                
+        conn.row_factory = sqlite3.Row
+        c = conn.cursor()
+        
+        c.execute(string, data)
+        rows = c.fetchall()
+        
+        for row in rows:
+            #print row['task_name']
+            # get artist_status
+            '''
+            if int(artist().read_artist({'nik_name':row['artist']})[1][0]['outsource']):
+                print '###########################################', row['artist']
+            '''
+            if not new_status:
+                if row['status'] == 'null':
+                    if artist().read_artist({'nik_name':row['artist']})[1][0]['outsource'] == 1:
+                        string2 = 'UPDATE ' +  table + ' SET status = \"ready_to_send\" WHERE task_name = \"' + row['task_name'] + '\"'
+                    else:	
+                        string2 = 'UPDATE ' +  table + ' SET status = \"ready\" WHERE task_name = \"' + row['task_name'] + '\"'
+                    c.execute(string2)
+            elif new_status not in self.end_statuses and row['status'] != 'close':
+                string2 = 'UPDATE ' +  table + ' SET status = \"null\" WHERE task_name = \"' + row['task_name'] + '\"'
+                c.execute(string2)
+            
+        conn.commit()
+        conn.close()
+        
+        return True, 'ok'
+    '''
+    def _read_task(self, project_name, task_name, keys):
+        if keys == 'all':
+            new_keys = []
+            for key in self.tasks_keys:
+                new_keys.append(key[0])
+            keys = new_keys
+            
+        # other errors test
+        result = self.get_project(project_name)
+        if not result[0]:
+            return(False, result[1])
+        
+        # read tasks
+        conn = sqlite3.connect(self.tasks_path, detect_types=sqlite3.PARSE_DECLTYPES|sqlite3.PARSE_COLNAMES)
+        conn.row_factory = sqlite3.Row
+        c = conn.cursor()
+        
+        asset_name = task_name.split(':')[0]
+        table = '\"' + asset_name + ':' + self.tasks_t + '\"'
+        string = 'select * from ' + table + ' WHERE task_name = \"' + task_name + '\"'
+        
+        try:
+            c.execute(string)
+            row = c.fetchone()
+        except:
+            conn.close()
+            #return(False, ('can_not_read_asset', string))
+            return(False, string)
+        conn.close()
+        
+        if not row:
+            return(False, 'not_task_name')
+                
+        data = {}
+        for key in keys:
+            data[key] = row[key]
+            
+        return(True, data)
+    '''
+        
+    '''	
+    def change_status_by_open_task(self, project_name, task_name, artist):
+        self.edit_task(self, project_name, {'task_name': task_name, 'status': 'work'})
+    '''
+
+
+    # **************** Task NEW  METODS ******************
+
+    # объект asset, передаваемый в task должен быть инициализирован.
+    # list_of_tasks (list) - список задачь (словари по tasks_keys, обязательные параметры: task_name).
+    def create_tasks_from_list(self, list_of_tasks): #v2
+        asset_name = self.asset.name #asset_data['name']
+        asset_id = self.asset.id #asset_data['id']
+        #asset_path = self.asset.path #asset_data['path']
+        
+        # 1-создаём таблицу если нет
+        # 2-читаем список имён существующих задач в exists_tasks
+        # 3-пробегаем по списку list_of_tasks - если есть имена из exists_tasks - записываем их в conflicting_names
+        # --3.1 если conflicting_names не пустой - то (return False, 'Matching names, look at the terminal!'); print(conflicting_names)
+        # --3.2 если task_name или activity вообще остутсвуют - ошибка
+        # 4-создаём задачи
+        # --4.1 заполняем недостающие поля: outsource=0, priority
+        # --4.2 запись базы данных.
+        
+        table_name = '"%s:%s"' % ( asset_id, self.tasks_t)
+        # 1
+        bool_, return_data = database().create_table('project', self.asset.project, table_name, self.tasks_keys, table_root = self.tasks_db)
+        if not bool_:
+            return(bool_, return_data)
+        # 2
+        exists_tasks = []
+        bool_, return_data = database().read('project', self.asset.project, table_name, self.tasks_keys, table_root=self.tasks_db)
+        if not bool_:
+            return(bool_, return_data)
+        for task_ in return_data:
+            exists_tasks.append(task_['task_name'])
+        # 3
+        conflicting_names = []
+        for task_ in list_of_tasks:
+            if task_.get('task_name') in exists_tasks:
+                conflicting_names.append(task_['task_name'])
+            # 3.2
+            elif not task_.get('task_name'):
+                print('#'*5, task_)
+                return(False, 'in create_tasks_from_list() \n The task does not specify the "name"! Look the terminal')
+            elif not task_.get('activity') and task_.get('task_type') != 'service':
+                print('#'*5, task_)
+                return(False, 'in create_tasks_from_list() \n The task does not specify the "activity"! Look the terminal')
+        # 3.1
+        if conflicting_names:
+            print('#'*5, 'in create_tasks_from_list()')
+            print('#'*5, 'Matching names: ', conflicting_names)
+            return(False, 'in create_tasks_from_list() \n Matching names found! Look the terminal')
+        
+        # 4
+        for task_keys in list_of_tasks:
+            # 4.1
+            if not task_keys.get('priority'):
+                if not self.asset.priority:
+                    task_keys['priority'] = 0
+                else:
+                    task_keys['priority'] = self.asset.priority
+            task_keys['outsource'] = 0
+            # 4.2
+            bool_, return_data = database().insert('project', self.asset.project, table_name, self.tasks_keys, task_keys, table_root=self.tasks_db)
+            if not bool_:
+                return(bool_, return_data)
+        '''
+        # Other errors test
+        result = self.get_project(project_name)
+        if not result[0]:
+            return(False, result[1])
+            
+        # Connect to db
+        conn = sqlite3.connect(self.tasks_path, detect_types=sqlite3.PARSE_DECLTYPES|sqlite3.PARSE_COLNAMES)
+        conn.row_factory = sqlite3.Row
+        c = conn.cursor()
+        
+        # Exists table
+        table = '\"' + asset_id + ':' + self.tasks_t + '\"'
+        try:
+            str_ = 'select * from ' + table
+            c.execute(str_)
+            
+        except:
+            string2 = "CREATE TABLE " + table + " ("
+            for i,key in enumerate(self.tasks_keys):
+                if i == 0:
+                    string2 = string2 + key[0] + ' ' + key[1]
+                else:
+                    string2 = string2 + ', ' + key[0] + ' ' + key[1]
+            string2 = string2 + ')'
+            #print(string2)
+            c.execute(string2)
+            
+        # Get exists_tasks
+        exists_tasks = []
+        str_ = 'select * from ' + table
+        c.execute(str_)
+        for row in c.fetchall():
+            exists_tasks.append(row['task_name'])
+        
+        # Crete Tasks
+        for task_keys in list_of_tasks:
+            # ***************** tests *************
+            try:
+                if not task_keys['asset']:
+                    task_keys['asset'] = asset_name
+                if not task_keys['asset_id']:
+                    task_keys['asset_id'] = asset_id
+                if not task_keys['asset_path']:
+                    task_keys['asset_path'] = asset_path
+            except:
+                task_keys['asset'] = asset_name
+                task_keys['asset_id'] = asset_id
+                task_keys['asset_path'] = asset_path
+                
+            # task autsource
+            task_keys['outsource'] = '0'
+                
+            # test task['Task_Name']
+            try:
+                if not task_keys['task_name']:
+                    conn.close()
+                    return(False, 'Not Task_Name!')
+                else:
+                    if task_keys['task_name'] in exists_tasks:
+                        conn.close()
+                        return(False, (task_keys['task_name'] + ' already exists!'))
+            except:
+                conn.close()
+                return(False, 'Not Task_Name!')
+                
+            # test task['Activity']
+            if task_keys['task_type'] != 'service':
+                try:
+                    if not task_keys['activity']:
+                        conn.close()
+                        return(False, 'activity!')
+                except:
+                    conn.close()
+                    return(False, 'activity!')
+            
+            # ***************** tests end *************
+            
+            #
+            string = "insert into " + table + " values"
+            values = '('
+            data = []
+            for i, key in enumerate(self.tasks_keys):
+                if i< (len(self.tasks_keys) - 1):
+                    values = values + '?, '
+                else:
+                    values = values + '?'
+                if key[0] in task_keys:
+                    data.append(task_keys[key[0]])
+                else:
+                    if key[1] == 'real':
+                        data.append(0.0)
+                    elif key[1] == 'timestamp':
+                        data.append(None)
+                    else:
+                        data.append('')
+                        
+            values = values + ')'
+            data = tuple(data)
+            string = string + values
+            
+            # add task
+            c.execute(string, data)
+            
+        conn.commit()
+        conn.close()
+        '''
+        return(True, 'ok')
+
+    # объект asset, передаваемый в task должен быть инициализирован.
+    # обязательные поля в task_data: activity, task_name, task_type, extension
+    def add_single_task(self, task_data): # asset_id=False # v2
+        pass
+        # 0 - проверка обязательных полей.
+        # 1 - проверка уникальности имени.
+        # 2 - назначение данных из ассета.
+        # 3 - создание задачи. insert
+        # 4 - внесение данной задачи в список output входящей задачи. change_input()
+        # 5 - внесение данной задачи в список input исходящей задачи. change_input()
+        
+        # (0) required fields
+        for field in ['activity','task_name','task_type', 'extension']:
+            if not task_data.get('%s' % field):
+                return(False, 'Not specified the "%s"!' % field)
+            
+        # (1)
+        for td in self.get_list()[1]:
+            if td.task_name == task_data['task_name']:
+                return(False, 'Task with this name: "%s" already exists!' % task_data['task_name'])
+            
+        # (2)
+        # -- priority
+        if not task_data.get('priority'):
+            task_data['priority'] = self.asset.priority
+        # -- output
+        output_task_name = False
+        if task_data.get('output'):
+            output_task_name = task_data.get('output')[0]
+            task_data['output'].append('%s:final' % self.asset.name)
+        else:
+            task_data['output'] = ['%s:final' % self.asset.name]
+        # -- input
+        input_task_name = False
+        if task_data.get('input'):
+            input_task_name = task_data.get('input')
+            #task_data['input']= ''
+        else:
+            task_data['input'] = ''
+        #
+        #other_fields = [
+            #'artist',
+            #'planned_time',
+            #'time',
+            #'supervisor',
+            #'price',
+            #'specification',
+            #]
+        #
+        task_data['status'] = 'ready'
+        task_data['outsource'] = 0
+        task_data['season'] = self.asset.season
+        #task_data['asset_name'] = self.asset.name
+        #task_data['asset_id'] = self.asset.id
+        #task_data['asset_type'] = self.asset.type
+        
+        # (3)
+        table_name = '"%s:%s"' % ( self.asset.id, self.tasks_t)
+        bool_, return_data = database().insert('project', self.asset.project, table_name, self.tasks_keys, task_data, table_root=self.tasks_db)
+        if not bool_:
+            return(bool_, return_data)
+        
+        new_task = self.init_by_keys(task_data, new=True)
+        
+        # (4)
+        if input_task_name:
+            bool_, return_data = new_task.change_input(input_task_name)
+            if not bool_:
+                return(bool_, return_data)
+        
+        # (5)
+        if output_task_name:
+            output_task = self.init(output_task_name)
+            
+            # --
+            bool_, return_data = output_task.change_input(new_task.task_name)
+            if not bool_:
+                return(bool_, return_data)
+        
+        '''
+        # get table
+        table = '\"' + task_data['asset_id'] + ':' + self.tasks_t + '\"'
+            
+        # Connect to db
+        conn = sqlite3.connect(self.tasks_path, detect_types=sqlite3.PARSE_DECLTYPES|sqlite3.PARSE_COLNAMES)
+        conn.row_factory = sqlite3.Row
+        c = conn.cursor()
+        
+        # ***************** get current task_status
+        if not task_data['input']:
+            task_data['status'] = 'ready'
+        else:
+            #get_input_string = 'SELECT * FROM ' + table + ' WHERE task_name = ?'
+            get_input_string = 'SELECT * FROM ' + table
+            #data = (task_data['input'],)
+            #c.execute(get_input_string, data)
+            c.execute(get_input_string)
+            row = None
+            #names = []
+            for row_ in c.fetchall():
+                #names.append(row_['task_name'])
+                #print(row_)
+                if task_data['task_name'] == row_['task_name']:
+                    conn.close()
+                    return(False, 'Thi Task_Name Already Exists!')
+                if row_['task_name'] == task_data['input']:
+                    row = row_
+            #print(row['status'])
+            if row['status'] in self.end_statuses:
+                task_data['status'] = 'ready'
+            else:
+                task_data['status'] = 'null'
+                
+            # ***************** add this task to output to input task
+            input_task_data = dict(row)
+            new_output_list = json.loads(input_task_data['output'])
+            new_output_list.append(task_data['task_name'])
+            input_task_data['output'] = json.dumps(new_output_list)
+            #print(input_task_data['output'])
+            
+            new_output_string = string = 'UPDATE ' +  table + ' SET  output  = ? WHERE task_name = ?'
+            data = (input_task_data['output'],input_task_data['task_name'])
+            c.execute(new_output_string, data)
+            
+        # ***************** insert TASK_
+        insert_string = "insert into " + table + " values"
+        values = '('
+        data = []
+        for i, key in enumerate(self.tasks_keys):
+            if i< (len(self.tasks_keys) - 1):
+                values = values + '?, '
+            else:
+                values = values + '?'
+            if key[0] in task_data:
+                data.append(task_data[key[0]])
+            else:
+                if key[1] == 'real':
+                    data.append(0.0)
+                elif key[1] == 'timestamp':
+                    data.append(None)
+                else:
+                    data.append('')
+            #print '>>> ', key[0], data[len(data) - 1]
+                    
+        values = values + ')'
+        data = tuple(data)
+        insert_string = insert_string + values
+        c.execute(insert_string, data)
+        
+        # ***************** To OUTPUTS 
+        old_status = None
+        output_row = None
+        old_input = None
+        if output_task_name:
+            # get output_task_data
+            get_output_string = 'SELECT * FROM ' + table + ' WHERE task_name = ?'
+            data = (output_task_name,)
+            c.execute(get_output_string, data)
+            output_row = c.fetchone()
+            old_status = output_row['status']
+            old_input = output_row['input']
+                        
+            # edit input,status to output_task
+            string = 'UPDATE ' +  table + ' SET  input  = ?, status = ? WHERE task_name = ?'
+            data = (task_data['task_name'],'null', output_task_name)
+            c.execute(string, data)
+            
+            
+            # edit output_list to old_input
+            if old_input:
+                old_input_row = None
+                string = 'SELECT * FROM ' + table + ' WHERE task_name = ?'
+                data = (old_input,)
+                c.execute(string, data)
+                old_input_row = c.fetchone()
+                old_input_output = json.loads(old_input_row['output'])
+                old_input_output.remove(output_task_name)
+                # -- update
+                string = 'UPDATE ' +  table + ' SET  output  = ? WHERE task_name = ?'
+                data = (json.dumps(old_input_output), old_input)
+                c.execute(string, data)
+            
+        conn.commit()
+        conn.close()
+            
+        if old_input:
+            # change status to output
+            if (old_status != 'close') and (old_status in self.end_statuses):
+                #print('change status')
+                self._this_change_from_end(project_name, dict(output_row))
+        '''
+                
+        return(True, 'Ok')
+
+    # asset_id (str) - требуется если объект asset, передаваемый в task не инициализирован.
+    # task_status (str) - фильтр по статусам задач.
+    # artist (str) - фильтр по имени.
+    def get_list(self, asset_id=False, task_status = False, artist = False): # v2
+        if asset_id:
+            table_name = '"%s:%s"' % ( asset_id, self.tasks_t)
+        else:
+            table_name = '"%s:%s"' % ( self.asset.id, self.tasks_t)
+        if task_status or artist:
+            where = {}
+            if task_status and task_status in self.task_status:
+                #where = {'status': task_status.lower()}
+                where['status'] = task_status.lower()
+            elif task_status and not task_status in self.task_status:
+                return(False, 'Wrong status "%s"' % task_status)
+            if artist:
+                where['artist'] = artist
+        else:
+            where = False
+        bool_, return_data = database().read('project', self.asset.project, table_name, self.tasks_keys, where=where, table_root=self.tasks_db)
+        
+        if not bool_:
+            return(bool_, return_data)
+        
+        tasks_ob = []
+        for td in return_data:
+            td['asset_path'] = self.asset.path
+            tasks_ob.append(self.init_by_keys(td))
+        
+        return(True, tasks_ob)
+        
+    # возвращает задачи (словари) по списку имён задачь, из различных ассетов.
+    # self.asset.project - инициализирован
+    # assets_data (dict) - dict{asset_name: {asset_data},...} словарь всех ассетов (всех типов) по именам
+    # task_name_list (list) - список имён задач.
+    def get_tasks_by_name_list(self, task_name_list, assets_data = False): # v2
+        pass
+        # (1) получение assets_data
+        if not assets_data:
+            result = self.asset.get_dict_by_name_by_all_types()
+            if not result[0]:
+                return(False, 'in task.get_tasks_by_name_list():\n%s' % result[1])
+            else:
+                assets_data = result[1]
+        # (2) чтение БД
+        level = 'project'
+        read_ob = self.asset.project
+        table_root = self.tasks_db
+        keys = self.tasks_keys
+        task_data_dict = {}
+        #
+        for task_name in task_name_list:
+            #
+            asset_id = assets_data[task_name.split(':')[0]].id
+            table_name = '"%s:%s"' % (asset_id, self.tasks_t)
+            where = {'task_name': task_name}
+            #
+            bool_, return_data = database().read(level, read_ob, table_name, keys, where=where, table_root=table_root)
+            if not bool_:
+                return(bool_, return_data)
+            if return_data:
+                return_data[0]['asset_path'] = assets_data[task_name.split(':')[0]].path
+                r_task = task(assets_data[task_name.split(':')[0]])
+                task_data_dict[task_name] = r_task.init_by_keys(return_data[0])
+        
+        return(True, task_data_dict)
+
+    # self.asset.project - должен быть инициализирован
+    # new_activity (str)
+    def change_activity(self, new_activity): # v2
+        pass
+        # (2) проверка валидации new_activity
+        if not new_activity in self.asset.ACTIVITY_FOLDER[self.asset.type]:
+            return(False, 'Incorrect activity: "%s"' % new_activity)
+        # (3) запись БД
+        table_name = '"%s:%s"' % (self.asset.id, self.tasks_t)
+        read_ob = self.asset.project
+        update_data = {'activity':new_activity}
+        where = {'task_name':self.task_name}
+        #
+        bool_, return_data = database().update('project', read_ob, table_name, self.tasks_keys, update_data, where, table_root=self.tasks_db)
+        # запись нового активити в поле объекта, если он инициализирован
+        if bool_ :
+            self.activity = new_activity
+        return(bool_, return_data)
+
+    # self.asset.project - должен быть инициализирован
+    # new_price (float)
+    def change_price(self, new_price): # v2
+        pass
+        #
+        table_name = '"%s:%s"' % (self.asset.id, self.tasks_t)
+        read_ob = self.asset.project
+        update_data = {'price': new_price}
+        where = {'task_name':self.task_name}
+        #
+        bool_, return_data = database().update('project', read_ob, table_name, self.tasks_keys, update_data, where, table_root=self.tasks_db)
+        # запись новой цены в поле объекта, если он инициализирован
+        if bool_ :
+            self.price = new_price
+        return(bool_, return_data)
+        
+    # key (str) - ключ для которого идёт замена
+    # new_data (по типу ключа) - данные на замену
+    def changes_without_a_change_of_status(self, key, new_data): # v2
+        changes_keys = [
+        'activity',
+        'task_type',
+        'season',
+        'price',
+        'specification',
+        'extension',
+        'start',
+        'end',
+        'time',
+        'full_time',
+        'deadline',
+        'planned_time',
+        'level',
+        ]
+        if not key in changes_keys:
+            return(False, 'This key invalid! You can only edit keys from this list: %s' % json.dumps(changes_keys))
+        
+        #
+        read_ob = self.asset.project
+        table_name = '"%s:%s"' % (self.asset.id, self.tasks_t)
+        update_data = {key: new_data}
+        where = {'task_name': self.task_name}
+        bool_, r_data = database().update('project', read_ob, table_name, self.tasks_keys, update_data, where, table_root=self.tasks_db)
+        if not bool_:
+            return(bool_, r_data)
+        # запись новых данных в поле объекта, если он инициализирован
+        setattr(self, key, new_data)
+
+        return(True, 'Ok!')
+
+    # принудительная перезапись какого либо поля в таблице базы данных текущей задачи, без каких либо изменений во взаимосвязях.
+    # key (str) - изменяемое поле в таблице из studio.tasks_keys (имя колонки)
+    # new_data (в зависимости от типа данных данной колонки) - новое значение.
+    def __change_data(self, key, new_data): # v2
+        pass
+        #
+        read_ob = self.asset.project
+        table_name = '"%s:%s"' % (self.asset.id, self.tasks_t)
+        update_data = {key: new_data}
+        where = {'task_name': self.task_name}
+        bool_, r_data = database().update('project', read_ob, table_name, self.tasks_keys, update_data, where, table_root=self.tasks_db)
+        if not bool_:
+            return(bool_, r_data)
+        
+        # запись новых данных в поле объекта.
+        setattr(self, key, new_data)
+        
+        return(True, 'Ok!')
+
+    # добавление читателей к текущей задаче
+    # add_readers_list (list) - список никнеймов проверяющих (читателей)
+    def add_readers(self, add_readers_list): # v2 *** тестилось без смены статуса.
+        pass
+        # ? - проверять ли актуальность списка читателей.
+        # 2 - чтение словаря 'readers' и определение change_status
+        # 3 - определение update_data
+        # 4 - редактирование данного объекта задачи.
+        # 5 - перезапись задачи
+        # 6 - смена исходящих статусов если change_status=True
+        # 7 - запись изменеий в artist.checking_tasks
+        
+        #
+        if not isinstance(add_readers_list, list) and not isinstance(add_readers_list, tuple):
+            return(False, '###\nin task.add_readers()\nInvalid type of "add_readers_list": "%s"' % add_readers_list.__class__.__name__)
+        
+        change_status = False
+        readers_dict = {}
+        
+        # (2)
+        readers_dict = self.readers
+        if self.status == 'done':
+            change_status = True
+        
+        for artist_name in add_readers_list:
+            readers_dict[artist_name] = 0
+            
+        # (3)
+        new_status = False
+        if change_status:
+            new_status = 'checking'
+            update_data = {'status': new_status, 'readers': readers_dict}
+
+        else:
+            update_data = {'readers': readers_dict}
+                    
+        # (4)
+        self.readers = readers_dict
+        if new_status:
+            self.status = new_status
+        
+        # (5)
+        read_ob = self.asset.project
+        table_name = '"%s:%s"' % (self.asset.id, self.tasks_t)
+        keys = self.tasks_keys
+        where = {'task_name': self.task_name}
+        #
+        bool_, r_data = database().update('project', read_ob, table_name, keys, update_data, where, table_root=self.tasks_db)
+        if not bool_:
+            return(bool_, r_data)
+        
+        # (6) change output statuses
+        if change_status:
+            bool_, r_data = self._this_change_from_end()
+            if not bool_:
+                return(bool_, r_data)
+            
+        # (7)
+        for artist_name in add_readers_list:
+            artist_ob = artist().init(artist_name)
+            if not artist_ob.checking_tasks:
+                artist_ob.checking_tasks = {}
+            if not self.asset.project.name in artist_ob.checking_tasks.keys():
+                artist_ob.checking_tasks[self.asset.project.name] = []
+            if not self.task_name in artist_ob.checking_tasks[self.asset.project.name]:
+                artist_ob.checking_tasks[self.asset.project.name].append(self.task_name)
+            b, r = artist_ob.edit_artist({'checking_tasks': artist_ob.checking_tasks}, current_user='force')
+            if not b:
+                print('*'*5, r)
+                continue		
+        
+        return(True, readers_dict, change_status)
+
+    # nik_name (str) - никнейм артиста
+    def make_first_reader(self, nik_name): # v2
+        pass
+        # ? - проверять ли актуальность читателя.
+        
+        # 2 - чтение словаря 'readers'
+        # 3 - редактирование задачи в случае если она инициализирована.
+        # 4 - перезапись задачи
+        # 5 - редактирование artist.checking_tasks
+        
+        #
+        # (1)
+                
+        # (2)
+        readers_dict = self.readers
+        readers_dict['first_reader'] = nik_name
+        
+        # (3)
+        self.readers = readers_dict
+            
+        # (4)
+        read_ob = self.asset.project
+        table_name = '"%s:%s"' % (self.asset.id, self.tasks_t)
+        keys = self.tasks_keys
+        where = {'task_name': self.task_name}
+        #
+        update_data = {'readers': readers_dict}
+        #
+        bool_, r_data = database().update('project', read_ob, table_name, keys, update_data, where, table_root=self.tasks_db)
+        if not bool_:
+            return(bool_, r_data)
+        
+        # (5)
+        artist_ob = artist().init(nik_name)
+        if not artist_ob.checking_tasks:
+            artist_ob.checking_tasks = {}
+        if not self.asset.project.name in artist_ob.checking_tasks.keys():
+                artist_ob.checking_tasks[self.asset.project.name] = []
+        if not self.task_name in artist_ob.checking_tasks[self.asset.project.name]:
+                artist_ob.checking_tasks[self.asset.project.name].append(self.task_name)
+        b, r = artist_ob.edit_artist({'checking_tasks': artist_ob.checking_tasks}, current_user='force')
+        if not b:
+            print('*'*5, r)
+        
+        return(True, readers_dict)
+
+    # remove_readers_list (list) - список никнеймов удаляемых из списка читателей
+    def remove_readers(self, remove_readers_list): # v2
+        pass
+        # 1 - получение task_data
+        # 2 - чтение БД - readers_dict
+        # 3 - очистка списка читателей
+        # 4 - определение изменения статуса
+        # 5 - запись изменения readers в БД
+        # 6 - в случае если данная задача инициализирована - внесение в неё изменений.
+        # 7 - в случае изменения статуса - изменение статуса исходящих задачь.
+        # 8 - редактирование artist.checking_tasks
+
+        change_status = False
+        readers_dict = {}
+        
+        # (1)
+        
+        # (2)
+        readers_dict = self.readers
+                
+        # (3) remove artists
+        for artist_name in remove_readers_list:
+            try:
+                del readers_dict[artist_name]
+            except:
+                pass
+            if artist_name == readers_dict.get('first_reader'):
+                del readers_dict['first_reader']
+        
+        # (4) get change status
+        if self.status in ['checking']:
+            change_status = True
+        if not readers_dict:
+            change_status = False
+        else:
+            for artist_name in readers_dict:
+                if readers_dict[artist_name] == 0:
+                    change_status = False
+                    break
+        
+        # (5) edit db
+        read_ob = self.asset.project
+        table_name = '"%s:%s"' % (self.asset.id, self.tasks_t)
+        keys = self.tasks_keys
+        where = {'task_name': self.task_name}
+        #
+        new_status = False
+        if change_status:
+            new_status = 'done'
+            update_data = {'status': new_status, 'readers': readers_dict}
+        else:
+            update_data = {'readers': readers_dict}
+        bool_, r_data = database().update('project', read_ob, table_name, keys, update_data, where, table_root=self.tasks_db)
+        if not bool_:
+            return(bool_, r_data)
+        
+        # (6)
+        self.readers = readers_dict
+        if new_status:
+            self.status = new_status
+        
+        # (7) change output statuses
+        if change_status:
+            result = self._this_change_to_end()
+            if not result[0]:
+                return(False, result[1])
+            
+        # (8)
+        for artist_name in remove_readers_list:
+            artist_ob = artist().init(artist_name)
+            if not artist_ob.checking_tasks or not artist_ob.checking_tasks.get(self.asset.project.name):
+                continue
+            if self.task_name in artist_ob.checking_tasks[self.asset.project.name]:
+                artist_ob.checking_tasks[self.asset.project.name].remove(self.task_name)
+            b, r = artist_ob.edit_artist({'checking_tasks': artist_ob.checking_tasks}, current_user='force')
+            if not b:
+                print('*'*5, r)
+                continue
+        
+        return(True, readers_dict, change_status)
+        
+    # new_artist (str/artist) - nik_name или artist - объект
+    def change_artist(self, new_artist): # v2  !!!!! возможно надо рассмотреть варианты когда меняется артист в завершённых статусах задачь.
+        pass
+        # 1 - получение task_data.
+        # 2 - чтение нового и старого артиста и определение аутсорсер новый или нет.
+        # 3 - чтение outsource - изменяемой задачи.
+        # 4 - определение нового статуса задачи
+        # 5 - внесение изменений в БД
+        # 6 - если task инициализирована - внеси в неё изменения.
+        # 7 - переписывание поля "working_tasks" артистов (нового и старого)
+        
+        #print('*** new artist: ', new_artist)
+        
+        # (1)
+                
+        #print('### task_data["outsource"].type = %s, value = %s' % (task_data["outsource"].__class__.__name__, str(task_data["outsource"])))
+        
+        # --------------- edit Status ------------
+        new_status = None
+                
+        # (2) get artist outsource
+        artist_outsource = False
+        new_artist_ob = None
+        old_artist_ob = None
+        # -- old artist
+        if self.artist:
+            old_artist_ob = artist().init(self.artist)
+        # -- new artist
+        if new_artist and (isinstance(new_artist, str) or isinstance(new_artist, unicode)):
+            result = artist().read_artist({'nik_name':new_artist})
+            if not result[0]:
+                return(False, result[1])
+            else:
+                new_artist_ob = result[1][0]
+            if new_artist_ob.outsource:
+                artist_outsource = new_artist_ob.outsource
+        elif new_artist and isinstance(new_artist, artist):
+            new_artist_ob = new_artist
+            artist_outsource = new_artist_ob.outsource
+            new_artist = new_artist_ob.nik_name
+        else:
+            new_artist = ''
+        # тест на совпадение нового и старого артиста
+        if old_artist_ob and new_artist_ob and old_artist_ob.nik_name == new_artist_ob.nik_name:
+            return(False, 'This artist "%s" has already been assigned to this task.' % new_artist_ob.nik_name)
+        
+        # затыка
+        if artist_outsource is None:
+            artist_outsource = 0
+        #print('*** artist_outsource: %s' % str(artist_outsource))
+            
+        # (3) get task_outsource
+        task_outsource = self.outsource
+                
+        # (4) get new status
+        if self.status in self.VARIABLE_STATUSES:
+            #print('****** in variable')
+            if not new_artist :
+                new_status = 'ready'
+            elif (not self.artist) or (not task_outsource):
+                #print('****** start not outsource')
+                if artist_outsource:
+                    new_status = self.CHANGE_BY_OUTSOURCE_STATUSES['to_outsource'][self.status]
+                else:
+                    pass
+                    #print('****** artist not outsource')
+            elif task_outsource and (not artist_outsource):
+                #print('****** to studio 1')
+                new_status = self.CHANGE_BY_OUTSOURCE_STATUSES['to_studio'][self.status]
+            else:
+                #print('****** start outsource')
+                if not artist_outsource:
+                    new_status = self.CHANGE_BY_OUTSOURCE_STATUSES['to_studio'][self.status]
+                else:
+                    pass
+                    #print('****** artist outsource')
+        else:
+            pass
+            #print('****** not in variable')
+        #print('*** new_status: %s' % str(new_status))
+            
+        # (5)
+        read_ob = self.asset.project
+        table_name = '"%s:%s"' % (self.asset.id, self.tasks_t)
+        keys = self.tasks_keys
+        where = {'task_name': self.task_name}
+        if new_status:
+            update_data = {'artist': new_artist, 'outsource': int(artist_outsource), 'status':new_status}
+        else:
+            update_data = {'artist': new_artist, 'outsource': int(artist_outsource)}
+        bool_, r_data = database().update('project', read_ob, table_name, keys, update_data, where, table_root=self.tasks_db)
+        
+        #print('*'*25, update_data, bool_)
+        
+        if not bool_:
+            return(bool_, r_data)
+        
+        # (6)
+        if new_status:
+            self.status = new_status
+            self.outsource = int(artist_outsource)
+            self.artist = new_artist
+        else:
+            self.outsource = int(artist_outsource)
+            self.artist = new_artist
+            
+        # (7)
+        #print(old_artist_ob, new_artist_ob)
+        
+        # -- old
+        if old_artist_ob and  old_artist_ob.working_tasks.get(self.asset.project.name) and self.task_name in old_artist_ob.working_tasks[self.asset.project.name]:
+            old_artist_ob.working_tasks[self.asset.project.name].remove(self.task_name)
+            b, r = old_artist_ob.edit_artist({'working_tasks': old_artist_ob.working_tasks}, current_user='force')
+            if not b:
+                print('*'*5, r)
+                #return(r)
+        # -- new
+        if new_artist:
+            if not new_artist_ob.working_tasks:
+                new_artist_ob.working_tasks = {}
+            if not self.asset.project.name in new_artist_ob.working_tasks.keys():
+                new_artist_ob.working_tasks[self.asset.project.name] = []
+            if not self.task_name in new_artist_ob.working_tasks[self.asset.project.name]:
+                new_artist_ob.working_tasks[self.asset.project.name].append(self.task_name)
+            b, r = new_artist_ob.edit_artist({'working_tasks': new_artist_ob.working_tasks}, current_user='force')
+            if not b:
+                print('*'*5, r)
+                #return(r)
+            
+        return(True, (new_status, int(artist_outsource)))
+        
+    # new_input (bool/str) - имя новой входящей задачи или False
+    # предполагается, что task инициализирован и меняем инпут данной задачи.
+    def change_input(self, new_input): # v2 *** тестилось без смены статуса.
+        pass
+        # 1 - получение task_data, task_outsource, old_input_task, new_input_task, new_status, list_output_old, list_output_new
+        # 2 - перезапись БД
+        # 3 - подготовка return_data
+        
+        # (1)
+        if new_input:
+            if self.output and new_input in self.output:
+                return(False, 'Outgoing task cannot be added to input!')
+        
+        # get old inputs tasks data (task instance)
+        old_input_task = None
+        if self.input:
+            old_input_task = self.init(self.input)
+        
+        # get new inputs task data (task instance)
+        new_input_task = None
+        if new_input:
+            new_input_task = self.init(new_input)
+        
+        # ???
+        # change status
+        new_status = self._from_input_status(new_input_task)
+        if self.status in self.end_statuses and not new_status in self.end_statuses:
+            self._this_change_from_end()
+                
+        # change outputs
+        # -- in old input
+        list_output_old = None # output бывшей входящей задачи
+        if old_input_task:
+            list_output_old = old_input_task.output
+            if self.task_name in list_output_old:
+                list_output_old.remove(self.task_name)
+            
+        # -- in new input
+        list_output_new = None
+        if new_input_task:
+            if not new_input_task.output:
+                list_output_new = []
+            else:
+                list_output_new = new_input_task.output
+            list_output_new.append(self.task_name)
+            
+        # prints
+        #if new_input_task:
+            #print('new input: %s' % new_input_task.task_name)
+        #else:
+            #print('new input: %s' % new_input_task)
+        #if old_input_task:
+            #print('old input: %s' % old_input_task.task_name)
+        #print('new status: %s' % new_status)
+        #print('list_output_old:' , list_output_old)
+        #print('list_output_new:' , list_output_new)
+        #return(True, 'Be!')
+        
+        # (2)
+        # change data
+        if new_input_task:
+            if list_output_new:
+                new_input_task.__change_data('output', list_output_new)
+            self.__change_data('input', new_input_task.task_name)
+        else:
+            self.__change_data('input', '')
+        #
+        if old_input_task and list_output_old:
+            old_input_task.__change_data('output', list_output_old)
+        #
+        if new_status:
+            self.__change_data('status', new_status)
+        
+        # (3)
+        return(True, (new_status, old_input_task, new_input_task))
+        
+    # task_data (dict) - изменяемая задача, если False - значит предполагается, что task инициализирован.
+    def accept_task(self): # v2
+        pass
+        # 1 - получение task_data,
+        # 2 - перезапись БД задачи
+        # 3 - изменение статусов исходящих задачь
+        # 4 - запись task лога
+        # 5 - запись artist_task_log
+        # 6 - внесение изменений в объект если он инициализирован
+        
+        # (1)
+        
+        '''
+        # (-) publish
+        #result = lineyka_publish.publish().publish(project_name, task_data)
+        result = self.publish.publish(self) # ???????????????????????????????????????????????? переработать
+        if not result[0]:
+            return(False, result[1])
+        '''
+        
+        # (2)
+        read_ob = self.asset.project
+        table_name = '"%s:%s"' % (self.asset.id, self.tasks_t)
+        keys = self.tasks_keys
+        update_data = {'readers':{}, 'status':'done'}
+        where = {'task_name': self.task_name}
+        bool_, r_data = database().update('project', read_ob, table_name, keys, update_data, where, table_root=self.tasks_db)
+        if not bool_:
+            return(bool_, r_data)
+        
+        # (3) change output statuses
+        result = self._this_change_to_end()
+        if not result[0]:
+            return(False, result[1])
+        
+        # (4)
+        log_keys = {
+        'description': 'accept',
+        'action': 'done',
+        }
+        b, r = log(self).write_log(log_keys)
+        if not b:
+            return(b, r)
+        
+        # (5)
+        artist_log_keys = {
+        'price': self.price,
+        'finish': datetime.datetime.now(),
+        }
+        b, r = log(self).artist_write_log(artist_log_keys)
+        if not b:
+            return(b, r)
+        
+        # (6)
+        self.status = 'done'
+        self.readers = {} # ???
+            
+        return(True, 'Ok!')
+
+    # приём задачи текущим ридером
+    # current_artist (artist) - экземпляр класса артист, должен быть инициализирован - artist.get_user()
+    def readers_accept_task(self, current_artist): # v2
+        pass
+        # 0 - проверка, чтобы current_artist был экземпляром класса artist
+        # 1 - изменения в readers, определение change_status
+        # 2 - запись лога
+        # 3 - accept_task()
+        # 4 - внесение изменений в объект.
+        
+        # (0)
+        if not isinstance(current_artist, artist):
+            return(False, 'in task.readers_accept_task() - "current_artist" must be an instance of "artist" class, and not "%s"' % current_artist.__class__.__name__)
+        
+        # (1)
+        change_status = True
+        readers = self.readers
+        if current_artist.nik_name in readers:
+            readers[current_artist.nik_name] = 1
+        else:
+            return(False, 'Current user is not a reader of this task!')
+        #
+        for key in readers:
+            if key == 'first_reader':
+                continue
+            elif readers[key] == 0:
+                change_status = False
+                break
+            
+        # (2)
+        log_keys = {
+        'description': 'reader_accept',
+        'action': 'reader_accept',
+        }
+        b, r = log(self).write_log(log_keys)
+        if not b:
+            return(b, r)
+        
+        # (3)
+        if change_status:
+            b ,r = self.accept_task()
+            if not b:
+                return(b, r)
+        
+        # (-) -- publish
+        '''
+        if change_status:
+            result = self.publish.publish(self)
+            if not result[0]:
+                return(False, result[1])
+                
+        # (-)
+        read_ob = self.asset.project
+        table_name = '"%s:%s"' % (self.asset.id, self.tasks_t)
+        keys = self.tasks_keys
+        if change_status:
+            update_data = {'readers':readers, 'status':'done'}
+        else:
+            update_data = {'readers':readers}
+        where = {'task_name': self.task_name}
+        bool_, r_data = database().update('project', read_ob, table_name, keys, update_data, where, table_root=self.tasks_db)
+        if not bool_:
+            return(bool_, r_data)
+        
+        # (-) change output statuses
+        if change_status:
+            # -- change output statuses
+            result = self._this_change_to_end()
+            if not result[0]:
+                return(False, result[1])
+        '''
+        # (4)
+        self.readers = readers
+        if change_status:
+            self.status = 'done'
+        
+        return(True, 'Ok')
+
+    # 
+    def close_task(self): # v2
+        pass
+        # 1 - получение task_data
+        # 2 - запись изменений задачи в БД
+        # 3 - изменение статусов исходящих задачь
+        # 4 - запись лога
+        # 5 - внесение изменений в объект если он инициализирован
+        
+        # (1)
+                        
+        # (2)
+        read_ob = self.asset.project
+        table_name = '"%s:%s"' % (self.asset.id, self.tasks_t)
+        keys = self.tasks_keys
+        update_data = {'status':'close'}
+        where = {'task_name': self.task_name}
+        bool_, r_data = database().update('project', read_ob, table_name, keys, update_data, where, table_root=self.tasks_db)
+        if not bool_:
+            return(bool_, r_data)
+                
+        # (3) change output statuses
+        result = self._this_change_to_end()
+        if not result[0]:
+            return(False, result[1])
+        
+        # (4)
+        log_keys = {
+        'description': 'close',
+        'action': 'close',
+        }
+        b, r = log(self).write_log(log_keys)
+        if not b:
+            return(b, r)
+        
+        # (5)
+        self.status = 'close'
+            
+        return(True, 'Ok!')
+
+    # task должен быть инициализирован.
+    # task_data (dict) - изменяемая задача, если False - значит предполагается, что task инициализирован.
+    # current_user (artist) - экземпляр класса артист, должен быть инициализирован - artist.get_user() - если False - то чат проверятся не будет (для тех нужд)
+    def rework_task(self, current_user): # v2 ** продолжение возможно только после редактирования chat().read_the_chat()
+        pass
+        # 1 - get exists chat
+        # 2 - edit readers
+        # 3 - write db
+        # 4 - запись лога
+        # 5 - edit self.status
+        
+        # (1)
+        if current_user:
+            if not isinstance(current_user, artist):
+                return(False, 'in task.rework_task() - "current_user" must be an instance of "artist" class, and not "%s"' % current_user.__class__.__name__)
+            exists_chat = False
+            result = chat(self).read_the_chat()
+            if not result[0]:
+                return(False, 'No chat messages! To send for rework, you must specify the reason in the chat.')
+            
+            delta = datetime.timedelta(minutes = 45)
+            now_time = datetime.datetime.now()
+            for topic in result[1]:
+                if topic['author'] == current_user.nik_name:
+                    if (now_time - topic['date_time']) <= delta:
+                        exists_chat = True
+                        break
+                        
+            if not exists_chat:
+                return(False, 'No chat messages or no fresh (30 minutes) messages! To send for rework, you must specify the reason in the chat.')
+        
+        # (2)
+        if self.readers:
+            for nik_name in self.readers:
+                if nik_name == 'first_reader':
+                    continue
+                self.readers[nik_name] = 0
+        
+        # (3)
+        read_ob = self.asset.project
+        table_name = '"%s:%s"' % (self.asset.id, self.tasks_t)
+        keys = self.tasks_keys
+        update_data = {'status':'recast', 'readers': self.readers}
+        where = {'task_name': self.task_name}
+        bool_, r_data = database().update('project', read_ob, table_name, keys, update_data, where, table_root=self.tasks_db)
+        if not bool_:
+            return(bool_, r_data)
+        
+        # (4)
+        log_keys = {
+        'description': 'recast',
+        'action': 'recast',
+        }
+        b, r = log(self).write_log(log_keys)
+        if not b:
+            return(b, r)
+        
+        # (5)
+        self.status = 'recast'
+        
+        return(True, 'Ok!')
+
+    # task_data (dict) - изменяемая задача, если False - значит предполагается, что task инициализирован.
+    def return_a_job_task(self): # v2
+        pass
+        # 1 - получение task_data,
+        # 2 - чтение входящей задачи
+        # 3 - получение статуса на основе статуса входящей задачи.
+        # 4 - внесение изменений в БД
+        # 5 - запись лога
+        # 6 - изменение статусов исходящих задач
+        
+        # (2)
+        input_task = False
+        if self.input:
+            input_task = self.init(self.input)
+        
+        # (3)
+        self.status = 'null'
+        new_status = self._from_input_status(input_task)
+        #return(True, new_status)
+        
+        # (4)
+        read_ob = self.asset.project
+        table_name = '"%s:%s"' % (self.asset.id, self.tasks_t)
+        keys = self.tasks_keys
+        update_data = {'readers':{}, 'status':new_status}
+        where = {'task_name': self.task_name}
+        bool_, r_data = database().update('project', read_ob, table_name, keys, update_data, where, table_root=self.tasks_db)
+        if not bool_:
+            return(bool_, r_data)
+        
+        # (5)
+        log_keys = {
+        'description': 'return a job',
+        'action': 'return_a_job',
+        }
+        b, r = log(self).write_log(log_keys)
+        if not b:
+            return(b, r)
+        
+        # (6) change output statuses
+        result = self._this_change_from_end()
+        if not result[0]:
+            return(False, result[1])
+        else:
+            return(True, new_status)
+            
+    # change_statuses (list) - [(task_ob, new_status), ...]
+    # тупо смена статусов в пределах рабочих, что не приводит к смене статусов исходящих задач.
+    # task.asset инициализирован
+    def change_work_statuses(self, change_statuses): # v2
+        table_name = '"%s:%s"' % (self.asset.id, self.tasks_t)
+        return_data_ = {}
+        for data in change_statuses:
+            task_ob = data[0]
+            new_status = data[1]
+            #
+            if new_status not in (self.working_statuses + ['checking']):
+                continue
+            #
+            update_data = {'status': new_status}
+            where = {'task_name': task_ob.task_name}
+            bool_, return_data = database().update('project', self.asset.project, table_name, self.tasks_keys, update_data, where, table_root=self.tasks_db)
+            if not bool_:
+                return(False, return_data)
+            #
+            task_ob.status = new_status
+            #
+            return_data_[task_ob.task_name] = new_status
+            
+        return(True, return_data_)
+
+    # отправка текущей задачи на проверку
+    # обёртка на task.change_work_statuses()
+    # задача должна быть инициализирована
+    def to_checking(self):
+        b, r = self.change_work_statuses([(self, 'checking')])
+        if not b:
+            return(b, r)
+        else:
+            pass
+            #
+            log_keys = {
+            'description': 'report',
+            'action': 'report',
+            }
+            b, r = log(self).write_log(log_keys)
+            if not b:
+                return(b, r)
+            #
+            self.status = 'checking'
+            return(True, 'Ok!')
+
+    # task_name (str) - имя задачи
+    # возврат словаря задачи (по ключам из tasks_keys, чтение БД) по имени задачи. если нужен объект используем task.init(name)
+    def _read_task(self, task_name): # v2
+        pass
+        # 1 - get asset_id, other_asset
+        # 2 - read task_data
+        # 3 - return
+        
+        # (1)
+        other_asset=False
+        
+        if self.asset.name == task_name.split(':')[0]: # задача из данного ассета
+            asset_id = self.asset.id
+        # asset_path
+        else: # задача из другого ассета
+            other_asset = self.asset.init(task_name.split(':')[0])
+            asset_id = other_asset.id
+        
+        # (2) read task
+        table_name = '"%s:%s"' % (asset_id, self.tasks_t)
+        where={'task_name': task_name}
+        
+        # -- read
+        bool_, return_data = database().read('project', self.asset.project, table_name, self.tasks_keys , where=where, table_root=self.tasks_db)
+        if not bool_:
+            return(bool_, return_data)
+        if not return_data:
+            return(False, 'Not Found task whith name "%s"!' % task_name)
+        
+        task_data = return_data[0]
+        
+        # (3)
+        return (True, (task_data, other_asset))
+        '''
+        if not other_asset:
+            return(True, self.init_by_keys(task_data))
+        else:
+            task_ob = task(other_asset)
+            task_ob.init_by_keys(task_data, new=False)
+            return(True, task_ob)
+        '''
+
+    # input_task_list (list) - список задач (объекты)
+    def _service_add_list_to_input(self, input_task_list): # v2
+        pass
+        # 0 - получение task_data.
+        # 1 - проверка на srvice
+        # 2 - получение данных для перезаписи инпута данной задачи и аутпутов новых входящих задач.
+        # 3 - изменение статуса данной задачи.
+        # 4 - внесение изменений в БД по данной задаче.
+        # 5 - внесение изменений в БД по входящим задачам.
+        # 6 - внесение изменений в объект, если он инициализирован
+        
+        # (0)
+                        
+        # (1)
+        if self.task_type != 'service':
+            description = 'In task._service_add_list_to_input() - incorrect type!\nThe type of task to be changed must be "service".\nThis type: "%s"' % self.task_type
+            return(False, description)
+        
+        # (2)
+        # add input list
+        # -- get_input_list
+        overlap_list = []
+        inputs = []
+        done_statuses = []
+        rebild_input_task_list = []
+        for task_ob in input_task_list:
+            # -- get inputs list
+            if self.input:
+                ex_inputs = []
+                try:
+                    ex_inputs = self.input
+                except:
+                    pass
+                if task_ob.task_name in ex_inputs:
+                    overlap_list.append(task_ob.task_name)
+                    continue
+            inputs.append(task_ob.task_name)
+            # -- get done statuses
+            done_statuses.append(task_ob.status in self.end_statuses)
+            
+            # edit outputs
+            if task_ob.output:
+                ex_outputs = []
+                try:
+                    ex_outputs = task_ob.output
+                except:
+                    pass
+                ex_outputs.append(self.task_name)
+                task_ob.output = ex_outputs
+            else:
+                this_outputs = []
+                this_outputs.append(self.task_name)
+                task_ob.output = this_outputs
+                
+            rebild_input_task_list.append(task_ob)
+            
+        if not self.input:
+            self.input = inputs
+        else:
+            ex_inputs = []
+            try:
+                ex_inputs = self.input
+            except:
+                pass
+            self.input = ex_inputs + inputs
+        
+        # (3) change status
+        if self.status in self.end_statuses:
+            if False in done_statuses:
+                self.status = 'null'
+                self._this_change_from_end()
+                
+        # (4)
+        read_ob = self.asset.project
+        table_name = '"%s:%s"' % (self.asset.id, self.tasks_t)
+        keys = self.tasks_keys
+        update_data = {'input':self.input, 'status':self.status}
+        where = {'task_name': self.task_name}
+        bool_, r_data = database().update('project', read_ob, table_name, keys, update_data, where, table_root=self.tasks_db)
+        if not bool_:
+            return(bool_, r_data)
+        
+        # (5)
+        append_task_name_list = []
+        for task_ob in rebild_input_task_list:
+            if not task_ob.task_name in overlap_list:
+                table_name = '"%s:%s"' % (task_ob.asset.id, self.tasks_t)
+                update_data = {'output':task_ob.output}
+                where = {'task_name': task_ob.task_name}
+                append_task_name_list.append(task_ob.task_name)
+                bool_, r_data = database().update('project', read_ob, table_name, keys, update_data, where, table_root=self.tasks_db)
+                if not bool_:
+                    return(bool_, r_data)
+                
+        # (6)
+        #self.status = task_data['status']
+        #self.input = task_data['input']
+        
+        return(True, (self.status, append_task_name_list))
+        
+    # asset_list (list) - подсоединяемые ассеты (словари, или объекты)
+    # task_data (dict) - изменяемая задача, если False - значит предполагается, что task инициализирован
+    def _service_add_list_to_input_from_asset_list(self, asset_list, task_data=False): # v2
+        pass
+        # 1 - получение task_data.
+        # 2 - проверка на srvice
+        # 3 - получение списка задачь для добавления в инпут
+        
+        # (1)
+        if not task_data:
+            task_data={}
+            for key in self.tasks_keys:
+                exec('task_data["%s"] = self.%s' % (key, key))
+                
+        # (2)
+        if task_data['task_type'] != 'service':
+            description = 'In task._service_add_list_to_input_from_asset_list() - incorrect type!\nThe type of task to be changed must be "service".\nThis type: "%s"' % task_data['task_type']
+            return(False, description)
+        
+        # (3)
+        final_tasks_list = []
+        #types = {'obj':'model', 'char':'rig'}
+        types = {'mesh':'model', 'group':'model',  'rig':'rig'}
+        for ast in asset_list:
+            if isinstance(ast, dict):
+                ast_ob = asset(self.asset.project)
+                ast_ob.init_by_keys(ast, new=False)
+            elif isinstance(ast, asset):
+                ast_ob = ast
+            else:
+                continue
+            tsk_ob = task(ast_ob)
+            #if task_data['asset_type'] in ['location', 'shot_animation'] and ast_ob.type in types:
+            if task_data['asset_type'] in ['location', 'shot_animation'] and ast_ob.type=='object':
+                pass
+                #activity = types[ast_ob.type]
+                activity = types[ast_ob.loading_type]
+                bool_, task_list = tsk_ob.get_list()
+                if not bool_:
+                    return(bool_, task_list)
+                #
+                td_dict = {}
+                for td in task_list:
+                    td_dict[td['task_name']] = td
+                #
+                for td in task_list:
+                    if td.get('activity') == activity:
+                        if not td.get('input') or td_dict[td['input']]['activity'] != activity:
+                                final_tasks_list.append(td)
+            else:
+                task_name = (ast_ob.name + ':final')
+                td = tsk_ob.init(task_name)
+                final_tasks_list.append(td)
+        '''
+        # edit db
+        # -- Connect to db
+        conn = sqlite3.connect(self.tasks_path, detect_types=sqlite3.PARSE_DECLTYPES|sqlite3.PARSE_COLNAMES)
+        conn.row_factory = sqlite3.Row
+        c = conn.cursor()
+        
+        # get task list
+        final_tasks_list = []
+        for asset in asset_list:
+            if task_data['asset_type'] in ['location', 'shot_animation'] and asset['type'] in ['obj', 'char']:
+                activity = None
+                if asset['type'] == 'obj':
+                    activity = 'model'
+                elif asset['type'] == 'char':
+                    activity = 'rig'
+                
+                # get all task data
+                table = '\"' + asset['id'] + ':' + self.tasks_t + '\"'
+                string = 'select * from ' + table
+                try:
+                    c.execute(string)
+                except:
+                    print(('Not exicute in _service_add_list_to_input_from_asset_list -> ' + asset['name']))
+                    continue
+                else:
+                    td_dict = {}
+                    rows = c.fetchall()
+                    for td in rows:
+                        td_dict[td['task_name']] = td
+                        
+                    for td in rows:
+                        if td['activity'] == activity:
+                            if not dict(td).get('input') or td_dict[td['input']]['activity'] != activity:
+                                final_tasks_list.append(td)
+            
+            else:
+                task_name = (asset['name'] + ':final')
+                
+                table = '\"' + asset['id'] + ':' + self.tasks_t + '\"'
+                string = 'select * from ' + table + ' WHERE task_name = \"' + task_name + '\"'
+                try:
+                    c.execute(string)
+                    final_task = dict(c.fetchone())
+                    final_tasks_list.append(final_task)
+                except:
+                    print(('not found task: ' + task_name))
+        
+        conn.close()
+        '''
+        
+        result = self._service_add_list_to_input(final_tasks_list, task_data)
+        if not result[0]:
+            return(False, result[1])
+        
+        #
+        if self.task_name == task_data['task_name']:
+            self.status = result[1][0]
+            for task_name in result[1][1]:
+                if not task_name in self.input:
+                    self.input.append(task_name)
+        
+        return(True, result[1])
+        
+    # self.asset.project - должен быть инициализирован
+    # task_data (dict) - изменяемая задача, если False - значит предполагается, что task инициализирован.
+    # removed_tasks_list (list) - содержит словари удаляемых из инпута задач.
+    def _service_remove_task_from_input(self, removed_tasks_list, task_data=False, change_status = True): # v2
+        pass
+        # 0 - получение task_data.
+        # 1 - тест на статус сервис-не сервис.
+        # 2 - очистка списка входящих.
+        # 3 - замена статуса очищаемой задачи.
+        # 4 - удаление данной задачи из output - входящей задачи.
+        # 5 - перезепись status, input - изменяемой задачи.
+        # 6 - изменение статуса далее по цепи.
+        # 7 - внесение изменений в объект, если он инициализирован
+        
+        # (0)
+        if not task_data:
+            task_data={}
+            for key in self.tasks_keys:
+                exec('task_data["%s"] = self.%s' % (key, key))
+        
+        # (1)
+        if task_data['task_type'] != 'service':
+            description = 'In task._service_remove_task_from_input() - incorrect type!\nThe type of task being cleared, must be "service".\nThis type: "%s"' % task_data['task_type']
+            return(False, description)
+        
+        # (2)
+        # get input_list
+        input_list = task_data['input']
+        # removed input list
+        for tsk in removed_tasks_list:
+            if tsk['task_name'] in input_list:
+                input_list.remove(tsk['task_name'])
+            else:
+                print('warning! *** ', tsk['task_name'], ' not in ', input_list)
+        
+        # (3)
+        # GET STATUS
+        new_status = None
+        old_status = task_data['status']
+        assets = False
+        if old_status == 'done' or not input_list:
+            new_status = 'done'
+        else:
+            # get assets dict
+            result = self.asset.get_dict_by_name_by_all_types()
+            if not result[0]:
+                return(False, result[1])
+            assets = result[1]
+            #
+            bool_statuses = []
+            
+            for task_name in input_list:
+                bool_, r_data = self.get_tasks_by_name_list([task_name], assets_data = assets.get(task_name.split(':')[0]))
+                if not bool_:
+                    print('#'*5)
+                    print('in task.get_tasks_by_name_list()')
+                    print('task_name - %s' % task_name)
+                    print('asset_data - ', assets_data)
+                    continue
+                else:
+                    if r_data:
+                        inp_task_data = r_data[task_name]
+                    else:
+                        continue
+                
+                if inp_task_data['status'] in self.end_statuses:
+                    bool_statuses.append(True)
+                else:
+                    bool_statuses.append(False)
+                    
+            if False in bool_statuses:
+                new_status = 'null'
+            else:
+                new_status = 'done'
+        '''
+        # ****** connect to db
+        conn = sqlite3.connect(self.tasks_path, detect_types=sqlite3.PARSE_DECLTYPES|sqlite3.PARSE_COLNAMES)
+        conn.row_factory = sqlite3.Row
+        c = conn.cursor()
+        
+        assets = False
+        if old_status == 'done' or not input_list:
+            new_status = 'done'
+        else:
+            # get assets dict
+            result = self.get_dict_by_name_by_all_types(project_name)
+            if not result[0]:
+                return(False, result[1])
+            assets = result[1]
+            
+            bool_statuses = []
+            
+            for task_name in input_list:
+                try:
+                    asset_id = assets[task_name.split(':')[0]]['id']
+                except:
+                    print(('in from_service_remove_input_tasks incorrect key: ' + task_name.split(':')[0] + ' in ' + task_name))
+                    continue
+                
+                table = '\"' + asset_id + ':' + self.tasks_t + '\"'
+                
+                string = 'select * from ' + table + ' WHERE task_name = \"' + task_name + '\"'
+                try:
+                    c.execute(string)
+                    inp_task_data = c.fetchone()
+                except:
+                    conn.close()
+                    return(False, ('in from_service_remove_input_tasks can not read ' + string))
+                    
+                if inp_task_data['status'] in self.end_statuses:
+                    bool_statuses.append(True)
+                else:
+                    bool_statuses.append(False)
+                    
+            if False in bool_statuses:
+                new_status = 'null'
+            else:
+                new_status = 'done'
+        '''	
+        # (4)
+        for tsk in removed_tasks_list:
+            output_list = tsk['output']
+            if not output_list:
+                continue
+            
+            if task_data['task_name'] in output_list:
+                output_list.remove(task_data['task_name'])
+                print('#'*5, tsk['task_name'], output_list)
+            else:
+                print('#'*5)
+                continue
+            
+            table = '"%s:%s"' % (tsk['asset_id'], self.tasks_t)
+            update_data = {'output': output_list}
+            where = {'task_name': tsk['task_name']}
+            bool_, r_data = database().update('project', self.asset.project, table, self.tasks_keys, update_data, where, table_root=self.tasks_db)
+            if not bool_:
+                return(bool_, r_data)
+            '''
+            string = 'UPDATE ' + table + ' SET output = ? WHERE task_name = ?'
+            data = (json.dumps(output_list), tsk['task_name'])
+            c.execute(string, data)
+            '''
+        # (5)
+        table = '"%s:%s"' % (task_data['asset_id'], self.tasks_t)
+        if change_status:
+            update_data = {'input': input_list, 'status':new_status}
+        else:
+            update_data = {'input': input_list}
+        where = {'task_name': task_data['task_name']}
+        bool_, r_data = database().update('project', self.asset.project, table, self.tasks_keys, update_data, where, table_root=self.tasks_db)
+        if not bool_:
+            return(bool_, r_data)
+        
+        '''
+        table = '\"' + task_data['asset_id'] + ':' + self.tasks_t + '\"'
+        string = 'UPDATE ' + table + ' SET status = ?, input = ?  WHERE task_name = ?'
+        data = (new_status, json.dumps(input_list), task_data['task_name'])
+        c.execute(string, data)
+        conn.commit()
+        conn.close()
+        '''
+        
+        # (6)
+        if change_status:
+            if old_status == 'done' and new_status == 'null':
+                self._this_change_from_end(task_data, assets = assets)
+            elif old_status == 'null' and new_status == 'done':
+                self._this_change_to_end(task_data, assets = assets)
+                
+        # (7)
+        if self.task_name == task_data['task_name']:
+            if change_status:
+                self.status = new_status
+            self.input = input_list
+        
+        # return
+        if change_status:
+            return(True, (new_status, input_list))
+        else:
+            return(True, (old_status, input_list))
+        
+    # 
+    # removed_task_data (dict) - удаляемая задача
+    # added_task_data (dict) - добавляемая задача
+    # task_data (dict) - изменяемая задача, если False - значит предполагается, что task инициализирован.
+    def _service_change_task_in_input(self, removed_task_data, added_task_data, task_data=False): # v2
+        pass
+        # 0 - получение task_data.
+        
+        # (0)
+        if not task_data:
+            task_data={}
+            for key in self.tasks_keys:
+                exec('task_data["%s"] = self.%s' % (key, key))
+        
+        # debug
+        #print(task_data['task_name'])
+        #print(removed_task_data['task_name'])
+        #print(added_task_data['task_name'])
+        
+        # remove task
+        result = self._service_remove_task_from_input([removed_task_data], task_data=task_data)
+        if not result[0]:
+            return(False, result[1])
+        
+        new_status, input_list = result[1]
+        
+        # edit task_data
+        print(task_data['input'], task_data['status'])
+        #
+        task_data['input'] = input_list
+        task_data['status'] = new_status
+        #
+        print(task_data['input'], task_data['status'])
+        
+        #print(json.dumps(task_data, sort_keys = True, indent = 4))
+        #return(False, 'Epteeeee!')
+        
+        # add task
+        result = self._service_add_list_to_input([added_task_data], task_data=task_data)
+        if not result[0]:
+            return(False, result[1])
+        
+        #
+        if self.task_name == task_data['task_name']:
+            self.status = result[1][0]
+            self.input = input_list + result[1][1]
+            
+        return(True, result[1])
+
+    # заменяет все рид статусы задачи на 0
+    # task_data (dict) - изменяемая задача, если False - значит предполагается, что task инициализирован.
+    def task_edit_read_status_unread(self, task_data=False): # v2 ** start - не обнаружено использование
+        pass
+        # 0 - получение task_data.
+        # 1 - принудительное прочтение задачи из БД - ???????????? зачееемм!!!!!!
+        
+        # (0)
+        if not task_data:
+            task_data={}
+            for key in self.tasks_keys:
+                exec('task_data["%s"] = self.%s' % (key, key))
+                
+        # (1)
+        read_ob = self.asset.project
+        table_name = '"%s:%s"' % (task_data['asset_id'], self.tasks_t)
+        keys = self.tasks_keys
+        where = {'task_name': task_data['task_name']}
+        
+        
+        '''
+        table = '\"' + task_data['asset_id'] + ':' + self.tasks_t + '\"'
+        string = 'SELECT * FROM ' + table + ' WHERE task_name = ?'
+        data = (task_data['task_name'],)
+        
+        # connect db
+        try:
+            conn = sqlite3.connect(self.tasks_path, detect_types=sqlite3.PARSE_DECLTYPES|sqlite3.PARSE_COLNAMES)
+            conn.row_factory = sqlite3.Row
+            c = conn.cursor()
+        except:
+            return(False, 'in task_edit_read_status_unread - not connect db!')
+        
+        # read-edit data
+        c.execute(string, data)
+        task_data = dict(c.fetchone())
+        try:
+            readers = json.loads(task_data['readers'])
+            for nik_name in readers:
+                readers[nik_name] = 0
+            task_data['chat_local'] = json.dumps(readers)
+        except:
+            task_data['chat_local'] = json.dumps({})
+            
+        # write data
+        string = 'UPDATE ' + table + 'SET chat_local = ? WHERE task_name = ?'
+        data = (task_data['chat_local'], task_data['task_name'])
+        c.execute(string, data)
+        
+        conn.commit()
+        conn.close()
+        '''
+        return(True, 'Ok!')
+
+    # заменяет все рид статусы задачи на 1
+    # self.task - должен быть инициализирован
+    def task_edit_read_status_read(self, project_name, task_data, nik_name): # v2 ** - не обнаружено использование
+        pass
+        # test project
+        result = self.get_project(project_name)
+        if not result[0]:
+            return(False, result[1])
+            
+        table = '\"' + task_data['asset_id'] + ':' + self.tasks_t + '\"'
+        string = 'SELECT * FROM ' + table + ' WHERE task_name = ?'
+        data = (task_data['task_name'],)
+        
+        # connect db
+        try:
+            conn = sqlite3.connect(self.tasks_path, detect_types=sqlite3.PARSE_DECLTYPES|sqlite3.PARSE_COLNAMES)
+            conn.row_factory = sqlite3.Row
+            c = conn.cursor()
+        except:
+            return(False, 'in task_edit_read_status_read - not connect db!')
+        
+        # read-edit data
+        c.execute(string, data)
+        task_data = dict(c.fetchone())
+        
+        readers2 = {}
+        try:
+            readers2 = json.loads(task_data['chat_local'])
+            readers2[nik_name] = 1
+        except:
+            readers2[nik_name] = 1
+        task_data['chat_local'] = json.dumps(readers2)
+        
+        # write data
+        string = 'UPDATE ' + table + 'SET chat_local = ? WHERE task_name = ?'
+        data = (task_data['chat_local'], task_data['task_name'])
+        c.execute(string, data)
+        
+        conn.commit()
+        conn.close()
+        
+        return(True, 'Ok!')
+
 class log(studio):
 	'''
 	write_log(project_name, task_name, {key: data, ...}) 

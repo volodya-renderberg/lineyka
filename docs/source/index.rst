@@ -15,6 +15,7 @@ Contents:
    database
    project
    asset
+   task
    examples
    specifications
 
