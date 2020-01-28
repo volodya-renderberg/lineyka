@@ -4226,23 +4226,23 @@ class task(studio):
         Returns
         -------
         tuple
-            * для задач с типом из :attr:`edit_db.studio.multi_publish_task_types` - (*True*, (``{path_data}`` [5]_, ``version``)) или (*False*, comment)
+            * для задач с типом из :attr:`edit_db.studio.multi_publish_task_types` - (*True*, (``{path_data}`` [1]_, ``version``)) или (*False*, comment)
             * для остальных - (*True*, (``path``, ``version``)) - или (*False*, comment)
             
-        .. [5] Структура словаря ``{path_data}`` :
-        
-        ::
-        
-            {
-            'look_path': {
-                branch_name : path,
-                ...
-                },
-            'push_path': {
-                branch_name : path,
-                ...
-                },
-            }
+            .. [1] Структура словаря ``{path_data}`` :
+            
+                ::
+                
+                    {
+                    'look_path': {
+                        branch_name : path,
+                        ...
+                        },
+                    'push_path': {
+                        branch_name : path,
+                        ...
+                        },
+                    }
         """
         
         pass
@@ -4325,23 +4325,23 @@ class task(studio):
         Returns
         -------
         tuple
-            * для задач с типом из :attr:`edit_db.studio.multi_publish_task_types` - (*True*, ``{path_data}`` [5]_) или (*False*, comment)
+            * для задач с типом из :attr:`edit_db.studio.multi_publish_task_types` - (*True*, ``{path_data}`` [2]_) или (*False*, comment)
             * для остальных - (*True*, ``path``) - или (*False*, comment)
             
-        .. [5] Структура словаря ``{path_data}`` :
-        
-        ::
-        
-            {
-            'look_path': {
-                branch_name : path,
-                ...
-                },
-            'push_path': {
-                branch_name : path,
-                ...
-                },
-            }
+            .. [2] Структура словаря ``{path_data}`` :
+            
+                ::
+                
+                    {
+                    'look_path': {
+                        branch_name : path,
+                        ...
+                        },
+                    'push_path': {
+                        branch_name : path,
+                        ...
+                        },
+                    }
         """
         
         pass
