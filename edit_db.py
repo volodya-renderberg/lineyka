@@ -2365,7 +2365,7 @@ class asset(studio):
     '''
     
     # CONSTANTS
-    self.ACTIVITY_FOLDER = {
+    ACTIVITY_FOLDER = {
     'film':{
         'storyboard':'storyboard',
         'specification':'specification',
@@ -2428,7 +2428,7 @@ class asset(studio):
     
     """
     
-    self.ADDITIONAL_FOLDERS = {
+    ADDITIONAL_FOLDERS = {
     'meta_data':'00_common',
     }
     """dict : Общие активити для всех типов ассетов. 
@@ -2442,10 +2442,10 @@ class asset(studio):
         }
     """
     
-    self.UNCHANGEABLE_KEYS = ['id', 'type', 'path']
+    UNCHANGEABLE_KEYS = ['id', 'type', 'path']
     """list : Заголовки неизменяемых данных ассетов. """
     
-    self.COPIED_ASSET = {
+    COPIED_ASSET = {
         'object':['object'],
         }
     """dict : Типы ассетов, которые подлежат копированию.
@@ -2459,7 +2459,7 @@ class asset(studio):
         }
     """
     
-    self.COPIED_WITH_TASK = ['object']
+    COPIED_WITH_TASK = ['object']
     """list : Список типов ассетов, которые копируются с задачами ``?`` """
 
     def __init__(self, project_ob):
