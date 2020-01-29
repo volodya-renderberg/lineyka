@@ -5265,12 +5265,6 @@ class task(studio):
                     return(False, str(e))
             return(True, tmp_path)
 
-    # look какой-либо версии файла для менеджеров (push, publish версии).
-    # action (str) - экшен из [push, publish]
-    # version (bool / str / int) - версия, если False - то открывается последняя.
-    # launch (bool) - False - возвращает только путь, иначе запуск редактором по расширению (для не скетч).
-    # -- note -- для скетч - запуска не делается - возвращаются пути.
-    # return (True, path) или (False, comment)
     def look(self, action='push', version=False, launch=True):
         """Просмотр какой-либо версии файла для менеджеров (``push``, ``publish`` версии).
         
@@ -5289,6 +5283,7 @@ class task(studio):
         -------
         tuple
             Возвращаемые данные аналогичны тому что возвращается при выполнении функций:
+            
             * :func:`edit_db.task.get_version_push_file_path`
             * :func:`edit_db.task.get_final_push_file_path`
             * :func:`edit_db.task.get_version_publish_file_path`
