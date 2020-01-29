@@ -4408,11 +4408,46 @@ class task(studio):
         
         return(True, r_data)
 
-    # push последней или указанной work версии
-    # version (bool/ str / int) - версия коммит источника для push (не для sketch)
-    # current_artist (artist) - текущий пользователь, если не передавать, будет сделано get_user
-    # return для скетч - (True, ({словарь с ключами: source_path, source_versions, push_path, look_path - значения словари по веткам}, version) для остальных (True, ((source_path, new_path), version))
     def get_new_push_file_path(self, version=False, current_artist=False):
+        """Возвращает как новые пути и версию для операции ``push``, так и пути и версии исходников из ``work`` директории.
+        
+        Parameters
+        ----------
+        version : str, int, optional
+            Коммит версия исходника (не для задач с типом из :attr:`edit_db.studio.multi_publish_task_types`, для задач с этим типом делается ``push`` только последних версий каждой ветки).
+        current_artist : :obj:`edit_db.artist`, optional
+            Текущий пользователь, если не передавать, будет сделано :func:`edit_db.artist.get_user`
+            
+        Returns
+        -------
+        tuple
+            * для задач с типом из :attr:`edit_db.studio.multi_publish_task_types` - (*True*, (``{path_data}`` [3]_, ``new_version``)) или (*False*, comment)
+            * для остальных - (*True*, (``source_path``, ``source_version``, ``source_branch``, ``new_path``, ``new_version``)) - или (*False*, comment)
+            
+            .. [3] Структура словаря ``{path_data}`` :
+            
+                ::
+                
+                    {
+                    'source_path': {
+                        branch_name : path,
+                        ...
+                        },
+                    'source_versions': {
+                        branch_name : version,
+                        ...
+                        },
+                    'push_path': {
+                        branch_name : path,
+                        ...
+                        },
+                    'look_path': {
+                        branch_name : path,
+                        ...
+                        },
+                    }
+        
+        """
         pass
         # 0 - test artist
         # 1 - чтение push лога
@@ -4549,12 +4584,39 @@ class task(studio):
             else:
                 return(True, (source_path, str_source_version, end_work_log['branch'], r, str_new_version))
 
-    # Publish пути
-    # version (int / str) - номер publish версии
-    # branches (bool / list) - список веток данного паблиша, для мультипаблиша.
-    # version_log (bool / dict) - словарь лога данной версии, если его передавать, то branches и version не имеют смысла.
-    # return (True, path или dict(пути по веткам)) или (False, comment)
     def get_version_publish_file_path(self, version=False, branches=False, version_log=False):
+        """Пути до файлов указанной ``publish`` версии (на локальном сервере студии).
+        
+        Parameters
+        ----------
+        version : str, int, optional
+            Номер ``publish`` версии.
+        branches : list, optional
+            Список веток данного паблиша, для мультипаблиша.
+        version_log : dict
+            Словарь лога данной версии, если его передавать, то ``branches`` и ``version`` не имеют смысла.
+            
+        Returns
+        -------
+        tuple
+            * для задач с типом из :attr:`edit_db.studio.multi_publish_task_types` - (*True*, ``{path_data}`` [4]_) или (*False*, comment)
+            * для остальных - (*True*, ``path``) - или (*False*, comment)
+            
+            .. [4] Структура словаря ``{path_data}`` :
+            
+                ::
+                
+                    {
+                    'look_path': {
+                        branch_name : path,
+                        ...
+                        },
+                    'publish_path': {
+                        branch_name : path,
+                        ...
+                        },
+                    }
+        """
         pass
         # (1)
         if version_log:
@@ -4603,9 +4665,30 @@ class task(studio):
                 else:
                     return(b, r)
 
-    # пути к top версии паблиш файлов
-    # return (True, path или dict(пути по веткам)) или (False, comment)
     def get_final_publish_file_path(self):
+        """Пути к ``top`` версии паблиш файлов (на локальном сервере студии).
+        
+        Returns
+        -------
+        tuple
+            * для задач с типом из :attr:`edit_db.studio.multi_publish_task_types` - (*True*, ``{path_data}`` [5]_) или (*False*, comment)
+            * для остальных - (*True*, ``path``) - или (*False*, comment)
+            
+            .. [5] Структура словаря ``{path_data}`` :
+            
+                ::
+                
+                    {
+                    'look_path': {
+                        branch_name : path,
+                        ...
+                        },
+                    'publish_path': {
+                        branch_name : path,
+                        ...
+                        },
+                    }
+        """
         pass
         # 1 - read the final publish log, get final publish version
         # 2 - get template path
@@ -4654,6 +4737,68 @@ class task(studio):
     # source_version (bool / str) - версия исходника (пуш, паблиш) если False - последняя версия.
     # return: (true, (dict_path, version)) или (False, comment), структура dict_path: ключи - 'top_path', 'version_path', 'top_look_path', 'version_look_path', 'source_look_path', 'source_path'   значения - пути или словари путей по веткам.
     def get_new_publish_file_path(self, republish=False, source_log=False, source_version=False):
+        """Пути до файлов новой ``publish`` версии (и ``top``, и версию, на локальном сервере студии). 
+        
+        Parameters
+        ----------
+        republish : bool, optional
+            Репаблиш или нет.
+        source_log : dict, optional
+            лог источника для паблиша (``push`` или ``publish``), при наличие этого лога версия ``source_version`` передавать не имеет смысла.
+        source_version : int, str, optional
+            Версия исходника (``push`` или ``publish``) если *False* - последняя версия.
+        
+        Returns
+        -------
+        tuple
+            * для задач с типом из :attr:`edit_db.studio.multi_publish_task_types` - (*True*, (``{path_data}`` [6]_, ``new_version``, ``source`` [7]_, ``branches`` [8]_)) или (*False*, comment)
+            * для остальных - (*True*, (``{path_data}`` [9]_, ``new_version``, ``source`` [7]_)) или (*False*, comment)
+            
+            .. [6] Структура словаря ``{path_data}`` :
+            
+                ::
+                
+                    {
+                    'top_path': {
+                        branch_name : path,
+                        ...
+                        },
+                    'top_look_path': {
+                        branch_name : path,
+                        ...
+                        },
+                    'version_path': {
+                        branch_name : path,
+                        ...
+                        },
+                    'version_look_path': {
+                        branch_name : path,
+                        ...
+                        },
+                    'source_path': {
+                        branch_name : path,
+                        ...
+                        },
+                    'source_look_path': {
+                        branch_name : path,
+                        ...
+                        },
+                    }
+                    
+            .. [7] версия (``push`` или ``publish``) от куда делается паблиш.
+            
+            .. [8] список веток которые паблишатся.
+            
+            .. [9] Структура словаря ``{path_data}`` :
+            
+                ::
+                
+                    {
+                    'top_path': path,
+                    'version_path': path,
+                    'source_path': path,
+                    }
+        """
         pass
         # 1 - read the final publish log, get final publish version
         # 2 - получение branches и путей исходника.
