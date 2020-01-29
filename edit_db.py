@@ -4731,11 +4731,6 @@ class task(studio):
                 else:
                     return(b, (r, end_log['version']))
 
-    # пути для новых паблиш файлов: и top и версию
-    # republish (bool) - репаблиш или нет.
-    # source_log (bool / dict) - лог источника для паблиша (push или publish), при наличие этого лога версия source_version передавать не имеет смысла.
-    # source_version (bool / str) - версия исходника (пуш, паблиш) если False - последняя версия.
-    # return: (true, (dict_path, version)) или (False, comment), структура dict_path: ключи - 'top_path', 'version_path', 'top_look_path', 'version_look_path', 'source_look_path', 'source_path'   значения - пути или словари путей по веткам.
     def get_new_publish_file_path(self, republish=False, source_log=False, source_version=False):
         """Пути до файлов новой ``publish`` версии (и ``top``, и версию, на локальном сервере студии). 
         
@@ -4784,10 +4779,11 @@ class task(studio):
                         ...
                         },
                     }
-                    
-            .. [7] версия (``push`` или ``publish``) от куда делается паблиш.
             
-            .. [8] список веток которые паблишатся.
+            
+            .. [7] Версия ``push`` или ``publish``, откуда делается паблиш.
+            
+            .. [8] Список веток которые паблишатся.
             
             .. [9] Структура словаря ``{path_data}`` :
             
@@ -4926,7 +4922,7 @@ class task(studio):
     # old
 
     # task - должен быть инициализирован
-    def get_final_file_path(self, current_artist=False): # v2
+    def get_final_file_path(self, current_artist=False): # УСТАРЕЛО!!!!!!!!!!!!!
         pass
         activity_path = NormPath(os.path.join(self.asset.path, self.activity))
         
@@ -4964,7 +4960,7 @@ class task(studio):
     # asset - должен быит инициализирован
     # task_data (dict) - требуется если не инициализирован task
     # version (str) - hex 4 символа
-    def get_version_file_path(self, version, task_data=False): # v2
+    def get_version_file_path(self, version, task_data=False): # УСТАРЕЛО!!!!!!!!!!!!!
         asset_path = self.asset.path
         if not task_data:
             asset_type = self.asset.type
@@ -4988,7 +4984,7 @@ class task(studio):
 
     # asset - должен быит инициализирован
     # task_data (dict) - требуется если не инициализирован task
-    def get_new_file_path(self, task_data=False): # v2
+    def get_new_file_path(self, task_data=False): # УСТАРЕЛО!!!!!!!!!!!!!
         pass
         if not task_data:
             asset_type = self.asset.type
@@ -5034,7 +5030,7 @@ class task(studio):
 
     # asset - должен быит инициализирован
     # activity (str)
-    def get_publish_file_path(self, activity): # v2
+    def get_publish_file_path(self, activity): # УСТАРЕЛО!!!!!!!!!!!!!
         pass
         # get task_data
         result = self.get_list(asset_id=self.asset.id)
@@ -5066,21 +5062,45 @@ class task(studio):
             
         return(True, file_path)
 
-    # вызов одноимённого хука
     def _pre_commit(self, work_path, save_path):
+        """Вызов одноимённого хука. Вызывается из :func:`edit_db.task.commit`
+        
+        Returns
+        -------
+        tuple
+            (*True, 'Ok!'*) или (*False, comment*)
+        """
         return(True, 'Ok!')
 
-    # вызов одноимённого хука
     def _post_commit(self, work_path, save_path):
+        """Вызов одноимённого хука. Вызывается из :func:`edit_db.task.commit`
+        
+        Returns
+        -------
+        tuple
+            (*True, 'Ok!'*) или (*False, comment*)
+        """
         return(True, 'Ok!')
 
-    # запись новой рабочей версии в work директорию. заполнение task.time, task.full_time, artist_log.full_time.
-    # work_path (str) - путь к текущему рабочему файлу
-    # description (unicode) - коммент
-    # branch (unicode) - наименование ветки, если не передавать - то master
-    # artist_ob (artist) - если не передовать, то будет выполнен get_user()
-    # return (True, path - путь до сохранённого файла) или (False, comment)
     def commit(self, work_path, description, branch=False, artist_ob=False):
+        """Запись новой рабочей версии в ``work`` директорию пользователя (:attr:`edit_db.studio.work_folder`).
+        
+        Parameters
+        ----------
+        work_path : str
+            Путь к текущему рабочему файлу.
+        description : str
+            Описание.
+        branch : str, optional
+            Наименование ветки, если не передавать - то будет использован ``master``.
+        artist_ob : :obj:`edit_db.artist`, optional
+            Текущий пользователь, если не передавать, будет сделано :func:`edit_db.artist.get_user`
+        
+        Returns
+        -------
+        tuple
+            (*True*, ``path`` - путь до сохранённого файла) или (*False, comment*)
+        """
         pass
         # 0 - input data
         # 1 - get save_path
@@ -5183,11 +5203,23 @@ class task(studio):
         
         return(True, save_path)
 
-    # запуск файлов редакторами или вьювером, создание tmp копии файла.
-    # path (str) - путь до оригинального файла.
-    # viewer (bool) - если True - открытие вьювером по оригинальному пути.
-    # -- если False - открытие редактором tmp копии файла.
     def run_file(self, path, viewer=False):
+        """Запуск файлов редактором или вьювером, создание ``tmp`` копии файла.
+        
+        Parameters
+        ----------
+        path : str
+            Путь до оригинального файла.
+        viewer : bool, optional
+            Если *True* - открытие вьювером по оригинальному пути.
+        
+        Returns
+        -------
+        tuple
+            (*True*, ``path`` [10]_) или (*False, comment*)
+            
+            .. [10] ``path`` - путь до открываемого файла, оригинальный или ``tmp``.
+        """
         if viewer:
             soft = {'Linux':'xdg-open',
                 'Windows':'explorer',
@@ -5240,6 +5272,28 @@ class task(studio):
     # -- note -- для скетч - запуска не делается - возвращаются пути.
     # return (True, path) или (False, comment)
     def look(self, action='push', version=False, launch=True):
+        """Просмотр какой-либо версии файла для менеджеров (``push``, ``publish`` версии).
+        
+        .. note:: Если тип задачи из :attr:`edit_db.studio.multi_publish_task_types` (например ``sketch``) то запуска не будет, но будут возвращены пути.
+        
+        Parameters
+        ----------
+        action : str, optional
+            Экшен из [``push``, ``publish``]
+        version : int, str, optional
+            Версия, если *False* - то открывается последняя.
+        launch : bool, optional
+            Если *False* - возвращает только путь, иначе запуск редактором по расширению.
+            
+        Returns
+        -------
+        tuple
+            Возвращаемые данные аналогичны тому что возвращается при выполнении функций:
+            * :func:`edit_db.task.get_version_push_file_path`
+            * :func:`edit_db.task.get_final_push_file_path`
+            * :func:`edit_db.task.get_version_publish_file_path`
+            * :func:`edit_db.task.get_final_publish_file_path`
+        """
         pass
         # 1 - получение пути / запуск
         # 2 - открытие или возврат пути
