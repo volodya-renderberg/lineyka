@@ -6053,13 +6053,28 @@ class task(studio):
         
                     
         return(True, (new_dir_path, new_file_path))
-        
-    # version (str) - hex 4 символа
-    # cache_dir_name (str) - "asset_name + '_' + ob_name"
-    # activity (str) - по умолчанию cache (для blender) - для других программ может быть другим, например "maya_cache"
-    # extension (str) - расширение файла кеша.
-    # task_data (dict) - изменяемая задача, если False - значит предполагается, что task инициализирован.
+
     def get_version_cache_file_path(self, version, cache_dir_name, activity = 'cache', extension = '.pc2', task_data=False): # v2 *** без тестов
+        """Путь к определённой версии файла кеша меш объекта.
+        
+        Parameters
+        ----------
+        version : str
+            Версия ``hex`` 4 символа ``?``.
+        cache_dir_name : str
+            Имя директории состоиит из имени ассета и имени меш объекта, через нижнее подчёркивание: ``asset_name`` + ``'_'`` + ``ob_name``.
+        activity : str, optional
+            По умолчанию ``'cache'`` (для *blender*) - для других программ может быть другим, например ``'maya_cache'``.
+        extension : str, optional
+            Расширение файла кеша.
+        task_data : dict
+            Не использовать. Работа с текущим объектом.
+            
+        Returns
+        -------
+        tuple
+            (*True*, ``path``) или (*False, comment*)
+        """
         pass
         # 1 - получение task_data
         # (1)
