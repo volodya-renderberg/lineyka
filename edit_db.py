@@ -5917,12 +5917,26 @@ class task(studio):
             return(True, tech_anim_cache_versions_list)
         else:
             return(False, 'No Found Cache Versions! *')
-        
-    # cache_dir_name (str) - "asset_name + '_' + ob_name"
-    # activity (str) - по умолчанию cache (для blender) - для других программ может быть другим, например "maya_cache"
-    # extension (str) - расширение файла кеша.
-    # task_data (dict) - изменяемая задача, если False - значит предполагается, что task инициализирован.
+
     def get_final_cache_file_path(self, cache_dir_name, activity = 'cache', extension = '.pc2', task_data=False): # v2 *** без тестов
+        """Путь к последней версии кеша для меш объекта.
+        
+        Parameters
+        ----------
+        cache_dir_name : str
+            Имя директории состоиит из имени ассета и имени меш объекта, через нижнее подчёркивание: ``asset_name`` + ``'_'`` + ``ob_name``.
+        activity : str, optional
+            По умолчанию ``'cache'`` (для *blender*) - для других программ может быть другим, например ``'maya_cache'``.
+        extension : str, optional
+            Расширение файла кеша.
+        task_data : dict
+            Не использовать. Работа с текущим объектом.
+            
+        Returns
+        -------
+        tuple
+            (*True*, ``path``) или (*False, comment*)
+        """
         pass
         # 1 - получение task_data
         # (1)
@@ -5969,12 +5983,26 @@ class task(studio):
             i = i-1
         
         return(False, 'No Found Chache! *2')
-        
-    # cache_dir_name (str) - "asset_name + '_' + ob_name"
-    # activity (str) - по умолчанию cache (для blender) - для других программ может быть другим, например "maya_cache"
-    # extension (str) - расширение файла кеша.
-    # task_data (dict) - изменяемая задача, если False - значит предполагается, что task инициализирован.
+
     def get_new_cache_file_path(self, cache_dir_name, activity = 'cache', extension = '.pc2', task_data=False): # v2 *** без тестов
+        """Путь к новой версии кеша для меш объекта.
+        
+        Parameters
+        ----------
+        cache_dir_name : str
+            Имя директории состоиит из имени ассета и имени меш объекта, через нижнее подчёркивание: ``asset_name`` + ``'_'`` + ``ob_name``.
+        activity : str, optional
+            По умолчанию ``'cache'`` (для *blender*) - для других программ может быть другим, например ``'maya_cache'``.
+        extension : str, optional
+            Расширение файла кеша.
+        task_data : dict
+            Не использовать. Работа с текущим объектом.
+            
+        Returns
+        -------
+        tuple
+            (*True*, (``new_dir_path``, ``new_file_path``)) или (*False, comment*)
+        """
         pass
         # 1 - получение task_data
         # (1)
