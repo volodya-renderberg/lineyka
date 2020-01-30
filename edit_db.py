@@ -5327,14 +5327,35 @@ class task(studio):
             else:
                 return(True, path)
 
-    # откроет файл в приложении - согласно расширению. заполнение: task.open_time, task.start; выполнение log.artist_start_log(), 
-    # look (bool) - если True - то статусы меняться не будут, если False - то статусы меняться будут.
-    # current_artist (artist) - если не передавать, то в случае look=False - будет выполняться get_user() - лишнее обращение к БД.
-    # tasks (dict) - словарь задачь данного артиста по именам. - нужен для случая когда look=False, при отсутствии будет считан - лишнее обращение к БД.
-    # input_task (task) - входящая задача - для open_from_input - если передавать - то имеется ввиду открытие из активити входящей задачи.
-    # open_path (unicode/str) - путь к файлу - указывается для open_from_file
-    # launch (bool) - если True - то будет произведён запуск приложением, которое установлено в соответствии с данным расширением файла (для универсальной юзерской панели и для менеджерской панели, при открытии на проверку), если False - то запуска не будет, но все смены статусов произойдут и будет возвращён путь к файлу.
     def open_file(self, look=False, current_artist=False, tasks=False, input_task=False, open_path=False, version=False, launch=True):
+        """Откроет файл в приложении - согласно расширению.
+        
+        .. note:: заполнение: :attr:`edit_db.task.time`, :attr:`edit_db.task.full_time`, ``artist_log.full_time``
+        
+        Parameters
+        ----------
+        look : bool, optional
+            Если *True* - то статусы меняться не будут, если *False* - то статусы меняться будут.
+        current_artist : :obj:`edit_db.artist`, optional
+            Текущий пользователь, если не передавать, будет сделано :func:`edit_db.artist.get_user`
+        tasks : dict, optional
+            Словарь задач данного артиста по именам (результат функции :func:`edit_db.artist.get_working_tasks`). - нужен для случая когда ``look`` = *False*, при отсутствии будет считан - лишнее обращение к БД.
+        input_task : :obj:`edit_db.task`, optional
+            Входящая задача - для *open_from_input* (если передавать - то имеется ввиду открытие из активити входящей задачи).
+        open_path : str, optional
+            Путь к файлу - указывается для *open_from_file* (открытие из указанного файла).
+        version : str, int, optional
+            Версия рабочего файла активити - если указать то будет открытие рабочего файла этой версии.
+        launch : bool, optional
+            * Если *True* - то будет произведён запуск приложением, которое установлено в соответствии с данным расширением файла \
+            (для универсальной юзерской панели и для менеджерской панели, при открытии на проверку),
+            * если *False* - то запуска не будет, но все смены статусов произойдут и будет возвращён путь к файлу - для запуска из плагина.
+            
+        Returns
+        -------
+        tuple
+            (*True*, ``file_path`` - куда открывается файл) или (*False, coment*).
+        """
         pass
         
         # (1) ***** CHANGE STATUS
@@ -5461,18 +5482,45 @@ class task(studio):
             
         return(True, tmp_file_path)
 
-    # вызов одноимённого хука
     def _pre_push(self):
+        """Вызов одноимённого хука. Вызывается из :func:`edit_db.task.push`
+        
+        Returns
+        -------
+        tuple
+            (*True, 'Ok!'*) или (*False, comment*)
+        """
         return(True, 'Ok!')
 
-    # вызов одноимённого хука
     def _post_push(self):
+        """Вызов одноимённого хука. Вызывается из :func:`edit_db.task.push`
+        
+        Returns
+        -------
+        tuple
+            (*True, 'Ok!'*) или (*False, comment*)
+        """
         return(True, 'Ok!')
 
-    # make version of push at server of studio.
-    # version (str/int) - версия которая пушится, не имеет смысла для мультипуша (sketch) там только из последней версии.
-    # return (True, message) или (False, message)
     def push(self, description, version=False, current_artist=False):
+        """Создание новой ``push`` версии на сервере студии, или выгрузка архива в облако для создания ``push`` версии на сервере студии (для аутсорса).
+        
+        .. Attention:: Для аутсорса пока не сделано, только для работников студии.
+        
+        Parameters
+        ----------
+        description : str
+            Краткое описание.
+        version : str, int, optional
+            ``work`` версия из которой делается ``push``, не имеет смысла для задач с типом из :attr:`edit_db.studio.multi_publish_task_types`, там только из последней версии.
+        current_artist : :obj:`edit_db.artist`, optional
+            Текущий пользователь, если не передавать, будет сделано :func:`edit_db.artist.get_user`
+            
+        Returns
+        -------
+        tuple
+            (*True, message*) или (*False, comment*)
+        """
         pass
         # 0 - input data
         # 0.1 - получение путей 
@@ -5592,20 +5640,47 @@ class task(studio):
         
         return(True, 'Created a new Push version with number: %s' % new_version)
 
-    # вызов одноимённого хука
     def _pre_publish(self):
+        """Вызов одноимённого хука. Вызывается из :func:`edit_db.task.publish_task`
+        
+        Returns
+        -------
+        tuple
+            (*True, 'Ok!'*) или (*False, comment*)
+        """
         return(True, 'Ok!')
 
-    # вызов одноимённого хука
     def _post_publish(self):
+        """Вызов одноимённого хука. Вызывается из :func:`edit_db.task.publish_task`
+        
+        Returns
+        -------
+        tuple
+            (*True, 'Ok!'*) или (*False, comment*)
+        """
         return(True, 'Ok!')
 
-    # паблиш: перекладывание файлов, запись лога.
-    # description (str) - не обязательный параметр, при отсутствии составляется автоматически - техническое описание: что, откуда, куда.
-    # source_version (int, str) - версия push или publish при репаблише, если False при паблише - то паблиш из последней пуш версии.
-    # source_log (bool / dict) - лог версии источника, при его наличии source_version не имеет смысла.
-    # current_artist (artist) - если не передавать, то будет выполняться get_user() - лишнее обращение к БД.
     def publish_task(self, description=False, republish=False, source_version=False, source_log=False, current_artist=False):
+        """Перекладывание паблиш версии файлов (в том числе ``top`` версии), запись лога.
+        
+        Parameters
+        ----------
+        description : str, optional
+            Краткое описание, не обязательный параметр, при отсутствии составляется автоматически - техническое описание: что, откуда, куда.
+        republish : bool, optional
+            Если *True* - то делается *репаблиш*, а именно перезапись в финал и в ``top``, какой-либо указанной *паблиш* версии.
+        source_version : str, int, optional
+            Версия ``push`` или ``publish`` (при *репаблише*), если *False* при *паблише* - то *паблиш* из последней *пуш* версии.
+        source_log : dict, optional
+            Лог версии источника, при его наличии ``source_version`` не имеет смысла.
+        current_artist : :obj:`edit_db.artist`, optional
+            Текущий пользователь, если не передавать, будет сделано :func:`edit_db.artist.get_user`
+            
+        Returns
+        -------
+        tuple
+            (*True, message*) или (*False, comment*).
+        """
         pass
         # 0 - input data
         # 1 - получение путей
@@ -5715,7 +5790,7 @@ class task(studio):
     # current_file (unicode/str) - текущее местоположение рабочего файла (как правило в темп)
     # current_artist (artist) - если не передавать, то будет выполняться get_user() - лишнее обращение к БД.
     # return(True, new_file_path) или (False, comment)
-    def push_file(self, description, current_file, current_artist=False):
+    def push_file(self, description, current_file, current_artist=False): # УСТАРЕЛО!!!!!!!!!!!!! 
         pass
         
         # (1) test data
@@ -5765,11 +5840,34 @@ class task(studio):
         
 
     # **************************** CACHE  ( file path ) ****************************
-    # ob_name (str) - имя 3d объекта
-    # activity (str) - по умолчанию cache (для blender) - для других программ может быть другим, например "maya_cache"
-    # extension (str) - расширение файла кеша.
-    # task_data (dict) - изменяемая задача, если False - значит предполагается, что task инициализирован.
     def get_versions_list_of_cache_by_object(self, ob_name, activity = 'cache', extension = '.pc2', task_data=False): # v2 *** без тестов
+        """Список версий кеша для *меш* объекта.
+        
+        Parameters
+        ----------
+        ob_name : str
+            Имя 3d объекта.
+        activity : str, optional
+            По умолчанию ``'cache'`` (для *blender*) - для других программ может быть другим, например ``'maya_cache'``.
+        extension : str, optional
+            Расширение файла кеша.
+        task_data : dict
+            Не использовать. Работа с текущим объектом.
+            
+        Returns
+        -------
+        tuple
+            (*True*, ``cache_versions_list`` [11]_) или (*False, comment*)
+            
+            .. [11] Структура ``cache_versions_list`` (список кортежей):
+            
+                ::
+                
+                    [
+                        (num_version '''str''', ob_name,  path),
+                        ...
+                    ]
+        """
         pass
         # 1 - получение task_data
         # (1)
