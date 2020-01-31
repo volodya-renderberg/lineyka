@@ -6097,7 +6097,7 @@ class task(studio):
         
     # ************************ CHANGE STATUS ******************************** end
         
-    def add_task(self, project_name, task_key_data): # не обнаружено использование
+    def add_task(self, project_name, task_key_data): # УСТАРЕЛО!!!!!!!!!!!!! 
         pass
         # other errors test
         result = self.get_project(project_name)
@@ -6216,7 +6216,7 @@ class task(studio):
         conn.close()
         return True, 'ok'
 
-    def edit_task(self, project_name, task_key_data): # не обнаружено использование
+    def edit_task(self, project_name, task_key_data): # УСТАРЕЛО!!!!!!!!!!!!! 
         pass
         # other errors test
         result = self.get_project(project_name)
@@ -6365,7 +6365,7 @@ class task(studio):
         
         return(True, 'ok')
 
-    def edit_status_to_output(self, project_name, task_name, new_status = None): # не обнаружено использование
+    def edit_status_to_output(self, project_name, task_name, new_status = None): # УСТАРЕЛО!!!!!!!!!!!!! 
         asset_name = task_name.split(':')[0]
         table = '\"' + asset_name + ':' + self.tasks_t + '\"'
         data = (task_name,)
@@ -6453,9 +6453,19 @@ class task(studio):
 
     # **************** Task NEW  METODS ******************
 
-    # объект asset, передаваемый в task должен быть инициализирован.
-    # list_of_tasks (list) - список задачь (словари по tasks_keys, обязательные параметры: task_name).
     def create_tasks_from_list(self, list_of_tasks): #v2
+        """Создание задач ассета по списку.
+        
+        Parameters
+        ----------
+        list_of_tasks : list
+            Список задач (словари по :attr:`edit_db.studio.tasks_keys`, обязательные параметры: `task_name`)
+        
+        Returns
+        -------
+        tuple
+            (*True, 'Ok!'*) или (*False, comment*)
+        """
         asset_name = self.asset.name #asset_data['name']
         asset_id = self.asset.id #asset_data['id']
         #asset_path = self.asset.path #asset_data['path']
@@ -6621,9 +6631,20 @@ class task(studio):
         '''
         return(True, 'ok')
 
-    # объект asset, передаваемый в task должен быть инициализирован.
-    # обязательные поля в task_data: activity, task_name, task_type, extension
     def add_single_task(self, task_data): # asset_id=False # v2
+        """Создание одной задачи.
+        
+        Parameters
+        ----------
+        task_data : dict
+            Словарь по :attr:`edit_db.studio.tasks_keys`, обязательные поля: ``activity``, ``task_name``, ``task_type``, ``extension``.\
+            Если передать поля ``input``, ``output`` - то будут установлены соединения и призведены проверки, и смены статусов.
+        
+        Returns
+        -------
+        tuple
+            (*True, 'Ok!'*) или (*False, comment*)
+        """
         pass
         # 0 - проверка обязательных полей.
         # 1 - проверка уникальности имени.
@@ -6815,10 +6836,23 @@ class task(studio):
                 
         return(True, 'Ok')
 
-    # asset_id (str) - требуется если объект asset, передаваемый в task не инициализирован.
-    # task_status (str) - фильтр по статусам задач.
-    # artist (str) - фильтр по имени.
     def get_list(self, asset_id=False, task_status = False, artist = False): # v2
+        """Получение списка задач ассета (экземпляры).
+        
+        Parameters
+        ----------
+        asset_id : str, optional
+            ``id`` ассета. Передаётся если список задач требуется не для ассета данной задачи, который есть - :attr:`edit_db.task.asset`.
+        task_status : str, optional
+            Фильтр по статусам задач. Значение из :attr:`edit_db.studio.task_status`.
+        artist : str
+            Фильтр по ``nik_name`` артиста.
+            
+        Returns
+        -------
+        tuple
+            (*True*, ``[список задач - экземпляры]``) или (*False, коммент*)
+        """
         if asset_id:
             table_name = '"%s:%s"' % ( asset_id, self.tasks_t)
         else:
@@ -6851,6 +6885,29 @@ class task(studio):
     # assets_data (dict) - dict{asset_name: {asset_data},...} словарь всех ассетов (всех типов) по именам
     # task_name_list (list) - список имён задач.
     def get_tasks_by_name_list(self, task_name_list, assets_data = False): # v2
+        """Возвращает задачи (экземпляры) по списку имён задач, из различных ассетов данного проекта.
+        
+        Parameters
+        ----------
+        task_name_list : list
+            Список имён задач.
+        assets_data : dict, optional
+            Словарь всех ассетов проекта (экземпляры) с ключами по именам. Результат выполнения функции :func:`edit_db.asset.get_dict_by_name_by_all_types`. Если не передавать - будет произведено чтение БД.
+            
+        Returns
+        -------
+        tuple
+            (*True*, ``dikt_of_tasks`` [12]_) или (*False*, comment)
+            
+            .. [12] Структура ``dikt_of_tasks``:
+            
+                ::
+                
+                    {
+                        task_name : :obj:`edit_db.task`,
+                        ...
+                    }
+        """
         pass
         # (1) получение assets_data
         if not assets_data:
