@@ -6880,10 +6880,6 @@ class task(studio):
         
         return(True, tasks_ob)
         
-    # возвращает задачи (словари) по списку имён задачь, из различных ассетов.
-    # self.asset.project - инициализирован
-    # assets_data (dict) - dict{asset_name: {asset_data},...} словарь всех ассетов (всех типов) по именам
-    # task_name_list (list) - список имён задач.
     def get_tasks_by_name_list(self, task_name_list, assets_data = False): # v2
         """Возвращает задачи (экземпляры) по списку имён задач, из различных ассетов данного проекта.
         
@@ -6904,7 +6900,7 @@ class task(studio):
                 ::
                 
                     {
-                        task_name : :obj:`edit_db.task`,
+                        task_name : task_ob (экземпляр задачи),
                         ...
                     }
         """
@@ -6939,9 +6935,19 @@ class task(studio):
         
         return(True, task_data_dict)
 
-    # self.asset.project - должен быть инициализирован
-    # new_activity (str)
     def change_activity(self, new_activity): # v2
+        """Замена активити текущей задачи. Параметр :attr:`edit_db.task.activity`
+        
+        Parameters
+        ----------
+        new_activity : str
+            Новое активити для задачи, значение из :attr:`edit_db.asset.ACTIVITY_FOLDER`.
+            
+        Returns
+        -------
+        tuple
+            (*True*, 'Ok!') или (*False*, comment)
+        """
         pass
         # (2) проверка валидации new_activity
         if not new_activity in self.asset.ACTIVITY_FOLDER[self.asset.type]:
@@ -6958,9 +6964,19 @@ class task(studio):
             self.activity = new_activity
         return(bool_, return_data)
 
-    # self.asset.project - должен быть инициализирован
-    # new_price (float)
     def change_price(self, new_price): # v2
+        """Замена стоимости текущей задачи. Параметр :attr:`edit_db.task.price`.
+        
+        Parameters
+        ----------
+        new_price : float
+            Новое значение стоимости задачи.
+            
+        Returns
+        -------
+        tuple
+            (*True*, 'Ok!') или (*False*, comment)
+        """
         pass
         #
         table_name = '"%s:%s"' % (self.asset.id, self.tasks_t)
@@ -6974,9 +6990,34 @@ class task(studio):
             self.price = new_price
         return(bool_, return_data)
         
-    # key (str) - ключ для которого идёт замена
-    # new_data (по типу ключа) - данные на замену
     def changes_without_a_change_of_status(self, key, new_data): # v2
+        """Замена параметров задачи, которые не приводят к смене статуса.
+        
+        Parameters
+        ----------
+        key : str
+            Заменяемый параметр. Допустимые на замену параметры:
+            *  ``activity``
+            *  ``task_type``
+            *  ``season``
+            *  ``price``
+            *  ``specification``
+            *  ``extension``
+            *  ``start``
+            *  ``end``
+            *  ``time``
+            *  ``full_time``
+            *  ``deadline``
+            *  ``planned_time``
+            *  ``level``
+        new_data : тип зависит от параметра
+            Новое значение для параметра.
+        
+        Returns
+        -------
+        tuple
+            (*True*, 'Ok!') или (*False*, comment)
+        """
         changes_keys = [
         'activity',
         'task_type',
