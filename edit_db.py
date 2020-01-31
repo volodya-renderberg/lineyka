@@ -6997,19 +6997,19 @@ class task(studio):
         ----------
         key : str
             Заменяемый параметр. Допустимые на замену параметры:
-            *  ``activity``
-            *  ``task_type``
-            *  ``season``
-            *  ``price``
-            *  ``specification``
-            *  ``extension``
-            *  ``start``
-            *  ``end``
-            *  ``time``
-            *  ``full_time``
-            *  ``deadline``
-            *  ``planned_time``
-            *  ``level``
+            ``activity``,
+            ``task_type``,
+            ``season``,
+            ``price``,
+            ``specification``,
+            ``extension``,
+            ``start``,
+            ``end``,
+            ``time``,
+            ``full_time``,
+            ``deadline``,
+            ``planned_time``,
+            ``level``,
         new_data : тип зависит от параметра
             Новое значение для параметра.
         
@@ -7068,9 +7068,19 @@ class task(studio):
         
         return(True, 'Ok!')
 
-    # добавление читателей к текущей задаче
-    # add_readers_list (list) - список никнеймов проверяющих (читателей)
     def add_readers(self, add_readers_list): # v2 *** тестилось без смены статуса.
+        """Добавление проверяющих для текущей задачи.
+        
+        Parameters
+        ----------
+        add_readers_list : list
+            Список никнеймов проверяющих.
+            
+        Returns
+        -------
+        tuple
+            (*True, ``readers`` - (слорварь в формате записи как :attr:`edit_db.task.readers`), ``change_status`` - (*bool*)) или (*False*, comment)
+        """
         pass
         # ? - проверять ли актуальность списка читателей.
         # 2 - чтение словаря 'readers' и определение change_status
@@ -7141,8 +7151,21 @@ class task(studio):
         
         return(True, readers_dict, change_status)
 
-    # nik_name (str) - никнейм артиста
     def make_first_reader(self, nik_name): # v2
+        """обозначение превого проверяющего, только после его проверки есть смысл проверять остальным проверяющим,\
+        и только после его приёма данная задача появится в списке на проверку у остальных читателей.\
+        Предполагается что это технический проверяющий от отдела, где идёт работа.
+        
+        Parameters
+        ----------
+        nik_name : str
+            Никнейм.
+        
+        Returns
+        -------
+        tuple
+            (*True*, ``readers`` - (слорварь в формате записи как :attr:`edit_db.task.readers`), ``change_status`` - (*bool*)) или (*False*, comment)
+        """
         pass
         # ? - проверять ли актуальность читателя.
         
@@ -7187,8 +7210,19 @@ class task(studio):
         
         return(True, readers_dict)
 
-    # remove_readers_list (list) - список никнеймов удаляемых из списка читателей
     def remove_readers(self, remove_readers_list): # v2
+        """Удаляет проверяющего из списка проверяющих, а также удалит его как первого проверяющего, если он таковой.
+        
+        Parameters
+        ----------
+        remove_readers_list : list
+            Список никнеймов удаляемых из списка проверяющих.
+            
+        Returns
+        -------
+        tuple
+            (*True*, ``readers`` - (слорварь в формате записи как :attr:`edit_db.task.readers`), ``change_status`` - (*bool*)) или (*False*, comment)
+        """
         pass
         # 1 - получение task_data
         # 2 - чтение БД - readers_dict
@@ -7268,8 +7302,19 @@ class task(studio):
         
         return(True, readers_dict, change_status)
         
-    # new_artist (str/artist) - nik_name или artist - объект
     def change_artist(self, new_artist): # v2  !!!!! возможно надо рассмотреть варианты когда меняется артист в завершённых статусах задачь.
+        """Замена артиста и возможная замена при этом статуса.
+        
+        Parameters
+        ----------
+        new_artist : str, :obj:`edit_db.artist`
+            Новый артист никнейм или экземпляр, лучше передавать экземпляр для экономии запросов.
+            
+        Returns
+        -------
+        tuple
+            (*True*, (``new_task_status``, :attr:`edit_db.artist.outsource`)) или (*False*, comment)
+        """
         pass
         # 1 - получение task_data.
         # 2 - чтение нового и старого артиста и определение аутсорсер новый или нет.
@@ -7399,9 +7444,19 @@ class task(studio):
             
         return(True, (new_status, int(artist_outsource)))
         
-    # new_input (bool/str) - имя новой входящей задачи или False
-    # предполагается, что task инициализирован и меняем инпут данной задачи.
     def change_input(self, new_input): # v2 *** тестилось без смены статуса.
+        """Изменение входа не сервисной задачи, с вытикающими изменениями статусов.
+        
+        Parameters
+        ----------
+        new_input : str
+            Имя новой входящей задачи.
+            
+        Returns
+        -------
+        tuple
+            (*True*, (``new_status``, ``old_input_task_data``, ``new_input_task_data``)) или (*False*, comment)
+        """
         pass
         # 1 - получение task_data, task_outsource, old_input_task, new_input_task, new_status, list_output_old, list_output_new
         # 2 - перезапись БД
@@ -7475,8 +7530,14 @@ class task(studio):
         # (3)
         return(True, (new_status, old_input_task, new_input_task))
         
-    # task_data (dict) - изменяемая задача, если False - значит предполагается, что task инициализирован.
     def accept_task(self): # v2
+        """Приём задачи, статус на ``done`` (со всеми вытикающими сменами статусов), создание паблиш версии, заполнение ``artist_tasks_log`` (``finish``,``price``), выполнение хуков.
+        
+        Returns
+        -------
+        tuple
+            (*True*, 'Ok!') или (*False*, comment)
+        """
         pass
         # 1 - получение task_data,
         # 2 - перезапись БД задачи
@@ -7534,9 +7595,19 @@ class task(studio):
             
         return(True, 'Ok!')
 
-    # приём задачи текущим ридером
-    # current_artist (artist) - экземпляр класса артист, должен быть инициализирован - artist.get_user()
     def readers_accept_task(self, current_artist): # v2
+        """приём задачи текущим проверяющим, изменение статуса в :attr:`edit_db.task.readers`, если он последний то смена статуса задачи на ``done`` (со всеми вытикающими сменами статусов).
+        
+        Parameters
+        ----------
+        current_artist : :obj:`edit_db.artist`
+            Артист - экземпляр.
+            
+        Returns
+        -------
+        tuple
+            (*True*, 'Ok!') или (*False*, comment)
+        """
         pass
         # 0 - проверка, чтобы current_artist был экземпляром класса artist
         # 1 - изменения в readers, определение change_status
@@ -7612,8 +7683,14 @@ class task(studio):
         
         return(True, 'Ok')
 
-    # 
     def close_task(self): # v2
+        """Закрытие задачи, смена статуса на ``close`` (со всеми вытикающими сменами статусов)
+        
+        Returns
+        -------
+        tuple
+            (*True*, 'Ok!') или (*False*, comment)
+        """
         pass
         # 1 - получение task_data
         # 2 - запись изменений задачи в БД
@@ -7652,10 +7729,19 @@ class task(studio):
             
         return(True, 'Ok!')
 
-    # task должен быть инициализирован.
-    # task_data (dict) - изменяемая задача, если False - значит предполагается, что task инициализирован.
-    # current_user (artist) - экземпляр класса артист, должен быть инициализирован - artist.get_user() - если False - то чат проверятся не будет (для тех нужд)
     def rework_task(self, current_user): # v2 ** продолжение возможно только после редактирования chat().read_the_chat()
+        """Отправка задачи на переработку из статуса на проверке, при этом проверяется наличие свежего (последние 30 минут) коментария от данного проверяющего (``current_user``).
+        
+        Parameters
+        ----------
+        current_user : :obj:`edit_db.artist`
+            Экземпляр класса артист, должен быть инициализирован. Если передать *False* - то задача отправится на переделку без проверки чата (для тех нужд).
+        
+        Returns
+        -------
+        tuple
+            (*True*, 'Ok!') или (*False*, comment)
+        """
         pass
         # 1 - get exists chat
         # 2 - edit readers
@@ -7714,8 +7800,14 @@ class task(studio):
         
         return(True, 'Ok!')
 
-    # task_data (dict) - изменяемая задача, если False - значит предполагается, что task инициализирован.
     def return_a_job_task(self): # v2
+        """Возврат в работу задачи из завершённых статусов - :attr:`edit_db.studio.end_statuses`.
+        
+        Returns
+        -------
+        tuple
+            (*True*, ``new_status``) или (*False*, comment)
+        """
         pass
         # 1 - получение task_data,
         # 2 - чтение входящей задачи
@@ -7760,10 +7852,19 @@ class task(studio):
         else:
             return(True, new_status)
             
-    # change_statuses (list) - [(task_ob, new_status), ...]
-    # тупо смена статусов в пределах рабочих, что не приводит к смене статусов исходящих задач.
-    # task.asset инициализирован
     def change_work_statuses(self, change_statuses): # v2
+        """Тупо смена статусов в пределах рабочих, что не приводит к смене статусов исходящих задач. Применяется для списка задач.
+        
+        Parameters
+        ----------
+        change_statuses : list
+            Список кортежей - (``task_ob``, ``new_status``)
+        
+        Returns
+        -------
+        tuple
+            (*True*, {``task_name``: ``new_status``, ... }) или (*False*, comment)
+        """
         table_name = '"%s:%s"' % (self.asset.id, self.tasks_t)
         return_data_ = {}
         for data in change_statuses:
@@ -7785,10 +7886,14 @@ class task(studio):
             
         return(True, return_data_)
 
-    # отправка текущей задачи на проверку
-    # обёртка на task.change_work_statuses()
-    # задача должна быть инициализирована
     def to_checking(self):
+        """Отправка текущей задачи на проверку. Обёртка на :obj:`edit_db.task.change_work_statuses`
+        
+        Returns
+        -------
+        tuple
+            (*True*, 'Ok!') или (*False*, comment)
+        """
         b, r = self.change_work_statuses([(self, 'checking')])
         if not b:
             return(b, r)
@@ -7806,9 +7911,19 @@ class task(studio):
             self.status = 'checking'
             return(True, 'Ok!')
 
-    # task_name (str) - имя задачи
-    # возврат словаря задачи (по ключам из tasks_keys, чтение БД) по имени задачи. если нужен объект используем task.init(name)
     def _read_task(self, task_name): # v2
+        """Возврат словаря задачи (по ключам из :attr:`edit_db.studio.tasks_keys` , чтение БД) по имени задачи. если нужен объект используем :func:`edit_db.task.init`.
+        
+        Parameters
+        ----------
+        task_name : str
+            Имя задачи.
+            
+        Returns
+        -------
+        tuple
+            (*True*, {``task_data``}) или (*False*, comment)
+        """
         pass
         # 1 - get asset_id, other_asset
         # 2 - read task_data
@@ -7848,8 +7963,19 @@ class task(studio):
             return(True, task_ob)
         '''
 
-    # input_task_list (list) - список задач (объекты)
     def _service_add_list_to_input(self, input_task_list): # v2
+        """Добавление списка задач во входящие сервисной задаче, со всеми вытикающими изменениями статусов.
+        
+        Parameters
+        ----------
+        input_task_list : list
+            Список задач (экземпляры).
+        
+        Returns
+        -------
+        tuple
+            (*True*, (``new_ststus``, [``append_task_name_list``])) или (*False, comment*)
+        """
         pass
         # 0 - получение task_data.
         # 1 - проверка на srvice
