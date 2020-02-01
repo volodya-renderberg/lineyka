@@ -7964,7 +7964,7 @@ class task(studio):
         '''
 
     def _service_add_list_to_input(self, input_task_list): # v2
-        """Добавление списка задач во входящие сервисной задаче, со всеми вытикающими изменениями статусов.
+        """Добавление списка задач во входящие сервисной задаче, со всеми вытикающими изменениями статусов. Изменяется параметр :attr:`edit_db.task.input`, с возможными изменениями статусов, как данной, так и исходящих задач.
         
         Parameters
         ----------
@@ -8073,20 +8073,30 @@ class task(studio):
         #self.input = task_data['input']
         
         return(True, (self.status, append_task_name_list))
+    
+    def _service_add_list_to_input_from_asset_list(self, asset_list): # v2
+        """Добавление задач во входящие сервисной задаче из списка ассетов. Из списка задач ассета подсоединяется первая задача нужного активити. Изменяется параметр :attr:`edit_db.task.input`, с возможными изменениями статусов, как данной, так и исходящих задач.
         
-    # asset_list (list) - подсоединяемые ассеты (словари, или объекты)
-    # task_data (dict) - изменяемая задача, если False - значит предполагается, что task инициализирован
-    def _service_add_list_to_input_from_asset_list(self, asset_list, task_data=False): # v2
+        Parameters
+        ----------
+        asset_list : list
+            Список подсоединяемых ассетов (словари, или экземпляры).
+            
+        Returns
+        -------
+        tuple
+            (*True*, (``this_task_data``, ``append_task_name_list``)) ``?? пересмотреть``  или (*False, коммент*)
+        """
         pass
         # 1 - получение task_data.
         # 2 - проверка на srvice
         # 3 - получение списка задачь для добавления в инпут
         
         # (1)
-        if not task_data:
-            task_data={}
-            for key in self.tasks_keys:
-                exec('task_data["%s"] = self.%s' % (key, key))
+        #if not task_data:
+        task_data=dict()
+        for key in self.tasks_keys:
+            exec('task_data["%s"] = self.%s' % (key, key))
                 
         # (2)
         if task_data['task_type'] != 'service':
@@ -8191,10 +8201,28 @@ class task(studio):
         
         return(True, result[1])
         
-    # self.asset.project - должен быть инициализирован
-    # task_data (dict) - изменяемая задача, если False - значит предполагается, что task инициализирован.
-    # removed_tasks_list (list) - содержит словари удаляемых из инпута задач.
     def _service_remove_task_from_input(self, removed_tasks_list, task_data=False, change_status = True): # v2
+        """Удаление списка задач из :attr:`edit_db.task.input` сервисной задачи, с возможными изменениями статусов, как данной, так и исходящих задач.
+        
+        .. attention :: Переработать, уйти от словарей, переделать на объекты, не передавать ``task_data``.
+        
+        Parameters
+        ----------
+        removed_tasks_list : list
+            Содержит список словарей удаляемых из инпута задач ``?? переработать - заменить на объекты``
+        task_data : dict, optional
+            Изменяемая задача, если *False* - значит предполагается, что *task* инициализирован ``лучше не использовать``.
+        change_status : bool, optional
+            Если *True* то пересматривается статус данной и исходящих задачь, если *False* то статусы персматриваться не будут.
+        
+        Returns
+        -------
+        tuple
+            (*True*, (``new_status`` [13]_, ``input_list`` [14]_) или (*False*, comment)
+            
+            .. [13] ``new_status`` - новый статус данной задачи.
+            .. [14] ``input_list`` - получаемое значение инпут атрибута :attr:`edit_db.task.input`.
+        """
         pass
         # 0 - получение task_data.
         # 1 - тест на статус сервис-не сервис.
@@ -8372,12 +8400,26 @@ class task(studio):
             return(True, (new_status, input_list))
         else:
             return(True, (old_status, input_list))
-        
-    # 
-    # removed_task_data (dict) - удаляемая задача
-    # added_task_data (dict) - добавляемая задача
-    # task_data (dict) - изменяемая задача, если False - значит предполагается, что task инициализирован.
+    
     def _service_change_task_in_input(self, removed_task_data, added_task_data, task_data=False): # v2
+        """Замена одной входящей задачи на другую, для сервисной задачи. Изменение параметра :attr:`edit_db.task.input`, с возможными изменениями статусов данной и исходящих задач.
+        
+        .. attention :: Переработать, уйти от словарей, переделать на объекты, не передавать ``task_data``.
+        
+        Parameters
+        ----------
+        removed_task_data : dict
+            Словарь удаляемой задачи, ``переработать - заменить на экземпляр!!!``.
+        added_task_data : dict
+            Словарь добавляемой задачи, ``переработать - заменить на экземпляр!!!``.
+        task_data : dict, optional
+            Изменяемая задача, если *False* - значит предполагается, что *task* инициализирован ``лучше не использовать``.
+        
+        Returns
+        -------
+        tuple
+            (*True*, (``this_task_data``, ``append_task_name_list``)) ``?? пересмотреть``  или (*False, коммент*).
+        """
         pass
         # 0 - получение task_data.
         
@@ -8424,7 +8466,7 @@ class task(studio):
 
     # заменяет все рид статусы задачи на 0
     # task_data (dict) - изменяемая задача, если False - значит предполагается, что task инициализирован.
-    def task_edit_read_status_unread(self, task_data=False): # v2 ** start - не обнаружено использование
+    def task_edit_read_status_unread(self, task_data=False): # УСТАРЕЛО!!!!!!!!!!!!! 
         pass
         # 0 - получение task_data.
         # 1 - принудительное прочтение задачи из БД - ???????????? зачееемм!!!!!!
@@ -8478,7 +8520,7 @@ class task(studio):
 
     # заменяет все рид статусы задачи на 1
     # self.task - должен быть инициализирован
-    def task_edit_read_status_read(self, project_name, task_data, nik_name): # v2 ** - не обнаружено использование
+    def task_edit_read_status_read(self, project_name, task_data, nik_name): # УСТАРЕЛО!!!!!!!!!!!!! 
         pass
         # test project
         result = self.get_project(project_name)
