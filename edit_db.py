@@ -7887,9 +7887,7 @@ class task(studio):
         return(True, return_data_)
 
     def to_checking(self):
-        """Отправка текущей задачи на проверку. Обёртка на :obj:`edit_db.task.change_work_statuses`. Изменение параметра :attr:`edit_db.task.status` на ``ready_to_send``. Выгрузка необходимых файлов в облако, для аутсорса.
-        
-        .. attention:: Выгрузки в облако для аутсорса пока не сделано.
+        """Отправка текущей задачи на проверку. Обёртка на :obj:`edit_db.task.change_work_statuses`. Изменение параметра :attr:`edit_db.task.status` на ``ready_to_send``.
         
         Returns
         -------
