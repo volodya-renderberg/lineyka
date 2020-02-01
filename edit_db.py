@@ -3464,7 +3464,7 @@ class task(studio):
     source : list
         Имена задач, объекты из активити которых используются как исходники.
     input : str, list
-        Для сервисной задачи (*task_type=service*) - это список имён входящих задач. для не сервисной задачи - это имя входящей задачи.
+        Для сервисной задачи (``task_type`` = ``service``) - это список имён входящих задач. для не сервисной задачи - это имя входящей задачи.
     status : str
         Cтатус задачи из :attr:`edit_db.studio.task_status`
     outsource : int
@@ -5211,7 +5211,7 @@ class task(studio):
         path : str
             Путь до оригинального файла.
         viewer : bool, optional
-            Если *True* - открытие вьювером по оригинальному пути.
+            Если *True* - открытие вьювером по оригинальному пути (``tmp`` копии не создаётся).
         
         Returns
         -------
@@ -5341,9 +5341,9 @@ class task(studio):
         tasks : dict, optional
             Словарь задач данного артиста по именам (результат функции :func:`edit_db.artist.get_working_tasks`). - нужен для случая когда ``look`` = *False*, при отсутствии будет считан - лишнее обращение к БД.
         input_task : :obj:`edit_db.task`, optional
-            Входящая задача - для *open_from_input* (если передавать - то имеется ввиду открытие из активити входящей задачи).
+            Входящая задача - для ``open_from_input`` (если передавать - то имеется ввиду открытие из активити входящей задачи).
         open_path : str, optional
-            Путь к файлу - указывается для *open_from_file* (открытие из указанного файла).
+            Путь к файлу - указывается для ``open_from_file`` (открытие из указанного файла).
         version : str, int, optional
             Версия рабочего файла активити - если указать то будет открытие рабочего файла этой версии.
         launch : bool, optional
@@ -6459,7 +6459,7 @@ class task(studio):
         Parameters
         ----------
         list_of_tasks : list
-            Список задач (словари по :attr:`edit_db.studio.tasks_keys`, обязательные параметры: `task_name`)
+            Список задач (словари по :attr:`edit_db.studio.tasks_keys`, обязательные параметры: ``task_name``)
         
         Returns
         -------
@@ -6842,7 +6842,7 @@ class task(studio):
         Parameters
         ----------
         asset_id : str, optional
-            ``id`` ассета. Передаётся если список задач требуется не для ассета данной задачи, который есть - :attr:`edit_db.task.asset`.
+            ``id`` ассета. Передаётся, если список задач требуется не для ассета данной задачи, который есть - :attr:`edit_db.task.asset`.
         task_status : str, optional
             Фильтр по статусам задач. Значение из :attr:`edit_db.studio.task_status`.
         artist : str
@@ -6936,7 +6936,7 @@ class task(studio):
         return(True, task_data_dict)
 
     def change_activity(self, new_activity): # v2
-        """Замена активити текущей задачи. Параметр :attr:`edit_db.task.activity`
+        """Замена активити текущей задачи. Изменяемый параметр :attr:`edit_db.task.activity`
         
         Parameters
         ----------
@@ -6965,7 +6965,7 @@ class task(studio):
         return(bool_, return_data)
 
     def change_price(self, new_price): # v2
-        """Замена стоимости текущей задачи. Параметр :attr:`edit_db.task.price`.
+        """Замена стоимости текущей задачи. Изменяемый параметр :attr:`edit_db.task.price`.
         
         Parameters
         ----------
@@ -7079,7 +7079,7 @@ class task(studio):
         Returns
         -------
         tuple
-            (*True, ``readers`` - (слорварь в формате записи как :attr:`edit_db.task.readers`), ``change_status`` - (*bool*)) или (*False*, comment)
+            (*True*, ``readers`` - (слорварь в формате записи как :attr:`edit_db.task.readers`), ``change_status`` - (*bool*)) или (*False*, comment)
         """
         pass
         # ? - проверять ли актуальность списка читателей.
@@ -7303,7 +7303,7 @@ class task(studio):
         return(True, readers_dict, change_status)
         
     def change_artist(self, new_artist): # v2  !!!!! возможно надо рассмотреть варианты когда меняется артист в завершённых статусах задачь.
-        """Замена артиста и возможная замена при этом статуса.
+        """Замена артиста и возможная замена при этом статуса. Изменяемый параметр :attr:`edit_db.task.artist`.
         
         Parameters
         ----------
@@ -7445,7 +7445,7 @@ class task(studio):
         return(True, (new_status, int(artist_outsource)))
         
     def change_input(self, new_input): # v2 *** тестилось без смены статуса.
-        """Изменение входа не сервисной задачи, с вытикающими изменениями статусов.
+        """Изменение входа не сервисной задачи, с вытикающими изменениями статусов. Изменяемый параметр :attr:`edit_db.task.input`.
         
         Parameters
         ----------
@@ -7684,7 +7684,7 @@ class task(studio):
         return(True, 'Ok')
 
     def close_task(self): # v2
-        """Закрытие задачи, смена статуса на ``close`` (со всеми вытикающими сменами статусов)
+        """Закрытие задачи, смена статуса на ``close`` (со всеми вытикающими сменами статусов). Изменяемый параметр :attr:`edit_db.task.status`.
         
         Returns
         -------
@@ -7730,7 +7730,7 @@ class task(studio):
         return(True, 'Ok!')
 
     def rework_task(self, current_user): # v2 ** продолжение возможно только после редактирования chat().read_the_chat()
-        """Отправка задачи на переработку из статуса на проверке, при этом проверяется наличие свежего (последние 30 минут) коментария от данного проверяющего (``current_user``).
+        """Отправка задачи на переработку из статуса на проверке (``ready_to_send``), при этом проверяется наличие свежего (последние 30 минут) коментария от данного проверяющего (``current_user``). Изменяемый параметр :attr:`edit_db.task.status`.
         
         Parameters
         ----------
@@ -7801,7 +7801,7 @@ class task(studio):
         return(True, 'Ok!')
 
     def return_a_job_task(self): # v2
-        """Возврат в работу задачи из завершённых статусов - :attr:`edit_db.studio.end_statuses`.
+        """Возврат в работу задачи из завершённых статусов - :attr:`edit_db.studio.end_statuses`, со всеми вытекающими изменениями статусов исходящих задачь. Изменяемый параметр :attr:`edit_db.task.status`.
         
         Returns
         -------
@@ -7853,7 +7853,7 @@ class task(studio):
             return(True, new_status)
             
     def change_work_statuses(self, change_statuses): # v2
-        """Тупо смена статусов в пределах рабочих, что не приводит к смене статусов исходящих задач. Применяется для списка задач.
+        """Тупо смена статусов в пределах рабочих, что не приводит к смене статусов исходящих задач. Изменяемый параметр :attr:`edit_db.task.status`. Применяется для списка задач.
         
         Parameters
         ----------
@@ -7887,7 +7887,9 @@ class task(studio):
         return(True, return_data_)
 
     def to_checking(self):
-        """Отправка текущей задачи на проверку. Обёртка на :obj:`edit_db.task.change_work_statuses`
+        """Отправка текущей задачи на проверку. Обёртка на :obj:`edit_db.task.change_work_statuses`. Изменение параметра :attr:`edit_db.task.status` на ``ready_to_send``. Выгрузка необходимых файлов в облако, для аутсорса.
+        
+        .. attention:: Выгрузки в облако для аутсорса пока не сделано.
         
         Returns
         -------
