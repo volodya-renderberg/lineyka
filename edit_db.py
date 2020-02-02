@@ -8562,576 +8562,572 @@ class task(studio):
         return(True, 'Ok!')
 
 class log(studio):
-	'''
-	write_log(project_name, task_name, {key: data, ...}) 
-	
-	read_log(project_name, asset_name, {key: key_name, ...});; example: self.read_log(project, asset, {'activity':'rig_face', 'action':'push'});; return: (True, ({key: data, ...}, {key: data, ...}, ...))  or (False, description)
-	
-	'''
-	
-	def __init__(self, task_ob): # v2
-		if not isinstance(task_ob, task):
-			raise Exception('in log.__init__() - Object is not the right type "%s", must be "task"' % task_ob.__class__.__name__)
-		self.task = task_ob
-		#
-		for key in self.logs_keys:
-			exec('self.%s = False' % key)
-		
-		self.camera_log_file_name = 'camera_logs.json'
-		self.playblast_log_file_name = 'playblast_logs.json'
-		
-		self.log_actions = [
-		'pull',
-		'commit',
-		'push',
-		'publish',
-		'open',
-		'report',
-		'recast',
-		'change_artist',
-		'close',
-		'done', # принятие задачи со всеми вытекающими
-		'reader_accept', # утверждение задачи одним из проверяющих, в процедуре task.readers_accept_task()
-		'return_a_job',
-		'send_to_outsource',
-		'load_from_outsource'
-		]
-	
-	# запись лога для задачи
-	# self.task - должен быть инициализирован
-	# logs_keys (dict) - словарь по studio.logs_keys - обязательные ключи: description, version, action
-	# artist_ob (bool/artist) - если False - значит создаётся новый объект artist и определяется текущий пользователь.
-	def write_log(self, logs_keys, artist_ob=False): # v2 - процедура бывшая notes_log 
-		pass
-		# 1 - тест обязательных полей: description, version, action
-		# 2 - чтение artist
-		# 3 -
-		# 4 - заполнение полей task_name, date_time, artist
-		# 5 - запись БД
-		
-		# (1)
-		for item in ["description", "action"]:
-			if logs_keys.get(item) is False or logs_keys.get(item) is None:
-				return(False, 'in log.write_log() - no "%s" submitted!' % item)
-		#
-		if not logs_keys['action'] in self.log_actions:
-			return(False, 'in log.write_log() - wrong action - "%s"!' % logs_keys['action'])
-		#	
-		if not logs_keys['action'] in ['close', 'return_a_job', 'send_to_outsource', 'load_from_outsource', 'done', 'reader_accept', 'change_artist', 'recast', 'report', 'open']:
-			for item in ['version']:
-				if logs_keys.get(item) is False or logs_keys.get(item) is None:
-					return(False, 'in log.write_log() - no "%s" submitted!' % item)
-			#
-			b, r = self._template_version_num(logs_keys['version'])
-			if not b:
-				return(b, r)
-			else:
-				logs_keys['version']=r
-			#
-			if not logs_keys.get('branch'):
-				logs_keys['branch'] = 'master'
-		else:
-			pass
-		
-		# (2)
-		if not artist_ob:
-			artist_ob = artist()
-			bool_, r_data = artist_ob.get_user()
-			if not bool_:
-				return(bool_, r_data)
-		
-		# (3)
+    """Class Log
+    
+    """
+    def __init__(self, task_ob): # v2
+        if not isinstance(task_ob, task):
+            raise Exception('in log.__init__() - Object is not the right type "%s", must be "task"' % task_ob.__class__.__name__)
+        self.task = task_ob
+        #
+        for key in self.logs_keys:
+            exec('self.%s = False' % key)
+        
+        self.camera_log_file_name = 'camera_logs.json'
+        self.playblast_log_file_name = 'playblast_logs.json'
+        
+        self.log_actions = [
+        'pull',
+        'commit',
+        'push',
+        'publish',
+        'open',
+        'report',
+        'recast',
+        'change_artist',
+        'close',
+        'done', # принятие задачи со всеми вытекающими
+        'reader_accept', # утверждение задачи одним из проверяющих, в процедуре task.readers_accept_task()
+        'return_a_job',
+        'send_to_outsource',
+        'load_from_outsource'
+        ]
 
-		# (4)
-		# task_name
-		if not self.task.task_name:
-			return(False, 'in log.write_log() - value "self.task.task_name" not defined!')
-		else:
-			logs_keys['task_name'] = self.task.task_name
-		#
-		if not logs_keys.get('date_time'):
-			logs_keys['date_time'] = datetime.datetime.now()
-		#
-		logs_keys['artist'] = artist_ob.nik_name
-		#
-		logs_keys['activity'] = self.task.activity
-		
-		# (5)
-		table_name = '"%s:%s:logs"' % (self.task.asset.id, logs_keys['activity'])
-		read_ob = self.task.asset.project
-		#
-		bool_, r_data = database().insert('project', read_ob, table_name, self.logs_keys, logs_keys, table_root=self.logs_db)
-		if not bool_:
-			return(bool_, r_data)
-			
-		return(True, 'ok')
-	
-	# чтение лога задачи, заполнение атрибута класса task.branches
-	# self.task - должен быть инициализирован
-	# action (bool / str/ list) если False - то возврат для всех action, если list - то будет использован оператор where or - возврат по всем экшенам
-	# branch (bool / str / unicode) - фильтр по веткам
-	def read_log(self, action=False, branch=False): # v2
-		pass
-		# 1 - проверка инициализации ассета.
-		# 2 - проверка action
-		# 3 - чтение БД.
-	
-		# (1)
-		if not self.task.task_name:
-			return(False, 'in log.write_log() - value "self.task.task_name" not defined!')
-		
-		## (2)
-		#if action and not action in self.log_actions:
-			#return(False, 'in log.read_log() - wrong "action" - "%s"!' % action)
-		
-		# (3)
-		table_name = '"%s:%s:logs"' % (self.task.asset.id, self.task.activity)
-		read_ob = self.task.asset.project
-		if action:
-			if isinstance(action, str):
-				where = {'action': action}
-			elif isinstance(action, list) or isinstance(action, tuple):
-				where = {'action': action, 'condition': 'or'}
-		else:
-			where = False
-		bool_, r_data = database().read('project', read_ob, table_name, self.logs_keys, where=where, table_root=self.logs_db)
-		if not bool_:
-			return(bool_, r_data)
-		branches = list()
-		final_r_data = list()
-		for item in r_data:
-			branch_ = item['branch']
-			if isinstance(branch_, str) or isinstance(branch_, unicode):
-				branches.append(branch_)
-			elif isinstance(branch_, list):
-				branches.extend(branch_)
-			if branch and (isinstance(branch_, str) or isinstance(branch_, unicode)) and branch_ !=branch:
-				continue
-			final_r_data.append(item)
-		branches = list(set(branches))
-		
-		# fill branches
-		self.task._set_branches(branches)
-		
-		return(True, (final_r_data, branches))
-	
-	# читает только push логи
-	# преобразует datetime в строку
-	# task_data (bool/dict) - если False - значит читается self.task
-	# time_to_str (bool) - если True - то преобразует дату в строку.
-	def get_push_logs(self, task_data=False, time_to_str = False): # v2 возможно устаревшая
-		pass
-		# get all logs
-		if not task_data:
-			bool_, r_data = self.read_log(action='push')
-			if not bool_:
-				return(False, r_data)
-		else:
-			# get asset/task
-			if task_data['asset_name'] != self.task.asset.name:
-				asset_ob = self.task.asset.init(task_data['asset_name'])
-				task_ob = task(asset_ob)
-			else:
-				task_ob = task(self.task.asset)
-			#
-			task_ob.init_by_keys(task_data, new=False)
-			# get log
-			log_new = log(task_ob)
-			# read log
-			bool_, r_data = log_new.read_log(action='push')
-			if not bool_:
-				return(False, r_data)
-		
-		if time_to_str:
-			for row in r_data[0]:
-				dt = row['date_time']
-				data = dt.strftime("%d-%m-%Y %H:%M:%S")
-				row['date_time'] = data
-				
-		return(True, r_data)
-	
-	# *** ARTIST LOGS ***
-	
-	# создание лога артиста по данной задаче.
-	# artist_ob (bool/artist) - если False - значит создаётся новый объект artist и определяется текущий пользователь.
-	# return - (True, 'ok!') или (False, comment)
-	def artist_start_log(self, artist_ob=False):
-		pass
-		# 1 - input data
-		# 2 - read log 
-		# 3 - write log
-		
-		# (1)
-		if not artist_ob:
-			artist_ob = artist()
-			b, r = artist_ob.get_user()
-			if not b:
-				return(b, r)
-			
-		# (2)
-		b, r = self.artist_read_log()
-		if not b:
-			return(b, r)
-		if r:
-			return(True, 'log allready exists!')
-		
-		# (3)
-		if self.task.start:
-			start_time = self.task.start
-		else:
-			start_time = datetime.datetime.now()
-		write_data = {
-			'project_name': self.task.asset.project.name,
-			'task_name': self.task.task_name,
-			'start': start_time,
-			}
-		table_name = '%s_tasks_logs' % artist_ob.nik_name
-		b, r = database().insert('studio', self, table_name, self.artists_logs_keys, write_data, table_root=self.artists_logs_db)
-		if not b:
-			return(b, r)
-		
-		return(True, 'Ok!')
-	
-	# чтение логов артиста
-	# all (bool) - если True - то все логи этого артиста, если False - То только по этой задаче.
-	# artist_ob (bool/artist) - если False - значит создаётся новый объект artist и определяется текущий пользователь.
-	# return:
-	#	all=True - (True, [список логов - словари])
-	#	all=False - (True, {log})
-	#	или (False, coment)
-	def artist_read_log(self, all=False, artist_ob=False):
-		pass
-		# 1 - input data
-		# 2 - read log
-		
-		# (1)
-		if not artist_ob:
-			artist_ob = artist()
-			bool_, r_data = artist_ob.get_user()
-			if not bool_:
-				return(bool_, r_data)
-			
-		# (2)
-		if all:
-			where=False
-		else:
-			where = {'project_name': self.task.asset.project.name, 'task_name': self.task.task_name}
-		b,r = database().read('studio', self, '%s_tasks_logs' % artist_ob.nik_name, self.artists_logs_keys, where=where, table_root=self.artists_logs_db)
-		if not b:
-			return(b, r)
-		if all:
-			return(b, r)
-		elif r:
-			return(b, r[0])
-		else:
-			return(b, dict())		
-	
-	# внесение изменений в лог артиста по задаче (кроме параметров из no_editable_keys)
-	# keys (dict) - словарь данных на замену по ключам artists_logs_keys
-	# artist_ob (bool/artist) - если False - значит создаётся новый объект artist и определяется текущий пользователь.
-	# return - (True, 'ok!') или (False, comment)
-	def artist_write_log(self, keys, artist_ob=False):
-		pass
-		# 1 - input data
-		# 2 - read log
-		# 3 - write log
-		
-		no_editable_keys = ['project_name', 'task_name', 'start']
-		
-		# (1)
-		if not artist_ob:
-			artist_ob = artist()
-			bool_, r_data = artist_ob.get_user()
-			if not bool_:
-				return(bool_, r_data)
-		# (2)
-		b, r = self.artist_read_log()
-		if not b:
-			return(b, r)
-		if not r:
-			return(False, 'The artist`s log no exists!')
-		
-		update_data=dict()
-		for key in keys:
-			if key in no_editable_keys:
-				continue
-			else:
-				update_data[key]=keys[key]
-		#
-		if not update_data:
-			return(False, 'No found data to update! (%s)' % str(keys))
-				
-		where = {'project_name': self.task.asset.project.name, 'task_name': self.task.task_name}
-		table_name = '%s_tasks_logs' % artist_ob.nik_name
-		b, r = database().update('studio', self, table_name, self.artists_logs_keys, update_data, where=where, table_root=self.artists_logs_db)
-		if not b:
-			return(b, r)
-		
-		return(True, 'Ok!')
-	
-	# добавление временик full_time
-	# time (float) - время затраченное на commit (секунды)
-	# artist_ob (bool/artist) - если False - значит создаётся новый объект artist и определяется текущий пользователь.
-	# return - (True, 'ok!') или (False, comment)
-	def artist_add_full_time(self, time, artist_ob=False):
-		pass
-		# 1 - input data
-		# 2 - read log + added time
-		# 3 - write log
-		
-		# (1)
-		if not isinstance(time, float) and not isinstance(time, int):
-			return(False, 'time - wrong type - "%s", need "float" or "int"' % time.__class__.__name__)
-		if not artist_ob:
-			artist_ob = artist()
-			bool_, r_data = artist_ob.get_user()
-			if not bool_:
-				return(bool_, r_data)
-		# (2)
-		b, r = self.artist_read_log()
-		if not b:
-			return(b, r)
-		if not r:
-			return(False, 'The artist`s log no exists!')
-		#
-		if r['full_time']:
-			update_data = {'full_time' : (r['full_time'] + time)}
-		else:
-			update_data = {'full_time' : time}
-		where = {'project_name': self.task.asset.project.name, 'task_name': self.task.task_name}
-		table_name = '%s_tasks_logs' % artist_ob.nik_name
-		b, r = database().update('studio', self, table_name, self.artists_logs_keys, update_data, where=where, table_root=self.artists_logs_db)
-		if not b:
-			return(b, r)
-		
-		return(True, 'Ok!')
-		
-	
-	# *** CAMERA LOGS ***
-	# artist_ob - (artist) - объект artist, его никнейм записывается в лог.
-	# description (str) - комментарий
-	# version (str/int) - номер версии <= 9999
-	# task_data (bool/dict) - если False - значит читается self.task, если передаётся, то только задача данного ассета.
-	def camera_write_log(self, artist_ob, description, version, task_data=False): # v2 - возможно нужна поверка существования версии ?
-		pass
-		# 0 - проверка user
-		# 1 - заполнение task_data
-		# 2 - тест обязательных полей: description, version
-		# 3 - заполнение logs_keys
-		# 4 - запись json
-		
-		# (0)
-		if not isinstance(artist_ob, artist):
-			return(False, 'in log.camera_write_log() - "artist_ob" parameter is not an instance of "artist" class')
-		if not artist_ob.nik_name:
-			return(False, 'in log.camera_write_log() - required login!')
-		
-		# (1)
-		if not task_data:
-			task_data={}
-			for key in self.tasks_keys:
-				exec('task_data["%s"] = self.task.%s' % (key, key))
-		else:
-			if not taks_data['asset_name'] == self.task.asset.name:
-				return(False, 'in log.camera_write_log() - transferred "task_data" is not from the correct asset: transferred: "%s", required: "%s"' % (taks_data['asset_name'], self.task.asset.name))
-				
-		# (2)
-		for item in [description, version]:
-			if not item:
-				return(False, '"%s" parameter not passed!' % item)
-		
-		# (3)
-		logs_keys = {}
-		for key in self.logs_keys:
-			if key in self.tasks_keys:
-				logs_keys[key] = task_data[key]
-		
-		str_version = '%04d' % int(version)
-		logs_keys['description'] = description
-		logs_keys['action'] = 'push_camera'
-		logs_keys['date_time'] = datetime.datetime.now().strftime("%d-%m-%Y %H:%M:%S")
-		logs_keys['version'] = str_version
-		logs_keys['artist'] = artist_ob.nik_name
-		
-		# (4)
-		path = os.path.join(task_data['asset_path'], self.task.asset.ADDITIONAL_FOLDERS['meta_data'], self.camera_log_file_name)
-		path = NormPath(path)
-		
-		data = {}
-		
-		if os.path.exists(path):
-			with open(path, 'r') as f:
-				try:
-					data = json.load(f)
-				except:
-					pass
-		
-		data[str_version] = logs_keys
-		
-		with open(path, 'w') as f:
-			jsn = json.dump(data, f, sort_keys=True, indent=4)
-		
-		return(True, 'Ok!')
-	
-	# task_data (bool/dict) - если False - значит читается self.task, если передаётся, то только задача данного ассета.
-	def camera_read_log(self, task_data=False): # v2
-		pass
-		# 1 - заполнение task_data
-		# 2 - определение пути к файлу
-		# 3 - чтение json
-		# 4 - сортировка
-		
-		# (1)
-		if not task_data:
-			task_data={}
-			for key in self.tasks_keys:
-				exec('task_data["%s"] = self.task.%s' % (key, key))
-		else:
-			if not taks_data['asset_name'] == self.task.asset.name:
-				return(False, 'in log.camera_read_log() - transferred "task_data" is not from the correct asset: transferred: "%s", required: "%s"' % (taks_data['asset_name'], self.task.asset.name))		
-		
-		# (2)
-		path = os.path.join(task_data['asset_path'], self.task.asset.ADDITIONAL_FOLDERS['meta_data'], self.camera_log_file_name)
-		if not os.path.exists(path):
-			return(False, 'No saved versions!')
-			
-		# (3)
-		with open(path, 'r') as f:
-			data = None
-			try:
-				data = json.load(f)
-			except:
-				return(False, ('problems with file versions: ' + path))
-		# (4)
-		nums = []
-		sort_data = []
-		for key in data:
-			nums.append(int(key))
-		nums.sort()
-		
-		for num in nums:
-			#key = '0'*(4 - len(str(num))) + str(num)
-			key = '%04d' % int(num)
-			if data.get(key):
-				sort_data.append(data[str(key)])
-			else:
-				print('*** not key')
-			
-		return(True, sort_data)
-		
-	# *** PLAYBLAST LOGS ***
-	# artist_ob - (artist) - объект artist, его никнейм записывается в лог.
-	# description (str) - комментарий
-	# version (str/int) - номер версии <= 9999
-	# task_data (bool/dict) - если False - значит читается self.task, если передаётся, то только задача данного ассета.
-	def playblast_write_log(self, artist_ob, description, version, task_data=False): # v2
-		pass
-		# 0 - проверка user
-		# 1 - заполнение task_data
-		# 2 - тест обязательных полей: description, version
-		# 3 - заполнение logs_keys
-		# 4 - запись json
-		
-		# (0)
-		if not isinstance(artist_ob, artist):
-			return(False, 'in log.playblast_write_log() - "artist_ob" parameter is not an instance of "artist" class')
-		if not artist_ob.nik_name:
-			return(False, 'in log.playblast_write_log() - required login!')
-		
-		# (1)
-		if not task_data:
-			task_data={}
-			for key in self.tasks_keys:
-				exec('task_data["%s"] = self.task.%s' % (key, key))
-		else:
-			if not taks_data['asset_name'] == self.task.asset.name:
-				return(False, 'in log.playblast_write_log() - transferred "task_data" is not from the correct asset: transferred: "%s", required: "%s"' % (taks_data['asset_name'], self.task.asset.name))
-				
-		# (2)
-		for item in [description, version]:
-			if not item:
-				return(False, '"%s" parameter not passed!' % item)
-		
-		# (3)
-		logs_keys = {}
-		for key in self.logs_keys:
-			if key in self.tasks_keys:
-				logs_keys[key] = task_data[key]
-		
-		str_version = '%04d' % int(version)
-		logs_keys['description'] = description
-		logs_keys['action'] = 'playblast'
-		logs_keys['date_time'] = datetime.datetime.now().strftime("%d-%m-%Y %H:%M:%S")
-		logs_keys['version'] = str_version
-		logs_keys['artist'] = artist_ob.nik_name
-		
-		path = os.path.join(task_data['asset_path'], self.task.asset.ADDITIONAL_FOLDERS['meta_data'], self.playblast_log_file_name)
-		path = NormPath(path)
-		
-		data = {}
-		
-		if os.path.exists(path):
-			with open(path, 'r') as f:
-				try:
-					data = json.load(f)
-				except:
-					pass
-		
-		data[str_version] = logs_keys
-		
-		with open(path, 'w') as f:
-			jsn = json.dump(data, f, sort_keys=True, indent=4)
-		
-		return(True, 'Ok!')
-	
-	# task_data (bool/dict) - если False - значит читается self.task, если передаётся, то только задача данного ассета.
-	def playblast_read_log(self, task_data=False): # v2
-		pass
-		# 1 - заполнение task_data
-		# 2 - определение пути к файлу
-		# 3 - чтение json
-		# 4 - сортировка
-		
-		# (1)
-		if not task_data:
-			task_data={}
-			for key in self.tasks_keys:
-				exec('task_data["%s"] = self.task.%s' % (key, key))
-		else:
-			if not taks_data['asset_name'] == self.task.asset.name:
-				return(False, 'in log.camera_read_log() - transferred "task_data" is not from the correct asset: transferred: "%s", required: "%s"' % (taks_data['asset_name'], self.task.asset.name))	
-			
-		# (2)
-		path = os.path.join(task_data['asset_path'], self.task.asset.ADDITIONAL_FOLDERS['meta_data'], self.playblast_log_file_name)
-		if not os.path.exists(path):
-			return(False, 'No saved versions!')
-		
-		# (3)
-		with open(path, 'r') as f:
-			data = None
-			try:
-				data = json.load(f)
-			except:
-				return(False, ('problems with file versions: ' + path))
-		
-		# (4)
-		nums = []
-		sort_data = []
-		for key in data:
-			nums.append(int(key))
-		nums.sort()
-		
-		for num in nums:
-			#key = '0'*(4 - len(str(num))) + str(num)
-			key = '%04d' % int(num)
-			sort_data.append(data[key])
-			
-		return(True, sort_data)
-		
-	
-	def camera_get_push_logs(self, project_name, task_data): # возможно никогда не понадобится
-		pass
-		
+    # запись лога для задачи
+    # self.task - должен быть инициализирован
+    # logs_keys (dict) - словарь по studio.logs_keys - обязательные ключи: description, version, action
+    # artist_ob (bool/artist) - если False - значит создаётся новый объект artist и определяется текущий пользователь.
+    def write_log(self, logs_keys, artist_ob=False): # v2 - процедура бывшая notes_log 
+        pass
+        # 1 - тест обязательных полей: description, version, action
+        # 2 - чтение artist
+        # 3 -
+        # 4 - заполнение полей task_name, date_time, artist
+        # 5 - запись БД
+        
+        # (1)
+        for item in ["description", "action"]:
+            if logs_keys.get(item) is False or logs_keys.get(item) is None:
+                return(False, 'in log.write_log() - no "%s" submitted!' % item)
+        #
+        if not logs_keys['action'] in self.log_actions:
+            return(False, 'in log.write_log() - wrong action - "%s"!' % logs_keys['action'])
+        #	
+        if not logs_keys['action'] in ['close', 'return_a_job', 'send_to_outsource', 'load_from_outsource', 'done', 'reader_accept', 'change_artist', 'recast', 'report', 'open']:
+            for item in ['version']:
+                if logs_keys.get(item) is False or logs_keys.get(item) is None:
+                    return(False, 'in log.write_log() - no "%s" submitted!' % item)
+            #
+            b, r = self._template_version_num(logs_keys['version'])
+            if not b:
+                return(b, r)
+            else:
+                logs_keys['version']=r
+            #
+            if not logs_keys.get('branch'):
+                logs_keys['branch'] = 'master'
+        else:
+            pass
+        
+        # (2)
+        if not artist_ob:
+            artist_ob = artist()
+            bool_, r_data = artist_ob.get_user()
+            if not bool_:
+                return(bool_, r_data)
+        
+        # (3)
+
+        # (4)
+        # task_name
+        if not self.task.task_name:
+            return(False, 'in log.write_log() - value "self.task.task_name" not defined!')
+        else:
+            logs_keys['task_name'] = self.task.task_name
+        #
+        if not logs_keys.get('date_time'):
+            logs_keys['date_time'] = datetime.datetime.now()
+        #
+        logs_keys['artist'] = artist_ob.nik_name
+        #
+        logs_keys['activity'] = self.task.activity
+        
+        # (5)
+        table_name = '"%s:%s:logs"' % (self.task.asset.id, logs_keys['activity'])
+        read_ob = self.task.asset.project
+        #
+        bool_, r_data = database().insert('project', read_ob, table_name, self.logs_keys, logs_keys, table_root=self.logs_db)
+        if not bool_:
+            return(bool_, r_data)
+            
+        return(True, 'ok')
+
+    # чтение лога задачи, заполнение атрибута класса task.branches
+    # self.task - должен быть инициализирован
+    # action (bool / str/ list) если False - то возврат для всех action, если list - то будет использован оператор where or - возврат по всем экшенам
+    # branch (bool / str / unicode) - фильтр по веткам
+    def read_log(self, action=False, branch=False): # v2
+        pass
+        # 1 - проверка инициализации ассета.
+        # 2 - проверка action
+        # 3 - чтение БД.
+
+        # (1)
+        if not self.task.task_name:
+            return(False, 'in log.write_log() - value "self.task.task_name" not defined!')
+        
+        ## (2)
+        #if action and not action in self.log_actions:
+            #return(False, 'in log.read_log() - wrong "action" - "%s"!' % action)
+        
+        # (3)
+        table_name = '"%s:%s:logs"' % (self.task.asset.id, self.task.activity)
+        read_ob = self.task.asset.project
+        if action:
+            if isinstance(action, str):
+                where = {'action': action}
+            elif isinstance(action, list) or isinstance(action, tuple):
+                where = {'action': action, 'condition': 'or'}
+        else:
+            where = False
+        bool_, r_data = database().read('project', read_ob, table_name, self.logs_keys, where=where, table_root=self.logs_db)
+        if not bool_:
+            return(bool_, r_data)
+        branches = list()
+        final_r_data = list()
+        for item in r_data:
+            branch_ = item['branch']
+            if isinstance(branch_, str) or isinstance(branch_, unicode):
+                branches.append(branch_)
+            elif isinstance(branch_, list):
+                branches.extend(branch_)
+            if branch and (isinstance(branch_, str) or isinstance(branch_, unicode)) and branch_ !=branch:
+                continue
+            final_r_data.append(item)
+        branches = list(set(branches))
+        
+        # fill branches
+        self.task._set_branches(branches)
+        
+        return(True, (final_r_data, branches))
+
+    # читает только push логи
+    # преобразует datetime в строку
+    # task_data (bool/dict) - если False - значит читается self.task
+    # time_to_str (bool) - если True - то преобразует дату в строку.
+    def get_push_logs(self, task_data=False, time_to_str = False): # v2 возможно устаревшая
+        pass
+        # get all logs
+        if not task_data:
+            bool_, r_data = self.read_log(action='push')
+            if not bool_:
+                return(False, r_data)
+        else:
+            # get asset/task
+            if task_data['asset_name'] != self.task.asset.name:
+                asset_ob = self.task.asset.init(task_data['asset_name'])
+                task_ob = task(asset_ob)
+            else:
+                task_ob = task(self.task.asset)
+            #
+            task_ob.init_by_keys(task_data, new=False)
+            # get log
+            log_new = log(task_ob)
+            # read log
+            bool_, r_data = log_new.read_log(action='push')
+            if not bool_:
+                return(False, r_data)
+        
+        if time_to_str:
+            for row in r_data[0]:
+                dt = row['date_time']
+                data = dt.strftime("%d-%m-%Y %H:%M:%S")
+                row['date_time'] = data
+                
+        return(True, r_data)
+
+    # *** ARTIST LOGS ***
+
+    # создание лога артиста по данной задаче.
+    # artist_ob (bool/artist) - если False - значит создаётся новый объект artist и определяется текущий пользователь.
+    # return - (True, 'ok!') или (False, comment)
+    def artist_start_log(self, artist_ob=False):
+        pass
+        # 1 - input data
+        # 2 - read log 
+        # 3 - write log
+        
+        # (1)
+        if not artist_ob:
+            artist_ob = artist()
+            b, r = artist_ob.get_user()
+            if not b:
+                return(b, r)
+            
+        # (2)
+        b, r = self.artist_read_log()
+        if not b:
+            return(b, r)
+        if r:
+            return(True, 'log allready exists!')
+        
+        # (3)
+        if self.task.start:
+            start_time = self.task.start
+        else:
+            start_time = datetime.datetime.now()
+        write_data = {
+            'project_name': self.task.asset.project.name,
+            'task_name': self.task.task_name,
+            'start': start_time,
+            }
+        table_name = '%s_tasks_logs' % artist_ob.nik_name
+        b, r = database().insert('studio', self, table_name, self.artists_logs_keys, write_data, table_root=self.artists_logs_db)
+        if not b:
+            return(b, r)
+        
+        return(True, 'Ok!')
+
+    # чтение логов артиста
+    # all (bool) - если True - то все логи этого артиста, если False - То только по этой задаче.
+    # artist_ob (bool/artist) - если False - значит создаётся новый объект artist и определяется текущий пользователь.
+    # return:
+    #	all=True - (True, [список логов - словари])
+    #	all=False - (True, {log})
+    #	или (False, coment)
+    def artist_read_log(self, all=False, artist_ob=False):
+        pass
+        # 1 - input data
+        # 2 - read log
+        
+        # (1)
+        if not artist_ob:
+            artist_ob = artist()
+            bool_, r_data = artist_ob.get_user()
+            if not bool_:
+                return(bool_, r_data)
+            
+        # (2)
+        if all:
+            where=False
+        else:
+            where = {'project_name': self.task.asset.project.name, 'task_name': self.task.task_name}
+        b,r = database().read('studio', self, '%s_tasks_logs' % artist_ob.nik_name, self.artists_logs_keys, where=where, table_root=self.artists_logs_db)
+        if not b:
+            return(b, r)
+        if all:
+            return(b, r)
+        elif r:
+            return(b, r[0])
+        else:
+            return(b, dict())		
+
+    # внесение изменений в лог артиста по задаче (кроме параметров из no_editable_keys)
+    # keys (dict) - словарь данных на замену по ключам artists_logs_keys
+    # artist_ob (bool/artist) - если False - значит создаётся новый объект artist и определяется текущий пользователь.
+    # return - (True, 'ok!') или (False, comment)
+    def artist_write_log(self, keys, artist_ob=False):
+        pass
+        # 1 - input data
+        # 2 - read log
+        # 3 - write log
+        
+        no_editable_keys = ['project_name', 'task_name', 'start']
+        
+        # (1)
+        if not artist_ob:
+            artist_ob = artist()
+            bool_, r_data = artist_ob.get_user()
+            if not bool_:
+                return(bool_, r_data)
+        # (2)
+        b, r = self.artist_read_log()
+        if not b:
+            return(b, r)
+        if not r:
+            return(False, 'The artist`s log no exists!')
+        
+        update_data=dict()
+        for key in keys:
+            if key in no_editable_keys:
+                continue
+            else:
+                update_data[key]=keys[key]
+        #
+        if not update_data:
+            return(False, 'No found data to update! (%s)' % str(keys))
+                
+        where = {'project_name': self.task.asset.project.name, 'task_name': self.task.task_name}
+        table_name = '%s_tasks_logs' % artist_ob.nik_name
+        b, r = database().update('studio', self, table_name, self.artists_logs_keys, update_data, where=where, table_root=self.artists_logs_db)
+        if not b:
+            return(b, r)
+        
+        return(True, 'Ok!')
+
+    # добавление временик full_time
+    # time (float) - время затраченное на commit (секунды)
+    # artist_ob (bool/artist) - если False - значит создаётся новый объект artist и определяется текущий пользователь.
+    # return - (True, 'ok!') или (False, comment)
+    def artist_add_full_time(self, time, artist_ob=False):
+        pass
+        # 1 - input data
+        # 2 - read log + added time
+        # 3 - write log
+        
+        # (1)
+        if not isinstance(time, float) and not isinstance(time, int):
+            return(False, 'time - wrong type - "%s", need "float" or "int"' % time.__class__.__name__)
+        if not artist_ob:
+            artist_ob = artist()
+            bool_, r_data = artist_ob.get_user()
+            if not bool_:
+                return(bool_, r_data)
+        # (2)
+        b, r = self.artist_read_log()
+        if not b:
+            return(b, r)
+        if not r:
+            return(False, 'The artist`s log no exists!')
+        #
+        if r['full_time']:
+            update_data = {'full_time' : (r['full_time'] + time)}
+        else:
+            update_data = {'full_time' : time}
+        where = {'project_name': self.task.asset.project.name, 'task_name': self.task.task_name}
+        table_name = '%s_tasks_logs' % artist_ob.nik_name
+        b, r = database().update('studio', self, table_name, self.artists_logs_keys, update_data, where=where, table_root=self.artists_logs_db)
+        if not b:
+            return(b, r)
+        
+        return(True, 'Ok!')
+        
+
+    # *** CAMERA LOGS ***
+    # artist_ob - (artist) - объект artist, его никнейм записывается в лог.
+    # description (str) - комментарий
+    # version (str/int) - номер версии <= 9999
+    # task_data (bool/dict) - если False - значит читается self.task, если передаётся, то только задача данного ассета.
+    def camera_write_log(self, artist_ob, description, version, task_data=False): # v2 - возможно нужна поверка существования версии ?
+        pass
+        # 0 - проверка user
+        # 1 - заполнение task_data
+        # 2 - тест обязательных полей: description, version
+        # 3 - заполнение logs_keys
+        # 4 - запись json
+        
+        # (0)
+        if not isinstance(artist_ob, artist):
+            return(False, 'in log.camera_write_log() - "artist_ob" parameter is not an instance of "artist" class')
+        if not artist_ob.nik_name:
+            return(False, 'in log.camera_write_log() - required login!')
+        
+        # (1)
+        if not task_data:
+            task_data={}
+            for key in self.tasks_keys:
+                exec('task_data["%s"] = self.task.%s' % (key, key))
+        else:
+            if not taks_data['asset_name'] == self.task.asset.name:
+                return(False, 'in log.camera_write_log() - transferred "task_data" is not from the correct asset: transferred: "%s", required: "%s"' % (taks_data['asset_name'], self.task.asset.name))
+                
+        # (2)
+        for item in [description, version]:
+            if not item:
+                return(False, '"%s" parameter not passed!' % item)
+        
+        # (3)
+        logs_keys = {}
+        for key in self.logs_keys:
+            if key in self.tasks_keys:
+                logs_keys[key] = task_data[key]
+        
+        str_version = '%04d' % int(version)
+        logs_keys['description'] = description
+        logs_keys['action'] = 'push_camera'
+        logs_keys['date_time'] = datetime.datetime.now().strftime("%d-%m-%Y %H:%M:%S")
+        logs_keys['version'] = str_version
+        logs_keys['artist'] = artist_ob.nik_name
+        
+        # (4)
+        path = os.path.join(task_data['asset_path'], self.task.asset.ADDITIONAL_FOLDERS['meta_data'], self.camera_log_file_name)
+        path = NormPath(path)
+        
+        data = {}
+        
+        if os.path.exists(path):
+            with open(path, 'r') as f:
+                try:
+                    data = json.load(f)
+                except:
+                    pass
+        
+        data[str_version] = logs_keys
+        
+        with open(path, 'w') as f:
+            jsn = json.dump(data, f, sort_keys=True, indent=4)
+        
+        return(True, 'Ok!')
+
+    # task_data (bool/dict) - если False - значит читается self.task, если передаётся, то только задача данного ассета.
+    def camera_read_log(self, task_data=False): # v2
+        pass
+        # 1 - заполнение task_data
+        # 2 - определение пути к файлу
+        # 3 - чтение json
+        # 4 - сортировка
+        
+        # (1)
+        if not task_data:
+            task_data={}
+            for key in self.tasks_keys:
+                exec('task_data["%s"] = self.task.%s' % (key, key))
+        else:
+            if not taks_data['asset_name'] == self.task.asset.name:
+                return(False, 'in log.camera_read_log() - transferred "task_data" is not from the correct asset: transferred: "%s", required: "%s"' % (taks_data['asset_name'], self.task.asset.name))		
+        
+        # (2)
+        path = os.path.join(task_data['asset_path'], self.task.asset.ADDITIONAL_FOLDERS['meta_data'], self.camera_log_file_name)
+        if not os.path.exists(path):
+            return(False, 'No saved versions!')
+            
+        # (3)
+        with open(path, 'r') as f:
+            data = None
+            try:
+                data = json.load(f)
+            except:
+                return(False, ('problems with file versions: ' + path))
+        # (4)
+        nums = []
+        sort_data = []
+        for key in data:
+            nums.append(int(key))
+        nums.sort()
+        
+        for num in nums:
+            #key = '0'*(4 - len(str(num))) + str(num)
+            key = '%04d' % int(num)
+            if data.get(key):
+                sort_data.append(data[str(key)])
+            else:
+                print('*** not key')
+            
+        return(True, sort_data)
+        
+    # *** PLAYBLAST LOGS ***
+    # artist_ob - (artist) - объект artist, его никнейм записывается в лог.
+    # description (str) - комментарий
+    # version (str/int) - номер версии <= 9999
+    # task_data (bool/dict) - если False - значит читается self.task, если передаётся, то только задача данного ассета.
+    def playblast_write_log(self, artist_ob, description, version, task_data=False): # v2
+        pass
+        # 0 - проверка user
+        # 1 - заполнение task_data
+        # 2 - тест обязательных полей: description, version
+        # 3 - заполнение logs_keys
+        # 4 - запись json
+        
+        # (0)
+        if not isinstance(artist_ob, artist):
+            return(False, 'in log.playblast_write_log() - "artist_ob" parameter is not an instance of "artist" class')
+        if not artist_ob.nik_name:
+            return(False, 'in log.playblast_write_log() - required login!')
+        
+        # (1)
+        if not task_data:
+            task_data={}
+            for key in self.tasks_keys:
+                exec('task_data["%s"] = self.task.%s' % (key, key))
+        else:
+            if not taks_data['asset_name'] == self.task.asset.name:
+                return(False, 'in log.playblast_write_log() - transferred "task_data" is not from the correct asset: transferred: "%s", required: "%s"' % (taks_data['asset_name'], self.task.asset.name))
+                
+        # (2)
+        for item in [description, version]:
+            if not item:
+                return(False, '"%s" parameter not passed!' % item)
+        
+        # (3)
+        logs_keys = {}
+        for key in self.logs_keys:
+            if key in self.tasks_keys:
+                logs_keys[key] = task_data[key]
+        
+        str_version = '%04d' % int(version)
+        logs_keys['description'] = description
+        logs_keys['action'] = 'playblast'
+        logs_keys['date_time'] = datetime.datetime.now().strftime("%d-%m-%Y %H:%M:%S")
+        logs_keys['version'] = str_version
+        logs_keys['artist'] = artist_ob.nik_name
+        
+        path = os.path.join(task_data['asset_path'], self.task.asset.ADDITIONAL_FOLDERS['meta_data'], self.playblast_log_file_name)
+        path = NormPath(path)
+        
+        data = {}
+        
+        if os.path.exists(path):
+            with open(path, 'r') as f:
+                try:
+                    data = json.load(f)
+                except:
+                    pass
+        
+        data[str_version] = logs_keys
+        
+        with open(path, 'w') as f:
+            jsn = json.dump(data, f, sort_keys=True, indent=4)
+        
+        return(True, 'Ok!')
+
+    # task_data (bool/dict) - если False - значит читается self.task, если передаётся, то только задача данного ассета.
+    def playblast_read_log(self, task_data=False): # v2
+        pass
+        # 1 - заполнение task_data
+        # 2 - определение пути к файлу
+        # 3 - чтение json
+        # 4 - сортировка
+        
+        # (1)
+        if not task_data:
+            task_data={}
+            for key in self.tasks_keys:
+                exec('task_data["%s"] = self.task.%s' % (key, key))
+        else:
+            if not taks_data['asset_name'] == self.task.asset.name:
+                return(False, 'in log.camera_read_log() - transferred "task_data" is not from the correct asset: transferred: "%s", required: "%s"' % (taks_data['asset_name'], self.task.asset.name))	
+            
+        # (2)
+        path = os.path.join(task_data['asset_path'], self.task.asset.ADDITIONAL_FOLDERS['meta_data'], self.playblast_log_file_name)
+        if not os.path.exists(path):
+            return(False, 'No saved versions!')
+        
+        # (3)
+        with open(path, 'r') as f:
+            data = None
+            try:
+                data = json.load(f)
+            except:
+                return(False, ('problems with file versions: ' + path))
+        
+        # (4)
+        nums = []
+        sort_data = []
+        for key in data:
+            nums.append(int(key))
+        nums.sort()
+        
+        for num in nums:
+            #key = '0'*(4 - len(str(num))) + str(num)
+            key = '%04d' % int(num)
+            sort_data.append(data[key])
+            
+        return(True, sort_data)
+        
+
+    def camera_get_push_logs(self, project_name, task_data): # возможно никогда не понадобится
+        pass
+        
 class artist(studio):
 	'''
 	self.add_artist({key:data, ...}) - "nik_name", "user_name" - Required, add new artist in 'artists.db';; return - (True, 'ok') or (Fasle, description) descriptions: 'overlap', 'not nik_name', 
