@@ -16,6 +16,7 @@ Contents:
    project
    asset
    task
+   log
    examples
    specifications
 

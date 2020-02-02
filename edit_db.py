@@ -3408,6 +3408,8 @@ class asset(studio):
 class task(studio):
     '''
     **level** = 'project'
+    
+    Данные хранимые в БД (имя столбца : тип данных):
 
     .. code-block:: python
 
@@ -5094,7 +5096,7 @@ class task(studio):
         branch : str, optional
             Наименование ветки, если не передавать - то будет использован ``master``.
         artist_ob : :obj:`edit_db.artist`, optional
-            Текущий пользователь, если не передавать, будет сделано :func:`edit_db.artist.get_user`
+            Текущий пользователь, если не передавать, будет сделано :func:`edit_db.artist.get_user`.
         
         Returns
         -------
@@ -8562,9 +8564,99 @@ class task(studio):
         return(True, 'Ok!')
 
 class log(studio):
-    """Class Log
+    """**level** = 'project'
+
+    Данные хранимые в БД (имя столбца : тип данных):
+
+    Лог экшена задачи (активити) из списка :attr:`edit_db.log.log_actions`. Одна запись на экшн. :attr:`edit_db.studio.logs_keys`.
     
+    .. code-block:: python
+        
+        logs_keys = {
+        'version': 'text',              # hex 4 символа
+        'date_time': 'timestamp',       # время и дата записи
+        'activity': 'text',             # ативити задачи
+        'task_name': 'text',            # имя задачи
+        'action': 'text',               # тип записи из log.log_actions
+        'artist': 'text',               # nik_name артиста, кто делает запись
+        'description': 'text',          # коментарий
+        'source': 'json',               # для push - версия коммита источника (в случае sketch - список версий по всем веткам, порядок совпадает с порядком записи веток в branch), для publish - версия push источника.
+        'branch' : 'text',              # ветка - в случае push, publish (для sketch - список веток).
+        'time' : 'integer',             # время затраченное на commit, ед. измерения секунда.
+        }
+        
+    Лог артиста по задачам. Одна запись на задачу. :attr:`edit_db.studio.artists_logs_keys`.
+    
+    .. code-block:: python
+    
+        artists_logs_keys = {
+        'project_name': 'text',
+        'task_name': 'text',
+        'full_time': 'integer',         # суммарное время затраченое артистом на задачу, ед. измерения секунда.
+        'price': 'real',                # сумма начисленная за выполнение задачи. вносится по принятию задачи.
+        'start': 'timestamp',           # дата-время создания записи, запись создаётся при первом open задачи.
+        'finish': 'timestamp',          # дата-время принятия задачи.
+        }
+        
+    Лог артиста по дням, заполняемый вручную: день/проект/задача/время. Одна запись на задачу в день. :attr:`edit_db.studio.artists_time_logs_keys`.
+    
+    .. code-block:: python
+    
+        artists_time_logs_keys = {
+        'project_name':'text',
+        'task_name':'text',
+        'date':'timestamp',  # возможно только дата без времени?
+        'time':'integer',    # суммарное время затраченое артистом на задачу, ед. измерения секунда. Заполняется вручную.
+        }
+        
+    Examples
+    --------
+    Создание экземпляра класса:
+
+    .. code-block:: python
+    
+        import edit_db as db
+  
+        project = db.project()
+        asset = db.asset(project)
+        task = db.task(asset)
+        
+        log = db.log(task) # task - обязательный параметр при создании экземпляра log
+        # доступ ко всем параметрам и методам принимаемого экземпляра task - через log.task
+    
+    Attributes
+    ----------
+    task : :obj:`edit_db.task`
+        Экземпляр задачи принимаемый при создании экземпляра класса, содержит все атрибуты и методы :obj:`edit_db.task`.
     """
+    
+    no_editable_keys = ['project_name', 'task_name', 'start']
+    """Список параметров лога артиста, которые нельзя редактировать. """
+    
+    camera_log_file_name = 'camera_logs.json'
+    """str: Имя ``json`` файла куда записывается лог камеры. ``?``"""
+    
+    playblast_log_file_name = 'playblast_logs.json'
+    """str: Имя ``json`` файла куда записывается лог плейбласта. ``?``"""
+    
+    log_actions = [
+    'pull',
+    'commit',
+    'push',
+    'publish',
+    'open',
+    'report',
+    'recast',
+    'change_artist',
+    'close',
+    'done', # принятие задачи со всеми вытекающими
+    'reader_accept', # утверждение задачи одним из проверяющих, в процедуре task.readers_accept_task()
+    'return_a_job',
+    'send_to_outsource',
+    'load_from_outsource'
+    ]
+    """list: Список возможных экшенов для задач."""
+        
     def __init__(self, task_ob): # v2
         if not isinstance(task_ob, task):
             raise Exception('in log.__init__() - Object is not the right type "%s", must be "task"' % task_ob.__class__.__name__)
@@ -8572,32 +8664,22 @@ class log(studio):
         #
         for key in self.logs_keys:
             exec('self.%s = False' % key)
-        
-        self.camera_log_file_name = 'camera_logs.json'
-        self.playblast_log_file_name = 'playblast_logs.json'
-        
-        self.log_actions = [
-        'pull',
-        'commit',
-        'push',
-        'publish',
-        'open',
-        'report',
-        'recast',
-        'change_artist',
-        'close',
-        'done', # принятие задачи со всеми вытекающими
-        'reader_accept', # утверждение задачи одним из проверяющих, в процедуре task.readers_accept_task()
-        'return_a_job',
-        'send_to_outsource',
-        'load_from_outsource'
-        ]
 
-    # запись лога для задачи
-    # self.task - должен быть инициализирован
-    # logs_keys (dict) - словарь по studio.logs_keys - обязательные ключи: description, version, action
-    # artist_ob (bool/artist) - если False - значит создаётся новый объект artist и определяется текущий пользователь.
-    def write_log(self, logs_keys, artist_ob=False): # v2 - процедура бывшая notes_log 
+    def write_log(self, logs_keys, artist_ob=False): # v2 - процедура бывшая notes_log
+        """Запись лога активити задачи.
+        
+        Parameters
+        ----------
+        logs_keys : str
+            Словарь по :attr:`edit_db.studio.logs_keys` - обязательные ключи: ``description``, ``version``, ``action``.
+        artist_ob : :obj:`edit_db.artist`, optional
+            Текущий пользователь, если не передавать, будет сделано :func:`edit_db.artist.get_user`.
+            
+        Returns
+        -------
+        tuple
+            (*True*, 'Ok!') или (*False*, comment)
+        """
         pass
         # 1 - тест обязательных полей: description, version, action
         # 2 - чтение artist
@@ -8662,11 +8744,21 @@ class log(studio):
             
         return(True, 'ok')
 
-    # чтение лога задачи, заполнение атрибута класса task.branches
-    # self.task - должен быть инициализирован
-    # action (bool / str/ list) если False - то возврат для всех action, если list - то будет использован оператор where or - возврат по всем экшенам
-    # branch (bool / str / unicode) - фильтр по веткам
     def read_log(self, action=False, branch=False): # v2
+        """Чтение лога активити задачи. Заполняет :attr:`edit_db.task.branches`.
+        
+        Parameters
+        ----------
+        action : str, list, optional
+            Фильтр по экшенам. Если *False* - то возврат для всех ``action``, если ``str`` (название экшена) - то все логи по данному экшену, если ``list`` (список наименований экшенов) - то будет использован оператор ``WHERE OR`` тоесть возврат по всем перечисленным экшенам.
+        branch : str, optional
+            Фильтр по веткам, если *False* - то вернёт логи для всех веток.
+            
+        Returns
+        -------
+        tuple
+            (*True, ([список словарей логов, сотрирован по порядку], [список наименований веток])*) или (*False*, comment)
+        """
         pass
         # 1 - проверка инициализации ассета.
         # 2 - проверка action
@@ -8711,11 +8803,23 @@ class log(studio):
         
         return(True, (final_r_data, branches))
 
-    # читает только push логи
-    # преобразует datetime в строку
-    # task_data (bool/dict) - если False - значит читается self.task
-    # time_to_str (bool) - если True - то преобразует дату в строку.
     def get_push_logs(self, task_data=False, time_to_str = False): # v2 возможно устаревшая
+        """Возврат списка ``push`` логов для задачи.
+        
+        .. attention:: Возможно устарело!.
+        
+        Parameters
+        ----------
+        task_data : dict, optional
+            Если *False* - значит текущая задача. ``лучше не использовать``
+        time_to_str : bool, optional
+            Если *True* - то преобразует дату в строку.
+        
+        Returns
+        -------
+        tuple
+            (*True, ([список словарей логов, сотрирован по порядку], [список наименований веток])*) или (*False*, comment)
+        """
         pass
         # get all logs
         if not task_data:
@@ -8748,10 +8852,19 @@ class log(studio):
 
     # *** ARTIST LOGS ***
 
-    # создание лога артиста по данной задаче.
-    # artist_ob (bool/artist) - если False - значит создаётся новый объект artist и определяется текущий пользователь.
-    # return - (True, 'ok!') или (False, comment)
     def artist_start_log(self, artist_ob=False):
+        """Создание, при отсутствии, лога артиста по данной задаче, заполнение ``artist_log.start``
+        
+        Parameters
+        ----------
+        artist_ob : :obj:`edit_db.studio.artist`, optional
+            Текущий пользователь, если не передавать, будет сделано :func:`edit_db.artist.get_user`.
+        
+        Returns
+        -------
+        tuple
+            (*True*, 'Ok!') или (*False*, comment)
+        """
         pass
         # 1 - input data
         # 2 - read log 
@@ -8788,14 +8901,22 @@ class log(studio):
         
         return(True, 'Ok!')
 
-    # чтение логов артиста
-    # all (bool) - если True - то все логи этого артиста, если False - То только по этой задаче.
-    # artist_ob (bool/artist) - если False - значит создаётся новый объект artist и определяется текущий пользователь.
-    # return:
-    #	all=True - (True, [список логов - словари])
-    #	all=False - (True, {log})
-    #	или (False, coment)
     def artist_read_log(self, all=False, artist_ob=False):
+        """Чтение логов артиста.
+        
+        Parameters
+        ----------
+        all : bool, optional
+            Если *True* - то все логи этого артиста, если *False* - То только по этой задаче.
+        artist_ob : :obj:`edit_db.studio.artist`, optional
+            Текущий пользователь, если не передавать, будет сделано :func:`edit_db.artist.get_user`.
+            
+        Returns
+        -------
+        tuple
+            * Если ``all`` = *True* - (*True*, [список логов - словари]) или (*False*, comment).
+            * Если ``all`` = *False* - (*True*, {лог - словарь}) или (*False*, comment).
+        """
         pass
         # 1 - input data
         # 2 - read log
@@ -8822,17 +8943,25 @@ class log(studio):
         else:
             return(b, dict())		
 
-    # внесение изменений в лог артиста по задаче (кроме параметров из no_editable_keys)
-    # keys (dict) - словарь данных на замену по ключам artists_logs_keys
-    # artist_ob (bool/artist) - если False - значит создаётся новый объект artist и определяется текущий пользователь.
-    # return - (True, 'ok!') или (False, comment)
     def artist_write_log(self, keys, artist_ob=False):
+        """Внесение изменений в лог артиста по задаче (кроме параметров из :attr:`edit_db.log.no_editable_keys`).
+        
+        Parameters
+        ----------
+        keys : dict
+            Словарь данных на замену по ключам :attr:`edit_db.studio.artists_logs_keys`.
+        artist_ob : :obj:`edit_db.studio.artist`, optional
+            Текущий пользователь, если не передавать, будет сделано :func:`edit_db.artist.get_user`.
+        
+        Returns
+        -------
+        tuple
+            (*True*, 'Ok!') или (*False*, comment)
+        """
         pass
         # 1 - input data
         # 2 - read log
         # 3 - write log
-        
-        no_editable_keys = ['project_name', 'task_name', 'start']
         
         # (1)
         if not artist_ob:
@@ -8849,7 +8978,7 @@ class log(studio):
         
         update_data=dict()
         for key in keys:
-            if key in no_editable_keys:
+            if key in self.no_editable_keys:
                 continue
             else:
                 update_data[key]=keys[key]
@@ -8865,11 +8994,21 @@ class log(studio):
         
         return(True, 'Ok!')
 
-    # добавление временик full_time
-    # time (float) - время затраченное на commit (секунды)
-    # artist_ob (bool/artist) - если False - значит создаётся новый объект artist и определяется текущий пользователь.
-    # return - (True, 'ok!') или (False, comment)
     def artist_add_full_time(self, time, artist_ob=False):
+        """Добавление временик ``full_time`` в лог артиста по задачам.
+        
+        Parameters
+        ----------
+        time : float
+            Время затраченное на ``commit`` (секунды).
+        artist_ob : :obj:`edit_db.studio.artist`, optional
+            Текущий пользователь, если не передавать, будет сделано :func:`edit_db.artist.get_user`.
+            
+        Returns
+        -------
+        tuple
+            (*True*, 'Ok!') или (*False*, comment)
+        """
         pass
         # 1 - input data
         # 2 - read log + added time
@@ -8904,11 +9043,25 @@ class log(studio):
         
 
     # *** CAMERA LOGS ***
-    # artist_ob - (artist) - объект artist, его никнейм записывается в лог.
-    # description (str) - комментарий
-    # version (str/int) - номер версии <= 9999
-    # task_data (bool/dict) - если False - значит читается self.task, если передаётся, то только задача данного ассета.
     def camera_write_log(self, artist_ob, description, version, task_data=False): # v2 - возможно нужна поверка существования версии ?
+        """Запись лога для сохраняемой камеры шота.
+        
+        Parameters
+        ----------
+        artist_ob : :obj:`edit_db.artist`
+            Никнейм данного артиста записывается в лог.
+        description : str
+            Комментарий.
+        version : str, int
+            Номер версии. ``Лучше сделать автоопределение номера``.
+        task_data : dict
+            Словарь данных задачи, для которой делается запись, если не передавать - то текущая. ``Лучше не использовать``.
+        
+        Returns
+        -------
+        tuple
+            (*True*, 'Ok!') или (*False*, comment).
+        """
         pass
         # 0 - проверка user
         # 1 - заполнение task_data
@@ -8969,8 +9122,19 @@ class log(studio):
         
         return(True, 'Ok!')
 
-    # task_data (bool/dict) - если False - значит читается self.task, если передаётся, то только задача данного ассета.
     def camera_read_log(self, task_data=False): # v2
+        """Чтение логов камеры шота.
+        
+        Parameters
+        ----------
+        task_data : dict
+            Словарь данных задачи, для которой делается чтение логов, если не передавать - то текущая. ``Лучше не использовать``.
+            
+        Returns
+        -------
+        tuple
+            (*True*, [Список словарей логов камеры, сортированы по порядку создания]) или (*False*, comment).
+        """
         pass
         # 1 - заполнение task_data
         # 2 - определение пути к файлу
@@ -9015,12 +9179,25 @@ class log(studio):
             
         return(True, sort_data)
         
-    # *** PLAYBLAST LOGS ***
-    # artist_ob - (artist) - объект artist, его никнейм записывается в лог.
-    # description (str) - комментарий
-    # version (str/int) - номер версии <= 9999
-    # task_data (bool/dict) - если False - значит читается self.task, если передаётся, то только задача данного ассета.
     def playblast_write_log(self, artist_ob, description, version, task_data=False): # v2
+        """Запись лога создаваемого плейбласта шота.
+        
+        Parameters
+        ----------
+        artist_ob : :obj:`edit_db.artist`
+            Никнейм данного артиста записывается в лог.
+        description : str
+            Комментарий.
+        version : str, int
+            Номер версии. ``Лучше сделать автоопределение номера``.
+        task_data : dict
+            Словарь данных задачи, для которой делается запись, если не передавать - то текущая. ``Лучше не использовать``.
+            
+        Returns
+        -------
+        tuple
+            (*True*, 'Ok!') или (*False*, comment).
+        """
         pass
         # 0 - проверка user
         # 1 - заполнение task_data
@@ -9080,8 +9257,19 @@ class log(studio):
         
         return(True, 'Ok!')
 
-    # task_data (bool/dict) - если False - значит читается self.task, если передаётся, то только задача данного ассета.
     def playblast_read_log(self, task_data=False): # v2
+        """Чтение логов плейбластов шота.
+        
+        Parameters
+        ----------
+        task_data : dict
+            Словарь данных задачи, для которой делается чтение логов, если не передавать - то текущая. ``Лучше не использовать``.
+            
+        Returns
+        -------
+        tuple
+            (*True*, [Список словарей логов, сортированы по порядку создания]) или (*False*, comment).
+        """
         pass
         # 1 - заполнение task_data
         # 2 - определение пути к файлу
@@ -9124,7 +9312,6 @@ class log(studio):
             
         return(True, sort_data)
         
-
     def camera_get_push_logs(self, project_name, task_data): # возможно никогда не понадобится
         pass
         
