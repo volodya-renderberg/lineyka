@@ -1820,7 +1820,7 @@ class project(studio):
     """
     **level** = 'studio'
 
-    .. rubric:: Данные хранимые в БД (имя столбца : тип данных):
+    .. rubric:: Данные хранимые в БД (имя столбца : тип данных) :attr:`edit_db.studio.projects_keys`:
 
     .. code-block:: python
 
@@ -2303,7 +2303,7 @@ class asset(studio):
     '''
     **level** = 'project'
     
-    .. rubric:: Данные хранимые в БД (имя столбца : тип данных):
+    .. rubric:: Данные хранимые в БД (имя столбца : тип данных) :attr:`edit_db.studio.asset_keys`:
 
     .. code-block:: python
 
@@ -3409,7 +3409,7 @@ class task(studio):
     '''
     **level** = 'project'
     
-    Данные хранимые в БД (имя столбца : тип данных):
+    Данные хранимые в БД (имя столбца : тип данных) :attr:`edit_db.studio.tasks_keys`:
 
     .. code-block:: python
 
@@ -9316,22 +9316,70 @@ class log(studio):
         pass
         
 class artist(studio):
-    '''
-    self.add_artist({key:data, ...}) - "nik_name", "user_name" - Required, add new artist in 'artists.db';; return - (True, 'ok') or (Fasle, description) descriptions: 'overlap', 'not nik_name', 
+    '''**level** = 'studio'
+    
+    Данные хранимые в БД (имя столбца : тип данных) :attr:`edit_db.studio.artists_keys`:
 
-    self.login_user(nik_name, password) - 
+    .. code-block:: python
 
-    self.read_artist({key:data, ...}) - "nik_name", - Required, returns full information, relevant over the keys ;; example: self.read_artist({'specialty':'rigger'});; return: (True, [{Data}, ...])  or (False, description)
-
-    self.edit_artist({key:data, ...}) - "nik_name", - Required, does not change the setting ;;
-
-    self.get_user() - ;; return: (True, (nik_name, user_name)), (False, 'more than one user'), (False, 'not user') ;;
-
-    self.add_stat(user_name, {key:data, ...}) - "project_name, task_name, data_start" - Required ;;
-
-    self.read_stat(user_name, {key:data, ...}) - returns full information, relevant over the keys: (True, [{Data}, ...]) or (False, description);; 
-
-    self.edit_stat(user_name, project_name, task_name, {key:data, ...}) - 
+        artists_keys = {
+        'nik_name': 'text',
+        'user_name': 'text',
+        'password': 'text',
+        'date_time': 'timestamp',
+        'email': 'text',
+        'phone': 'text',
+        'specialty': 'text',
+        'outsource': 'integer',
+        'workroom': 'json', # список id отделов
+        'level': 'text',
+        'share_dir': 'text',
+        'status': 'text',
+        'working_tasks': 'json',# словарь списков имён назначенных задач, по именам отделов.
+        'checking_tasks': 'json',# словарь списков имён назначенных на проверку задач, по именам отделов.
+        }
+        
+    Examples
+    --------
+    Создание экземпляра класса:
+    
+    .. code-block:: python
+    
+        import edit_db as db
+        
+        artist = db.artist()
+        
+    Attributes
+    ----------
+    nik_name : str
+        Никнейм (уникально).
+    user_name : str
+        Юзернейм в текущей системе, откуда сделан вход.
+    password : str
+        Пароль в текстовом виде.
+    date_time : timestamp
+        Дата и время регистрации в студии.
+    email : str
+        Email
+    phone : str
+        Номер телефона
+    specialty : str
+        Специализация.
+    outsource : int
+        Статус аутсорса: 0 или 1
+    workroom : list
+        Список id отделов, в которых сосотоит артист.
+    level :  str
+        Уровень, значение из :attr:`edit_db.studio.user_levels`
+    share_dir : str
+        Путь к директории обмена ``пока не используется``
+    status : str
+        Статус активности пользователя, значение из [``'active'``, ``'none'``] - ``Возможно перейти на булевские значения?``.
+    working_tasks : dict
+        Словарь списков имён назначенных задач, (по именам отделов ``?``).
+    checking_tasks : dict
+        Словарь списков имён назначенных на проверку задач, (по именам отделов ``?``).
+    
     '''
     def __init__(self):
         pass

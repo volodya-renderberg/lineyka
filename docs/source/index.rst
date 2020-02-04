@@ -13,6 +13,7 @@ Contents:
    
    studio
    database
+   artist
    project
    asset
    task
