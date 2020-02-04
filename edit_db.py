@@ -9389,9 +9389,22 @@ class artist(studio):
         #studio.__init__(self)
         pass
 
-    # инициализация по имени
-    # new (bool) - если True - то возвращается новый инициализированный объект класса artist, если False - то инициализируется текущий объект
     def init(self, nik_name, new = True):
+        """Инициализация по имени, возвращает новый, или инициализирует текущий экземпляр.
+        
+        Parameters
+        ----------
+        nik_name : str
+            Ник нейм артиста.
+        new : bool
+            Если *True* - возвращает новый инициализированный экземпляр, если *False* то инициализирует текущий экземпляр.
+            
+        Returns
+        -------
+        :obj:`edit_db.artist`, tuple
+            * если new= *True* - экземпляр класса :obj:`edit_db.artist`,
+            * если new= *False* - (*True,  'Ok!'*) или (*False, comment*)
+        """
         pass
         # get keys
         bool_, artists = self.read_artist({'nik_name': nik_name})
@@ -9408,9 +9421,22 @@ class artist(studio):
             #self.asset_path = keys.get('asset_path')
             return(True, 'Ok')
         
-    # инициализация по словарю
-    # new (bool) - если True - то возвращается новый инициализированный объект класса artist, если False - то инициализируется текущий объект
     def init_by_keys(self, keys, new = True):
+        """Инициализация по словарю (без чтения БД), возвращает новый, или инициализирует текущий экземпляр.
+        
+        Parameters
+        ----------
+        keys : dict
+            Словарь по :attr:`edit_db.studio.artists_keys`
+        new : bool, optional
+            Если *True* - возвращает новый инициализированный экземпляр, если *False* то инициализирует текущий.
+        
+        Returns
+        -------
+        :obj:`edit_db.artist`, tuple
+            * если new= *True* - экземпляр класса :obj:`edit_db.artist`,
+            * если new= *False* - (*True,  'Ok!'*) или (*False, comment*)
+        """
         pass
         # fill fields
         if new:
@@ -9424,11 +9450,24 @@ class artist(studio):
             #self.asset_path = keys.get('asset_path')
             return(True, 'Ok')
 
-    # если registration=True - произойдёт заполнение полей artists_keys, поле user_name будет заполнено.
-    # если registration=False - поля artists_keys заполняться не будут, поле user_name - останется пустым.
     def add_artist(self, keys, registration = True):
+        """Добавление нового пользователя.
+        
+        Parameters
+        ----------
+        keys : dict
+            Словарь по ключам :attr:`edit_db.studio.artists_keys`, обязательные поля - ``nik_name`` и ``password``.
+        registration : bool, optional
+            * Если =*True* - произойдёт заполнение полей :attr:`edit_db.studio.artists_keys` экземпляра класса, поле ``user_name`` будет заполнено.
+            * Если =*False* - поля заполняться не будут, поле ``user_name`` - останется пустым.
+            
+        Returns
+        -------
+        tuple
+            (*True*, 'Ok!') или (*False*, comment).
+        """
         pass
-        # test nik_name
+        # test required fields.
         if not keys.get('nik_name'):
             return(False, '\"Nik Name\" not specified!')
         if not keys.get('password'):
@@ -9487,9 +9526,21 @@ class artist(studio):
                     exec(com)
             return(True, 'ok')
         
-    # keys (dict) - фильтр по ключам artists_keys
-    # objects (bool) - если True - то возвращаются объекты, если False - то словари.
     def read_artist(self, keys, objects=True):
+        """Чтение списка данных артистов.
+        
+        Parameters
+        ----------
+        keys : dict
+            словарь по ключам :attr:`edit_db.studio.artists_keys` - критерии для поиска, если ``keys``= 'all' вернёт данные по всем артистам.
+        objects : bool, optional
+            Если *True* - вернёт экземпляры :obj:`edit_db.artist`, если *False* - словари по :attr:`edit_db.studio.artists_keys`.
+            
+        Returns
+        -------
+        tuple
+            (*True*, [артисты - словари или экземпляры]) или (*False, comment*)
+        """
         if keys == 'all':
             keys = False
         bool_, r_data = database().read('studio', self, self.artists_t, self.artists_keys, where=keys)
@@ -9503,8 +9554,21 @@ class artist(studio):
                 objects.append(self.init_by_keys(data))
             return(True, objects)
             
-        
     def read_artist_of_workroom(self, workroom_id, objects=True):
+        """Чтение списка артистов отдела.
+        
+        Parameters
+        ----------
+        workroom_id : str
+            ``id`` отдела.
+        objects : bool, optional
+            Если *True* - вернёт экземпляры :obj:`edit_db.artist`, если *False* - словари по :attr:`edit_db.studio.artists_keys`.
+        
+        Returns
+        -------
+        tuple
+            (*True*, [артисты - словари или экземпляры]) или (*False, comment*).
+        """
         bool_, return_data = database().read('studio', self, self.artists_t, self.artists_keys)
         if not bool_:
             return(bool_, return_data)
@@ -9522,11 +9586,21 @@ class artist(studio):
                     artists_dict[row['nik_name']] = row
         return(True, artists_dict)
 
-    # список активных артистов подходящих для данного типа задачи.
-    # task_type (str) - тип задачи
-    # workroom_ob (workroom)предполагается что выполнена процедура workroom.get_list() и заполнено поле list_workroom (список всех отделов)
-    # rturn - (True, сортированный список имён артистов, словарь артистов по именам.) или (False, comment)
     def get_artists_for_task_type(self, task_type, workroom_ob):
+        """Возвращает активных артистов подходящих для данного типа задачи (сортированный список имён и словарь по именам).
+        
+        Parameters
+        ----------
+        task_type : str
+            Тип задачи.
+        workroom_ob : :obj:`edit_db.workroom`
+            Любой экземпляр отдела, предполагается что выполнена процедура :func:`edit_db.workroom.get_list` и заполнено поле :attr:`edit_db.workroom.list_workroom` (список отделов).
+        
+        Returns
+        -------
+        tuple
+            (*True*, [сортированный список имён артистов], {словарь артистов по именам}) или (*False, comment*).
+        """
         pass
         artists_dict = {}
         active_artists_list = []
@@ -9549,6 +9623,23 @@ class artist(studio):
         return(True, active_artists_list, artists_dict)
         
     def login_user(self, nik_name, password):
+        """Логин юзера.\
+        Перезаписывает текущее имя пользователя пк, в соответствие указанного ник-нейма, при этом проверит и удалит данное имя пользователя из под других ник-неймов.\
+        Произойдёт заполнение полей :obj:`edit_db.artist.artists_keys` экземпляра класса.
+        
+        Parameters
+        ----------
+        nik_name : str
+            Никнейм.
+        password : str
+            Пароль
+            
+        Returns
+        -------
+        tuple
+            (*True*, (``nik_name``, ``user_name``))  или (*False, comment*).
+        
+        """
         pass
         # проверка наличия юзера
         # проверка пароля
@@ -9582,6 +9673,19 @@ class artist(studio):
         return(True, (nik_name, user_name))
 
     def get_user(self, outsource = False):
+        """Определение текущего пользователя, инициализация текущего экземпляра.
+        
+        Parameters
+        ----------
+        outsource : bool
+            С точки зрения удалённого пользователя или нет.
+            
+        Returns
+        -------
+        tuple
+            (*True*, (``nik_name``, ``user_name``, ``outsource`` (bool), {``данные артиста - словарь``})) или (*False, comment*)
+        
+        """
         user_name = getpass.getuser()
         bool_, return_data = database().read('studio', self, self.artists_t, self.artists_keys, where = {'user_name': user_name})
         if not bool_:
@@ -9607,10 +9711,21 @@ class artist(studio):
                     out_source = False
                 return True, (rows[0]['nik_name'], rows[0]['user_name'], out_source, rows[0])
 
-    # редактирование объекта артиста. текущий объект artist должен быть инициализирован. редактирует параметры текущего-редактируемого объекта.
-    # keys (dict) - данные на замену - nik_name - не редактируется, поэтому удаляется из данных перед записью.
-    # current_user (artist) - редактор - залогиненный пользователь. если force - проверки уровней не выполняются.
     def edit_artist(self, keys, current_user=False):
+        """Редактирование данного (инициализированного) экземпляра артиста.
+        
+        Parameters
+        ----------
+        keys : dict
+            данные на замену - ``nik_name`` - не редактируется, не зависимо от того передан или нет.
+        current_user : :obj:`edit_db.artist`, str, optional
+            редактор - залогиненный пользователь, если *False* - то будет создан новый экземпляр и произведено :func:`edit_db.artist.get_user` (лишнее обращени е к БД) . если передать ``'force'`` - проверки уровней и доступов не выполняются.
+            
+        Returns
+        -------
+        tuple
+            (*True*, "Ok!") или (*False*, comment)
+        """
         pass
         # 1 - проверка заполненности keys
         # 2 - тест current_user
@@ -9658,10 +9773,21 @@ class artist(studio):
         
         return True, 'ok'
 
-    # словарь по именам  рабочих задач артиста, данного проекта.
-    # project_ob (project) - текущий проект
-    # statuses (bool / list) - фильтр по статтусам, список статусов.
     def get_working_tasks(self, project_ob, statuses = False):
+        """Получение словаря задач (по именам) назначенных на артиста.
+        
+        Parameters
+        ----------
+        project_ob : :obj:`edit_db.project`
+            Проект для которого ищется список задач.
+        statuses : list
+            Фильтр по статтусам (список статусов). Если не передавать - то все статусы.
+            
+        Returns
+        -------
+        tuple
+            (*True*, {``task_name``: ``task_ob``, ...}) или (*False*, comment)
+        """
         pass
         # 1 - получаем список всех ассетов
         # 2 - пробегаемся по списку artist.working_tasks - и инициализируем задачи.
@@ -9685,9 +9811,21 @@ class artist(studio):
                 
         return(True, tasks)
 
-    # список задач, на которых артист назначен читателем
-    # status (bool/ str) - если не True, то возвращает только задачи соответствующие данному статусу.
     def get_reading_tasks(self, project_ob, status=False):
+        """получение словаря задач (по именам) назначенных на артиста в качестве проверяющего.
+        
+        Parameters
+        ----------
+        project_ob : :obj:`edit_db.project`
+            Проект для которого ищется список задач.
+        status : str
+            Возвращает задачи соответствующие данному статусу, если не передавать - то все статусы.
+            
+        Returns
+        -------
+        tuple
+            (*True*, {``task_name``: ``task_ob``, ...}) или (*False*, comment)
+        """
         pass
         # 1 - получаем список всех ассетов
         # 2 - пробегаемся по списку artist.checking_tasks - и инициализируем задачи.
@@ -9711,153 +9849,6 @@ class artist(studio):
                     tasks[task_name] = task_ob
                 
         return(True, tasks)
-        
-    def add_stat(self, user_name, keys):
-        pass
-        # test project_name
-        try:
-            project_name = keys['project_name']
-        except:
-            return False, 'not project_name'
-        
-        # test task_name
-        try:
-            task_name = keys['task_name']
-        except:
-            return False, 'not task_name'
-        
-        # test data_start
-        try:
-            data_start = keys['data_start']
-        except:
-            return False, 'not data_start'
-        
-        # create string
-        table = '\"' + user_name + ':' + self.statistic_t + '\"'
-        string = "insert into " + table + " values"
-        values = '('
-        data = []
-        for i, key in enumerate(self.statistics_keys):
-            if i< (len(self.statistics_keys) - 1):
-                values = values + '?, '
-            else:
-                values = values + '?'
-            if key[0] in keys:
-                data.append(keys[key[0]])
-            else:
-                if key[1] == 'real':
-                    data.append(0.0)
-                else:
-                    data.append('')
-                    
-        values = values + ')'
-        data = tuple(data)
-        string = string + values
-        
-        # write task to db
-        conn = sqlite3.connect(self.statistic_path, detect_types=sqlite3.PARSE_DECLTYPES|sqlite3.PARSE_COLNAMES)
-        conn.row_factory = sqlite3.Row
-        c = conn.cursor()
-        
-        # exists table
-        try:
-            str_ = 'select * from ' + table
-            c.execute(str_)
-            # unicum task_name test
-            r = c.fetchall()
-            for row in r:
-                if row['task_name'] == keys['task_name']:
-                    conn.close()
-                    return False, 'overlap'
-        except:
-            string2 = "CREATE TABLE " + table + " ("
-            for i,key_ in enumerate(self.statistics_keys):
-                if i == 0:
-                    string2 = string2 + key_[0] + ' ' + key_[1]
-                else:
-                    string2 = string2 + ', ' + key_[0] + ' ' + key_[1]
-            string2 = string2 + ')'
-            #return string2
-            c.execute(string2)
-        
-        # add task
-        c.execute(string, data)
-        conn.commit()
-        conn.close()
-        return True, 'ok'
-
-    def read_stat(self, nik_name, keys):
-        pass
-        # create string
-        table = '\"' + nik_name + ':' + self.statistic_t + '\"'
-        
-        if keys == 'all':
-            string = 'select * from ' + table
-        else:
-            string = 'select * from ' + table + ' WHERE '
-            for i,key in enumerate(keys):
-                if key != 'nik_name':
-                    if i == 0:
-                        string = string + ' ' + key + ' = ' + '\"' + keys[key] + '\"'
-                    else:
-                        string = string + 'and ' + key + ' = ' + '\"' + keys[key] + '\"'
-                
-        #return string
-                
-        # read tasks
-        conn = sqlite3.connect(self.statistic_path, detect_types=sqlite3.PARSE_DECLTYPES|sqlite3.PARSE_COLNAMES)
-        conn.row_factory = sqlite3.Row
-        c = conn.cursor()
-        '''	
-        c.execute(string)
-        rows = c.fetchall()
-        '''
-        try:
-            c.execute(string)
-            rows = c.fetchall()
-        except:
-            conn.close()
-            return False, 'can_not_read_stat'
-            
-        conn.close()
-        '''
-        if not rows:
-            return False, 'not_task_name'
-        '''
-                        
-        return True, rows
-        
-    def edit_stat(self, user_name, project_name, task_name, keys):
-        pass
-        # create string	
-        table = '\"' + user_name + ':' + self.statistic_t + '\"'
-        # edit db
-        string = 'UPDATE ' +  table + ' SET '
-        for key in keys:
-            if (key != 'project_name') and (key != 'task_name'):
-                string = string + ' ' + key + ' = \"' + keys[key] + '\",'
-            
-        # -- >>
-        string = string + ' WHERE project_name = \"' + project_name + '\" and task_name = \"' + task_name + '\"'
-        string = string.replace(', WHERE', ' WHERE')
-        #return string
-        
-        # write task to db
-        conn = sqlite3.connect(self.statistic_path, detect_types=sqlite3.PARSE_DECLTYPES|sqlite3.PARSE_COLNAMES)
-        c = conn.cursor()
-        '''
-        c.execute(string)
-        '''
-        try:
-            c.execute(string)
-        except:
-            conn.close()
-            return False, 'can_not_execute_stat'
-        
-        conn.commit()
-        conn.close()
-        
-        return True, 'ok'
 		
 class workroom(studio):
 	list_workroom = None
