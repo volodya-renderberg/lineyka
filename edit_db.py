@@ -9464,7 +9464,7 @@ class artist(studio):
         Returns
         -------
         tuple
-            (*True*, 'Ok!') или (*False*, comment).
+            (*True*, 'Ok!') или (*False, comment*).
         """
         pass
         # test required fields.
@@ -9724,7 +9724,7 @@ class artist(studio):
         Returns
         -------
         tuple
-            (*True*, "Ok!") или (*False*, comment)
+            (*True*, "Ok!") или (*False, comment*)
         """
         pass
         # 1 - проверка заполненности keys
@@ -9786,7 +9786,7 @@ class artist(studio):
         Returns
         -------
         tuple
-            (*True*, {``task_name``: ``task_ob``, ...}) или (*False*, comment)
+            (*True*, {``task_name``: ``task_ob``, ...}) или (*False, comment*)
         """
         pass
         # 1 - получаем список всех ассетов
@@ -9824,7 +9824,7 @@ class artist(studio):
         Returns
         -------
         tuple
-            (*True*, {``task_name``: ``task_ob``, ...}) или (*False*, comment)
+            (*True*, {``task_name``: ``task_ob``, ...}) или (*False, comment*)
         """
         pass
         # 1 - получаем список всех ассетов
