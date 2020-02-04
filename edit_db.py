@@ -9849,231 +9849,231 @@ class artist(studio):
                     tasks[task_name] = task_ob
                 
         return(True, tasks)
-		
-class workroom(studio):
-	list_workroom = None
-	dict_by_name = None
-	dict_by_id = None
-	
-	def __init__(self):
-		pass
-		for key in self.workroom_keys:
-			exec('self.%s = False' % key)
-		
-	# инициализация по словарю
-	# new (bool) - если True - то возвращается новый инициализированный объект класса workroom, если False - то инициализируется текущий объект
-	def init_by_keys(self, keys, new = True):
-		if new:
-			new_ob = workroom()
-			for key in self.workroom_keys:
-				exec('new_ob.%s = keys.get("%s")' % (key, key))
-			return new_ob
-		else:
-			for key in self.workroom_keys:
-				exec('self.%s = keys.get("%s")' % (key, key))
-			return(True, 'Ok')
-	
-	# keys['type'] - must be a list, False or None
-	def add(self, keys, new=False):
-		pass
-		# test name
-		try:
-			name = keys['name']
-		except:
-			return(False, 'not Name!')
-			
-		keys['id'] = uuid.uuid4().hex
-		
-		# 1 - создание таблицы, если отсутствует. чтобы без вылетов сработала проверка на совпадение имени.
-		# 2 - проверка на совпадение имени
-		# 3 - проверка чтобы типы задач были из task_types
-		# 4 - запись строки в таблицу
-		
-		# (1) create table 
-		bool_, return_data = database().create_table('studio', self, self.workroom_t, self.workroom_keys, table_root = self.workroom_db)
-		if not bool_:
-			return(bool_, return_data)
-		
-		# (2) test exists name
-		bool_, return_data = database().read('studio', self, self.workroom_t, self.workroom_keys, where={'name': name}, table_root=self.workroom_db)
-		if not bool_:
-			return(bool_, return_data)
-		elif return_data:
-			return(False, 'This workroom name: "%s" already exists!' % name)
-		
-		# (3) test type
-		type_ = keys.get('type')
-		if type_:
-			if type_.__class__.__name__ == 'list':
-				for item in type_:
-					if not item in self.task_types:
-						return(False, 'This type of task: "%s" is not correct!' % item)
-			else:
-				return(False, 'This type of keys[type]: "%s" is not correct (must be a list, False or None)' % str(type_))
-			
-		# (4) insert string
-		bool_, return_data = database().insert('studio', self, self.workroom_t, self.workroom_keys, keys, table_root=self.workroom_db)
-		if not bool_:
-			return(bool_, return_data)
-		
-		if not new:
-			return(True, 'ok')
-		else:
-			return(self.init_by_keys(keys, True))
-		
-	def get_list(self, return_type = False, objects=True):
-		pass
-		bool_, return_data = database().read('studio', self, self.workroom_t, self.workroom_keys, table_root=self.workroom_db)
-		if not bool_:
-			return(bool_, return_data)
 
-		return_data_0 = {}
-		return_data_1 = []
-		return_data_2 = {}
-		for row in return_data:
-			#return_data['name'] = row['name']
-			work_room_data = {}
-			work_room_data_1 = {}
-			work_room_data_2 = {}
-			if objects:
-				wr_data = self.init_by_keys(row)
-			else:
-				wr_data = row
-			return_data_0[row['name']] = wr_data
-			return_data_1.append(wr_data)
-			return_data_2[row['id']] = wr_data
-		
-		# fill fields
-		self._fill_fields_of_workroom_class(return_data_1, return_data_0, return_data_2)
-		
-		# return
-		if not return_type:
-			return(True, return_data_1)
-		elif return_type == 'by_name':
-			return(True, return_data_0)
-		elif return_type == 'by_id':
-			return(True, return_data_2)
-		elif return_type == 'by_id_by_name':
-			return(True, return_data_2, return_data_0)
-		else:
-			return(False, ('Incorrect "return_type": %s' % return_type))
-		
-	@classmethod
-	def _fill_fields_of_workroom_class(self, list_workroom, dict_by_name, dict_by_id):
-		pass
-		self.list_workroom = list_workroom
-		self.dict_by_name = dict_by_name
-		self.dict_by_id = dict_by_id
-	
-	
-	def get_name_by_id(self, id_):
-		where = {'id': id_}
-		bool_, return_data = database().read('studio', self, self.workroom_t, self.workroom_keys, columns = ['name'], where = where, table_root=self.artists_db)
-		if not bool_:
-			return(bool_, return_data)
-		else:
-			if return_data:
-				return(True, return_data[0]['name'])
-			else:
-				print('#'*3, 'workroom.get_name_by_id() - id is incorrect!')
-				print('#'*3, 'id:', id_)
-				return(False, 'Look the terminal!')
-	
-	def get_id_by_name(self, name):
-		where = {'name': name}
-		bool_, return_data = database().read('studio', self, self.workroom_t, self.workroom_keys, columns = ['id'], where = where, table_root=self.artists_db)
-		if not bool_:
-			return(bool_, return_data)
-		else:
-			if return_data:
-				return(True, return_data[0]['id'])
-			else:
-				print('#'*3, 'workroom.get_id_by_name() - name is incorrect!')
-				print('#'*3, 'name:', name)
-				return(False, 'Look the terminal!')
-	
-	# возможно лучше не использовать
-	def name_list_to_id_list(self, name_list):
-		bool_, data = self.get_list('by_name', False)
-		if not bool_:
-			return(bool_, data)
-		if data:
-			return_data = []
-			for key in data:
-				if key in name_list:
-					return_data.append(data[key]['id'])
-			return(True, return_data)
-		else:
-			print('#'*3, 'workroom.name_list_to_id_list() - list of names is incorrect!')
-			print('#'*3, 'name list:', name_list)
-			return(False, 'Look the terminal!')
-	
-	# возможно лучше не использовать
-	def id_list_to_name_list(self, id_list):
-		bool_, data = self.get_list('by_id', False)
-		if not bool_:
-			return(bool_, data)
-		if data:
-			return_data = []
-			for key in data:
-				if key in id_list:
-					return_data.append(data[key]['name'])
-			return(True, return_data)
-		else:
-			print('#'*3, 'workroom.id_list_to_name_list() - list of id is incorrect!')
-			print('#'*3, 'id list:', id_list)
-			return(False, 'Look the terminal!')
-			
-	# объект должен быть инициализирован
-	# new_name (str) - новое имя для отдела
-	def rename_workroom(self, new_name):
-		new_name = new_name.replace(' ', '_')
-		
-		# 1 - проверка имени на совпадение, со старым и с имеющимися
-		# 2 - запись данных в БД
-		# 3 - перезапись name текущего объекта.
-		
-		# (1)
-		if self.name == new_name:
-			return(False, 'Match names!')
-		bool_, return_data = self.get_list('by_name', False)
-		if not bool_:
-			return(bool_, return_data)
-		if new_name in return_data:
-			return(False, 'This name of workroom already exists! "%s"' % new_name)
-		
-		# (2)
-		update_data = {'name':new_name}
-		where = {'id': self.id}
-		bool_, return_data = database().update('studio', self, self.workroom_t, self.workroom_keys, update_data, where, table_root=self.workroom_db)
-		if not bool_:
-			return(bool_, return_data)
-		
-		# (3)
-		self.name = new_name
-		
-		return(True, 'Ok!')
-	
-	# объект должен быть инициализирован
-	# new_type_list (list) - список типов
-	def edit_type(self, new_type_list):
-		pass
-		# (1) test type
-		if new_type_list:
-			if new_type_list.__class__.__name__ == 'list':
-				for item in new_type_list:
-					if not item in self.task_types:
-						return(False, 'This type of task: "%s" is not correct!' % item)
-			else:
-				return(False, 'This type of keys[type]: "%s" is not correct (must be a list, False or None)' % str(new_type_list))
-		# (2)
-		update_data = {'type': new_type_list}
-		where = {'id': self.id}
-		bool_, return_data = database().update('studio', self, self.workroom_t, self.workroom_keys, update_data, where, table_root=self.workroom_db)
-		if not bool_:
-			return(bool_, return_data)
-		self.type = new_type_list
-		return(True, 'Ok!')
+class workroom(studio):
+    list_workroom = None
+    dict_by_name = None
+    dict_by_id = None
+
+    def __init__(self):
+        pass
+        for key in self.workroom_keys:
+            exec('self.%s = False' % key)
+        
+    # инициализация по словарю
+    # new (bool) - если True - то возвращается новый инициализированный объект класса workroom, если False - то инициализируется текущий объект
+    def init_by_keys(self, keys, new = True):
+        if new:
+            new_ob = workroom()
+            for key in self.workroom_keys:
+                exec('new_ob.%s = keys.get("%s")' % (key, key))
+            return new_ob
+        else:
+            for key in self.workroom_keys:
+                exec('self.%s = keys.get("%s")' % (key, key))
+            return(True, 'Ok')
+
+    # keys['type'] - must be a list, False or None
+    def add(self, keys, new=False):
+        pass
+        # test name
+        try:
+            name = keys['name']
+        except:
+            return(False, 'not Name!')
+            
+        keys['id'] = uuid.uuid4().hex
+        
+        # 1 - создание таблицы, если отсутствует. чтобы без вылетов сработала проверка на совпадение имени.
+        # 2 - проверка на совпадение имени
+        # 3 - проверка чтобы типы задач были из task_types
+        # 4 - запись строки в таблицу
+        
+        # (1) create table 
+        bool_, return_data = database().create_table('studio', self, self.workroom_t, self.workroom_keys, table_root = self.workroom_db)
+        if not bool_:
+            return(bool_, return_data)
+        
+        # (2) test exists name
+        bool_, return_data = database().read('studio', self, self.workroom_t, self.workroom_keys, where={'name': name}, table_root=self.workroom_db)
+        if not bool_:
+            return(bool_, return_data)
+        elif return_data:
+            return(False, 'This workroom name: "%s" already exists!' % name)
+        
+        # (3) test type
+        type_ = keys.get('type')
+        if type_:
+            if type_.__class__.__name__ == 'list':
+                for item in type_:
+                    if not item in self.task_types:
+                        return(False, 'This type of task: "%s" is not correct!' % item)
+            else:
+                return(False, 'This type of keys[type]: "%s" is not correct (must be a list, False or None)' % str(type_))
+            
+        # (4) insert string
+        bool_, return_data = database().insert('studio', self, self.workroom_t, self.workroom_keys, keys, table_root=self.workroom_db)
+        if not bool_:
+            return(bool_, return_data)
+        
+        if not new:
+            return(True, 'ok')
+        else:
+            return(self.init_by_keys(keys, True))
+        
+    def get_list(self, return_type = False, objects=True):
+        pass
+        bool_, return_data = database().read('studio', self, self.workroom_t, self.workroom_keys, table_root=self.workroom_db)
+        if not bool_:
+            return(bool_, return_data)
+
+        return_data_0 = {}
+        return_data_1 = []
+        return_data_2 = {}
+        for row in return_data:
+            #return_data['name'] = row['name']
+            work_room_data = {}
+            work_room_data_1 = {}
+            work_room_data_2 = {}
+            if objects:
+                wr_data = self.init_by_keys(row)
+            else:
+                wr_data = row
+            return_data_0[row['name']] = wr_data
+            return_data_1.append(wr_data)
+            return_data_2[row['id']] = wr_data
+        
+        # fill fields
+        self._fill_fields_of_workroom_class(return_data_1, return_data_0, return_data_2)
+        
+        # return
+        if not return_type:
+            return(True, return_data_1)
+        elif return_type == 'by_name':
+            return(True, return_data_0)
+        elif return_type == 'by_id':
+            return(True, return_data_2)
+        elif return_type == 'by_id_by_name':
+            return(True, return_data_2, return_data_0)
+        else:
+            return(False, ('Incorrect "return_type": %s' % return_type))
+        
+    @classmethod
+    def _fill_fields_of_workroom_class(self, list_workroom, dict_by_name, dict_by_id):
+        pass
+        self.list_workroom = list_workroom
+        self.dict_by_name = dict_by_name
+        self.dict_by_id = dict_by_id
+
+
+    def get_name_by_id(self, id_):
+        where = {'id': id_}
+        bool_, return_data = database().read('studio', self, self.workroom_t, self.workroom_keys, columns = ['name'], where = where, table_root=self.artists_db)
+        if not bool_:
+            return(bool_, return_data)
+        else:
+            if return_data:
+                return(True, return_data[0]['name'])
+            else:
+                print('#'*3, 'workroom.get_name_by_id() - id is incorrect!')
+                print('#'*3, 'id:', id_)
+                return(False, 'Look the terminal!')
+
+    def get_id_by_name(self, name):
+        where = {'name': name}
+        bool_, return_data = database().read('studio', self, self.workroom_t, self.workroom_keys, columns = ['id'], where = where, table_root=self.artists_db)
+        if not bool_:
+            return(bool_, return_data)
+        else:
+            if return_data:
+                return(True, return_data[0]['id'])
+            else:
+                print('#'*3, 'workroom.get_id_by_name() - name is incorrect!')
+                print('#'*3, 'name:', name)
+                return(False, 'Look the terminal!')
+
+    # возможно лучше не использовать
+    def name_list_to_id_list(self, name_list):
+        bool_, data = self.get_list('by_name', False)
+        if not bool_:
+            return(bool_, data)
+        if data:
+            return_data = []
+            for key in data:
+                if key in name_list:
+                    return_data.append(data[key]['id'])
+            return(True, return_data)
+        else:
+            print('#'*3, 'workroom.name_list_to_id_list() - list of names is incorrect!')
+            print('#'*3, 'name list:', name_list)
+            return(False, 'Look the terminal!')
+
+    # возможно лучше не использовать
+    def id_list_to_name_list(self, id_list):
+        bool_, data = self.get_list('by_id', False)
+        if not bool_:
+            return(bool_, data)
+        if data:
+            return_data = []
+            for key in data:
+                if key in id_list:
+                    return_data.append(data[key]['name'])
+            return(True, return_data)
+        else:
+            print('#'*3, 'workroom.id_list_to_name_list() - list of id is incorrect!')
+            print('#'*3, 'id list:', id_list)
+            return(False, 'Look the terminal!')
+            
+    # объект должен быть инициализирован
+    # new_name (str) - новое имя для отдела
+    def rename_workroom(self, new_name):
+        new_name = new_name.replace(' ', '_')
+        
+        # 1 - проверка имени на совпадение, со старым и с имеющимися
+        # 2 - запись данных в БД
+        # 3 - перезапись name текущего объекта.
+        
+        # (1)
+        if self.name == new_name:
+            return(False, 'Match names!')
+        bool_, return_data = self.get_list('by_name', False)
+        if not bool_:
+            return(bool_, return_data)
+        if new_name in return_data:
+            return(False, 'This name of workroom already exists! "%s"' % new_name)
+        
+        # (2)
+        update_data = {'name':new_name}
+        where = {'id': self.id}
+        bool_, return_data = database().update('studio', self, self.workroom_t, self.workroom_keys, update_data, where, table_root=self.workroom_db)
+        if not bool_:
+            return(bool_, return_data)
+        
+        # (3)
+        self.name = new_name
+        
+        return(True, 'Ok!')
+
+    # объект должен быть инициализирован
+    # new_type_list (list) - список типов
+    def edit_type(self, new_type_list):
+        pass
+        # (1) test type
+        if new_type_list:
+            if new_type_list.__class__.__name__ == 'list':
+                for item in new_type_list:
+                    if not item in self.task_types:
+                        return(False, 'This type of task: "%s" is not correct!' % item)
+            else:
+                return(False, 'This type of keys[type]: "%s" is not correct (must be a list, False or None)' % str(new_type_list))
+        # (2)
+        update_data = {'type': new_type_list}
+        where = {'id': self.id}
+        bool_, return_data = database().update('studio', self, self.workroom_t, self.workroom_keys, update_data, where, table_root=self.workroom_db)
+        if not bool_:
+            return(bool_, return_data)
+        self.type = new_type_list
+        return(True, 'Ok!')
 		
 class chat(studio):
 	'''
