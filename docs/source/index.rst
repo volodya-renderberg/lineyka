@@ -13,6 +13,7 @@ Contents:
    
    studio
    database
+   workroom
    artist
    project
    asset

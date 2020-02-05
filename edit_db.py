@@ -9851,18 +9851,65 @@ class artist(studio):
         return(True, tasks)
 
 class workroom(studio):
+    """**level** = 'studio'
+
+    Данные хранимые в БД (имя столбца : тип данных) :attr:`edit_db.studio.workroom_keys`:
+
+    .. code-block:: python
+
+        workroom_keys = {
+        'name': 'text',
+        'id': 'text',
+        'type': 'json' # список типов задач, которые выполняются данным отделом.
+        }
+
+    Examples
+    --------
+    Создание экземпляра класса:
+
+    .. code-block:: python
+  
+        import edit_db as db
+
+        workroom = db.workroom()
+
+    Attributes
+    ----------
+    name : str
+        Имя отдела (уникально).
+    id : str
+        ``uuid.hex``
+    type : json
+        Список типов задач из :attr:`edit_db.studio.task_types`, которые выполняются данным отделом.
+    """
     list_workroom = None
+    """list: ``атрибут класса`` список отделов даной студии (экземпляры). Заполняется привыполнеии метода :func:`edit_db.workroom.get_list`, значение по умолчанию - ``[]``. """
     dict_by_name = None
+    """dict: ``атрибут класса`` словарь отделов даной студии (экземпляры) с ключами по ``name``. Заполняется привыполнеии метода :func:`edit_db.workroom.get_list`, значение по умолчанию - ``{}``. """
     dict_by_id = None
+    """dict: ``атрибут класса`` словарь отделов даной студии (экземпляры) с ключами по ``id``. Заполняется привыполнеии метода :func:`edit_db.workroom.get_list`, значение по умолчанию - ``{}``. """
 
     def __init__(self):
         pass
         for key in self.workroom_keys:
             exec('self.%s = False' % key)
         
-    # инициализация по словарю
-    # new (bool) - если True - то возвращается новый инициализированный объект класса workroom, если False - то инициализируется текущий объект
     def init_by_keys(self, keys, new = True):
+        """Инициализация по словарю (без чтения БД), возвращает новый, или инициализирует текущий экземпляр.
+        
+        Parameters
+        ----------
+        keys : dict
+            Словарь по :attr:`edit_db.studio.workroom_keys`
+        new : bool, optional
+            Если *True* - возвращает новый инициализированный экземпляр, если *False* то инициализирует текущий.
+        
+        Returns
+        -------
+        :obj:`edit_db.workroom`, tuple
+            * если new= *True* - экземпляр класса :obj:`edit_db.workroom`,
+            * если new= *False* - (*True,  'Ok!'*) или (*False, comment*)
+        """
         if new:
             new_ob = workroom()
             for key in self.workroom_keys:
@@ -9873,8 +9920,22 @@ class workroom(studio):
                 exec('self.%s = keys.get("%s")' % (key, key))
             return(True, 'Ok')
 
-    # keys['type'] - must be a list, False or None
     def add(self, keys, new=False):
+        """Создание отдела.
+        
+        Parameters
+        ----------
+        keys : dict
+            Словарь ключей по :attr:`edit_db.studio.workroom_keys`, ``name`` - обязательный параметр.
+        new : bool, optional
+            Если *True* - то возвращает инициализированный экземпляр.
+
+        Returns
+        -------
+        :obj:`edit_db.workroom`, tuple
+            * Если new= *True* - экземпляр класса :obj:`edit_db.workroom`.
+            * Если new= *False* - (*True,  'Ok!'*) или (*False, comment*).
+        """
         pass
         # test name
         try:
@@ -9922,6 +9983,26 @@ class workroom(studio):
             return(self.init_by_keys(keys, True))
         
     def get_list(self, return_type = False, objects=True):
+        """Получение списка отделов.
+
+        .. note:: Заполняет ``атрибуты класса``: :attr:`edit_db.workroom.list_workroom`, :attr:`edit_db.workroom.dict_by_name`, :attr:`edit_db.workroom.dict_by_id`.
+
+        .. attention:: Учитывая вышесказанное - про заполнение атрибутов класса - история с ``return_type`` излишня - достаточно возвращать тру-ок.
+
+        Parameters
+        ----------
+        return_type : str
+            параметр определяющий структуру возвращаемой информации значения из [*False*, ``'by_name'``, ``'by_id'``]. 
+        objects : bool
+            Определяет в каком виде возвращаются отделы, если *False* - то словари, а если *True* - то экземпляры класса :obj:`edit_db.workroom`.
+
+        Returns
+        -------
+        tuple
+            * Если return_type= *False* - (*True*, [список отделов (экземпляры или словари)]) или (*False, comment*).
+            * Если return_type= ``'by_name'`` - (*True*, {словарь по ``name`` - значения отделы (экземпляры или словари)}) или (*False, comment*).
+            * Если return_type= ``'by_id'`` - (*True*, {словарь по ``id`` - значения отделы (экземпляры или словари)}) или (*False, comment*).
+        """
         pass
         bool_, return_data = database().read('studio', self, self.workroom_t, self.workroom_keys, table_root=self.workroom_db)
         if not bool_:
