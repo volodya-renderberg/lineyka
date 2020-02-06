@@ -5,4 +5,3 @@ Class Workroom(studio)
 
 .. autoclass:: edit_db.workroom
    :members:
-

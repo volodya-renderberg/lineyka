@@ -9314,7 +9314,7 @@ class log(studio):
         
     def camera_get_push_logs(self, project_name, task_data): # возможно никогда не понадобится
         pass
-        
+
 class artist(studio):
     '''**level** = 'studio'
     
@@ -10231,219 +10231,245 @@ class workroom(studio):
             return(bool_, return_data)
         self.type = new_type_list
         return(True, 'Ok!')
-		
-class chat(studio):
-	'''
-	self.record_messages(project_name, task_name, topic) - records topic to '.chats.db';; topic = dumps({line1:(img, img_icon, text), ...})
-	
-	self.read_the_chat(self, project_name, task_name, reverse = 0) - It returns a list of all messages for a given task;;
-	'''
-	def __init__(self, task_ob):
-		if not isinstance(task_ob, task):
-			raise Exception('in chat.__init__() - Object is not the right type "%s", must be "task"' % task_ob.__class__.__name__)
-		self.task = task_ob
-		# 
-		for key in self.chats_keys:
-			exec('self.%s = False' % key)
-	
-	#def record_messages(self, project_name, task_name, author, color, topic, status, date_time = ''):
-	# запись сообщения в чат для задачи
-	# self.task - должен быть инициализирован
-	# input_keys (dict) - словарь по studio.chats_keys - обязательные ключи: 'topic','color','status', 'reading_status'  ??????? список обязательных полей будет пересмотрен
-	# artist_ob (bool/artist) - если False - значит создаётся новый объект artist и определяется текущий пользователь.
-	def record_messages(self, input_keys, artist_ob=False): # v2
-		pass
-		# 1 - artist_ob test
-		# 2 - тест обязательных полей
-		# 3 - datetime, message_id
-		# 4 - запись БД
-		
-		# (1)
-		if artist_ob and not isinstance(artist_ob, artist):
-			return(False, 'in chat.record_messages() - Wrong type of "artist_ob"! - "%s"' % artist_ob.__class__.__name__)
-		elif artist_ob:
-			if not artist_ob.nik_name:
-				return(False, 'in chat.record_messages() - User is not logged in!')
-			input_keys['author'] = artist_ob.nik_name
-		elif not artist_ob:
-			artist_ob = artist()
-			bool_, r_data = artist_ob.get_user()
-			if not bool_:
-				return(bool_, r_data)
-			input_keys['author'] = artist_ob.nik_name
-			
-		# (2)
-		for item in ['topic','color','status', 'reading_status']:
-			if not input_keys.get(item):
-				return(False, 'in chat.record_messages() - missing "%s"!' % item)
-			
-		# (3)
-		input_keys['date_time_of_edit'] = input_keys['date_time'] = datetime.datetime.now()
-		input_keys['message_id'] = uuid.uuid4().hex
-		
-		# (4)
-		table_name = '"%s"' % self.task.task_name
-		read_ob = self.task.asset.project
-		#
-		bool_, r_data = database().insert('project', read_ob, table_name, self.chats_keys, input_keys, table_root=self.chats_db)
-		if not bool_:
-			return(bool_, r_data)
-		
-		'''
-		# create string  timestamp
-		table = '\"' + task_name + '\"'
-		string = "insert into " + table + " values("
-		data = []
-		for i, key in enumerate(self.chats_keys):
-			# -- string
-			if i == 0:
-				string = string + '?'
-			else:
-				string = string + ',?'
-			
-			# -- data
-			if key[0] in input_keys.keys():
-				data.append(input_keys[key[0]])
-			else:
-				if key[1] == 'text':
-					data.append('')
-				elif key[1] == 'real':
-					data.append(0.0)
-				elif key[1] == 'timestamp':
-					data.append(datetime.datetime.now())
-				
-		string = string + ')'
-		data = tuple(data)
-		
-		# connect to self.chat_path
-		conn = sqlite3.connect(self.chat_path, detect_types=sqlite3.PARSE_DECLTYPES|sqlite3.PARSE_COLNAMES)
-		#conn.row_factory = sqlite3.Row
-		c = conn.cursor()
-		
-		# exists or create table
-		try:
-			str_ = 'select * from ' + table
-			c.execute(str_)
-			
-		except:
-			string2 = "CREATE TABLE " + table + " ("
-			for i,key in enumerate(self.chats_keys):
-				if i == 0:
-					string2 = string2 + key[0] + ' ' + key[1]
-				else:
-					string2 = string2 + ', ' + key[0] + ' ' + key[1]
-			string2 = string2 + ')'
-			#return string2
-			c.execute(string2)
-	
-		# add topic
-		#print(string, data)
-		#return
-		c.execute(string, data)
-		conn.commit()
-		conn.close()
-		'''
-		return(True, 'ok')
-	
-	# чтение сообщений чата задачи
-	# self.task - должен быть инициализирован
-	# message_id (hex/bool) - id читаемого сообщения, если False - то читаются все сообщения чата.
-	# sort_key (str) - ключ по которому сортируется список. Если  False то сортировки не происходит.
-	# reverse (bool) - если True - то обратный порядок. имеет смысл только если передаётся sort_key.
-	def read_the_chat(self, message_id=False, sort_key=False, reverse = False): # v2
-		pass
-		# 1 - чтение БД
-		
-		# (1)
-		table_name = '"%s"' % self.task.task_name
-		if message_id:
-			where = {'message_id': message_id}
-			return(database().read('project', self.task.asset.project, table_name, self.chats_keys, where = where, table_root = self.chats_db))
-		else:
-			b, r = database().read('project', self.task.asset.project, table_name, self.chats_keys, table_root = self.chats_db)
-			if not b:
-				return(b, r)
-			if sort_key:
-				topics = sorted(r, key=lambda x: x[sort_key], reverse=reverse)
-				return(True, topics)
-			else:
-				return(b, r)
 
-		'''
-		table = '\"' + task_name + '\"'
-		
-		try:
-			conn = sqlite3.connect(self.chat_path, detect_types=sqlite3.PARSE_DECLTYPES|sqlite3.PARSE_COLNAMES)
-			conn.row_factory = sqlite3.Row
-			c = conn.cursor()
-		except:
-			return False, '".chats.db" not Connect!'
-		
-		# read the topic
-		try:
-			str_ = 'select * from ' + table
-			c.execute(str_)
-			rows = c.fetchall()
-			
-		except:
-			conn.close()
-			return False, ('topic with name ' + table + ' not Found!')
-		
-		conn.close()
-				
-		return(True, rows)
-		'''
-	
-	# изменение записи автором сообщения.
-	# self.task - должен быть инициализирован.
-	# artist_ob (bool/artist) - если False - значит создаётся новый объект artist и определяется текущий пользователь.
-	# message_id (hex) - id изменяемого сообщения
-	# new_data (dict) - словарь данных на замену - topic, color
-	def edit_message(self, message_id, new_data, artist_ob=False):
-		VALID_DATA = ['topic', 'color']
-		# 0 - тест new_data
-		# 1 - artist_ob test
-		# 2 - проверка автора
-		# 3 - запись изменений
-		
-		# (0)
-		removed_keys = []
-		for key in new_data:
-			if not key in ['topic', 'color']:
-				removed_keys.append(key)
-		for key in removed_keys:
-			del new_data[key]
-		
-		# (1)
-		if artist_ob and not isinstance(artist_ob, artist):
-			return(False, 'in chat.record_messages() - Wrong type of "artist_ob"! - "%s"' % artist_ob.__class__.__name__)
-		elif artist_ob and not artist_ob.nik_name:
-			return(False, 'in chat.record_messages() - User is not logged in!')
-		elif not artist_ob:
-			artist_ob = artist()
-			bool_, r_data = artist_ob.get_user()
-			if not bool_:
-				return(bool_, r_data)
-			
-		# (2)
-		bool_, r_data = self.read_the_chat(message_id=message_id)
-		if not bool_:
-			return(bool_, r_data)
-		message = r_data[0]
-		if message['author'] != artist_ob.nik_name:
-			return(False, 'Only author can edit messages!')
-			
-		# (3)
-		new_data['date_time_of_edit'] = datetime.datetime.now()
-		read_ob = self.task.asset.project
-		table_name = '"%s"' % self.task.task_name
-		where = {'message_id': message_id}
-		
-		bool_, r_data = database().update('project', read_ob, table_name, self.chats_keys, new_data, where=where, table_root=self.chats_db)
-		if not bool_:
-			return(bool_, r_data)
-		
-		return(True, 'Ok!')
+class chat(studio):
+    '''**level** = 'project'
+
+    Данные хранимые в БД (имя столбца : тип данных) :attr:`edit_db.studio.chats_keys`:
+
+    .. code-block:: python
+
+        chats_keys = {
+        'message_id':'text',
+        'date_time': 'timestamp',
+        'date_time_of_edit': 'timestamp',
+        'author': 'text',
+        'topic': 'json',
+        'color': 'json',
+        'status': 'text',
+        'reading_status': 'json',
+        }
+
+    Examples
+    --------
+    Создание экземпляра класса:
+
+    .. code-block:: python
+  
+        import edit_db as db
+
+        project = db.project()
+        asset = db.asset(project)
+        task = db.task(asset)
+
+        chat = db.chat(task) # task - обязательный параметр при создании экземпляра chat
+        # доступ ко всем параметрам и методам принимаемого экземпляра task - через chat.task
+
+    Attributes
+    ----------
+    message_id : str
+        ``id`` сообщения
+    date_time : timestamp
+        Время и дата создания записи.
+    date_time_of_edit : timestamp
+        Время и дата изменения записи.
+    author : str
+        ``nik_name`` автора записи.
+    topic : dict
+        Словарь данных сообщения, ключи - номера строк в ковычках, значения - список из трёх значений: путь к изображению, путь к иконке изображения, сообщение.\
+        {``'num_line'`` : [``path_to_img``, ``path_to_icon``, ``message``], ...}
+    color : list
+        ``[r,g,b]`` значения цвета от ``0`` до ``1``.
+    status : str
+        Статус.
+    reading_status : dict
+        ``??``
+    task : :obj:`edit_db.task`
+        Экземпляр задачи принимаемый при создании экземпляра класса, содержит все атрибуты и методы :obj:`edit_db.task`.
+    '''
+    def __init__(self, task_ob):
+        if not isinstance(task_ob, task):
+            raise Exception('in chat.__init__() - Object is not the right type "%s", must be "task"' % task_ob.__class__.__name__)
+        self.task = task_ob
+        # 
+        for key in self.chats_keys:
+            exec('self.%s = False' % key)
+
+    def record_messages(self, input_keys, artist_ob=False): # v2
+        """Запись сообщения в чат для задачи.
+
+        Parameters
+        ----------
+        input_keys : dict
+            Словарь по :attr:`edit_db.studio.chats_keys` - обязательные ключи: ``'topic'``, ``'color'``, ``'status'``, ``'reading_status'``.  ``??????? список обязательных полей будет пересмотрен``
+        artist_ob : :obj:`edit_db.artist`, optional
+            Текущий пользователь, если не передавать, будет сделано :func:`edit_db.artist.get_user`, обращение к БД.
+
+        Returns
+        -------
+        tuple
+            (*True, 'Ok!'*) или (*False, comment*).
+        """
+        pass
+        # 1 - artist_ob test
+        # 2 - тест обязательных полей
+        # 3 - datetime, message_id
+        # 4 - запись БД
+        
+        # (1)
+        if artist_ob and not isinstance(artist_ob, artist):
+            return(False, 'in chat.record_messages() - Wrong type of "artist_ob"! - "%s"' % artist_ob.__class__.__name__)
+        elif artist_ob:
+            if not artist_ob.nik_name:
+                return(False, 'in chat.record_messages() - User is not logged in!')
+            input_keys['author'] = artist_ob.nik_name
+        elif not artist_ob:
+            artist_ob = artist()
+            bool_, r_data = artist_ob.get_user()
+            if not bool_:
+                return(bool_, r_data)
+            input_keys['author'] = artist_ob.nik_name
+            
+        # (2)
+        for item in ['topic','color','status', 'reading_status']:
+            if not input_keys.get(item):
+                return(False, 'in chat.record_messages() - missing "%s"!' % item)
+            
+        # (3)
+        input_keys['date_time_of_edit'] = input_keys['date_time'] = datetime.datetime.now()
+        input_keys['message_id'] = uuid.uuid4().hex
+        
+        # (4)
+        table_name = '"%s"' % self.task.task_name
+        read_ob = self.task.asset.project
+        #
+        bool_, r_data = database().insert('project', read_ob, table_name, self.chats_keys, input_keys, table_root=self.chats_db)
+        if not bool_:
+            return(bool_, r_data)
+        
+        return(True, 'ok')
+
+    def read_the_chat(self, message_id=False, sort_key=False, reverse = False): # v2
+        """Чтение сообщений чата задачи.
+
+        Parameters
+        ----------
+        message_id : str, optional
+            ``id`` читаемого сообщения, если *False* - то читаются все сообщения чата.
+        sort_key : str, optional
+            Ключ по которому сортируется список. Если  *False* то сортировки не происходит.
+        reverse : bool
+            Если *True* - то делается реверсивная сортировка, имеет смысл только если передаётся ``sort_key``. ``!!! Пока не испоьзуется``.
+
+        Returns
+        -------
+        tuple
+            (*True*, [messages (словари)]) или (*False, comment*)
+        """
+        pass
+        # 1 - чтение БД
+        
+        # (1)
+        table_name = '"%s"' % self.task.task_name
+        if message_id:
+            where = {'message_id': message_id}
+            return(database().read('project', self.task.asset.project, table_name, self.chats_keys, where = where, table_root = self.chats_db))
+        else:
+            b, r = database().read('project', self.task.asset.project, table_name, self.chats_keys, table_root = self.chats_db)
+            if not b:
+                return(b, r)
+            if sort_key:
+                topics = sorted(r, key=lambda x: x[sort_key], reverse=reverse)
+                return(True, topics)
+            else:
+                return(b, r)
+
+        '''
+        table = '\"' + task_name + '\"'
+        
+        try:
+            conn = sqlite3.connect(self.chat_path, detect_types=sqlite3.PARSE_DECLTYPES|sqlite3.PARSE_COLNAMES)
+            conn.row_factory = sqlite3.Row
+            c = conn.cursor()
+        except:
+            return False, '".chats.db" not Connect!'
+        
+        # read the topic
+        try:
+            str_ = 'select * from ' + table
+            c.execute(str_)
+            rows = c.fetchall()
+            
+        except:
+            conn.close()
+            return False, ('topic with name ' + table + ' not Found!')
+        
+        conn.close()
+                
+        return(True, rows)
+        '''
+
+    def edit_message(self, message_id, new_data, artist_ob=False):
+        """Изменение записи автором сообщения.
+
+        Parameters
+        ----------
+        message_id : str
+            ``id`` редактируемого сообщения.
+        new_data : dict
+            Словарь данных на замену - ``topic``, ``color``.
+        artist_ob : :obj:`edit_db.artist`, optional
+            Текущий пользователь, если не передавать, будет сделано :func:`edit_db.artist.get_user`, обращение к БД.
+
+        Returns
+        -------
+        tuple
+            (*True, 'Ok!'*) или (*False, comment*).
+        """
+        VALID_DATA = ['topic', 'color']
+        # 0 - тест new_data
+        # 1 - artist_ob test
+        # 2 - проверка автора
+        # 3 - запись изменений
+        
+        # (0)
+        removed_keys = []
+        for key in new_data:
+            if not key in ['topic', 'color']:
+                removed_keys.append(key)
+        for key in removed_keys:
+            del new_data[key]
+        
+        # (1)
+        if artist_ob and not isinstance(artist_ob, artist):
+            return(False, 'in chat.record_messages() - Wrong type of "artist_ob"! - "%s"' % artist_ob.__class__.__name__)
+        elif artist_ob and not artist_ob.nik_name:
+            return(False, 'in chat.record_messages() - User is not logged in!')
+        elif not artist_ob:
+            artist_ob = artist()
+            bool_, r_data = artist_ob.get_user()
+            if not bool_:
+                return(bool_, r_data)
+            
+        # (2)
+        bool_, r_data = self.read_the_chat(message_id=message_id)
+        if not bool_:
+            return(bool_, r_data)
+        message = r_data[0]
+        if message['author'] != artist_ob.nik_name:
+            return(False, 'Only author can edit messages!')
+            
+        # (3)
+        new_data['date_time_of_edit'] = datetime.datetime.now()
+        read_ob = self.task.asset.project
+        table_name = '"%s"' % self.task.task_name
+        where = {'message_id': message_id}
+        
+        bool_, r_data = database().update('project', read_ob, table_name, self.chats_keys, new_data, where=where, table_root=self.chats_db)
+        if not bool_:
+            return(bool_, r_data)
+        
+        return(True, 'Ok!')
 	
 class set_of_tasks(studio):
 	def __init__(self):

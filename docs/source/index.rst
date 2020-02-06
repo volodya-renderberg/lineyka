@@ -19,6 +19,7 @@ Contents:
    asset
    task
    log
+   chat
    examples
    specifications
 
