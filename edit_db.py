@@ -9879,7 +9879,7 @@ class workroom(studio):
         Имя отдела (уникально).
     id : str
         ``uuid.hex``
-    type : json
+    type : list
         Список типов задач из :attr:`edit_db.studio.task_types`, которые выполняются данным отделом.
     """
     list_workroom = None
@@ -10048,6 +10048,20 @@ class workroom(studio):
 
 
     def get_name_by_id(self, id_):
+        """Возвращает имя отдела по его ``id``. Обращение к БД.
+  
+        .. attention:: Возможно лучше не использовать, или переписать без обращения к БД - чисто через класс атрибуты.
+
+        Parameters
+        ----------
+        id_ : str
+            ``id`` отдела.
+
+        Returns
+        -------
+        tuple
+            (*True*, workroom_name) или (*False, комментарий*).
+        """
         where = {'id': id_}
         bool_, return_data = database().read('studio', self, self.workroom_t, self.workroom_keys, columns = ['name'], where = where, table_root=self.artists_db)
         if not bool_:
@@ -10061,6 +10075,20 @@ class workroom(studio):
                 return(False, 'Look the terminal!')
 
     def get_id_by_name(self, name):
+        """Возвращает ``id`` отдела по его имени. Обращение к БД.
+
+        .. attention:: Возможно лучше не использовать, или переписать без обращения к БД - чисто через класс атрибуты.
+
+        Parameters
+        ----------
+        name : str
+            ``name`` отдела.
+
+        Returns
+        -------
+        tuple
+            (*True*, workroom_id) или (*False, комментарий*).
+        """
         where = {'name': name}
         bool_, return_data = database().read('studio', self, self.workroom_t, self.workroom_keys, columns = ['id'], where = where, table_root=self.artists_db)
         if not bool_:
@@ -10073,8 +10101,21 @@ class workroom(studio):
                 print('#'*3, 'name:', name)
                 return(False, 'Look the terminal!')
 
-    # возможно лучше не использовать
     def name_list_to_id_list(self, name_list):
+        """Возвращает список ``id`` отделов по списку имён. Обращение к БД.
+
+        .. attention:: Возможно лучше не использовать, или переписать без обращения к БД - чисто через класс атрибуты.
+
+        Parameters
+        ----------
+        name_list : list
+            Список имён отделов.
+
+        Returns
+        -------
+        tuple
+            (*True*, list_of_id) или (*False, comment*).
+        """
         bool_, data = self.get_list('by_name', False)
         if not bool_:
             return(bool_, data)
@@ -10089,8 +10130,23 @@ class workroom(studio):
             print('#'*3, 'name list:', name_list)
             return(False, 'Look the terminal!')
 
-    # возможно лучше не использовать
     def id_list_to_name_list(self, id_list):
+        """Возвращает список имён отделов по списку ``id``. Обращение к БД.
+
+        .. note:: Используется при записи.
+
+        .. attention:: Возможно лучше не использовать, или переписать без обращения к БД - чисто через класс атрибуты.
+
+        Parameters
+        ----------
+        id_list : list
+            Список ``id`` отделов.
+
+        Returns
+        -------
+        tuple
+            (*True*, list_of_names) или (*False, comment*).
+        """
         bool_, data = self.get_list('by_id', False)
         if not bool_:
             return(bool_, data)
@@ -10105,9 +10161,19 @@ class workroom(studio):
             print('#'*3, 'id list:', id_list)
             return(False, 'Look the terminal!')
             
-    # объект должен быть инициализирован
-    # new_name (str) - новое имя для отдела
     def rename_workroom(self, new_name):
+        """Переименование отдела (текущего экземпляра).  Перезапись параметра :attr:`edit_db.workroom.name`.
+
+        Parameters
+        ----------
+        new_name : str
+            Новое имя отдела.
+
+        Returns
+        -------
+        tuple
+            (*True, 'Ok!'*) или (*False, comment*).
+        """
         new_name = new_name.replace(' ', '_')
         
         # 1 - проверка имени на совпадение, со старым и с имеющимися
@@ -10135,9 +10201,19 @@ class workroom(studio):
         
         return(True, 'Ok!')
 
-    # объект должен быть инициализирован
-    # new_type_list (list) - список типов
     def edit_type(self, new_type_list):
+        """Замена типов задач с которыми работает данный отдел (текущий экземпляр). Перезапись параметра :attr:`edit_db.workroom.type`.
+
+        Parameters
+        ----------
+        new_type_list : list
+            Список типов задач для отдела. Типы задач - значения из :attr:`edit_db.studio.task_types`.
+
+        Returns
+        -------
+        tuple
+            (*True, 'Ok!'*) или (*False, comment*).
+        """
         pass
         # (1) test type
         if new_type_list:
