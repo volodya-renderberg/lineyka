@@ -11240,341 +11240,341 @@ class season(studio):
 			return(bool_, return_data)
 		self.status=u'active'
 		return(True, 'ok')
-	
-class group(studio):
-	list_group = None
-	dict_by_name = None
-	dict_by_id = None
-	dict_by_type = None
-	
-	def __init__(self, project_ob):
-		if not isinstance(project_ob, project):
-			raise Exception('in group.__init__() - Object is not the right type "%s", must be "project"' % project_ob.__class__.__name__)
-		self.project = project_ob
-		#base fields
-		for key in self.group_keys:
-			exec('self.%s = False' % key)
-	
-	# инициализация по имени группы
-	# new (bool) - если True - то возвращается новый инициализированный объект класса group, если False - то инициализируется текущий объект
-	def init(self, group_name, new = True):
-		pass
-		# get keys
-		bool_, ob = self.get_by_name(group_name)
-		if not bool_:
-			return(bool_, ob)
-		
-		if new:
-			return(ob)
-		else:
-			for key in self.group_keys:
-				setattr(self, key, getattr(ob, key))
-			return(True, 'Ok!')
-		
-	# инициализация по словарю
-	# new (bool) - если True - то возвращается новый инициализированный объект класса group, если False - то инициализируется текущий объект
-	# keys (dict) - словарь данных группы
-	def init_by_keys(self, keys, new = True):
-		if new:
-			new_group = group(self.project)
-			for key in self.group_keys:
-				exec('new_group.%s = keys.get("%s")' % (key, key))
-			return new_group
-		else:
-			for key in self.group_keys:
-				exec('self.%s = keys.get("%s")' % (key, key))
-			return(True, 'Ok!')
-	
-	# keys - словарь по group_keys (name и type - обязательные ключи)
-	# new (bool) - если True - то возвращается новый инициализированный объект класса group, если False - то инициализируется текущий объект.
-	def create(self, keys, new=True):
-		pass
-		# test name
-		if not keys.get('name'):
-			return(False, 'Not Name!')
-			
-		# test type
-		if not keys.get('type') or (not keys.get('type') in self.asset_types):
-			return(False, 'Not Type!')
-		
-		# get id
-		keys['id'] = uuid.uuid4().hex
-		# get description
-		if not 'description' in keys:
-			keys['description'] = ''
-		
-		# test season key
-		if keys['type'] in self.asset_types_with_season:
-			if 'season' in keys and keys['season'] == '':
-				return(False, 'For This Type Must Specify a Season!')
-			elif not 'season' in keys:
-				return(False, 'Required For This Type of Key Season!')
-		else:
-			keys['season'] = ''
-		#return(keys)
-		# create group
-		# -- create table
-		bool_, return_data  = database().create_table('project', self.project, self.group_t, self.group_keys, table_root = self.group_db)
-		if not bool_:
-			return(bool_, return_data)
-		
-		# проверка на совпадение имени
-		if self.get_by_name(keys['name'])[0]:
-			return(False, 'Group with this name(%s) already exists!' % keys['name'])
-		
-		# -- write data
-		bool_, return_data = database().insert('project', self.project, self.group_t, self.group_keys, keys, table_root = self.group_db)
-		if not bool_:
-			return(bool_, return_data)
-		
-		if new:
-			return(True, self.init_by_keys(keys))
-		else:
-			for key in self.group_keys:
-				setattr(self, key, keys[key])
-			return(True, 'ok')
-		
-	def create_recycle_bin(self):
-		pass
-		# -- create table
-		bool_, return_data  = database().create_table('project', self.project, self.group_t, self.group_keys, table_root = self.group_db)
-		if not bool_:
-			return(bool_, return_data)
-		
-		# get group list
-		result = self.get_list()
-		if not result[0]:
-			return(False, (result[1] + ' in get group list'))
-		groups = result[1]
-		
-		all_group = False
-		recycle_bin = False
-		names = []
-		id_s = []
-		if groups:
-			for group in groups:
-				names.append(group.name)
-				id_s.append(group.id)
-				if group.name == self.recycle_bin_name:
-					recycle_bin = group
-				if group.type == 'recycle_bin':
-					all_group = group
-				
-		if not all_group:
-			#print('Not ALL type')
-			# rename
-			if recycle_bin:
-				#print('Exist RB name')
-				# -- new name
-				new_name = self.recycle_bin_name + hex(random.randint(0, 1000000000)).replace('0x','')
-				while new_name in names:
-					new_name = self.recycle_bin_name + hex(random.randint(0, 1000000000)).replace('0x','')
-				# -- rename
-				result = self.dict_by_name[self.recycle_bin_name].rename(new_name)
-				if not result[0]:
-					return(False, result[1])
-				
-			# create group
-			# -- keys
-			keys = {
-			'name':self.recycle_bin_name,
-			'type': 'recycle_bin',
-			'description':'removed assets'
-			}
-			# -- get id
-			keys['id'] = hex(random.randint(0, 1000000000)).replace('0x','')
-			while keys['id'] in id_s:
-				keys['id'] = hex(random.randint(0, 1000000000)).replace('0x','')
-			#print(keys)
-			# -- write data
-			bool_, return_data = database().insert('project', self.project, self.group_t, self.group_keys, keys, table_root = self.group_db)
-			if not bool_:
-				return(bool_, return_data)
-		else:
-			#print('Exist RB!')
-			if not recycle_bin:
-				# -- rename
-				result = self.rename(all_group['name'], self.recycle_bin_name)
-				if not result[0]:
-					return(False, (result[1] + 'in rename rcycle bin'))
-			
-		return(True, 'ok')
-			
-	# возвращает список групп (объекты) согласно фильтру - заполняет поля класса: list_group, dict_by_name, dict_by_id, dict_by_type
-	# f (list) - filter of types список типов
-	def get_list(self, f = False): # f = [...] - filter of types список типов
-		pass
-		# 1 - пустые поля
-		# 2 - чтение БД
-		# 3 - output list
-		# 4 - заполнение полей
-		
-		# (1)
-		list_group = []
-		dict_by_name = {}
-		dict_by_id = {}
-		dict_by_type = {}
-		
-		# (2)
-		bool_, return_data = database().read('project', self.project, self.group_t, self.group_keys, table_root=self.group_db)
-		if not bool_:
-			return(bool_, return_data)
-		
-		# (3)
-		output_list = []
-		if not f:
-			for grp_d in return_data:
-				output_list.append(self.init_by_keys(grp_d))
-		else:
-			for grp_d in return_data:
-				if grp_d['type'] in f:
-					output_list.append(self.init_by_keys(grp_d))
-					
-		# (4)
-		for t in self.asset_types + ['recycle_bin']:
-			dict_by_type[t] = []
-			
-		for d in return_data:
-			ob = self.init_by_keys(d)
-			list_group.append(ob)
-			dict_by_name[ob.name] = ob
-			dict_by_id[ob.id] = ob
-			dict_by_type[ob.type].append(ob)
-			
-		self._fill_fields_of_group_class(list_group, dict_by_name, dict_by_id, dict_by_type)
-		return(True, output_list)
-		
-	@classmethod
-	def _fill_fields_of_group_class(self, list_group, dict_by_name, dict_by_id, dict_by_type):
-		pass
-		self.list_group = list_group
-		self.dict_by_name = dict_by_name
-		self.dict_by_id = dict_by_id
-		self.dict_by_type = dict_by_type
 
-	
-	''' не нужен так как class.dict_by_id - заполняется в self.get_list()
-	def get_groups_dict_by_id(self):
-		result = self.get_list()
-		if not result[0]:
-			return(False, result[1])
-		
-		group_dict = {}
-		for row in result[1]:
-			group_dict[row['id']] = row
-			
-		return(True, group_dict)
-	'''
-	
-	# keys (dict) - словарь по self.group_keys
-	# возвращает список объектов
-	def get_by_keys(self, keys):
-		if not keys:
-			return(False, 'Not Keys!')
-		elif keys.__class__.__name__ != 'dict':
-			return(False, 'Wrong type of keys: %s' % keys.__class__.__name__)
-		
-		bool_, return_data = database().read('project', self.project, self.group_t, self.group_keys, where = keys, table_root=self.group_db)
-		if not bool_:
-			return(bool_, return_data)
-		
-		r_list = []
-		for keys in return_data:
-			r_list.append(self.init_by_keys(keys))
-		
-		return(True, r_list)
-	
-	# обёртка на self.get_by_keys()
-	# name (str)
-	def get_by_name(self, name):
-		rows = self.get_by_keys({'name': name})
-		if rows[0] and rows[1]:
-			return(True, rows[1][0])
-		elif rows[0] and not rows[1]:
-			return(False, 'This name(%s) not Found' % name)
-		else:
-			return(False, rows[1])
-	
-	# обёртка на self.get_by_keys()
-	# id_ (str)
-	def get_by_id(self, id_):
-		rows = self.get_by_keys({'id': id_})
-		if rows[0] and rows[1]:
-			return(True, rows[1][0])
-		elif rows[0] and not rows[1]:
-			return(False, 'This id(%s) not Found' % id_)
-		else:
-			return(False, rows[1])
-	
-	# обёртка на self.get_by_keys()
-	# season (str)
-	def get_by_season(self, season):
-		rows = self.get_by_keys({'season': season})
-		if rows[0] and rows[1]:
-			return(True, rows[1][0])
-		elif rows[0] and not rows[1]:
-			return(False, 'This season(%s) not Found' % season)
-		else:
-			return(False, rows[1])
-	
-	# обёртка на self.get_list()
-	# type_list (list) - список типов по self.
-	def get_by_type_list(self, type_list):
-		data = []
-		b, r = self.get_list(f = type_list)
-		if not b:
-			return(b, r)
-				
-		return(True, r)
-		
-	''' не нужен так как class.dict_by_type - заполняется в self.get_list()
-	def get_dict_by_all_types(self):
-		pass
-		# get all group data
-		result = self.get_list()
-		if not result[0]:
-			return(False, result[1])
-		
-		# make data
-		data = {}
-		for group in result[1]:
-			if not group['type'] in data.keys():
-				c_data = []
-			else:
-				c_data = data[group['type']]
-			c_data.append(group)
-			data[group['type']] = c_data
-			
-		return(True, data)
-	'''
-	
-	# переименование текущего объекта
-	# new_name (str)
-	def rename(self, new_name):
-		pass
-		update_data = {'name': new_name}
-		where = {'id': self.id}
-		bool_, return_data = database().update('project', self.project, self.group_t, self.group_keys, update_data, where, table_root=self.group_db)
-		if not bool_:
-			return(bool_, return_data)
-		
-		# изменение текущего объекта
-		self.name = new_name
-		
-		return(True, 'ok')
-		
-	# изменение комента текущего объекта
-	# description (str)
-	def edit_description(self, description):
-		update_data = {'description': description}
-		where = {'id': self.id}
-		bool_, return_data = database().update('project', self.project, self.group_t, self.group_keys, update_data, where, table_root=self.group_db)
-		if not bool_:
-			return(bool_, return_data)
-		
-		self.description = description
-		return(True, 'ok')
-		
+class group(studio):
+    list_group = None
+    dict_by_name = None
+    dict_by_id = None
+    dict_by_type = None
+
+    def __init__(self, project_ob):
+        if not isinstance(project_ob, project):
+            raise Exception('in group.__init__() - Object is not the right type "%s", must be "project"' % project_ob.__class__.__name__)
+        self.project = project_ob
+        #base fields
+        for key in self.group_keys:
+            exec('self.%s = False' % key)
+
+    # инициализация по имени группы
+    # new (bool) - если True - то возвращается новый инициализированный объект класса group, если False - то инициализируется текущий объект
+    def init(self, group_name, new = True):
+        pass
+        # get keys
+        bool_, ob = self.get_by_name(group_name)
+        if not bool_:
+            return(bool_, ob)
+        
+        if new:
+            return(ob)
+        else:
+            for key in self.group_keys:
+                setattr(self, key, getattr(ob, key))
+            return(True, 'Ok!')
+        
+    # инициализация по словарю
+    # new (bool) - если True - то возвращается новый инициализированный объект класса group, если False - то инициализируется текущий объект
+    # keys (dict) - словарь данных группы
+    def init_by_keys(self, keys, new = True):
+        if new:
+            new_group = group(self.project)
+            for key in self.group_keys:
+                exec('new_group.%s = keys.get("%s")' % (key, key))
+            return new_group
+        else:
+            for key in self.group_keys:
+                exec('self.%s = keys.get("%s")' % (key, key))
+            return(True, 'Ok!')
+
+    # keys - словарь по group_keys (name и type - обязательные ключи)
+    # new (bool) - если True - то возвращается новый инициализированный объект класса group, если False - то инициализируется текущий объект.
+    def create(self, keys, new=True):
+        pass
+        # test name
+        if not keys.get('name'):
+            return(False, 'Not Name!')
+            
+        # test type
+        if not keys.get('type') or (not keys.get('type') in self.asset_types):
+            return(False, 'Not Type!')
+        
+        # get id
+        keys['id'] = uuid.uuid4().hex
+        # get description
+        if not 'description' in keys:
+            keys['description'] = ''
+        
+        # test season key
+        if keys['type'] in self.asset_types_with_season:
+            if 'season' in keys and keys['season'] == '':
+                return(False, 'For This Type Must Specify a Season!')
+            elif not 'season' in keys:
+                return(False, 'Required For This Type of Key Season!')
+        else:
+            keys['season'] = ''
+        #return(keys)
+        # create group
+        # -- create table
+        bool_, return_data  = database().create_table('project', self.project, self.group_t, self.group_keys, table_root = self.group_db)
+        if not bool_:
+            return(bool_, return_data)
+        
+        # проверка на совпадение имени
+        if self.get_by_name(keys['name'])[0]:
+            return(False, 'Group with this name(%s) already exists!' % keys['name'])
+        
+        # -- write data
+        bool_, return_data = database().insert('project', self.project, self.group_t, self.group_keys, keys, table_root = self.group_db)
+        if not bool_:
+            return(bool_, return_data)
+        
+        if new:
+            return(True, self.init_by_keys(keys))
+        else:
+            for key in self.group_keys:
+                setattr(self, key, keys[key])
+            return(True, 'ok')
+        
+    def create_recycle_bin(self):
+        pass
+        # -- create table
+        bool_, return_data  = database().create_table('project', self.project, self.group_t, self.group_keys, table_root = self.group_db)
+        if not bool_:
+            return(bool_, return_data)
+        
+        # get group list
+        result = self.get_list()
+        if not result[0]:
+            return(False, (result[1] + ' in get group list'))
+        groups = result[1]
+        
+        all_group = False
+        recycle_bin = False
+        names = []
+        id_s = []
+        if groups:
+            for group in groups:
+                names.append(group.name)
+                id_s.append(group.id)
+                if group.name == self.recycle_bin_name:
+                    recycle_bin = group
+                if group.type == 'recycle_bin':
+                    all_group = group
+                
+        if not all_group:
+            #print('Not ALL type')
+            # rename
+            if recycle_bin:
+                #print('Exist RB name')
+                # -- new name
+                new_name = self.recycle_bin_name + hex(random.randint(0, 1000000000)).replace('0x','')
+                while new_name in names:
+                    new_name = self.recycle_bin_name + hex(random.randint(0, 1000000000)).replace('0x','')
+                # -- rename
+                result = self.dict_by_name[self.recycle_bin_name].rename(new_name)
+                if not result[0]:
+                    return(False, result[1])
+                
+            # create group
+            # -- keys
+            keys = {
+            'name':self.recycle_bin_name,
+            'type': 'recycle_bin',
+            'description':'removed assets'
+            }
+            # -- get id
+            keys['id'] = hex(random.randint(0, 1000000000)).replace('0x','')
+            while keys['id'] in id_s:
+                keys['id'] = hex(random.randint(0, 1000000000)).replace('0x','')
+            #print(keys)
+            # -- write data
+            bool_, return_data = database().insert('project', self.project, self.group_t, self.group_keys, keys, table_root = self.group_db)
+            if not bool_:
+                return(bool_, return_data)
+        else:
+            #print('Exist RB!')
+            if not recycle_bin:
+                # -- rename
+                result = self.rename(all_group['name'], self.recycle_bin_name)
+                if not result[0]:
+                    return(False, (result[1] + 'in rename rcycle bin'))
+            
+        return(True, 'ok')
+            
+    # возвращает список групп (объекты) согласно фильтру - заполняет поля класса: list_group, dict_by_name, dict_by_id, dict_by_type
+    # f (list) - filter of types список типов
+    def get_list(self, f = False): # f = [...] - filter of types список типов
+        pass
+        # 1 - пустые поля
+        # 2 - чтение БД
+        # 3 - output list
+        # 4 - заполнение полей
+        
+        # (1)
+        list_group = []
+        dict_by_name = {}
+        dict_by_id = {}
+        dict_by_type = {}
+        
+        # (2)
+        bool_, return_data = database().read('project', self.project, self.group_t, self.group_keys, table_root=self.group_db)
+        if not bool_:
+            return(bool_, return_data)
+        
+        # (3)
+        output_list = []
+        if not f:
+            for grp_d in return_data:
+                output_list.append(self.init_by_keys(grp_d))
+        else:
+            for grp_d in return_data:
+                if grp_d['type'] in f:
+                    output_list.append(self.init_by_keys(grp_d))
+                    
+        # (4)
+        for t in self.asset_types + ['recycle_bin']:
+            dict_by_type[t] = []
+            
+        for d in return_data:
+            ob = self.init_by_keys(d)
+            list_group.append(ob)
+            dict_by_name[ob.name] = ob
+            dict_by_id[ob.id] = ob
+            dict_by_type[ob.type].append(ob)
+            
+        self._fill_fields_of_group_class(list_group, dict_by_name, dict_by_id, dict_by_type)
+        return(True, output_list)
+        
+    @classmethod
+    def _fill_fields_of_group_class(self, list_group, dict_by_name, dict_by_id, dict_by_type):
+        pass
+        self.list_group = list_group
+        self.dict_by_name = dict_by_name
+        self.dict_by_id = dict_by_id
+        self.dict_by_type = dict_by_type
+
+
+    ''' не нужен так как class.dict_by_id - заполняется в self.get_list()
+    def get_groups_dict_by_id(self):
+        result = self.get_list()
+        if not result[0]:
+            return(False, result[1])
+        
+        group_dict = {}
+        for row in result[1]:
+            group_dict[row['id']] = row
+            
+        return(True, group_dict)
+    '''
+
+    # keys (dict) - словарь по self.group_keys
+    # возвращает список объектов
+    def get_by_keys(self, keys):
+        if not keys:
+            return(False, 'Not Keys!')
+        elif keys.__class__.__name__ != 'dict':
+            return(False, 'Wrong type of keys: %s' % keys.__class__.__name__)
+        
+        bool_, return_data = database().read('project', self.project, self.group_t, self.group_keys, where = keys, table_root=self.group_db)
+        if not bool_:
+            return(bool_, return_data)
+        
+        r_list = []
+        for keys in return_data:
+            r_list.append(self.init_by_keys(keys))
+        
+        return(True, r_list)
+
+    # обёртка на self.get_by_keys()
+    # name (str)
+    def get_by_name(self, name):
+        rows = self.get_by_keys({'name': name})
+        if rows[0] and rows[1]:
+            return(True, rows[1][0])
+        elif rows[0] and not rows[1]:
+            return(False, 'This name(%s) not Found' % name)
+        else:
+            return(False, rows[1])
+
+    # обёртка на self.get_by_keys()
+    # id_ (str)
+    def get_by_id(self, id_):
+        rows = self.get_by_keys({'id': id_})
+        if rows[0] and rows[1]:
+            return(True, rows[1][0])
+        elif rows[0] and not rows[1]:
+            return(False, 'This id(%s) not Found' % id_)
+        else:
+            return(False, rows[1])
+
+    # обёртка на self.get_by_keys()
+    # season (str)
+    def get_by_season(self, season):
+        rows = self.get_by_keys({'season': season})
+        if rows[0] and rows[1]:
+            return(True, rows[1][0])
+        elif rows[0] and not rows[1]:
+            return(False, 'This season(%s) not Found' % season)
+        else:
+            return(False, rows[1])
+
+    # обёртка на self.get_list()
+    # type_list (list) - список типов по self.
+    def get_by_type_list(self, type_list):
+        data = []
+        b, r = self.get_list(f = type_list)
+        if not b:
+            return(b, r)
+                
+        return(True, r)
+        
+    ''' не нужен так как class.dict_by_type - заполняется в self.get_list()
+    def get_dict_by_all_types(self):
+        pass
+        # get all group data
+        result = self.get_list()
+        if not result[0]:
+            return(False, result[1])
+        
+        # make data
+        data = {}
+        for group in result[1]:
+            if not group['type'] in data.keys():
+                c_data = []
+            else:
+                c_data = data[group['type']]
+            c_data.append(group)
+            data[group['type']] = c_data
+            
+        return(True, data)
+    '''
+
+    # переименование текущего объекта
+    # new_name (str)
+    def rename(self, new_name):
+        pass
+        update_data = {'name': new_name}
+        where = {'id': self.id}
+        bool_, return_data = database().update('project', self.project, self.group_t, self.group_keys, update_data, where, table_root=self.group_db)
+        if not bool_:
+            return(bool_, return_data)
+        
+        # изменение текущего объекта
+        self.name = new_name
+        
+        return(True, 'ok')
+        
+    # изменение комента текущего объекта
+    # description (str)
+    def edit_description(self, description):
+        update_data = {'description': description}
+        where = {'id': self.id}
+        bool_, return_data = database().update('project', self.project, self.group_t, self.group_keys, update_data, where, table_root=self.group_db)
+        if not bool_:
+            return(bool_, return_data)
+        
+        self.description = description
+        return(True, 'ok')
+    
 class list_of_assets(studio):
 	def __init__(self, group_ob):
 		if not isinstance(group_ob, group):
