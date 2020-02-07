@@ -10861,7 +10861,7 @@ class set_of_tasks(studio):
         return(True, 'ok')
         
     def edit_asset_type(self, asset_type, name=False): # v2
-        """Смена типа набора. Изменение параметра :attr:`edit_db.set_of_tasks.loading_type`.
+        """Смена типа набора. Изменение параметра :attr:`edit_db.set_of_tasks.asset_type`.
         
         Parameters
         ----------
