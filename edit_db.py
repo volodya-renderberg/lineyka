@@ -10472,403 +10472,521 @@ class chat(studio):
         return(True, 'Ok!')
 	
 class set_of_tasks(studio):
-	def __init__(self):
-		self.set_of_tasks_keys = {
-		'name':'text',
-		'asset_type': 'text',
-		'loading_type':'text',
-		'sets':'json',
-		'edit_time': 'timestamp',
-		}
-		self.sets_keys = [
-		'task_name',
-		'input',
-		'activity',
-		'specification',
-		'cost',
-		'standart_time',
-		'task_type',
-		'extension',
-		]
-		
-		for key in self.set_of_tasks_keys:
-			setattr(self, key, False)
-	
-	def init_by_keys(self, keys, new=True): # v2
-		if new:
-			r_ob = set_of_tasks()
-		else:
-			r_ob = self
-			
-		for key in self.set_of_tasks_keys:
-			setattr(r_ob, key, keys.get(key))
-			
-		if new:
-			return r_ob
-		else:
-			return(True, 'Ok!')
-	
-	# name (str) - имя создаваемого сета
-	# asset_type (str) - тип ассета
-	# loading_type (str) - способ загрузки ассета object
-	# keys (list) список словарей по каждой задаче сета (по sets_keys)
-	# force (bool) - если False - то будет давать ошибку при совпадении имени, если True - то будет принудительно перименовывать подбирая номер
-	def create(self, name, asset_type, loading_type=False, keys = False, force=False): # v2
-		pass
-		# 1 - тесты передаваемых имени и типа ассета
-		# 2 - чтение наборов на определение совпадения имени + создание нового имени при force=True
-		# 3 - запись
-		
-		# (1)
-		# test data
-		if not name:
-			return(False, 'Not Name!')
-		
-		# (2)
-		b, r = self.get_list(f = {'name': name})
-		if not b:
-			print(r)
-		elif r and not force:
-			return(False, 'A set with that name "%s" already exists' % name)
-		elif r and force:
-			num = 0
-			while r:
-				num+=1
-				new_name = '%s.%i' % (name, num)
-				b, r = self.get_list(f = {'name': new_name})
-				if not b:
-					return(b, r)
-				print(new_name)
-			name = new_name
-		
-		if not asset_type in self.asset_types:
-			return(False, 'Wrong type of asset: "%s"' % asset_type)
-		
-		# (3)
-		# edit data
-		data = {}
-		data['name'] = name
-		data['asset_type'] = asset_type
-		if loading_type:
-			data['loading_type'] = loading_type
-		else:
-			data['loading_type'] = ''
-		data['edit_time'] = datetime.datetime.now()
-		if keys:
-			data['sets'] = keys
+    """**level** = 'studio'
 
-		# write data
-		bool_, r_data = database().insert('studio', self, self.set_of_tasks_t, self.set_of_tasks_keys, data, table_root=self.set_of_tasks_db)
-		if not bool_:
-			return(bool_, r_data)
-		
-		return(True, self.init_by_keys(data))
-	
-	# возврат списка объектов
-	# f (dict) - фильтр ро ключам set_of_tasks_keys / используется только для чтения из базы данных при path=False
-	# path (bool / str) - если указан - то чтение из файла json, если - False - то чтение из базы данных.
-	def get_list(self, f = False, path = False): # v2
-		pass
-		# 1 - чтение из базы данных
-		# 2 - чтение из json
-		data = []
-		
-		# (1)
-		if not path:
-			if f:
-				wh = f
-			else:
-				wh = False
-			bool_, r_data = database().read('studio', self, self.set_of_tasks_t, self.set_of_tasks_keys, where=wh, table_root=self.set_of_tasks_db)
-			if not bool_:
-				return(False, r_data)
-			
-			## преобразование в словарь
-			#for set_ in r_data:
-				#data[set_['name']] = set_
-				
-			for item in r_data:
-				data.append(self.init_by_keys(item))
-		
-		# (2)
-		else:
-			if not os.path.exists(path):
-				return(False, ('No Exists path: %s' % path))
-			# read data
-			try:
-				with open(path, 'r') as read:
-					r_data = json.load(read)
-					read.close()
-			except Exception as e:
-				print('#'*5, e)
-				return(False, ("%s can not be read! Look The terminal!" % path))
-			
-			for key in r_data:
-				item = r_data[key]
-				item['name'] = key
-				data.append(self.init_by_keys(item))
-			
-		return(True, data)
-		
-	# обёртка на get_list(f)
-	def get_list_by_type(self, asset_type): # v2
-		if not asset_type in self.asset_types:
-			return(False, 'Wrong type of asset: "%s"' % asset_type)
-		return_list = []
-		return(self.get_list(f = {'asset_type': asset_type}))
-		
-	# объекты
-	def get_dict_by_all_types(self): # v2
-		result = self.get_list()
-		if not result[0]:
-			return(False, result[1])
-		
-		return_list = {}
-		for item in result[1]:
-			asset_type = item.asset_type
-			if not asset_type in return_list:
-				return_list[asset_type] = {}
-			
-			return_list[asset_type][item.name] = item
-				
-		return(True, return_list)
-	
-	# возвращает новый объект по имени, обёртка на get_list(f)
-	# name (str) имя сета
-	def get(self, name): # v2
-		pass
-		# test data
-		if not name:
-			return(False, 'Not Name!')
-		bool_, r_data = self.get_list(f = {'name': name})
-		if not bool_:
-			return(False, r_data)
-		
-		if not r_data:
-			return(False, 'A set with that name "%s" was not found' % name)
-		else:
-			return(True, r_data[0])
-	
-	# удаление из базы данных
-	# name (str) - если False - то удаляется текущий инициализированный объект: удаляется строка из БД - поля объекта переписываются на False.
-	def remove(self, name=False): # v2
-		pass
-		# 1 - удаление записи из БД
-		# 2 - перезапись полей в False - если name=False
-	
-		# (1)
-		if name:
-			where = {'name': name}
-		else:
-			where = {'name': self.name}
-		bool_, r_data = database().delete('studio', self, self.set_of_tasks_t, where, table_root=self.set_of_tasks_db)
-		if not bool_:
-			return(False, r_data)
-		
-		# (2)
-		if not name:
-			for key in self.set_of_tasks_keys:
-				setattr(self, key, False)
-		
-		return(True, 'ok')
-	
-	# new_name (str) - новое имя сета
-	# name (str) - имя переименоваваемого сета, если False - переименовывается текущий объект.
-	def rename(self, new_name, name=False): # v2
-		pass
-		# 1 - тест на наличие и совпадение имени
-		# 2 - перезапись БД
-		# 3 - перезапись полей текущего объекта
-	
-		# (1)
-		if not new_name:
-			return(False, 'No new name is specified!')
-		
-		if name:
-			old_name = name
-		else:
-			old_name = self.name
-			if not old_name:
-				return(False, 'This object is not initialized!')
-			
-		if old_name == new_name:
-			return(False, 'New name matches existing one!')
-		
-		# (2)
-		table_name = self.set_of_tasks_t
-		keys = self.set_of_tasks_keys
-		update_data = {'name': new_name, 'edit_time':datetime.datetime.now()}
-		where = {'name': old_name}
-		bool_, r_data = database().update('studio', self, table_name, keys, update_data, where, table_root=self.set_of_tasks_db)
-		if not bool_:
-			return(False, r_data)
-		
-		# (3)
-		if not name:
-			self.name = new_name
-			self.edit_time = update_data['edit_time']
-			
-		return(True, 'ok')
-		
-	# asset_type (str) - новый тип сета
-	# name (str/bool) - имя изменяемого сета, если False - то редактируется текущий объект
-	def edit_asset_type(self, asset_type, name=False): # v2
-		pass
-		# 1 - тест имени и типа
-		# 2 - перезапись БД
-		# 3 - перезапись полей текущего объекта
-	
-		# (1)
-		if name:
-			old_name = name
-		else:
-			old_name = self.name
-			if not old_name:
-				return(False, 'This object is not initialized!')
-		
-		if not asset_type in self.asset_types:
-			return(False, 'Wrong type of asset: "%s"' % asset_type)	
-				
-		# (2)
-		table_name = self.set_of_tasks_t
-		keys = self.set_of_tasks_keys
-		update_data = {'asset_type': asset_type, 'edit_time':datetime.datetime.now()}
-		where = {'name': old_name}
-		bool_, r_data = database().update('studio', self, table_name, keys, update_data, where, table_root=self.set_of_tasks_db)
-		if not bool_:
-			return(False, r_data)
-		
-		# (3)
-		if not name:
-			self.asset_type = asset_type
-			self.edit_time = update_data['edit_time']
-			
-		return(True, 'ok')
-	
-	# только для ассетов "object" - редактирование параметра loading_type
-	# loading_type (str) - новый тип загрузки ассета
-	def edit_loading_type(self, loading_type): # v2
-		pass
-		# 1 - тест имени и типа
-		# 2 - перезапись БД
-		# 3 - перезапись полей текущего объекта
-	
-		# (1)
-		if not loading_type in self.loading_types:
-			return(False, 'Wrong loading type: "%s"' % loading_type)
-		elif self.asset_type != 'object':
-			return(False, 'This procedure can only be for an asset with an "object" type!')
-				
-		# (2)
-		table_name = self.set_of_tasks_t
-		keys = self.set_of_tasks_keys
-		update_data = {'loading_type': loading_type, 'edit_time':datetime.datetime.now()}
-		where = {'name': self.name}
-		bool_, r_data = database().update('studio', self, table_name, keys, update_data, where, table_root=self.set_of_tasks_db)
-		if not bool_:
-			return(False, r_data)
-		
-		# (3)
-		self.loading_type = loading_type
-		self.edit_time = update_data['edit_time']
-			
-		return(True, 'ok')
-	
-	# редактирование именно значения sets
-	# data (list) - список словарей по sets_keys
-	# name (bool/str) - если False - то редактируется текущий инициализированный объект
-	def edit_sets(self, data, name=False): # v2
-		pass
-		# 1 - тест типа данных data
-		# 2 - перезапись БД
-		# 3 - редактирование инициализированного объекта, если name=False
-		
-		# (1)
-		if not isinstance(data, list):
-			return(False, 'the "data" must be of type "list" but not "%s"' % data.__class__.__name__)
-		
-		# (2)
-		table_name = self.set_of_tasks_t
-		keys = self.set_of_tasks_keys
-		update_data = {'sets': data, 'edit_time':datetime.datetime.now()}
-		if name:
-			where = {'name': name}
-		else:
-			where = {'name': self.name}
-		bool_, r_data = database().update('studio', self, table_name, keys, update_data, where, table_root=self.set_of_tasks_db)
-		if not bool_:
-			return(False, r_data)
-		
-		# (3)
-		if not name:
-			self.sets = data
-			self.edit_time = update_data['edit_time']
-				
-		return(True, 'ok')
-	
-	# создание копии сета
-	# new_name (str) - имя создаваемого сета
-	# old_name (bool / str) - имя копируемого сета, если False - то копируется текущий.
-	def copy(self, new_name, old_name=False): # v2
-		pass
-		# 1 - тесты имён
-		# 2 - создание нового сета
-		
-		# (1)
-		if old_name == new_name:
-			return(False, 'Matching names!')
-		if not new_name:
-			return(False, 'Name not specified!')
-		
-		# (2)
-		if old_name:
-			b, source_ob = self.get(old_name)
-			if not b:
-				return(b, source_ob)
-		else:
-			source_ob = self
-			
-		b, r_data = self.create(new_name, source_ob.asset_type, keys = source_ob.sets)
-		return(b, r_data) # если  b=True, то r_data - новый объект.
-		
-	### ****************** Library
-	
-	# запись в файл json библиотеки наборов задач.
-	# path (str) - путь сохранения
-	# save_objects (list) - список объектов (set_of_tasks) - если False - то сохраняет всю библиотеку.
-	def save_to_library(self, path, save_objects=False): # v2
-		pass
-		# 1 - получение save_objects
-		# 2 - создание словаря save_data по типу json файла
-		# 3 - запись данных
-		
-		# (1)
-		if not save_objects:
-			b, r = self.get_list()
-			if not b:
-				return(b, r)
-			save_objects = r
-			
-		# (2)
-		save_data = {}
-		for ob in save_objects:
-			save_data[ob.name] = {}
-			for key in self.set_of_tasks_keys:
-				if key=='edit_time':
-					continue
-				save_data[ob.name][key] = getattr(ob, key)
-		
-		# (3)
-		try:
-			with open(path, 'w') as f:
-				jsn = json.dump(save_data, f, sort_keys=True, indent=4)
-				f.close()
-		except Exception as e:
-			print('***', e)
-			return(False, (path + "  can not be write"))
-		
-		return(True, 'ok')
-		
+    Редактирование наборов задач.
+
+    Данные хранимые в БД (имя столбца : тип данных) :attr:`edit_db.set_of_tasks.set_of_tasks_keys`:
+
+    .. code-block:: python
+
+        set_of_tasks_keys = {
+        'name':'text',
+        'asset_type': 'text',
+        'loading_type': 'text',
+        'sets':'json',
+        'edit_time': 'timestamp',
+        }
+        
+    Структура словарей атрибута :attr:`edit_db.set_of_tasks.sets_keys`:
+        
+    .. code-block:: python
+
+        sets_keys = [
+        'task_name',
+        'input',
+        'activity',
+        'tz',
+        'cost',
+        'standart_time',
+        'task_type',
+        'extension',
+        ]
+
+    Attributes
+    ----------
+    name : str
+        Имя сета (уникально).
+    asset_type : str
+        Тип ассета из :attr:`edit_db.studio.asset_types`.
+    loading_type : str
+        Способ загрузки ассета для типа ``object``, значения из :attr:`edit_db.studio.loading_types`.
+    sets : list
+        Сами задачи, список словарей с ключами по :attr:`edit_db.set_of_tasks.sets_keys` (ключи соответсвую атрибутам класса :obj:`edit_db.task`).
+    edit_time : timestamp
+        Дата и время последних изменений.
+    """
+
+    set_of_tasks_keys = {
+    'name':'text',
+    'asset_type': 'text',
+    'loading_type':'text',
+    'sets':'json',
+    'edit_time': 'timestamp',
+    }
+    """dict: Обозначение данных хранимых в БД для объектов edit_db.set_of_tasks . Ключи - заголовки, значения - тип данных БД. """
+
+    sets_keys = [
+    'task_name',
+    'input',
+    'activity',
+    'specification',
+    'cost',
+    'standart_time',
+    'task_type',
+    'extension',
+    ]
+    """list: Ключи таблицы для задач, которые хранятся в :attr:`edit_db.set_of_tasks.sets`. Это частичная выборка из :attr:`edit_db.studio.tasks_keys`. """
+
+    def __init__(self):
+        for key in self.set_of_tasks_keys:
+            setattr(self, key, False)
+
+    def init_by_keys(self, keys, new=True): # v2
+        """Инициализация по словарю (без чтения БД), возвращает новый, или инициализирует текущий экземпляр.
+        
+        Parameters
+        ----------
+        keys : dict
+            Словарь по :attr:`edit_db.set_of_tasks.set_of_tasks_keys`.
+        new : bool, optional
+            Если *True* - возвращает новый инициализированный экземпляр, если *False* то инициализирует текущий.
+        
+        Returns
+        -------
+        :obj:`edit_db.set_of_tasks`, tuple
+            * если new= *True* - экземпляр класса :obj:`edit_db.set_of_tasks`,
+            * если new= *False* - (*True,  'Ok!'*) или (*False, comment*).
+        """
+        if new:
+            r_ob = set_of_tasks()
+        else:
+            r_ob = self
+            
+        for key in self.set_of_tasks_keys:
+            setattr(r_ob, key, keys.get(key))
+            
+        if new:
+            return r_ob
+        else:
+            return(True, 'Ok!')
+
+    def create(self, name, asset_type, loading_type=False, keys = False, force=False): # v2
+        """Создание набора задач.
+
+        Parameters
+        ----------
+        name : str
+            Имя набора задач.
+        asset_type : str
+            Тип ассета. Значение из :attr:`edit_db.studio.asset_types`.
+        loading_type : str, optional
+            Способ загрузки ассета для типа ``object``, значения из :attr:`edit_db.studio.loading_types`.
+        keys : list
+            Список задач(словари по :attr:`edit_db.set_of_tasks.sets_keys`), если *False* - будет создан пустой набор.
+        force : bool
+            Если *False* - то будет давать ошибку при совпадении имени, если *True* - то будет принудительно перименовывать с подбором номера.
+
+        Returns
+        -------
+        tuple
+            (*True*, :obj:`edit_db.set_of_tasks`) или (*False, comment*).
+        """
+        pass
+        # 1 - тесты передаваемых имени и типа ассета
+        # 2 - чтение наборов на определение совпадения имени + создание нового имени при force=True
+        # 3 - запись
+        
+        # (1)
+        # test data
+        if not name:
+            return(False, 'Not Name!')
+        
+        # (2)
+        b, r = self.get_list(f = {'name': name})
+        if not b:
+            print(r)
+        elif r and not force:
+            return(False, 'A set with that name "%s" already exists' % name)
+        elif r and force:
+            num = 0
+            while r:
+                num+=1
+                new_name = '%s.%i' % (name, num)
+                b, r = self.get_list(f = {'name': new_name})
+                if not b:
+                    return(b, r)
+                print(new_name)
+            name = new_name
+        
+        if not asset_type in self.asset_types:
+            return(False, 'Wrong type of asset: "%s"' % asset_type)
+        
+        # (3)
+        # edit data
+        data = {}
+        data['name'] = name
+        data['asset_type'] = asset_type
+        if loading_type:
+            data['loading_type'] = loading_type
+        else:
+            data['loading_type'] = ''
+        data['edit_time'] = datetime.datetime.now()
+        if keys:
+            data['sets'] = keys
+
+        # write data
+        bool_, r_data = database().insert('studio', self, self.set_of_tasks_t, self.set_of_tasks_keys, data, table_root=self.set_of_tasks_db)
+        if not bool_:
+            return(bool_, r_data)
+        
+        return(True, self.init_by_keys(data))
+
+    def get_list(self, f = False, path = False): # v2
+        """Чтение всех наборов (экземпляры) из БД или из файла.
+
+        Parameters
+        ----------
+        f : dict, optional
+            Фильтр ро ключам :attr:`edit_db.set_of_tasks.set_of_tasks_keys`, используется только для чтения из базы данных при ``path`` = *False*.
+        path : str, optional
+            Путь до ``.json`` файла, если указан - то чтение из файла, если *False* - то чтение из базы данных.
+
+        Returns
+        -------
+        tuple
+            (*True, [список экземпляров]*) или (*False, comment*)
+        """
+        pass
+        # 1 - чтение из базы данных
+        # 2 - чтение из json
+        data = []
+        
+        # (1)
+        if not path:
+            if f:
+                wh = f
+            else:
+                wh = False
+            bool_, r_data = database().read('studio', self, self.set_of_tasks_t, self.set_of_tasks_keys, where=wh, table_root=self.set_of_tasks_db)
+            if not bool_:
+                return(False, r_data)
+            
+            ## преобразование в словарь
+            #for set_ in r_data:
+                #data[set_['name']] = set_
+                
+            for item in r_data:
+                data.append(self.init_by_keys(item))
+        
+        # (2)
+        else:
+            if not os.path.exists(path):
+                return(False, ('No Exists path: %s' % path))
+            # read data
+            try:
+                with open(path, 'r') as read:
+                    r_data = json.load(read)
+                    read.close()
+            except Exception as e:
+                print('#'*5, e)
+                return(False, ("%s can not be read! Look The terminal!" % path))
+            
+            for key in r_data:
+                item = r_data[key]
+                item['name'] = key
+                data.append(self.init_by_keys(item))
+            
+        return(True, data)
+        
+    def get_list_by_type(self, asset_type): # v2
+        """Чтение наборов (объекты) определённого типа (обёртка на :func:`edit_db.set_of_tasks.get_list`).
+
+        Parameters
+        ----------
+        asset_type : str
+            Тип ассета, значение из :attr:`edit_db.studio.asset_types`.
+
+        Returns
+        -------
+        tuple
+            (*True, [список экземпляров]*) или (*False, comment*)
+        """
+        if not asset_type in self.asset_types:
+            return(False, 'Wrong type of asset: "%s"' % asset_type)
+        return_list = []
+        return(self.get_list(f = {'asset_type': asset_type}))
+        
+    def get_dict_by_all_types(self): # v2
+        """Чтение всех наборов из БД (экземпляры) в словарь с ключами по типам ассетов.
+
+        Returns
+        -------
+        tuple
+            (*True*, {return_dict} [15]_) или (*False, comment*)
+
+            .. [15] Структура словаря ``{return_dict}`` :
+            
+                ::
+                
+                    {
+                    'asset_type': {
+                        'set_name' : set_instanse,
+                        ...
+                        },
+                    ...
+                    }
+        """
+        result = self.get_list()
+        if not result[0]:
+            return(False, result[1])
+        
+        return_list = {}
+        for item in result[1]:
+            asset_type = item.asset_type
+            if not asset_type in return_list:
+                return_list[asset_type] = {}
+            
+            return_list[asset_type][item.name] = item
+                
+        return(True, return_list)
+
+    # возвращает новый объект по имени, обёртка на get_list(f)
+    # name (str) имя сета
+    def get(self, name): # v2
+        pass
+        # test data
+        if not name:
+            return(False, 'Not Name!')
+        bool_, r_data = self.get_list(f = {'name': name})
+        if not bool_:
+            return(False, r_data)
+        
+        if not r_data:
+            return(False, 'A set with that name "%s" was not found' % name)
+        else:
+            return(True, r_data[0])
+
+    # удаление из базы данных
+    # name (str) - если False - то удаляется текущий инициализированный объект: удаляется строка из БД - поля объекта переписываются на False.
+    def remove(self, name=False): # v2
+        pass
+        # 1 - удаление записи из БД
+        # 2 - перезапись полей в False - если name=False
+
+        # (1)
+        if name:
+            where = {'name': name}
+        else:
+            where = {'name': self.name}
+        bool_, r_data = database().delete('studio', self, self.set_of_tasks_t, where, table_root=self.set_of_tasks_db)
+        if not bool_:
+            return(False, r_data)
+        
+        # (2)
+        if not name:
+            for key in self.set_of_tasks_keys:
+                setattr(self, key, False)
+        
+        return(True, 'ok')
+
+    # new_name (str) - новое имя сета
+    # name (str) - имя переименоваваемого сета, если False - переименовывается текущий объект.
+    def rename(self, new_name, name=False): # v2
+        pass
+        # 1 - тест на наличие и совпадение имени
+        # 2 - перезапись БД
+        # 3 - перезапись полей текущего объекта
+
+        # (1)
+        if not new_name:
+            return(False, 'No new name is specified!')
+        
+        if name:
+            old_name = name
+        else:
+            old_name = self.name
+            if not old_name:
+                return(False, 'This object is not initialized!')
+            
+        if old_name == new_name:
+            return(False, 'New name matches existing one!')
+        
+        # (2)
+        table_name = self.set_of_tasks_t
+        keys = self.set_of_tasks_keys
+        update_data = {'name': new_name, 'edit_time':datetime.datetime.now()}
+        where = {'name': old_name}
+        bool_, r_data = database().update('studio', self, table_name, keys, update_data, where, table_root=self.set_of_tasks_db)
+        if not bool_:
+            return(False, r_data)
+        
+        # (3)
+        if not name:
+            self.name = new_name
+            self.edit_time = update_data['edit_time']
+            
+        return(True, 'ok')
+        
+    # asset_type (str) - новый тип сета
+    # name (str/bool) - имя изменяемого сета, если False - то редактируется текущий объект
+    def edit_asset_type(self, asset_type, name=False): # v2
+        pass
+        # 1 - тест имени и типа
+        # 2 - перезапись БД
+        # 3 - перезапись полей текущего объекта
+
+        # (1)
+        if name:
+            old_name = name
+        else:
+            old_name = self.name
+            if not old_name:
+                return(False, 'This object is not initialized!')
+        
+        if not asset_type in self.asset_types:
+            return(False, 'Wrong type of asset: "%s"' % asset_type)	
+                
+        # (2)
+        table_name = self.set_of_tasks_t
+        keys = self.set_of_tasks_keys
+        update_data = {'asset_type': asset_type, 'edit_time':datetime.datetime.now()}
+        where = {'name': old_name}
+        bool_, r_data = database().update('studio', self, table_name, keys, update_data, where, table_root=self.set_of_tasks_db)
+        if not bool_:
+            return(False, r_data)
+        
+        # (3)
+        if not name:
+            self.asset_type = asset_type
+            self.edit_time = update_data['edit_time']
+            
+        return(True, 'ok')
+
+    # только для ассетов "object" - редактирование параметра loading_type
+    # loading_type (str) - новый тип загрузки ассета
+    def edit_loading_type(self, loading_type): # v2
+        pass
+        # 1 - тест имени и типа
+        # 2 - перезапись БД
+        # 3 - перезапись полей текущего объекта
+
+        # (1)
+        if not loading_type in self.loading_types:
+            return(False, 'Wrong loading type: "%s"' % loading_type)
+        elif self.asset_type != 'object':
+            return(False, 'This procedure can only be for an asset with an "object" type!')
+                
+        # (2)
+        table_name = self.set_of_tasks_t
+        keys = self.set_of_tasks_keys
+        update_data = {'loading_type': loading_type, 'edit_time':datetime.datetime.now()}
+        where = {'name': self.name}
+        bool_, r_data = database().update('studio', self, table_name, keys, update_data, where, table_root=self.set_of_tasks_db)
+        if not bool_:
+            return(False, r_data)
+        
+        # (3)
+        self.loading_type = loading_type
+        self.edit_time = update_data['edit_time']
+            
+        return(True, 'ok')
+
+    # редактирование именно значения sets
+    # data (list) - список словарей по sets_keys
+    # name (bool/str) - если False - то редактируется текущий инициализированный объект
+    def edit_sets(self, data, name=False): # v2
+        pass
+        # 1 - тест типа данных data
+        # 2 - перезапись БД
+        # 3 - редактирование инициализированного объекта, если name=False
+        
+        # (1)
+        if not isinstance(data, list):
+            return(False, 'the "data" must be of type "list" but not "%s"' % data.__class__.__name__)
+        
+        # (2)
+        table_name = self.set_of_tasks_t
+        keys = self.set_of_tasks_keys
+        update_data = {'sets': data, 'edit_time':datetime.datetime.now()}
+        if name:
+            where = {'name': name}
+        else:
+            where = {'name': self.name}
+        bool_, r_data = database().update('studio', self, table_name, keys, update_data, where, table_root=self.set_of_tasks_db)
+        if not bool_:
+            return(False, r_data)
+        
+        # (3)
+        if not name:
+            self.sets = data
+            self.edit_time = update_data['edit_time']
+                
+        return(True, 'ok')
+
+    # создание копии сета
+    # new_name (str) - имя создаваемого сета
+    # old_name (bool / str) - имя копируемого сета, если False - то копируется текущий.
+    def copy(self, new_name, old_name=False): # v2
+        pass
+        # 1 - тесты имён
+        # 2 - создание нового сета
+        
+        # (1)
+        if old_name == new_name:
+            return(False, 'Matching names!')
+        if not new_name:
+            return(False, 'Name not specified!')
+        
+        # (2)
+        if old_name:
+            b, source_ob = self.get(old_name)
+            if not b:
+                return(b, source_ob)
+        else:
+            source_ob = self
+            
+        b, r_data = self.create(new_name, source_ob.asset_type, keys = source_ob.sets)
+        return(b, r_data) # если  b=True, то r_data - новый объект.
+        
+    ### ****************** Library
+
+    # запись в файл json библиотеки наборов задач.
+    # path (str) - путь сохранения
+    # save_objects (list) - список объектов (set_of_tasks) - если False - то сохраняет всю библиотеку.
+    def save_to_library(self, path, save_objects=False): # v2
+        pass
+        # 1 - получение save_objects
+        # 2 - создание словаря save_data по типу json файла
+        # 3 - запись данных
+        
+        # (1)
+        if not save_objects:
+            b, r = self.get_list()
+            if not b:
+                return(b, r)
+            save_objects = r
+            
+        # (2)
+        save_data = {}
+        for ob in save_objects:
+            save_data[ob.name] = {}
+            for key in self.set_of_tasks_keys:
+                if key=='edit_time':
+                    continue
+                save_data[ob.name][key] = getattr(ob, key)
+        
+        # (3)
+        try:
+            with open(path, 'w') as f:
+                jsn = json.dump(save_data, f, sort_keys=True, indent=4)
+                f.close()
+        except Exception as e:
+            print('***', e)
+            return(False, (path + "  can not be write"))
+        
+        return(True, 'ok')
+    	
 class season(studio):
 	def __init__(self, project_ob):
 		seasons_list = []

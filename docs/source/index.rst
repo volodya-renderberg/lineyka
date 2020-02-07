@@ -16,6 +16,7 @@ Contents:
    workroom
    artist
    project
+   set_of_tasks
    asset
    task
    log
