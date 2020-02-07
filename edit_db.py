@@ -10470,7 +10470,7 @@ class chat(studio):
             return(bool_, r_data)
         
         return(True, 'Ok!')
-	
+
 class set_of_tasks(studio):
     """**level** = 'studio'
 
@@ -10524,7 +10524,7 @@ class set_of_tasks(studio):
     'sets':'json',
     'edit_time': 'timestamp',
     }
-    """dict: Обозначение данных хранимых в БД для объектов edit_db.set_of_tasks . Ключи - заголовки, значения - тип данных БД. """
+    """dict: Обозначение данных хранимых в БД для объектов :attr:`edit_db.set_of_tasks` . Ключи - заголовки, значения - тип данных БД. """
 
     sets_keys = [
     'task_name',
@@ -10861,7 +10861,7 @@ class set_of_tasks(studio):
         return(True, 'ok')
         
     def edit_asset_type(self, asset_type, name=False): # v2
-        """Смена типа набора.
+        """Смена типа набора. Изменение параметра :attr:`edit_db.set_of_tasks.loading_type`.
         
         Parameters
         ----------
@@ -11074,7 +11074,7 @@ class set_of_tasks(studio):
             return(False, (path + "  can not be write"))
         
         return(True, 'ok')
-    	
+
 class season(studio):
 	def __init__(self, project_ob):
 		seasons_list = []
