@@ -10751,9 +10751,19 @@ class set_of_tasks(studio):
                 
         return(True, return_list)
 
-    # возвращает новый объект по имени, обёртка на get_list(f)
-    # name (str) имя сета
     def get(self, name): # v2
+        """Чтение набора по имени (обёртка на :func:`edit_db.set_of_tasks.get_list`).
+        
+        Parameters
+        ----------
+        name : str
+            Имя набора
+            
+        Returns
+        -------
+        tuple
+            (*True*, :obj:`edit_db.set_of_tasks`) или (*False, comment*)
+        """
         pass
         # test data
         if not name:
@@ -10767,9 +10777,19 @@ class set_of_tasks(studio):
         else:
             return(True, r_data[0])
 
-    # удаление из базы данных
-    # name (str) - если False - то удаляется текущий инициализированный объект: удаляется строка из БД - поля объекта переписываются на False.
     def remove(self, name=False): # v2
+        """Удаление набора.
+        
+        Parameters
+        ----------
+        name : str, optional
+            Имя набора. Если *False* - то удаляется текущий инициализированный объект: удаляется строка из БД - поля объекта переписываются на *False*.
+            
+        Returns
+        -------
+        tuple
+            (*True, 'Ok!'*) или (*False, comment*)
+        """
         pass
         # 1 - удаление записи из БД
         # 2 - перезапись полей в False - если name=False
@@ -10790,9 +10810,21 @@ class set_of_tasks(studio):
         
         return(True, 'ok')
 
-    # new_name (str) - новое имя сета
-    # name (str) - имя переименоваваемого сета, если False - переименовывается текущий объект.
     def rename(self, new_name, name=False): # v2
+        """Переименовывание набора.
+        
+        Parameters
+        ----------
+        new_name : str
+            Новое имя сета.
+        name : str, optional
+            Имя сета, который переименовывается, если *False* - переименовывается текущий объект.
+        
+        Returns
+        -------
+        tuple
+            (*True, 'Ok!'*) или (*False, comment*)
+        """
         pass
         # 1 - тест на наличие и совпадение имени
         # 2 - перезапись БД
@@ -10828,9 +10860,21 @@ class set_of_tasks(studio):
             
         return(True, 'ok')
         
-    # asset_type (str) - новый тип сета
-    # name (str/bool) - имя изменяемого сета, если False - то редактируется текущий объект
     def edit_asset_type(self, asset_type, name=False): # v2
+        """Смена типа набора.
+        
+        Parameters
+        ----------
+        asset_type : str
+            Новый тип, должен быть из :attr:`edit_db.studio.asset_types`.
+        name : str, optional
+            Имя сета, который редактируется, если *False* - то редактируется текущий объект.
+        
+        Returns
+        -------
+        tuple
+            (*True, 'Ok!'*) или (*False, comment*)
+        """
         pass
         # 1 - тест имени и типа
         # 2 - перезапись БД
@@ -10863,9 +10907,21 @@ class set_of_tasks(studio):
             
         return(True, 'ok')
 
-    # только для ассетов "object" - редактирование параметра loading_type
-    # loading_type (str) - новый тип загрузки ассета
     def edit_loading_type(self, loading_type): # v2
+        """Изменение параметра :attr:`edit_db.set_of_tasks.loading_type`.
+        
+        .. note:: только для ассетов типа ``'object'``
+        
+        Parameters
+        ----------
+        loading_type : str
+            Новый тип загрузки, значение из :attr:`edit_db.studio.loading_types`.
+        
+        Returns
+        -------
+        tuple
+            (*True, 'Ok!'*) или (*False, comment*)
+        """
         pass
         # 1 - тест имени и типа
         # 2 - перезапись БД
@@ -10892,10 +10948,21 @@ class set_of_tasks(studio):
             
         return(True, 'ok')
 
-    # редактирование именно значения sets
-    # data (list) - список словарей по sets_keys
-    # name (bool/str) - если False - то редактируется текущий инициализированный объект
     def edit_sets(self, data, name=False): # v2
+        """Изменение параметра :attr:`edit_db.set_of_tasks.sets`.
+        
+        Parameters
+        ----------
+        data : list
+            список словарей по :attr:`edit_db.set_of_tasks.sets_keys`.
+        name : str, optional
+            Имя сета, который редактируется, если *False* - то редактируется текущий объект.
+        
+        Returns
+        -------
+        tuple
+            (*True, 'Ok!'*) или (*False, comment*)
+        """
         pass
         # 1 - тест типа данных data
         # 2 - перезапись БД
@@ -10924,10 +10991,21 @@ class set_of_tasks(studio):
                 
         return(True, 'ok')
 
-    # создание копии сета
-    # new_name (str) - имя создаваемого сета
-    # old_name (bool / str) - имя копируемого сета, если False - то копируется текущий.
     def copy(self, new_name, old_name=False): # v2
+        """Создание копии сета.
+        
+        Parameters
+        ----------
+        new_name : str
+            Имя создаваемого сета.
+        old_name : str, optional
+            Имя сета, который копируется, если *False* - то копируется текущий объект.
+        
+        Returns
+        -------
+        tuple
+            (*True*, :obj:`edit_db.set_of_tasks`) или (*False, comment*)
+        """
         pass
         # 1 - тесты имён
         # 2 - создание нового сета
@@ -10950,11 +11028,21 @@ class set_of_tasks(studio):
         return(b, r_data) # если  b=True, то r_data - новый объект.
         
     ### ****************** Library
-
-    # запись в файл json библиотеки наборов задач.
-    # path (str) - путь сохранения
-    # save_objects (list) - список объектов (set_of_tasks) - если False - то сохраняет всю библиотеку.
     def save_to_library(self, path, save_objects=False): # v2
+        """Запись библиотеки наборов задач в ``.json`` файл.
+        
+        Parameters
+        ----------
+        path : str
+            Путь сохранения.
+        save_objects : list, optional
+            Список объектов :obj:`edit_db.set_of_tasks` - если *False* - то сохраняет всю библиотеку.
+        
+        Returns
+        -------
+        tuple
+            (*True, 'Ok!'*) или (*False, comment*)
+        """
         pass
         # 1 - получение save_objects
         # 2 - создание словаря save_data по типу json файла
