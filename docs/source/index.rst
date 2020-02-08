@@ -17,6 +17,7 @@ Contents:
    artist
    project
    set_of_tasks
+   group
    asset
    task
    log

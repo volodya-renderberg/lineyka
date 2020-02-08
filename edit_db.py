@@ -11242,10 +11242,56 @@ class season(studio):
 		return(True, 'ok')
 
 class group(studio):
+    """**level** = 'project'
+    
+    Данные хранимые в БД (имя столбца : тип данных) :attr:`edit_db.studio.group_keys`:
+    
+    .. code-block:: python
+  
+        group_keys = {
+        'name': 'text',
+        'type': 'text',
+        'season': 'text',
+        'description': 'text',
+        'id': 'text',
+        }
+    
+    Examples
+    --------
+    Создание экземпляра класса:
+    
+    .. code-block:: python
+  
+        import edit_db as db
+        
+        project = db.project()
+        group = db.group(project) # project - обязательный параметр при создании экземпляра group
+        # доступ ко всем параметрам и методам принимаемого экземпляра project через group.project
+        
+    Attributes
+    ----------
+    name : str
+        Имя группы (уникально).
+    type : str
+        Тип ассетов данной группы, из :attr:`edit_db.studio.asset_types`.
+    season : str
+        ``id`` сезона ``?``
+    description : str
+        Краткое писание.
+    id : str
+        ``uuid.hex``.
+    project : :obj:`edit_db.project`
+        Проект принимаемый при создании экземпляра класса, содержит все атрибуты и методы :obj:`edit_db.project`.
+
+    """
     list_group = None
+    """list: ``атрибут класса`` список групп (экземпляры :obj:`edit_db.project`) даного проекта. Заполняется привыполнеии метода :func:`edit_db.group.get_list`, значение по умолчанию - *None*. """
     dict_by_name = None
+    """dict: ``атрибут класса`` словарь групп (экземпляры :obj:`edit_db.project`) с ключами по именам. Заполняется привыполнеии метода :func:`edit_db.group.get_list`, значение по умолчанию - *None*. """
     dict_by_id = None
+    """dict: ``атрибут класса`` словарь групп (экземпляры :obj:`edit_db.project`) с ключами по *id*. Заполняется привыполнеии метода :func:`edit_db.group.get_list`, значение по умолчанию - *None*. """
     dict_by_type = None
+    """dict: ``атрибут класса`` словарь групп: ключи - ``type``, значения - списки групп (экземпляры :obj:`edit_db.project`). Заполняется привыполнеии метода :func:`edit_db.group.get_list`, значение по умолчанию - *None*. """
 
     def __init__(self, project_ob):
         if not isinstance(project_ob, project):
@@ -11255,9 +11301,22 @@ class group(studio):
         for key in self.group_keys:
             exec('self.%s = False' % key)
 
-    # инициализация по имени группы
-    # new (bool) - если True - то возвращается новый инициализированный объект класса group, если False - то инициализируется текущий объект
     def init(self, group_name, new = True):
+        """Инициализация по имени, возвращает новый, или инициализирует текущий экземпляр.
+        
+        Parameters
+        ----------
+        group_name : str
+            Имя группы
+        new : bool
+            Если *True* - возвращает новый инициализированный экземпляр, если *False* то инициализирует текущий экземпляр.
+            
+        Returns
+        -------
+        :obj:`edit_db.group`, tuple
+            * если new= *True* - экземпляр класса :obj:`edit_db.group`,
+            * если new= *False* - (*True,  'Ok!'*) или (*False, comment*)
+        """
         pass
         # get keys
         bool_, ob = self.get_by_name(group_name)
@@ -11270,11 +11329,23 @@ class group(studio):
             for key in self.group_keys:
                 setattr(self, key, getattr(ob, key))
             return(True, 'Ok!')
-        
-    # инициализация по словарю
-    # new (bool) - если True - то возвращается новый инициализированный объект класса group, если False - то инициализируется текущий объект
-    # keys (dict) - словарь данных группы
+    
     def init_by_keys(self, keys, new = True):
+        """Инициализация по словарю (без чтения БД), возвращает новый, или инициализирует текущий экземпляр.
+        
+        Parameters
+        ----------
+        keys : dict
+            Словарь по :attr:`edit_db.studio.group_keys`
+        new : bool, optional
+            Если *True* - возвращает новый инициализированный экземпляр, если *False* то инициализирует текущий.
+        
+        Returns
+        -------
+        :obj:`edit_db.group`, tuple
+            * если new= *True* - экземпляр класса :obj:`edit_db.group`,
+            * если new= *False* - (*True,  'Ok!'*) или (*False, comment*)
+        """
         if new:
             new_group = group(self.project)
             for key in self.group_keys:
@@ -11285,9 +11356,22 @@ class group(studio):
                 exec('self.%s = keys.get("%s")' % (key, key))
             return(True, 'Ok!')
 
-    # keys - словарь по group_keys (name и type - обязательные ключи)
-    # new (bool) - если True - то возвращается новый инициализированный объект класса group, если False - то инициализируется текущий объект.
     def create(self, keys, new=True):
+        """Создание группы.
+        
+        Parameters
+        ----------
+        keys : dict
+            Словарь по :attr:`edit_db.studio.group_keys` (``name`` и ``type`` (тип ассетов) - обязательные ключи).
+        new : bool, optonal
+            Если *True* - возвращает новый инициализированный экземпляр, если *False* то инициализирует текущий.
+        
+        Returns
+        -------
+        :obj:`edit_db.group`, tuple
+            * если new= *True* - новая группа, экземпляр класса :obj:`edit_db.group`,
+            * если new= *False* - (*True,  'Ok!'*) или (*False, comment*).
+        """
         pass
         # test name
         if not keys.get('name'):
@@ -11335,6 +11419,13 @@ class group(studio):
             return(True, 'ok')
         
     def create_recycle_bin(self):
+        """Создание группы - ``корзина``, для удалённых ассетов. Процедура выполняется при создании проекта.
+        
+        Returns
+        -------
+        tuple
+            (*True,  'Ok!'*) или (*False, comment*).
+        """
         pass
         # -- create table
         bool_, return_data  = database().create_table('project', self.project, self.group_t, self.group_keys, table_root = self.group_db)
@@ -11400,9 +11491,26 @@ class group(studio):
             
         return(True, 'ok')
             
-    # возвращает список групп (объекты) согласно фильтру - заполняет поля класса: list_group, dict_by_name, dict_by_id, dict_by_type
-    # f (list) - filter of types список типов
     def get_list(self, f = False): # f = [...] - filter of types список типов
+        """Возвращает список групп (экземпляры) согласно фильтру.
+        
+        .. note:: Заполняет ``атрибуты класса``:
+            
+            *   :attr:`edit_db.group.list_group`, 
+            *   :attr:`edit_db.group.dict_by_name`, 
+            *   :attr:`edit_db.group.dict_by_id`, 
+            *   :attr:`edit_db.group.dict_by_type`.
+        
+        Parameters
+        ----------
+        f : list, optional
+            Список типов(типы ассета :attr:`edit_db.studio.asset_types`), если *False* - то всех типов.
+            
+        Returns
+        -------
+        tuple
+            (*True*, [список групп (экземпляры :obj:`edit_db.group`)])  или (*False, comment*)
+        """
         pass
         # 1 - пустые поля
         # 2 - чтение БД
@@ -11452,23 +11560,19 @@ class group(studio):
         self.dict_by_id = dict_by_id
         self.dict_by_type = dict_by_type
 
-
-    ''' не нужен так как class.dict_by_id - заполняется в self.get_list()
-    def get_groups_dict_by_id(self):
-        result = self.get_list()
-        if not result[0]:
-            return(False, result[1])
-        
-        group_dict = {}
-        for row in result[1]:
-            group_dict[row['id']] = row
-            
-        return(True, group_dict)
-    '''
-
-    # keys (dict) - словарь по self.group_keys
-    # возвращает список объектов
     def get_by_keys(self, keys):
+        """Возвращает список групп(экземпляры) удовлетворяющих ``keys``.
+        
+        Parameters
+        ----------
+        keys : dict
+            Словарь по :attr:`edit_db.studio.group_keys`.
+            
+        Returns
+        -------
+        tuple
+            (*True*, [список групп (экземпляры :obj:`edit_db.group`)])  или (*False, comment*)
+        """
         if not keys:
             return(False, 'Not Keys!')
         elif keys.__class__.__name__ != 'dict':
@@ -11484,9 +11588,21 @@ class group(studio):
         
         return(True, r_list)
 
-    # обёртка на self.get_by_keys()
-    # name (str)
     def get_by_name(self, name):
+        """Возвращает группу(экземпляр) по имени. Обёртка на :func:`edit_db.group.get_by_keys`.
+        
+        .. attention:: Нужно ли это, или это функция ``init``.
+        
+        Parameters
+        ----------
+        name : str
+            Имя группы.
+            
+        Returns
+        -------
+        tuple
+            (*True*, :obj:`edit_db.group`)  или (*False, comment*)
+        """
         rows = self.get_by_keys({'name': name})
         if rows[0] and rows[1]:
             return(True, rows[1][0])
