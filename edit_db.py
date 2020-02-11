@@ -11709,11 +11709,11 @@ class group(studio):
         
         self.description = description
         return(True, 'ok')
-    
+
 class list_of_assets(studio):
     """**level** = 'project'
     
-    Запись и редактирование временного списка ассетов {``name``, ``type``, ``set_of_tasks``} из редактора создания асетов. Не использует БД, запись в файл ``json`` в ``$HOME/.lineyka/``, после создания ассетов, список очищается.
+    Запись и редактирование временного списка ассетов {``name``, ``type``, ``set_of_tasks``} из редактора создания асетов. Не использует БД, запись в файл ``json`` в ``$HOME/.lineyka/``, после создания ассетов список очищается.
     
     Данные хранимые в файле ``json`` (имя столбца : тип данных) :attr:`edit_db.studio.list_of_assets_keys`:
     
