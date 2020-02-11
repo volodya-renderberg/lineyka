@@ -11711,133 +11711,215 @@ class group(studio):
         return(True, 'ok')
     
 class list_of_assets(studio):
-	def __init__(self, group_ob):
-		if not isinstance(group_ob, group):
-			raise Exception('in list_of_assets.__init__() - Object is not the right type "%s", must be "group"' % group_ob.__class__.__name__)
-		self.group = group_ob
+    """**level** = 'project'
+    
+    Запись и редактирование временного списка ассетов {``name``, ``type``, ``set_of_tasks``} из редактора создания асетов. Не использует БД, запись в файл ``json`` в ``$HOME/.lineyka/``, после создания ассетов, список очищается.
+    
+    Данные хранимые в файле ``json`` (имя столбца : тип данных) :attr:`edit_db.studio.list_of_assets_keys`:
+    
+    .. code-block:: python
 
-	# rows (list) = [{keys}, {keys}, ...]
-	def save_list(self, rows, group_name = False):
-		list_of_assets_path = self.group.project.list_of_assets_path
-		# test data keys
-		if not group_name:
-			if not self.group.name:
-				return(False, 'No init of Group!')
-			group_name = self.group.name
-		
-		if not self.group.project.name:
-			return(False, 'No init of Project!')
-		
-		# test exists path
-		if not os.path.exists(list_of_assets_path):
-			try:
-				with open(list_of_assets_path, 'w') as f:
-					jsn = json.dump({}, f, sort_keys=True, indent=4)
-					f.close()
-			except:
-				return(False, '"%s"  can not be write' % list_of_assets_path)
-		
-		# read data
-		try:
-			with open(list_of_assets_path, 'r') as read:
-				data = json.load(read)
-				read.close()
-		
-		except:
-			return(False, '"%s"  can not be read' % list_of_assets_path)
-		
-		# edit data
-		data[group_name] = rows
-		
-		# write data
-		try:
-			with open(list_of_assets_path, 'w') as f:
-				jsn = json.dump(data, f, sort_keys=True, indent=4)
-				#print('data:', data)
-				f.close()
-		except:
-			return(False, '"%s"  can not be write' % list_of_assets_path)
-		
-		return(True, 'ok')
-		
-	def get_list(self):
-		list_of_assets_path = self.group.project.list_of_assets_path
-		# test exists path
-		if not os.path.exists(list_of_assets_path):
-			return(True, [])
-		
-		# read data
-		try:
-			with open(list_of_assets_path, 'r') as read:
-				data = json.load(read)
-				read.close()
-								
-		except:
-			return(False, '"%s" can not be read!' % list_of_assets_path)
-			
-		return(True, data)
-		
-	def get(self, group_name = False):
-		list_of_assets_path = self.group.project.list_of_assets_path
-		if not group_name:
-			if not self.group.name:
-				return(False, 'No init of group!')
-			group_name = self.group.name
-			
-		# test exists path
-		if not os.path.exists(list_of_assets_path):
-			return(False, '"%s" Not Found!' % list_of_assets_path)
-		
-		# read data
-		try:
-			with open(list_of_assets_path, 'r') as read:
-				data = json.load(read)
-				read.close()
-		except:
-			return(False, '"%s" can not be read!' % list_of_assets_path)
-		
-		if group_name in data:
-			return(True, data[group_name])
-		else:
-			return(False, 'list of assets for "%s" not found!' % group_name)
-		
-		
-	def remove(self, group_name = False):
-		list_of_assets_path = self.group.project.list_of_assets_path
-		if not group_name:
-			if not self.group.name:
-				return(False, 'No init of group!')
-			group_name = self.group.name
-		
-		# test exists path
-		if not os.path.exists(list_of_assets_path):
-			return(False, '"%s" Not Found!' % list_of_assets_path)
-			
-		# read data
-		try:
-			with open(list_of_assets_path, 'r') as read:
-				data = json.load(read)
-				read.close()
-		except:
-			return(False, '"%s" can not be read!' % list_of_assets_path)
-			
-		if group_name in data:
-			del data[group_name]
-		else:
-			return(False, 'list of assets for "%s" not found!' % group_name)
-			
-		# write data
-		try:
-			with open(list_of_assets_path, 'w') as f:
-				jsn = json.dump(data, f, sort_keys=True, indent=4)
-				#print('data:', data)
-				f.close()
-		except:
-			return(False, '"%s"  can not be write' % list_of_assets_path)
-			
-		return(True, 'Ok')
-		
-		
-	def create_assets(self, project, group):
-		pass
-	
+        list_of_assets_keys = [
+            'asset_name', # text
+            'asset_type', # text
+            'set_of_tasks', # text
+            ]
+            
+    Examples
+    --------
+    Создание экземпляра класса:
+    
+    .. code-block:: python
+  
+        import edit_db as db
+        
+        project = db.project()
+        group = db.group(project)
+        
+        list_of_assets = db.list_of_assets(group) # group - обязательный параметр при создании экземпляра list_of_assets
+        # доступ ко всем параметрам и методам принимаемого экземпляра group - через list_of_assets.group
+        
+    Attributes
+    ----------
+    asset_name : str
+        Имя ассета.
+    asset_type : str
+        Тип ассета.
+    set_of_tasks : str
+        Название набора задач.
+    group : :obj:`edit_db.group`
+        Экземпляр группы принимаемый при создании экземпляра класса, содержит все атрибуты и методы :obj:`edit_db.group`.
+    """
+    def __init__(self, group_ob):
+        if not isinstance(group_ob, group):
+            raise Exception('in list_of_assets.__init__() - Object is not the right type "%s", must be "group"' % group_ob.__class__.__name__)
+        self.group = group_ob
+
+    def save_list(self, rows, group_name = False):
+        """Запись списка ассетов в файл.
+        
+        Parameters
+        ----------
+        rows : list
+            Список ассетов (словари по :attr:`edit_db.studio.list_of_assets_keys`).
+        group_name : str
+            Имя группы, не требуется если группа инициализирована ``лучше не использовать``.
+            
+        Returns
+        -------
+        tuple
+            (*True, 'Ok!'*) или (*False, comment*)
+        """
+        list_of_assets_path = self.group.project.list_of_assets_path
+        # test data keys
+        if not group_name:
+            if not self.group.name:
+                return(False, 'No init of Group!')
+            group_name = self.group.name
+        
+        if not self.group.project.name:
+            return(False, 'No init of Project!')
+        
+        # test exists path
+        if not os.path.exists(list_of_assets_path):
+            try:
+                with open(list_of_assets_path, 'w') as f:
+                    jsn = json.dump({}, f, sort_keys=True, indent=4)
+                    f.close()
+            except:
+                return(False, '"%s"  can not be write' % list_of_assets_path)
+        
+        # read data
+        try:
+            with open(list_of_assets_path, 'r') as read:
+                data = json.load(read)
+                read.close()
+        
+        except:
+            return(False, '"%s"  can not be read' % list_of_assets_path)
+        
+        # edit data
+        data[group_name] = rows
+        
+        # write data
+        try:
+            with open(list_of_assets_path, 'w') as f:
+                jsn = json.dump(data, f, sort_keys=True, indent=4)
+                #print('data:', data)
+                f.close()
+        except:
+            return(False, '"%s"  can not be write' % list_of_assets_path)
+        
+        return(True, 'ok')
+    
+    def get_list(self):
+        """Чтение всех данных в словарь по группам.
+        
+        Returns
+        -------
+        tuple
+            (*True*, {'group_name': [список ассетов (словари)], ... }) или (*False, comment*)
+        """
+        list_of_assets_path = self.group.project.list_of_assets_path
+        # test exists path
+        if not os.path.exists(list_of_assets_path):
+            return(True, [])
+        
+        # read data
+        try:
+            with open(list_of_assets_path, 'r') as read:
+                data = json.load(read)
+                read.close()
+                                
+        except:
+            return(False, '"%s" can not be read!' % list_of_assets_path)
+            
+        return(True, data)
+        
+    def get(self, group_name = False):
+        """Чтение списка ассетов данной группы.
+        
+        Parameters
+        ----------
+        group_name : str
+            Имя группы, не требуется если группа инициализирована ``лучше не использовать``.
+            
+        Returns
+        -------
+        tuple
+            (*True*, [список ассетов (словари)]) или (*False, comment*)
+        """
+        list_of_assets_path = self.group.project.list_of_assets_path
+        if not group_name:
+            if not self.group.name:
+                return(False, 'No init of group!')
+            group_name = self.group.name
+            
+        # test exists path
+        if not os.path.exists(list_of_assets_path):
+            return(False, '"%s" Not Found!' % list_of_assets_path)
+        
+        # read data
+        try:
+            with open(list_of_assets_path, 'r') as read:
+                data = json.load(read)
+                read.close()
+        except:
+            return(False, '"%s" can not be read!' % list_of_assets_path)
+        
+        if group_name in data:
+            return(True, data[group_name])
+        else:
+            return(False, 'list of assets for "%s" not found!' % group_name)
+    
+    def remove(self, group_name = False):
+        """Удаление списка ассетов данной группы.
+        
+        Parameters
+        ----------
+        group_name : str
+            Имя группы, не требуется если группа инициализирована ``лучше не использовать``.
+            
+        Returns
+        -------
+        tuple
+            (*True, 'Ok!'*) или (*False, comment*)
+        """
+        list_of_assets_path = self.group.project.list_of_assets_path
+        if not group_name:
+            if not self.group.name:
+                return(False, 'No init of group!')
+            group_name = self.group.name
+        
+        # test exists path
+        if not os.path.exists(list_of_assets_path):
+            return(False, '"%s" Not Found!' % list_of_assets_path)
+            
+        # read data
+        try:
+            with open(list_of_assets_path, 'r') as read:
+                data = json.load(read)
+                read.close()
+        except:
+            return(False, '"%s" can not be read!' % list_of_assets_path)
+            
+        if group_name in data:
+            del data[group_name]
+        else:
+            return(False, 'list of assets for "%s" not found!' % group_name)
+            
+        # write data
+        try:
+            with open(list_of_assets_path, 'w') as f:
+                jsn = json.dump(data, f, sort_keys=True, indent=4)
+                #print('data:', data)
+                f.close()
+        except:
+            return(False, '"%s"  can not be write' % list_of_assets_path)
+            
+        return(True, 'Ok')
+        
+        
+    def create_assets(self, project, group):
+        pass
+

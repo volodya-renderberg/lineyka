@@ -22,6 +22,7 @@ Contents:
    task
    log
    chat
+   list_of_assets
    examples
    specifications
 
