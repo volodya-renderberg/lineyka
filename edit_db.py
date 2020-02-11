@@ -11611,9 +11611,19 @@ class group(studio):
         else:
             return(False, rows[1])
 
-    # обёртка на self.get_by_keys()
-    # id_ (str)
     def get_by_id(self, id_):
+        """Возвращает группу(экземпляр) по ``id``. Обёртка на :func:`edit_db.group.get_by_keys`.
+        
+        Parameters
+        ----------
+        id_ : str
+            ``id`` группы.
+            
+        Returns
+        -------
+        tuple
+            (*True*, :obj:`edit_db.group`)  или (*False, comment*)
+        """
         rows = self.get_by_keys({'id': id_})
         if rows[0] and rows[1]:
             return(True, rows[1][0])
@@ -11624,7 +11634,7 @@ class group(studio):
 
     # обёртка на self.get_by_keys()
     # season (str)
-    def get_by_season(self, season):
+    def get_by_season(self, season): # скорее всего не нужна.
         rows = self.get_by_keys({'season': season})
         if rows[0] and rows[1]:
             return(True, rows[1][0])
@@ -11633,40 +11643,39 @@ class group(studio):
         else:
             return(False, rows[1])
 
-    # обёртка на self.get_list()
-    # type_list (list) - список типов по self.
     def get_by_type_list(self, type_list):
+        """Возвращает список групп (экземпляры) по списку типов. Обёртка на :func:`edit_db.group.get_list`.
+        
+        Parameters
+        ----------
+        type_list : list
+            Список типов ассетов из :attr:`edit_db.studio.asset_types`.
+        
+        Returns
+        -------
+        tuple
+            (*True*, [список групп - экземпляры :obj:`edit_db.group`])  или (*False, comment*)
+        """
         data = []
         b, r = self.get_list(f = type_list)
         if not b:
             return(b, r)
                 
         return(True, r)
-        
-    ''' не нужен так как class.dict_by_type - заполняется в self.get_list()
-    def get_dict_by_all_types(self):
-        pass
-        # get all group data
-        result = self.get_list()
-        if not result[0]:
-            return(False, result[1])
-        
-        # make data
-        data = {}
-        for group in result[1]:
-            if not group['type'] in data.keys():
-                c_data = []
-            else:
-                c_data = data[group['type']]
-            c_data.append(group)
-            data[group['type']] = c_data
-            
-        return(True, data)
-    '''
-
-    # переименование текущего объекта
-    # new_name (str)
+    
     def rename(self, new_name):
+        """Переименование текущего объекта группы.
+        
+        Parameters
+        ----------
+        new_name : str
+            Новое имя группы.
+            
+        Returns
+        -------
+        tuple
+            (*True, 'Ok!'*) или (*False, comment*)
+        """
         pass
         update_data = {'name': new_name}
         where = {'id': self.id}
@@ -11678,10 +11687,20 @@ class group(studio):
         self.name = new_name
         
         return(True, 'ok')
-        
-    # изменение комента текущего объекта
-    # description (str)
+    
     def edit_description(self, description):
+        """Редактирование описания текущего объекта группы.
+        
+        Parameters
+        ----------
+        description : str
+            Новое описание группы.
+        
+        Returns
+        -------
+        tuple
+            (*True, 'Ok!'*) или (*False, comment*)
+        """
         update_data = {'description': description}
         where = {'id': self.id}
         bool_, return_data = database().update('project', self.project, self.group_t, self.group_keys, update_data, where, table_root=self.group_db)
