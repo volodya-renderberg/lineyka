@@ -32,7 +32,7 @@ def make_studio():
 	
 	# workrooms
 	wr = db.workroom()
-	main = wr.add({'type': db.studio.task_types, 'name': 'Main'}, new=True)
+	main = wr.add({'type': list(db.studio.task_types), 'name': 'Main'}, new=True)
 	
 	# artists
 	artist = db.artist()

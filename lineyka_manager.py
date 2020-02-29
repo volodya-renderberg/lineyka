@@ -5572,7 +5572,7 @@ class MainWindow(QtWidgets.QMainWindow):
 			fn(window)
 			return
 	
-		self.ChoiceDateDialog = QtGui.QDialog(self)
+		self.ChoiceDateDialog = QtWidgets.QDialog(self)
 		self.ChoiceDateDialog.setModal(True)
 		self.ChoiceDateDialog.setWindowTitle('Choice Dates')
 		
@@ -5986,7 +5986,7 @@ class MainWindow(QtWidgets.QMainWindow):
 		group_dict = result[1]
 		
 		
-		self.searchDialog = QtGui.QDialog(self)
+		self.searchDialog = QtWidgets.QDialog(self)
 		self.searchDialog.setModal(True)
 		self.searchDialog.setWindowTitle('Search Results')
 		
@@ -7428,7 +7428,7 @@ class MainWindow(QtWidgets.QMainWindow):
 		
 	# ------- make preview ----------
 	def tm_make_preview_ui(self): # v2
-		self.makePreviewDialog = QtGui.QDialog(self)
+		self.makePreviewDialog = QtWidgets.QDialog(self)
 		self.makePreviewDialog.setModal(True)
 		#self.makePreviewDialog.resize(300, 300)
 		self.makePreviewDialog.setWindowTitle(('Make Preview: /// %s' %  self.selected_task.asset.name))
@@ -7551,7 +7551,7 @@ class MainWindow(QtWidgets.QMainWindow):
 		
 	# ------ add task --------------
 	def tm_add_task_ui(self):
-		self.addTaskDialog = QtGui.QDialog(self)
+		self.addTaskDialog = QtWidgets.QDialog(self)
 		self.addTaskDialog.setModal(True)
 		self.addTaskDialog.resize(500, 200)
 		self.addTaskDialog.setWindowTitle(('Create Single Task to Asset: /// %s' % self.selected_task.asset.name))
@@ -8114,7 +8114,7 @@ class MainWindow(QtWidgets.QMainWindow):
 			
 	def login_or_registration_ui(self):
 		pass
-		dialog = QtGui.QDialog(self)
+		dialog = QtWidgets.QDialog(self)
 		dialog.setWindowTitle('Login or register')
 		dialog.setModal(True)
 		dialog.resize(200, 100)

@@ -7343,7 +7343,7 @@ class task(studio):
         if self.artist:
             old_artist_ob = artist().init(self.artist)
         # -- new artist
-        if new_artist and (isinstance(new_artist, str) or isinstance(new_artist, unicode)):
+        if new_artist and (isinstance(new_artist, str)):
             result = artist().read_artist({'nik_name':new_artist})
             if not result[0]:
                 return(False, result[1])
@@ -9980,7 +9980,7 @@ class workroom(studio):
         if not new:
             return(True, 'ok')
         else:
-            return(self.init_by_keys(keys, True))
+            return self.init_by_keys(keys, new=True)
         
     def get_list(self, return_type = False, objects=True):
         """Получение списка отделов.
@@ -11539,7 +11539,7 @@ class group(studio):
                     output_list.append(self.init_by_keys(grp_d))
                     
         # (4)
-        for t in self.asset_types + ['recycle_bin']:
+        for t in list(self.asset_types) + ['recycle_bin']:
             dict_by_type[t] = []
             
         for d in return_data:
