@@ -201,7 +201,7 @@ class MainWindow(QtWidgets.QMainWindow):
 		# table_2 context menu
 		# change input task
 		self.myWidget.studio_editor_table_2.setContextMenuPolicy( QtCore.Qt.ActionsContextMenu )
-		addgrup_action = QtGui.QAction( 'change Task', self.myWidget)
+		addgrup_action = QtWidgets.QAction( 'change Task', self.myWidget)
 		addgrup_action.triggered.connect(partial(self.loc_change_input_task_ui))
 		self.myWidget.studio_editor_table_2.addAction( addgrup_action )
 		
@@ -316,8 +316,8 @@ class MainWindow(QtWidgets.QMainWindow):
 		self.myWidget.right_table_frame.setVisible(False)
 		# -- selection mode
 		self.myWidget.studio_editor_table.setSortingEnabled(True)
-		self.myWidget.studio_editor_table.setSelectionBehavior(QtGui.QAbstractItemView.SelectRows)
-		self.myWidget.studio_editor_table.setSelectionMode(QtGui.QAbstractItemView.SingleSelection)
+		self.myWidget.studio_editor_table.setSelectionBehavior(QtWidgets.QAbstractItemView.SelectRows)
+		self.myWidget.studio_editor_table.setSelectionMode(QtWidgets.QAbstractItemView.SingleSelection)
 		
 		self.clear_table()
 		self.fill_artist_table()
@@ -373,7 +373,7 @@ class MainWindow(QtWidgets.QMainWindow):
 		# fill table
 		for i, artist in enumerate(artists[1]):
 			for j,key in enumerate(headers):
-				newItem = QtGui.QTableWidgetItem()
+				newItem = QtWidgets.QTableWidgetItem()
 				if key == 'date_time':
 					newItem.setText(getattr(artist, key).strftime("%d-%m-%Y %H:%M:%S"))
 					#newItem.setText('time')
@@ -411,7 +411,7 @@ class MainWindow(QtWidgets.QMainWindow):
 		table = self.myWidget.studio_editor_table
 		item = table.selectedItems()[0]
 		#print(item.column_name)
-		menu = QtGui.QMenu(table)
+		menu = QtWidgets.QMenu(table)
 		menu_items = ['Edit Artist Data', 'Look Logs']
 		for label in menu_items:
 			if label == menu_items[0]:
@@ -695,10 +695,10 @@ class MainWindow(QtWidgets.QMainWindow):
 		
 		# -- add checkbox
 		checkbox_list = []
-		layout = QtGui.QVBoxLayout()
+		layout = QtWidgets.QVBoxLayout()
 		for wr in workrooms:
 			wr_name = wr.name
-			box = QtGui.QCheckBox(wr_name, window.check_buttons_frame)
+			box = QtWidgets.QCheckBox(wr_name, window.check_buttons_frame)
 			checkbox_list.append(box)
 			if wr_name in workroom_list:
 				box.setCheckState(QtCore.Qt.CheckState.Checked)
@@ -755,8 +755,8 @@ class MainWindow(QtWidgets.QMainWindow):
 		
 		# -- selection mode
 		table.setSortingEnabled(True)
-		table.setSelectionBehavior(QtGui.QAbstractItemView.SelectRows)
-		table.setSelectionMode(QtGui.QAbstractItemView.ExtendedSelection)
+		table.setSelectionBehavior(QtWidgets.QAbstractItemView.SelectRows)
+		table.setSelectionMode(QtWidgets.QAbstractItemView.ExtendedSelection)
 		
 		
 		# edit button
@@ -791,7 +791,7 @@ class MainWindow(QtWidgets.QMainWindow):
 		pass
 		# get path
 		home = os.path.expanduser('~')
-		folder = QtGui.QFileDialog.getExistingDirectory(self, home)
+		folder = QtWidgets.QFileDialog.getExistingDirectory(self, home)
 		field.setText(str(folder))
 		
 	# ------------------ Time Logs --------------------------------------
@@ -913,8 +913,8 @@ class MainWindow(QtWidgets.QMainWindow):
 		table.setRowCount(num_row)
 		table.setHorizontalHeaderLabels(headers)
 		
-		table.setSelectionBehavior(QtGui.QAbstractItemView.SelectRows)
-		table.setSelectionMode(QtGui.QAbstractItemView.SingleSelection)
+		table.setSelectionBehavior(QtWidgets.QAbstractItemView.SelectRows)
+		table.setSelectionMode(QtWidgets.QAbstractItemView.SingleSelection)
 		
 		all_time = 0
 		all_cost = 0
@@ -922,7 +922,7 @@ class MainWindow(QtWidgets.QMainWindow):
 		for i, log in enumerate(fin_logs):
 			pass
 			for j,header in enumerate(headers):
-				newItem = QtGui.QTableWidgetItem()
+				newItem = QtWidgets.QTableWidgetItem()
 				# content item
 				if header == 'start' or header == 'finish':
 					if log[header]:
@@ -1034,9 +1034,9 @@ class MainWindow(QtWidgets.QMainWindow):
 		self.myWidget.right_table_frame.setVisible(False)
 		# -- selection mode   
 		self.myWidget.studio_editor_table.setSortingEnabled(True)
-		#self.myWidget.studio_editor_table.setSelectionBehavior(QtGui.QAbstractItemView.SelectRows)
-		self.myWidget.studio_editor_table.setSelectionBehavior(QtGui.QAbstractItemView.SelectItems)
-		self.myWidget.studio_editor_table.setSelectionMode(QtGui.QAbstractItemView.SingleSelection)
+		#self.myWidget.studio_editor_table.setSelectionBehavior(QtWidgets.QAbstractItemView.SelectRows)
+		self.myWidget.studio_editor_table.setSelectionBehavior(QtWidgets.QAbstractItemView.SelectItems)
+		self.myWidget.studio_editor_table.setSelectionMode(QtWidgets.QAbstractItemView.SingleSelection)
 		
 		self.clear_table()
 		self.fill_workroom_table(self.myWidget.studio_editor_table)
@@ -1069,7 +1069,7 @@ class MainWindow(QtWidgets.QMainWindow):
 			for j,key in enumerate(headers):
 				if key == 'date_time':
 					continue
-				newItem = QtGui.QTableWidgetItem()
+				newItem = QtWidgets.QTableWidgetItem()
 				#
 				if key == 'type':
 					if workroom.type:
@@ -1106,7 +1106,7 @@ class MainWindow(QtWidgets.QMainWindow):
 		table = self.myWidget.studio_editor_table
 		item = table.selectedItems()[0]
 		#print(item.column_name)
-		menu = QtGui.QMenu(table)
+		menu = QtWidgets.QMenu(table)
 		menu_items = ['Rename','Edit Type', 'Edit Artist List']
 		for label in menu_items:
 			action = menu.addAction(label)
@@ -1170,9 +1170,9 @@ class MainWindow(QtWidgets.QMainWindow):
 		
 		# -- add checkbox
 		checkbox_list = []
-		layout = QtGui.QVBoxLayout()
+		layout = QtWidgets.QVBoxLayout()
 		for task_type in self.db_workroom.task_types:
-			box = QtGui.QCheckBox(task_type, window.check_buttons_frame)
+			box = QtWidgets.QCheckBox(task_type, window.check_buttons_frame)
 			checkbox_list.append(box)
 			if field.text():
 				if task_type in json.loads(field.text()):
@@ -1256,9 +1256,9 @@ class MainWindow(QtWidgets.QMainWindow):
 		
 		# -- add checkbox
 		checkbox_list = []
-		layout = QtGui.QVBoxLayout()
+		layout = QtWidgets.QVBoxLayout()
 		for task_type in self.db_workroom.task_types:
-			box = QtGui.QCheckBox(task_type, window.check_buttons_frame)
+			box = QtWidgets.QCheckBox(task_type, window.check_buttons_frame)
 			checkbox_list.append(box)
 			if self.workroom.type and task_type in self.workroom.type:
 				box.setCheckState(QtCore.Qt.CheckState.Checked)
@@ -1405,8 +1405,8 @@ class MainWindow(QtWidgets.QMainWindow):
 		self.myWidget.right_table_frame.setVisible(False)
 		# -- selection mode   
 		self.myWidget.studio_editor_table.setSortingEnabled(True)
-		self.myWidget.studio_editor_table.setSelectionBehavior(QtGui.QAbstractItemView.SelectRows)
-		self.myWidget.studio_editor_table.setSelectionMode(QtGui.QAbstractItemView.ExtendedSelection)
+		self.myWidget.studio_editor_table.setSelectionBehavior(QtWidgets.QAbstractItemView.SelectRows)
+		self.myWidget.studio_editor_table.setSelectionMode(QtWidgets.QAbstractItemView.ExtendedSelection)
 		
 		# fill table
 		self.clear_table()
@@ -1447,8 +1447,8 @@ class MainWindow(QtWidgets.QMainWindow):
 		self.myWidget.right_table_frame.setVisible(False)
 		# -- selection mode   
 		window.select_from_list_data_list_table.setSortingEnabled(True)
-		window.select_from_list_data_list_table.setSelectionBehavior(QtGui.QAbstractItemView.SelectRows)
-		window.select_from_list_data_list_table.setSelectionMode(QtGui.QAbstractItemView.ExtendedSelection)
+		window.select_from_list_data_list_table.setSelectionBehavior(QtWidgets.QAbstractItemView.SelectRows)
+		window.select_from_list_data_list_table.setSelectionMode(QtWidgets.QAbstractItemView.ExtendedSelection)
 		
 		# set modal window
 		window.setWindowModality(QtCore.Qt.WindowModal)
@@ -1489,7 +1489,7 @@ class MainWindow(QtWidgets.QMainWindow):
 			for j,key in enumerate(headers):
 				if not (key in self.look_keys):
 					continue
-				newItem = QtGui.QTableWidgetItem()
+				newItem = QtWidgets.QTableWidgetItem()
 				if key in ['outsource']:
 					newItem.setText(str(getattr(artist, key)))
 				else:
@@ -1544,7 +1544,7 @@ class MainWindow(QtWidgets.QMainWindow):
 			for j,key in enumerate(headers):
 				if not (key in self.look_keys):
 					continue
-				newItem = QtGui.QTableWidgetItem()
+				newItem = QtWidgets.QTableWidgetItem()
 				if key=='outsource':
 					newItem.setText(str(getattr(artist, key)))
 				else:
@@ -1713,8 +1713,8 @@ class MainWindow(QtWidgets.QMainWindow):
 		self.myWidget.right_table_frame.setVisible(False)
 		# -- selection mode   
 		self.myWidget.studio_editor_table.setSortingEnabled(True)
-		self.myWidget.studio_editor_table.setSelectionBehavior(QtGui.QAbstractItemView.SelectRows)
-		self.myWidget.studio_editor_table.setSelectionMode(QtGui.QAbstractItemView.SingleSelection)
+		self.myWidget.studio_editor_table.setSelectionBehavior(QtWidgets.QAbstractItemView.SelectRows)
+		self.myWidget.studio_editor_table.setSelectionMode(QtWidgets.QAbstractItemView.SingleSelection)
 		
 		self.reload_project_list()
 		
@@ -1741,7 +1741,7 @@ class MainWindow(QtWidgets.QMainWindow):
 		# fill table
 		for i, project in enumerate(self.project.list_projects):
 			for j,key in enumerate(headers):
-				newItem = QtGui.QTableWidgetItem()
+				newItem = QtWidgets.QTableWidgetItem()
 				newItem.setText(str(getattr(project, key)))
 				newItem.project = project
 				if key == 'name':
@@ -1765,7 +1765,7 @@ class MainWindow(QtWidgets.QMainWindow):
 		table = self.myWidget.studio_editor_table
 		item = table.selectedItems()[0]
 		#print(item.column_name)
-		menu = QtGui.QMenu(table)
+		menu = QtWidgets.QMenu(table)
 		menu_items = ['Rename', 'Set Fps', 'Set Units', 'Remove', 'Deactivate', 'Set Active']
 		for label in menu_items:
 			action = menu.addAction(label)
@@ -2117,8 +2117,8 @@ class MainWindow(QtWidgets.QMainWindow):
 		self.myWidget.right_table_frame.setVisible(False)
 		# -- selection mode   
 		self.myWidget.studio_editor_table.setSortingEnabled(True)
-		self.myWidget.studio_editor_table.setSelectionBehavior(QtGui.QAbstractItemView.SelectRows)
-		self.myWidget.studio_editor_table.setSelectionMode(QtGui.QAbstractItemView.SingleSelection)
+		self.myWidget.studio_editor_table.setSelectionBehavior(QtWidgets.QAbstractItemView.SelectRows)
+		self.myWidget.studio_editor_table.setSelectionMode(QtWidgets.QAbstractItemView.SingleSelection)
 		
 		self.clear_table()
 		self.fill_set_of_tasks_table(self.myWidget.studio_editor_table)
@@ -2154,7 +2154,7 @@ class MainWindow(QtWidgets.QMainWindow):
 		# fill table
 		for i, data in enumerate(data_to_fill):
 			for j,key in enumerate(headers):
-				newItem = QtGui.QTableWidgetItem()
+				newItem = QtWidgets.QTableWidgetItem()
 				if key == 'edit_time':
 					newItem.setText(getattr(data, key).strftime("%d-%m-%Y %H:%M:%S"))
 				else:
@@ -2187,7 +2187,7 @@ class MainWindow(QtWidgets.QMainWindow):
 		table = self.myWidget.studio_editor_table
 		item = table.selectedItems()[0]
 		#print(item.column_name)
-		menu = QtGui.QMenu(table)
+		menu = QtWidgets.QMenu(table)
 		menu_items = ['Rename','Edit of Asset Type', 'Edit of Loading Type', 'Make Copy', 'Edit', 'Remove']
 		for label in menu_items:
 			action = menu.addAction(label)
@@ -2420,7 +2420,7 @@ class MainWindow(QtWidgets.QMainWindow):
 		
 		# -- edit table
 		window.select_from_list_data_list_table.setDragEnabled(True)
-		window.select_from_list_data_list_table.setDragDropMode(QtGui.QAbstractItemView.InternalMove)
+		window.select_from_list_data_list_table.setDragDropMode(QtWidgets.QAbstractItemView.InternalMove)
 		
 		# context menu
 		#window.select_from_list_data_list_table.setContextMenuPolicy( QtCore.Qt.ActionsContextMenu )
@@ -2433,7 +2433,7 @@ class MainWindow(QtWidgets.QMainWindow):
 			for j,key in enumerate(headers):
 				if not (key in current_set.sets_keys):
 					continue
-				newItem = QtGui.QTableWidgetItem()
+				newItem = QtWidgets.QTableWidgetItem()
 				try:
 					newItem.setText(set_of_tasks[key])
 				except:
@@ -2450,7 +2450,7 @@ class MainWindow(QtWidgets.QMainWindow):
 		# fill empty items
 		for i in range(len(right_data), num_row):
 			for j in range(0, num_column):
-				newItem = QtGui.QTableWidgetItem()
+				newItem = QtWidgets.QTableWidgetItem()
 				newItem.column_name = headers[j]
 				window.select_from_list_data_list_table.setItem(i, j, newItem)
 				
@@ -2476,7 +2476,7 @@ class MainWindow(QtWidgets.QMainWindow):
 		#print(pos.__reduce__())
 		item = self.selectWorkroomDialog.select_from_list_data_list_table.selectedItems()[0]
 		#print(item.column_name)
-		menu = QtGui.QMenu(self.selectWorkroomDialog.select_from_list_data_list_table)
+		menu = QtWidgets.QMenu(self.selectWorkroomDialog.select_from_list_data_list_table)
 		
 		menu_items = []
 		if item.column_name == 'extension':
@@ -2484,7 +2484,7 @@ class MainWindow(QtWidgets.QMainWindow):
 		elif item.column_name == 'task_type':
 			menu_items = self.db_set_of_tasks.task_types
 		elif item.column_name == 'activity':
-			list_activity = self.db_asset.ACTIVITY_FOLDER[self.selected_set_of_tasks.asset_type].keys()
+			list_activity = list(self.db_asset.ACTIVITY_FOLDER[self.selected_set_of_tasks.asset_type].keys())
 			list_activity.sort()
 			menu_items = list_activity
 		elif item.column_name == 'input':
@@ -2492,9 +2492,9 @@ class MainWindow(QtWidgets.QMainWindow):
 			exists_tasks = []
 			for task_data in self.selected_set_of_tasks.sets:
 				exists_tasks.append(task_data.get('task_name'))
-			menu_items = menu_items + exists_tasks
+			menu_items = list(menu_items) + exists_tasks
 			
-		menu_items = menu_items + ['Copy','Paste','Delete']
+		menu_items = list(menu_items) + ['Copy','Paste','Delete']
 			
 		for label in menu_items:
 			action = menu.addAction(label)
@@ -2569,7 +2569,7 @@ class MainWindow(QtWidgets.QMainWindow):
 		
 	def save_set_of_task_to_library_ui(self, action = 'all'):
 		home = os.path.expanduser('~')
-		path, f = QtGui.QFileDialog.getSaveFileName(self, caption = 'Save Set_Of_Tasks To Library',  dir = home, filter = u'Json files (*.json)')
+		path, f = QtWidgets.QFileDialog.getSaveFileName(self, caption = 'Save Set_Of_Tasks To Library',  dir = home, filter = u'Json files (*.json)')
 		
 		split = os.path.splitext(path)
 		
@@ -2588,7 +2588,7 @@ class MainWindow(QtWidgets.QMainWindow):
 				
 	def load_set_of_task_from_library_ui(self):
 		home = os.path.expanduser('~')
-		path, f = QtGui.QFileDialog.getOpenFileNames(self, caption = 'Load Set_Of_Tasks Library',  dir = home, filter = u'Json files (*.json)')
+		path, f = QtWidgets.QFileDialog.getOpenFileNames(self, caption = 'Load Set_Of_Tasks Library',  dir = home, filter = u'Json files (*.json)')
 		
 		
 		b, data = self.db_set_of_tasks.get_list(path = path[0])
@@ -2609,8 +2609,8 @@ class MainWindow(QtWidgets.QMainWindow):
 		window.setAttribute(QtCore.Qt.WA_DeleteOnClose, True)
 		
 		# set select mode
-		window.select_from_list_data_list_table.setSelectionBehavior(QtGui.QAbstractItemView.SelectRows)
-		window.select_from_list_data_list_table.setSelectionMode(QtGui.QAbstractItemView.ExtendedSelection)
+		window.select_from_list_data_list_table.setSelectionBehavior(QtWidgets.QAbstractItemView.SelectRows)
+		window.select_from_list_data_list_table.setSelectionMode(QtWidgets.QAbstractItemView.ExtendedSelection)
 		
 		columns = ['name','asset_type', 'loading_type']
 		
@@ -2628,7 +2628,7 @@ class MainWindow(QtWidgets.QMainWindow):
 		# fill table
 		for i, set_ob in enumerate(data):
 			for j,key in enumerate(headers):
-				newItem = QtGui.QTableWidgetItem()
+				newItem = QtWidgets.QTableWidgetItem()
 				
 				if key == 'name':
 					color = self.set_of_tasks_color
@@ -2652,7 +2652,7 @@ class MainWindow(QtWidgets.QMainWindow):
 		
 		# context menu
 		table.setContextMenuPolicy( QtCore.Qt.ActionsContextMenu )
-		addgrup_action = QtGui.QAction( 'Look Set_of_Tasks', self.myWidget)
+		addgrup_action = QtWidgets.QAction( 'Look Set_of_Tasks', self.myWidget)
 		addgrup_action.triggered.connect(partial(self.look_set_of_task_from_library, table))
 		table.addAction( addgrup_action )
 		
@@ -2704,7 +2704,7 @@ class MainWindow(QtWidgets.QMainWindow):
 			for j,key in enumerate(headers):
 				if not (key in self.db_set_of_tasks.sets_keys):
 					continue
-				newItem = QtGui.QTableWidgetItem()
+				newItem = QtWidgets.QTableWidgetItem()
 				try:
 					newItem.setText(set_of_tasks[key])
 				except:
@@ -2886,8 +2886,8 @@ class MainWindow(QtWidgets.QMainWindow):
 		self.myWidget.right_table_frame.setVisible(False)
 		# -- selection mode   
 		table.setSortingEnabled(True)
-		table.setSelectionBehavior(QtGui.QAbstractItemView.SelectRows)
-		table.setSelectionMode(QtGui.QAbstractItemView.SingleSelection)
+		table.setSelectionBehavior(QtWidgets.QAbstractItemView.SelectRows)
+		table.setSelectionMode(QtWidgets.QAbstractItemView.SingleSelection)
 		
 		self.reload_season_list(table)
 		
@@ -2959,7 +2959,7 @@ class MainWindow(QtWidgets.QMainWindow):
 		# fill table
 		for i, data in enumerate(seasons):
 			for j,key in enumerate(headers):
-				newItem = QtGui.QTableWidgetItem()
+				newItem = QtWidgets.QTableWidgetItem()
 				newItem.setText(getattr(data, key))
 				if key == 'name':
 					color = self.season_color
@@ -2985,7 +2985,7 @@ class MainWindow(QtWidgets.QMainWindow):
 		table = self.myWidget.studio_editor_table
 		item = table.currentItem()
 		#print(item.column_name)
-		menu = QtGui.QMenu(table)
+		menu = QtWidgets.QMenu(table)
 		menu_items = ['Rename']
 		for label in menu_items:
 			action = menu.addAction(label)
@@ -3200,8 +3200,8 @@ class MainWindow(QtWidgets.QMainWindow):
 		self.myWidget.right_table_frame.setVisible(False)
 		# -- selection mode   
 		table.setSortingEnabled(True)
-		table.setSelectionBehavior(QtGui.QAbstractItemView.SelectRows)
-		table.setSelectionMode(QtGui.QAbstractItemView.SingleSelection)
+		table.setSelectionBehavior(QtWidgets.QAbstractItemView.SelectRows)
+		table.setSelectionMode(QtWidgets.QAbstractItemView.SingleSelection)
 		
 		if not self.selected_project:
 			self.default_state_group_table(table)
@@ -3272,7 +3272,7 @@ class MainWindow(QtWidgets.QMainWindow):
 		# fill table
 		for i, ob in enumerate(groups):
 			for j,key in enumerate(headers):
-				newItem = QtGui.QTableWidgetItem()
+				newItem = QtWidgets.QTableWidgetItem()
 				newItem.setText(getattr(ob, key))
 				if key == 'name':
 					color = self.group_color
@@ -3306,7 +3306,7 @@ class MainWindow(QtWidgets.QMainWindow):
 		#print(pos.__reduce__())
 		table = self.myWidget.studio_editor_table
 		#print(item.column_name)
-		menu = QtGui.QMenu(table)
+		menu = QtWidgets.QMenu(table)
 		menu_items = ['Rename', 'Edit Description', 'Asset List']
 		for label in menu_items:
 			action = menu.addAction(label)
@@ -3693,8 +3693,8 @@ class MainWindow(QtWidgets.QMainWindow):
 		self.myWidget.right_table_frame.setVisible(False)
 		# -- selection mode   
 		table.setSortingEnabled(True)
-		table.setSelectionBehavior(QtGui.QAbstractItemView.SelectRows)
-		table.setSelectionMode(QtGui.QAbstractItemView.SingleSelection)
+		table.setSelectionBehavior(QtWidgets.QAbstractItemView.SelectRows)
+		table.setSelectionMode(QtWidgets.QAbstractItemView.SingleSelection)
 		
 		self.clear_table()
 		self.fill_group_content_list(self.selected_group.name)
@@ -3758,7 +3758,7 @@ class MainWindow(QtWidgets.QMainWindow):
 			#print('**** %s' % row.loading_type)
 			#self.db_asset.init(row)
 			for j,key in enumerate(headers):
-				newItem = QtGui.QTableWidgetItem()
+				newItem = QtWidgets.QTableWidgetItem()
 				# -- get final task
 				task_name = '%s:final' % row.name
 				self.db_task.asset = row
@@ -3785,7 +3785,7 @@ class MainWindow(QtWidgets.QMainWindow):
 					# get img path
 					icon_path = os.path.join(self.db_asset.project.preview_img_path, (row.name + '_icon.png'))
 					# label
-					label = QtGui.QLabel()
+					label = QtWidgets.QLabel()
 					
 					if os.path.exists(icon_path):
 						# img
@@ -3823,7 +3823,7 @@ class MainWindow(QtWidgets.QMainWindow):
 		#print(pos.__reduce__())
 		table = self.myWidget.studio_editor_table
 		#print(item.column_name)
-		menu = QtGui.QMenu(table)
+		menu = QtWidgets.QMenu(table)
 		if self.selected_group.type=='recycle_bin':
 				menu_items = ['Gange Group', 'Gange Description']
 		elif self.selected_group.type=='object':
@@ -4178,7 +4178,7 @@ class MainWindow(QtWidgets.QMainWindow):
 		
 		# -- edit table
 		#table.setDragEnabled(True)
-		#table.setDragDropMode(QtGui.QAbstractItemView.InternalMove)
+		#table.setDragDropMode(QtWidgets.QAbstractItemView.InternalMove)
 		
 		# -- Fill table
 		data = []
@@ -4190,7 +4190,7 @@ class MainWindow(QtWidgets.QMainWindow):
 		
 		for i in range(0, num_row):
 			for j in range(0, num_column):
-				newItem = QtGui.QTableWidgetItem()
+				newItem = QtWidgets.QTableWidgetItem()
 				if i>=len(data):
 					table.setItem(i, j, newItem)
 					continue
@@ -4215,10 +4215,10 @@ class MainWindow(QtWidgets.QMainWindow):
 				set_list.append(ob.name)
 			table.setContextMenuPolicy( QtCore.Qt.ActionsContextMenu )
 			# workroom menu
-			addgrup_action = QtGui.QAction( '-- sets of tasks -- ', window)
+			addgrup_action = QtWidgets.QAction( '-- sets of tasks -- ', window)
 			table.addAction( addgrup_action )
 			for key in set_list:
-				addgrup_action = QtGui.QAction( key, window)
+				addgrup_action = QtWidgets.QAction( key, window)
 				#addgrup_action.setToolTip( 'to WorkRoom column' )
 				addgrup_action.triggered.connect(partial(self.insert_asset_list_in_table, key, table))
 				table.addAction( addgrup_action )
@@ -4573,8 +4573,8 @@ class MainWindow(QtWidgets.QMainWindow):
 		
 		# -- selection mode   
 		table.setSortingEnabled(True)
-		table.setSelectionBehavior(QtGui.QAbstractItemView.SelectRows)
-		table.setSelectionMode(QtGui.QAbstractItemView.SingleSelection)
+		table.setSelectionBehavior(QtWidgets.QAbstractItemView.SelectRows)
+		table.setSelectionMode(QtWidgets.QAbstractItemView.SingleSelection)
 		
 		self.clear_table()
 		self.clear_table(table = self.myWidget.studio_editor_table_2)
@@ -4707,12 +4707,12 @@ class MainWindow(QtWidgets.QMainWindow):
 		# edit table
 		# -- selection mode   
 		self.myWidget.studio_editor_table.setSortingEnabled(True)
-		self.myWidget.studio_editor_table.setSelectionBehavior(QtGui.QAbstractItemView.SelectItems)
-		self.myWidget.studio_editor_table.setSelectionMode(QtGui.QAbstractItemView.SingleSelection)
+		self.myWidget.studio_editor_table.setSelectionBehavior(QtWidgets.QAbstractItemView.SelectItems)
+		self.myWidget.studio_editor_table.setSelectionMode(QtWidgets.QAbstractItemView.SingleSelection)
 		  
 		# fill table
 		for i, task in enumerate(service_task_list):
-			newItem = QtGui.QTableWidgetItem()
+			newItem = QtWidgets.QTableWidgetItem()
 			newItem.setText(task['task_name'].replace((task['asset'] + ':'), ''))
 			newItem.task = dict(task)
 			
@@ -4810,8 +4810,8 @@ class MainWindow(QtWidgets.QMainWindow):
 		
 		# -- selection mode   
 		self.myWidget.studio_editor_table_2.setSortingEnabled(True)
-		self.myWidget.studio_editor_table_2.setSelectionBehavior(QtGui.QAbstractItemView.SelectRows)
-		self.myWidget.studio_editor_table_2.setSelectionMode(QtGui.QAbstractItemView.ExtendedSelection)
+		self.myWidget.studio_editor_table_2.setSelectionBehavior(QtWidgets.QAbstractItemView.SelectRows)
+		self.myWidget.studio_editor_table_2.setSelectionMode(QtWidgets.QAbstractItemView.ExtendedSelection)
 		
 		# fill table
 		for i, input_task_name in enumerate(input_list):
@@ -4819,7 +4819,7 @@ class MainWindow(QtWidgets.QMainWindow):
 				asset_name = input_task_name.split(':')[0]
 				task_name = input_task_name.replace((asset_name + ':'), '')
 				if head_label == 'Asset':
-					newItem = QtGui.QTableWidgetItem()
+					newItem = QtWidgets.QTableWidgetItem()
 					newItem.setText(asset_name)
 					newItem.task = inpun_tasks_data[input_task_name]
 					
@@ -4833,7 +4833,7 @@ class MainWindow(QtWidgets.QMainWindow):
 					
 					
 				elif head_label == 'Task Name':
-					newItem = QtGui.QTableWidgetItem()
+					newItem = QtWidgets.QTableWidgetItem()
 					newItem.setText(task_name)
 					newItem.task = inpun_tasks_data[input_task_name]
 					
@@ -4841,7 +4841,7 @@ class MainWindow(QtWidgets.QMainWindow):
 					# get img path
 					icon_path = os.path.join(self.db_asset.preview_img_path, (asset_name + '_icon.png'))
 					# label
-					label = QtGui.QLabel()
+					label = QtWidgets.QLabel()
 					
 					if os.path.exists(icon_path):
 						# img
@@ -4959,13 +4959,13 @@ class MainWindow(QtWidgets.QMainWindow):
 		
 		# -- selection mode table 
 		table.setSortingEnabled(True)
-		table.setSelectionBehavior(QtGui.QAbstractItemView.SelectRows)
-		table.setSelectionMode(QtGui.QAbstractItemView.SingleSelection)
+		table.setSelectionBehavior(QtWidgets.QAbstractItemView.SelectRows)
+		table.setSelectionMode(QtWidgets.QAbstractItemView.SingleSelection)
 		
 		# -- fill table
 		for i, task in enumerate(tasks_list):
 			for j, head in enumerate(headers):
-				newItem = QtGui.QTableWidgetItem()
+				newItem = QtWidgets.QTableWidgetItem()
 				#newItem.setText(task[head])
 				newItem.setText(task[head].replace((task['task_name'].split(':')[0] + ':'), ''))
 				if head == 'task_name':
@@ -5102,7 +5102,7 @@ class MainWindow(QtWidgets.QMainWindow):
 		service_output = json.loads(task_data['output'])
 		for i, task in enumerate(task_list):
 			for j, head in enumerate(headers):
-				newItem = QtGui.QTableWidgetItem()
+				newItem = QtWidgets.QTableWidgetItem()
 				newItem.setText(task[head].replace((task['task_name'].split(':')[0] + ':'), ''))
 				
 				if task['task_name'] in service_input:
@@ -5136,8 +5136,8 @@ class MainWindow(QtWidgets.QMainWindow):
 		
 		# selection mode
 		table.setSortingEnabled(True)
-		table.setSelectionBehavior(QtGui.QAbstractItemView.SelectRows)
-		table.setSelectionMode(QtGui.QAbstractItemView.ExtendedSelection)
+		table.setSelectionBehavior(QtWidgets.QAbstractItemView.SelectRows)
+		table.setSelectionMode(QtWidgets.QAbstractItemView.ExtendedSelection)
 		
 		window.show()
 	
@@ -5247,7 +5247,7 @@ class MainWindow(QtWidgets.QMainWindow):
 		for i, asset in enumerate(asset_list):
 			for j, head in enumerate(headers):
 				if head == 'Asste Name':
-					newItem = QtGui.QTableWidgetItem()
+					newItem = QtWidgets.QTableWidgetItem()
 					newItem.setText(asset['name'])
 					newItem.asset = None
 					
@@ -5261,7 +5261,7 @@ class MainWindow(QtWidgets.QMainWindow):
 						newItem.setBackground(brush)
 										
 				elif head == 'Type':
-					newItem = QtGui.QTableWidgetItem()
+					newItem = QtWidgets.QTableWidgetItem()
 					newItem.setText(asset['type'])
 					newItem.asset = asset
 					
@@ -5275,7 +5275,7 @@ class MainWindow(QtWidgets.QMainWindow):
 					# get img path
 					icon_path = os.path.join(self.db_asset.preview_img_path, (asset['name'] + '_icon.png'))
 					# label
-					label = QtGui.QLabel()
+					label = QtWidgets.QLabel()
 					
 					if os.path.exists(icon_path):
 						# img
@@ -5300,8 +5300,8 @@ class MainWindow(QtWidgets.QMainWindow):
 				
 		# -- selection mode   
 		table.setSortingEnabled(True)
-		table.setSelectionBehavior(QtGui.QAbstractItemView.SelectRows)
-		table.setSelectionMode(QtGui.QAbstractItemView.ExtendedSelection)
+		table.setSelectionBehavior(QtWidgets.QAbstractItemView.SelectRows)
+		table.setSelectionMode(QtWidgets.QAbstractItemView.ExtendedSelection)
 		
 	def print_table_item(self, item):
 		print(item.asset)
@@ -5447,7 +5447,7 @@ class MainWindow(QtWidgets.QMainWindow):
 		self.myWidget.task_manager_comboBox_4.setVisible(False)
 		self.myWidget.task_manager_comboBox_5.setVisible(False)
 		# fill type of assets box
-		self.myWidget.task_manager_comboBox_5.addItems((['-all types-'] + self.db_studio.asset_types))
+		self.myWidget.task_manager_comboBox_5.addItems((['-all types-'] + list(self.db_studio.asset_types)))
 		self.myWidget.task_manager_comboBox_5.activated[str].connect(self.tm_reload_group_list_by_type)
 		self.myWidget.local_search_qline.setVisible(False)
 		self.myWidget.local_search_qline.returnPressed.connect(self.tm_reload_task_list)
@@ -5460,13 +5460,13 @@ class MainWindow(QtWidgets.QMainWindow):
 		# LOCAL SEARCH
 		self.myWidget.local_search_qline.setContextMenuPolicy( QtCore.Qt.ActionsContextMenu )
 		for status in self.db_studio.task_status:
-			addgrup_action = QtGui.QAction( status, self.myWidget)
+			addgrup_action = QtWidgets.QAction( status, self.myWidget)
 			addgrup_action.triggered.connect(partial(self.tm_reload_task_list_by_status, status))
 			self.myWidget.local_search_qline.addAction( addgrup_action )
 		
 		# ACTIVITY
 		self.myWidget.tm_data_label_2.setContextMenuPolicy( QtCore.Qt.ActionsContextMenu )
-		addgrup_action = QtGui.QAction( 'change Activity', self.myWidget)
+		addgrup_action = QtWidgets.QAction( 'change Activity', self.myWidget)
 		addgrup_action.triggered.connect(partial(self.tm_change_task_activity_ui))
 		self.myWidget.tm_data_label_2.addAction( addgrup_action )
 		
@@ -5474,55 +5474,55 @@ class MainWindow(QtWidgets.QMainWindow):
 		self.myWidget.tm_data_label_3.hide()
 		self.myWidget.label_6.hide()
 		#self.myWidget.tm_data_label_3.setContextMenuPolicy( QtCore.Qt.ActionsContextMenu )
-		#addgrup_action = QtGui.QAction( 'change Workroom', self.myWidget)
+		#addgrup_action = QtWidgets.QAction( 'change Workroom', self.myWidget)
 		#addgrup_action.triggered.connect(partial(self.tm_change_task_workroom_ui))
 		#self.myWidget.tm_data_label_3.addAction( addgrup_action )
 		
 		# PRICE
 		self.myWidget.tm_data_label_5.setContextMenuPolicy( QtCore.Qt.ActionsContextMenu )
-		addgrup_action = QtGui.QAction( 'change Price', self.myWidget)
+		addgrup_action = QtWidgets.QAction( 'change Price', self.myWidget)
 		addgrup_action.triggered.connect(partial(self.tm_change_task_price_ui))
 		self.myWidget.tm_data_label_5.addAction( addgrup_action )
 		
 		# ARTIST
 		self.myWidget.tm_data_label_1.setContextMenuPolicy( QtCore.Qt.ActionsContextMenu )
-		addgrup_action = QtGui.QAction( 'change Artist', self.myWidget)
+		addgrup_action = QtWidgets.QAction( 'change Artist', self.myWidget)
 		addgrup_action.triggered.connect(partial(self.tm_change_task_artist_ui))
 		self.myWidget.tm_data_label_1.addAction( addgrup_action )
 		
 		# INPUT
 		self.myWidget.tm_data_label_4.setContextMenuPolicy( QtCore.Qt.ActionsContextMenu )
-		addgrup_action = QtGui.QAction( 'change Input Task', self.myWidget)
+		addgrup_action = QtWidgets.QAction( 'change Input Task', self.myWidget)
 		addgrup_action.triggered.connect(partial(self.tm_change_input_ui))
 		self.myWidget.tm_data_label_4.addAction( addgrup_action )
 		
 		# TASK_ TYPE
 		self.myWidget.tm_data_label_6.setContextMenuPolicy( QtCore.Qt.ActionsContextMenu )
-		addgrup_action = QtGui.QAction( 'change Task Type', self.myWidget)
+		addgrup_action = QtWidgets.QAction( 'change Task Type', self.myWidget)
 		addgrup_action.triggered.connect(partial(self.tm_change_task_type_ui))
 		self.myWidget.tm_data_label_6.addAction( addgrup_action )
 		
 		# EXTENSION
 		self.myWidget.tm_data_label_7.setContextMenuPolicy( QtCore.Qt.ActionsContextMenu )
-		addgrup_action = QtGui.QAction( 'change Extension', self.myWidget)
+		addgrup_action = QtWidgets.QAction( 'change Extension', self.myWidget)
 		addgrup_action.triggered.connect(partial(self.tm_change_task_extension_ui))
 		self.myWidget.tm_data_label_7.addAction( addgrup_action )
 		
 		# LOADING TYPE
 		self.myWidget.tm_data_label_9.setContextMenuPolicy( QtCore.Qt.ActionsContextMenu )
-		addgrup_action = QtGui.QAction( 'change Loading Type', self.myWidget)
+		addgrup_action = QtWidgets.QAction( 'change Loading Type', self.myWidget)
 		addgrup_action.triggered.connect(partial(self._edit_loading_type_ui, self.tm_change_loading_type, table=self.myWidget.task_manager_table, task=True)) #
 		self.myWidget.tm_data_label_9.addAction( addgrup_action )
 		
 		# LINK
 		self.myWidget.tm_data_label_8.setContextMenuPolicy( QtCore.Qt.ActionsContextMenu )
-		addgrup_action = QtGui.QAction( 'change Link', self.myWidget)
+		addgrup_action = QtWidgets.QAction( 'change Link', self.myWidget)
 		addgrup_action.triggered.connect(partial(self.tm_change_tz_link_ui))
 		self.myWidget.tm_data_label_8.addAction( addgrup_action )
 		
 		# EDIT READERS
 		self.myWidget.readers_list.setContextMenuPolicy( QtCore.Qt.ActionsContextMenu )
-		addgrup_action = QtGui.QAction( 'Edit Readers', self.myWidget)
+		addgrup_action = QtWidgets.QAction( 'Edit Readers', self.myWidget)
 		addgrup_action.triggered.connect(partial(self.tm_edit_readers_ui))
 		self.myWidget.readers_list.addAction( addgrup_action )
 		
@@ -5577,7 +5577,7 @@ class MainWindow(QtWidgets.QMainWindow):
 		self.ChoiceDateDialog.setWindowTitle('Choice Dates')
 		
 		# add widget
-		v_layout = QtGui.QVBoxLayout()
+		v_layout = QtWidgets.QVBoxLayout()
 		#
 		date_start = QtGui.QDateEdit(datetime.date.today() - datetime.timedelta(days=7))
 		date_start.setCalendarPopup(True)
@@ -5588,15 +5588,15 @@ class MainWindow(QtWidgets.QMainWindow):
 		date_end.setCalendarPopup(True)
 		v_layout.addWidget(date_end)
 		#
-		frame = QtGui.QFrame()
+		frame = QtWidgets.QFrame()
 		v_layout.addWidget(frame)
-		h_layout = QtGui.QHBoxLayout(frame)
+		h_layout = QtWidgets.QHBoxLayout(frame)
 		#
-		close_button = QtGui.QPushButton('Cancel')
+		close_button = QtWidgets.QPushButton('Cancel')
 		close_button.clicked.connect(partial(self.close_window, self.ChoiceDateDialog))
 		h_layout.addWidget(close_button)
 		#
-		ok_button = QtGui.QPushButton('Ok')
+		ok_button = QtWidgets.QPushButton('Ok')
 		ok_button.clicked.connect(partial(run_function))
 		h_layout.addWidget(ok_button)
 		#
@@ -5712,15 +5712,15 @@ class MainWindow(QtWidgets.QMainWindow):
 		table.setRowCount(num_row)
 		table.setHorizontalHeaderLabels(headers)
 		
-		table.setSelectionBehavior(QtGui.QAbstractItemView.SelectRows)
-		table.setSelectionMode(QtGui.QAbstractItemView.SingleSelection)
+		table.setSelectionBehavior(QtWidgets.QAbstractItemView.SelectRows)
+		table.setSelectionMode(QtWidgets.QAbstractItemView.SingleSelection)
 		
 		all_time = 0
 		
 		for i, log in enumerate(fin_logs):
 			pass
 			for j,header in enumerate(headers):
-				newItem = QtGui.QTableWidgetItem()
+				newItem = QtWidgets.QTableWidgetItem()
 				# content item
 				if header == 'date_time':
 					newItem.setText(log[header].strftime("%m/%d/%Y, %H:%M:%S"))
@@ -5991,10 +5991,10 @@ class MainWindow(QtWidgets.QMainWindow):
 		self.searchDialog.setWindowTitle('Search Results')
 		
 		# add widget
-		v_layout = QtGui.QVBoxLayout()
+		v_layout = QtWidgets.QVBoxLayout()
 		table = QtGui.QTableWidget()
 		v_layout.addWidget(table)
-		close_button = QtGui.QPushButton('Close')
+		close_button = QtWidgets.QPushButton('Close')
 		close_button.clicked.connect(partial(self.close_window, self.searchDialog))
 		v_layout.addWidget(close_button)
 		self.searchDialog.setLayout(v_layout)
@@ -6008,13 +6008,13 @@ class MainWindow(QtWidgets.QMainWindow):
 		table.setRowCount(num_row)
 		table.setHorizontalHeaderLabels(headers)
 		
-		table.setSelectionBehavior(QtGui.QAbstractItemView.SelectRows)
-		table.setSelectionMode(QtGui.QAbstractItemView.SingleSelection)
+		table.setSelectionBehavior(QtWidgets.QAbstractItemView.SelectRows)
+		table.setSelectionMode(QtWidgets.QAbstractItemView.SingleSelection)
 		table.itemClicked.connect(partial(self.tm_reload_task_list_by_global_search_action, self.searchDialog, group_dict))
 		
 		for i, row in enumerate(asset_list):
 			for j,header in enumerate(headers):
-				newItem = QtGui.QTableWidgetItem()
+				newItem = QtWidgets.QTableWidgetItem()
 				newItem.asset = row
 				
 				if header == 'group':
@@ -6032,7 +6032,7 @@ class MainWindow(QtWidgets.QMainWindow):
 					# get img path
 					icon_path = os.path.join(self.db_asset.preview_img_path, (row['name'] + '_icon.png'))
 					# label
-					label = QtGui.QLabel()
+					label = QtWidgets.QLabel()
 					
 					if os.path.exists(icon_path):
 						# img
@@ -6203,8 +6203,8 @@ class MainWindow(QtWidgets.QMainWindow):
 		# edit table
 		# -- selection mode  
 		#self.myWidget.task_manager_table.setSortingEnabled(True)
-		self.myWidget.task_manager_table.setSelectionBehavior(QtGui.QAbstractItemView.SelectItems)
-		self.myWidget.task_manager_table.setSelectionMode(QtGui.QAbstractItemView.SingleSelection)
+		self.myWidget.task_manager_table.setSelectionBehavior(QtWidgets.QAbstractItemView.SelectItems)
+		self.myWidget.task_manager_table.setSelectionMode(QtWidgets.QAbstractItemView.SingleSelection)
 		  
 				
 		# fill table
@@ -6213,7 +6213,7 @@ class MainWindow(QtWidgets.QMainWindow):
 			# get img path
 			icon_path = os.path.join(self.selected_project.preview_img_path, '%s_icon.png' % asset_name) 
 			# label
-			label = QtGui.QLabel()
+			label = QtWidgets.QLabel()
 			
 			if os.path.exists(icon_path):
 				# img
@@ -6230,7 +6230,7 @@ class MainWindow(QtWidgets.QMainWindow):
 			for j,task_ob in enumerate(self.tasks_rows[asset_name]):
 				j = j+1
 				
-				newItem = QtGui.QTableWidgetItem()
+				newItem = QtWidgets.QTableWidgetItem()
 				#item_text = '%s\n---' % task_ob.task_name.replace('%s:' % task_ob.asset.name, '')
 				#for attr in self.db_studio.setting_data['task_visible_fields']:
 					#item_text = '%s\n%s: %s' % (item_text, attr, getattr(task_ob, attr))
@@ -6252,12 +6252,12 @@ class MainWindow(QtWidgets.QMainWindow):
 			if not self.tasks_rows[asset_name]:
 				#print(asset_name)
 				for jj in range(0, num_column):
-					newItem = QtGui.QTableWidgetItem()
+					newItem = QtWidgets.QTableWidgetItem()
 					newItem.task = None
 					self.myWidget.task_manager_table.setItem(i, jj, newItem)
 			elif len(self.tasks_rows[asset_name])<num_column:
 				for jj in range((j+1), num_column):
-					newItem = QtGui.QTableWidgetItem()
+					newItem = QtWidgets.QTableWidgetItem()
 					newItem.task = None
 					self.myWidget.task_manager_table.setItem(i, jj, newItem)
 					
@@ -6433,12 +6433,12 @@ class MainWindow(QtWidgets.QMainWindow):
 		# -- selection mode
 		table = window.select_from_list_data_list_table
 		table.setSortingEnabled(True)
-		table.setSelectionBehavior(QtGui.QAbstractItemView.SelectRows)
-		table.setSelectionMode(QtGui.QAbstractItemView.ExtendedSelection)
+		table.setSelectionBehavior(QtWidgets.QAbstractItemView.SelectRows)
+		table.setSelectionMode(QtWidgets.QAbstractItemView.ExtendedSelection)
 		
 		# table_2 context menu
 		table.setContextMenuPolicy( QtCore.Qt.ActionsContextMenu )
-		addgrup_action = QtGui.QAction( 'make First', self.myWidget)
+		addgrup_action = QtWidgets.QAction( 'make First', self.myWidget)
 		addgrup_action.triggered.connect(partial(self.tm_make_first_reader, table))
 		table.addAction( addgrup_action )
 		
@@ -6473,7 +6473,7 @@ class MainWindow(QtWidgets.QMainWindow):
 				if reader_name == 'first_reader':
 					continue
 				for j,key in enumerate(headers):
-					newItem = QtGui.QTableWidgetItem()
+					newItem = QtWidgets.QTableWidgetItem()
 					if key == 'nik_name':
 						if self.selected_task.readers.get('first_reader') == reader_name:
 							newItem.setText('%s (***)' % reader_name)
@@ -6508,8 +6508,8 @@ class MainWindow(QtWidgets.QMainWindow):
 		
 		# -- selection mode
 		table.setSortingEnabled(True)
-		table.setSelectionBehavior(QtGui.QAbstractItemView.SelectRows)
-		table.setSelectionMode(QtGui.QAbstractItemView.ExtendedSelection)
+		table.setSelectionBehavior(QtWidgets.QAbstractItemView.SelectRows)
+		table.setSelectionMode(QtWidgets.QAbstractItemView.ExtendedSelection)
 		
 		# -- load workroom_list
 		#result = self.db_workroom.get_list() # под вопросом
@@ -6552,7 +6552,7 @@ class MainWindow(QtWidgets.QMainWindow):
 		if artirs_dict:
 			for i,reader_name in enumerate(sorted(list(artirs_dict.keys()))):
 				for j,key in enumerate(headers):
-					newItem = QtGui.QTableWidgetItem()
+					newItem = QtWidgets.QTableWidgetItem()
 					newItem.setText(str(getattr(artirs_dict[reader_name], key)))
 					#newItem.reader_name = reader_name
 					newItem.reader = artirs_dict[reader_name]
@@ -6731,7 +6731,7 @@ class MainWindow(QtWidgets.QMainWindow):
 		window.select_from_list_cansel_button.clicked.connect(partial(self.close_window, window))
 		window.select_from_list_apply_button.clicked.connect(partial(to_viewer, window))
 		window.select_from_list_apply_button.setText('By Viewer')
-		to_editor_button = QtGui.QPushButton('By Editor')
+		to_editor_button = QtWidgets.QPushButton('By Editor')
 		window.horizontalLayout.addWidget(to_editor_button)
 		to_editor_button.clicked.connect(partial(to_editor, window))
 		window.setWindowTitle('Look Branches')
@@ -6756,13 +6756,13 @@ class MainWindow(QtWidgets.QMainWindow):
 		
 		# selection mode   
 		window.select_from_list_data_list_table.setSortingEnabled(True)
-		window.select_from_list_data_list_table.setSelectionBehavior(QtGui.QAbstractItemView.SelectRows)
-		window.select_from_list_data_list_table.setSelectionMode(QtGui.QAbstractItemView.SingleSelection)
+		window.select_from_list_data_list_table.setSelectionBehavior(QtWidgets.QAbstractItemView.SelectRows)
+		window.select_from_list_data_list_table.setSelectionMode(QtWidgets.QAbstractItemView.SingleSelection)
 		
 		# make tabel
 		for i,branch in enumerate(viewer_dict):
 			for j,key in enumerate(headers):
-				newItem = QtGui.QTableWidgetItem()
+				newItem = QtWidgets.QTableWidgetItem()
 				newItem.path = {'viewer_path':viewer_dict[branch], 'editor_path':editor_dict[branch]}
 								
 				newItem.setText(branch)
@@ -6823,14 +6823,14 @@ class MainWindow(QtWidgets.QMainWindow):
 		
 		# selection mode   
 		window.select_from_list_data_list_table.setSortingEnabled(True)
-		window.select_from_list_data_list_table.setSelectionBehavior(QtGui.QAbstractItemView.SelectRows)
-		window.select_from_list_data_list_table.setSelectionMode(QtGui.QAbstractItemView.SingleSelection)
+		window.select_from_list_data_list_table.setSelectionBehavior(QtWidgets.QAbstractItemView.SelectRows)
+		window.select_from_list_data_list_table.setSelectionMode(QtWidgets.QAbstractItemView.SingleSelection)
 		
 		# make tabel
 		for i,log in enumerate(versions_list):
 			print(log)
 			for j,key in enumerate(headers):
-				newItem = QtGui.QTableWidgetItem()
+				newItem = QtWidgets.QTableWidgetItem()
 				newItem.log = log
 								
 				if key == 'time':
@@ -6899,14 +6899,14 @@ class MainWindow(QtWidgets.QMainWindow):
 		
 		# selection mode   
 		window.select_from_list_data_list_table.setSortingEnabled(True)
-		window.select_from_list_data_list_table.setSelectionBehavior(QtGui.QAbstractItemView.SelectRows)
-		window.select_from_list_data_list_table.setSelectionMode(QtGui.QAbstractItemView.SingleSelection)
+		window.select_from_list_data_list_table.setSelectionBehavior(QtWidgets.QAbstractItemView.SelectRows)
+		window.select_from_list_data_list_table.setSelectionMode(QtWidgets.QAbstractItemView.SingleSelection)
 		
 		# make tabel
 		for i,log in enumerate(versions_list):
 			print(log)
 			for j,key in enumerate(headers):
-				newItem = QtGui.QTableWidgetItem()
+				newItem = QtWidgets.QTableWidgetItem()
 				newItem.log = log
 								
 				if key == 'time':
@@ -7434,20 +7434,20 @@ class MainWindow(QtWidgets.QMainWindow):
 		self.makePreviewDialog.setWindowTitle(('Make Preview: /// %s' %  self.selected_task.asset.name))
 		
 		# add widgets
-		v_layout = QtGui.QVBoxLayout()
+		v_layout = QtWidgets.QVBoxLayout()
 		# -- image Label
-		self.makePreviewDialog.imageLabel = QtGui.QLabel()
+		self.makePreviewDialog.imageLabel = QtWidgets.QLabel()
 		self.makePreviewDialog.imageLabel.setFixedSize(300,300)
 		v_layout.addWidget(self.makePreviewDialog.imageLabel)
 		
 		# -- button
-		h__layout = QtGui.QHBoxLayout()
-		button_frame = QtGui.QFrame(parent = self.makePreviewDialog)
-		cansel_button = QtGui.QPushButton('Cansel', parent = button_frame)
+		h__layout = QtWidgets.QHBoxLayout()
+		button_frame = QtWidgets.QFrame(parent = self.makePreviewDialog)
+		cansel_button = QtWidgets.QPushButton('Cansel', parent = button_frame)
 		h__layout.addWidget(cansel_button)
-		paste_button = QtGui.QPushButton('Paste', parent = button_frame)
+		paste_button = QtWidgets.QPushButton('Paste', parent = button_frame)
 		h__layout.addWidget(paste_button)
-		save_button = QtGui.QPushButton('Save', parent = button_frame)
+		save_button = QtWidgets.QPushButton('Save', parent = button_frame)
 		h__layout.addWidget(save_button)
 		button_frame.setLayout(h__layout)
 		
@@ -7557,24 +7557,24 @@ class MainWindow(QtWidgets.QMainWindow):
 		self.addTaskDialog.setWindowTitle(('Create Single Task to Asset: /// %s' % self.selected_task.asset.name))
 		
 		# root frames
-		v_layout = QtGui.QVBoxLayout()
+		v_layout = QtWidgets.QVBoxLayout()
 		# -- 
-		headers_frame = QtGui.QFrame(parent = self.addTaskDialog)
+		headers_frame = QtWidgets.QFrame(parent = self.addTaskDialog)
 		# -- buttons frame
-		button_frame = QtGui.QFrame(parent = self.addTaskDialog)
+		button_frame = QtWidgets.QFrame(parent = self.addTaskDialog)
 		# -- add frames to layout
 		v_layout.addWidget(headers_frame)
 		v_layout.addWidget(button_frame)
 		self.addTaskDialog.setLayout(v_layout)
 		
 		# buttons
-		h_layout = QtGui.QHBoxLayout()
+		h_layout = QtWidgets.QHBoxLayout()
 		# -- buttons
-		close_button = QtGui.QPushButton(parent = button_frame)
+		close_button = QtWidgets.QPushButton(parent = button_frame)
 		close_button.setMaximumWidth(100)
 		close_button.setText('Close')
 		close_button.clicked.connect(partial(self.close_window, self.addTaskDialog))
-		apply_button = QtGui.QPushButton(parent = button_frame)
+		apply_button = QtWidgets.QPushButton(parent = button_frame)
 		apply_button.setMaximumWidth(100)
 		apply_button.setText('Create Task')
 		apply_button.clicked.connect(partial(self.tm_add_task_action, self.addTaskDialog))
@@ -7602,10 +7602,10 @@ class MainWindow(QtWidgets.QMainWindow):
 		headers = ['task_name', 'input', 'output', 'activity', 'task_type', 'planned_time','price','specification', 'extension']
 		for i, head in enumerate(headers):
 			if head in self.REQUIRED_KEYS:
-				label = QtGui.QLabel('%s*' % head, parent = headers_frame)
+				label = QtWidgets.QLabel('%s*' % head, parent = headers_frame)
 			else:
-				label = QtGui.QLabel(head, parent = headers_frame)
-			line = QtGui.QLineEdit(parent = headers_frame)	
+				label = QtWidgets.QLabel(head, parent = headers_frame)
+			line = QtWidgets.QLineEdit(parent = headers_frame)	
 			# -- line context menu
 			if head in ['input', 'output', 'activity', 'task_type', 'extension']:
 				textes = []
@@ -7628,7 +7628,7 @@ class MainWindow(QtWidgets.QMainWindow):
 				for text in textes:
 					# context menu
 					line.setContextMenuPolicy( QtCore.Qt.ActionsContextMenu )
-					addgrup_action = QtGui.QAction( (text), self.myWidget)
+					addgrup_action = QtWidgets.QAction( (text), self.myWidget)
 					addgrup_action.triggered.connect(partial(self.tm_set_text, line, text))
 					line.addAction( addgrup_action )
 			
@@ -7636,7 +7636,7 @@ class MainWindow(QtWidgets.QMainWindow):
 			hh_layout.addWidget(line, i, 1)
 			
 			if head == 'task_type':
-				help_button = QtGui.QPushButton('Help', parent = headers_frame)
+				help_button = QtWidgets.QPushButton('Help', parent = headers_frame)
 				help_button.setMaximumWidth(50)
 				hh_layout.addWidget(help_button, i, 2)
 				
@@ -7734,22 +7734,22 @@ class MainWindow(QtWidgets.QMainWindow):
 			ext_dict = result[1]
 		
 		# -- add widgets
-		layout = QtGui.QVBoxLayout()
+		layout = QtWidgets.QVBoxLayout()
 		for key in ext_dict:
 			print(key)
-			frame = QtGui.QFrame(parent = self.setWindow.additional_frame)
+			frame = QtWidgets.QFrame(parent = self.setWindow.additional_frame)
 			# frame content
-			h_layout = QtGui.QHBoxLayout()
+			h_layout = QtWidgets.QHBoxLayout()
 			# -- label
-			label = QtGui.QLabel(('exe for extension:  \"' + key + '\"'), parent = frame)
+			label = QtWidgets.QLabel(('exe for extension:  \"' + key + '\"'), parent = frame)
 			h_layout.addWidget(label)
 			# -- line edit
-			line = QtGui.QLineEdit(parent = frame)
+			line = QtWidgets.QLineEdit(parent = frame)
 			line.setText(ext_dict[key])
 			h_layout.addWidget(line)
 			line.returnPressed.connect(partial(self.set_exe_string, line, key))
 			# -- button
-			button = QtGui.QPushButton(key, parent = frame)
+			button = QtWidgets.QPushButton(key, parent = frame)
 			button.clicked.connect(partial(self.set_exe_path, line, key))
 			h_layout.addWidget(button)
 			
@@ -7759,25 +7759,25 @@ class MainWindow(QtWidgets.QMainWindow):
 			layout.addWidget(frame)
 			
 		# EDIT EXTENSION
-		frame = QtGui.QFrame(parent = self.setWindow.additional_frame)
+		frame = QtWidgets.QFrame(parent = self.setWindow.additional_frame)
 		# frame content
-		h_layout = QtGui.QHBoxLayout()
+		h_layout = QtWidgets.QHBoxLayout()
 		# -- line edit
-		line = QtGui.QLineEdit(parent = frame)
+		line = QtWidgets.QLineEdit(parent = frame)
 		h_layout.addWidget(line)
 		# -- add button
-		button = QtGui.QPushButton('Add Extension', parent = frame)
+		button = QtWidgets.QPushButton('Add Extension', parent = frame)
 		button.clicked.connect(partial(self.edit_extension, line, 'ADD', self.setWindow))
 		h_layout.addWidget(button)
 		# -- remove button
-		button = QtGui.QPushButton('Remove Extension', parent = frame)
+		button = QtWidgets.QPushButton('Remove Extension', parent = frame)
 		button.clicked.connect(partial(self.edit_extension, line, 'REMOVE', self.setWindow))
 		h_layout.addWidget(button)
 		# -- final
 		frame.setLayout(h_layout)
 		layout.addWidget(frame)
 		# pass button
-		button = QtGui.QPushButton(key, parent = self.setWindow.additional_frame)
+		button = QtWidgets.QPushButton(key, parent = self.setWindow.additional_frame)
 		button.setDefault(True)
 		button.setVisible(False)
 		layout.addWidget(button)
@@ -7788,14 +7788,14 @@ class MainWindow(QtWidgets.QMainWindow):
 		main_frame = self.setWindow.main_frame
 		grid_layout = self.setWindow.gridLayout
 		#
-		label = QtGui.QLabel(parent = main_frame)
+		label = QtWidgets.QLabel(parent = main_frame)
 		label.setText('Work Folder:')
 		grid_layout.addWidget(label, row=3, column=0)
 		#
-		self.wf_line = QtGui.QLineEdit(parent = main_frame)
+		self.wf_line = QtWidgets.QLineEdit(parent = main_frame)
 		grid_layout.addWidget(self.wf_line, row=3, column=1)
 		#
-		wf_button = QtGui.QPushButton('Set Work Folder', parent = main_frame)
+		wf_button = QtWidgets.QPushButton('Set Work Folder', parent = main_frame)
 		grid_layout.addWidget(wf_button, row=3, column=2)
 
 		# fill field
@@ -7836,7 +7836,7 @@ class MainWindow(QtWidgets.QMainWindow):
 	def set_studio_action(self):
 		# get path
 		home = os.path.expanduser('~')
-		folder = QtGui.QFileDialog.getExistingDirectory(self, dir = home)
+		folder = QtWidgets.QFileDialog.getExistingDirectory(self, dir = home)
 		
 		if folder:
 			self.setWindow.set_studio_field.setText(str(folder))
@@ -7872,7 +7872,7 @@ class MainWindow(QtWidgets.QMainWindow):
 	def set_tmp_path_action(self):
 		# get path
 		home = os.path.expanduser('~')
-		folder = QtGui.QFileDialog.getExistingDirectory(self, dir = home)
+		folder = QtWidgets.QFileDialog.getExistingDirectory(self, dir = home)
 		
 		if folder:
 			self.setWindow.set_tmp_field.setText(str(folder))
@@ -7904,7 +7904,7 @@ class MainWindow(QtWidgets.QMainWindow):
 	def set_convert_path_action(self):
 		# get path
 		home = os.path.expanduser('~')
-		file_ = QtGui.QFileDialog.getOpenFileName(self, dir = home)[0]
+		file_ = QtWidgets.QFileDialog.getOpenFileName(self, dir = home)[0]
 		
 		if file_:
 			self.setWindow.set_convert_exe_field.setText(str(file_))
@@ -7940,7 +7940,7 @@ class MainWindow(QtWidgets.QMainWindow):
 	def set_the_work_folder_action(self):
 		# get path
 		home = os.path.expanduser('~')
-		folder = QtGui.QFileDialog.getExistingDirectory(self, dir = home)
+		folder = QtWidgets.QFileDialog.getExistingDirectory(self, dir = home)
 		#print(folder)
 		#
 		if folder:
@@ -7970,7 +7970,7 @@ class MainWindow(QtWidgets.QMainWindow):
 	def set_exe_path(self, line, key):
 		# get path
 		home = os.path.expanduser('~')
-		file_path = QtGui.QFileDialog.getOpenFileName(self, dir = home)[0]
+		file_path = QtWidgets.QFileDialog.getOpenFileName(self, dir = home)[0]
 		
 		if file_path:
 			line.setText(str(file_path))
@@ -8120,16 +8120,16 @@ class MainWindow(QtWidgets.QMainWindow):
 		dialog.resize(200, 100)
 		
 		#
-		v_layout = QtGui.QVBoxLayout()
-		button_frame = QtGui.QFrame(parent = dialog)
+		v_layout = QtWidgets.QVBoxLayout()
+		button_frame = QtWidgets.QFrame(parent = dialog)
 		
 		# login_button
-		login_button = QtGui.QPushButton()
+		login_button = QtWidgets.QPushButton()
 		login_button.setMaximumWidth(100)
 		login_button.setText('Login')
 		login_button.clicked.connect(partial(self.login_or_registration_to_login, dialog))
 		# reg_button
-		reg_button = QtGui.QPushButton()
+		reg_button = QtWidgets.QPushButton()
 		reg_button.setMaximumWidth(100)
 		reg_button.setText('Registration')
 		reg_button.clicked.connect(partial(self.login_or_registration_to_registration, dialog))
@@ -8198,23 +8198,23 @@ class MainWindow(QtWidgets.QMainWindow):
 	def message(self, m, i):
 		#m = str(m)
 		
-		mBox = QtGui.QMessageBox()
+		mBox = QtWidgets.QMessageBox()
 		mBox.setText(m)
-		#mBox.setStandardButtons( QtGui.QMessageBox.Cancel | QtGui.QMessageBox.Ok )
-		ok_button = mBox.addButton(QtGui.QMessageBox.Ok)
-		cancel_button = mBox.addButton(QtGui.QMessageBox.Cancel)
+		#mBox.setStandardButtons( QtWidgets.QMessageBox.Cancel | QtWidgets.QMessageBox.Ok )
+		ok_button = mBox.addButton(QtWidgets.QMessageBox.Ok)
+		cancel_button = mBox.addButton(QtWidgets.QMessageBox.Cancel)
     
 		if i==1:
-			mBox.setIcon(QtGui.QMessageBox.Information)
+			mBox.setIcon(QtWidgets.QMessageBox.Information)
 			mBox.setWindowTitle('Info')
 		elif i == 2:
-			mBox.setIcon(QtGui.QMessageBox.Warning)
+			mBox.setIcon(QtWidgets.QMessageBox.Warning)
 			mBox.setWindowTitle('Warning!')
 		elif i == 3:
-			mBox.setIcon(QtGui.QMessageBox.Critical)
+			mBox.setIcon(QtWidgets.QMessageBox.Critical)
 			mBox.setWindowTitle('Error!')
 		elif i == 0:
-			mBox.setIcon(QtGui.QMessageBox.Question)
+			mBox.setIcon(QtWidgets.QMessageBox.Question)
 			mBox.setWindowTitle('Confirm!')
     
 		com = mBox.exec_()
@@ -8226,9 +8226,10 @@ class MainWindow(QtWidgets.QMainWindow):
       
 	def print_data(self, *args):
 		print(args)
-		
-QtCore.QCoreApplication.setAttribute(QtCore.Qt.AA_ShareOpenGLContexts)
-app = QtWidgets.QApplication(sys.argv)
-mw = MainWindow()
-mw.show()
-app.exec_()
+
+if __name__ == '__main__':
+    QtCore.QCoreApplication.setAttribute(QtCore.Qt.AA_ShareOpenGLContexts)
+    app = QtWidgets.QApplication(sys.argv)
+    mw = MainWindow()
+    mw.show()
+    app.exec_()
