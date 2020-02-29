@@ -6106,6 +6106,8 @@ class MainWindow(QtWidgets.QMainWindow):
 		SEARCH_IDENTIFIERS = ('#','@')
 		
 		#
+		if self.db_group.dict_by_name is None:
+			self.db_group.get_list()
 		group_ob = self.db_group.dict_by_name.get(group_name)
 				
 		#

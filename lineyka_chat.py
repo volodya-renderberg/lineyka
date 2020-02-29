@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 
 import sys
-from PySide2 import QtCore, QtGui, QtUiTools, QtSql
+from PySide2 import QtCore, QtGui, QtUiTools, QtSql, QtWidgets
 import os
 import shutil
 import webbrowser
@@ -65,25 +65,25 @@ class lineyka_chat:
 		
 		# add button '\u9758'
 		#root_layout = window.buttonVerticalLayout
-		#layout = QtGui.QHBoxLayout()
+		#layout = QtWidgets.QHBoxLayout()
 		#root_layout.addLayout(layout)
 		layout=window.pagesHorizontalLayout
 		
 		# widgets
-		pages_label = QtGui.QLabel()
-		next_button = QtGui.QPushButton(u'\u25B6')
+		pages_label = QtWidgets.QLabel()
+		next_button = QtWidgets.QPushButton(u'\u25B6')
 		next_button.setFlat(True)
 		next_button.clicked.connect(partial(self.flipping_page, 'next', pages_label, window))
-		previous_button = QtGui.QPushButton(u'\u25C0')
+		previous_button = QtWidgets.QPushButton(u'\u25C0')
 		previous_button.setFlat(True)
 		previous_button.clicked.connect(partial(self.flipping_page, 'previous', pages_label, window))
 		#
-		label2 = QtGui.QLabel('Per page:')
+		label2 = QtWidgets.QLabel('Per page:')
 		#
-		num_field = QtGui.QLineEdit()
+		num_field = QtWidgets.QLineEdit()
 		num_field.setMaxLength(3)
 		num_field.setValidator(QtGui.QIntValidator(1, 100))
-		num_field.setText(unicode(self.num_topics))
+		num_field.setText(str(self.num_topics))
 		num_field.textChanged.connect(partial(self.rebild_size_pages, window, pages_label))
 		
 		#
@@ -115,6 +115,8 @@ class lineyka_chat:
 	def rebild_size_pages(self, *args):
 		pass
 		#print(args)
+		#print(args[2])
+		#print('*'*3)
 		#return
 		num = int(args[2])
 		if not num:
@@ -175,7 +177,7 @@ class lineyka_chat:
 			i = i-1
 		
 		# size item
-		tool_box.setSizePolicy(QtGui.QSizePolicy(QtGui.QSizePolicy.Expanding, QtGui.QSizePolicy.Minimum))
+		tool_box.setSizePolicy(QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Minimum))
 		
 		if topics:
 			#for topic in topics:
@@ -195,17 +197,17 @@ class lineyka_chat:
 				#lines = json.loads(topic['topic'])
 				lines = topic['topic']
 				
-				topic_widget = QtGui.QFrame()
-				v_layout = QtGui.QVBoxLayout()
+				topic_widget = QtWidgets.QFrame()
+				v_layout = QtWidgets.QVBoxLayout()
 				for key in lines:
-					widget = QtGui.QFrame(parent = topic_widget)
-					layout = QtGui.QHBoxLayout()
+					widget = QtWidgets.QFrame(parent = topic_widget)
+					layout = QtWidgets.QHBoxLayout()
 					# button
 					if lines[key][1]:
-						button = QtGui.QPushButton(QtGui.QIcon(lines[key][1]), '', parent = widget)
+						button = QtWidgets.QPushButton(QtGui.QIcon(lines[key][1]), '', parent = widget)
 						button.setFlat(True)
 					else:
-						button = QtGui.QPushButton('not Image', parent = widget)
+						button = QtWidgets.QPushButton('not Image', parent = widget)
 						button.setFlat(True)
 					button.setIconSize(QtCore.QSize(100, 100))
 					button.setFixedSize(100, 100)
@@ -214,7 +216,7 @@ class lineyka_chat:
 					layout.addWidget(button)
 					
 					# text field
-					text_field = QtGui.QTextEdit(lines[key][2], parent = widget)
+					text_field = QtWidgets.QTextEdit(lines[key][2], parent = widget)
 					text_field.setMaximumHeight(100)
 					text_field.setFrameStyle(0)
 					layout.addWidget(text_field)
@@ -230,7 +232,7 @@ class lineyka_chat:
 				#
 				if topic['author'] == self.db_artist.nik_name:
 					topic_widget.setContextMenuPolicy( QtCore.Qt.ActionsContextMenu )
-					addgrup_action = QtGui.QAction( 'Edit messege', window)
+					addgrup_action = QtWidgets.QAction( 'Edit messege', window)
 					addgrup_action.triggered.connect(partial(self.chat_edit_topic_ui, topic_widget))
 					#addgrup_action.triggered.connect(partial(self.chat_edit_topic_ui))
 					topic_widget.addAction( addgrup_action )
@@ -259,17 +261,17 @@ class lineyka_chat:
 		edit_window.line_data = {}
 		
 		# V
-		v_layout = QtGui.QVBoxLayout()
+		v_layout = QtWidgets.QVBoxLayout()
 		lines = in_widget.topic['topic']
 		for i, key in enumerate(lines.keys()):
-			widget = QtGui.QFrame(parent = edit_window.new_topics_frame)
-			layout = QtGui.QHBoxLayout()
+			widget = QtWidgets.QFrame(parent = edit_window.new_topics_frame)
+			layout = QtWidgets.QHBoxLayout()
 			# button
 			if lines[key][1]:
-				button = QtGui.QPushButton(QtGui.QIcon(lines[key][1]), '', parent = widget)
+				button = QtWidgets.QPushButton(QtGui.QIcon(lines[key][1]), '', parent = widget)
 				button.setFlat(True)
 			else:
-				button = QtGui.QPushButton('not Image', parent = widget)
+				button = QtWidgets.QPushButton('not Image', parent = widget)
 				button.setFlat(True)
 			button.setIconSize(QtCore.QSize(100, 100))
 			button.setFixedSize(100, 100)
@@ -277,14 +279,14 @@ class lineyka_chat:
 			button.clicked.connect(partial(self.chat_image_view_ui, button))
 			# context
 			button.setContextMenuPolicy( QtCore.Qt.ActionsContextMenu )
-			addgrup_action = QtGui.QAction( 'Inser Image From Clipboard', edit_window)
+			addgrup_action = QtWidgets.QAction( 'Inser Image From Clipboard', edit_window)
 			addgrup_action.triggered.connect(partial(self.chat_add_img_to_line, button))
 			button.addAction( addgrup_action )
 			
 			layout.addWidget(button)
 			
 			# text field
-			text_field = QtGui.QTextEdit(lines[key][2], parent = widget)
+			text_field = QtWidgets.QTextEdit(lines[key][2], parent = widget)
 			text_field.setMaximumHeight(100)
 			text_field.setFrameStyle(0)
 			layout.addWidget(text_field)
@@ -326,10 +328,10 @@ class lineyka_chat:
 		
 		# ****** add first line
 		# H
-		h_layout = QtGui.QHBoxLayout()
-		line_frame = QtGui.QFrame(parent = add_window.new_topics_frame)
+		h_layout = QtWidgets.QHBoxLayout()
+		line_frame = QtWidgets.QFrame(parent = add_window.new_topics_frame)
 		# button
-		button = QtGui.QPushButton('img', parent = line_frame)
+		button = QtWidgets.QPushButton('img', parent = line_frame)
 		button.setFixedSize(100, 100)
 		button.img_path = False
 		button.setFlat(True)
@@ -337,19 +339,19 @@ class lineyka_chat:
 		# -- button connect
 		button.clicked.connect(partial(self.chat_image_view_ui, button))
 		button.setContextMenuPolicy( QtCore.Qt.ActionsContextMenu )
-		addgrup_action = QtGui.QAction( 'Inser Image From Clipboard', add_window)
+		addgrup_action = QtWidgets.QAction( 'Inser Image From Clipboard', add_window)
 		addgrup_action.triggered.connect(partial(self.chat_add_img_to_line, button))
 		button.addAction( addgrup_action )
 		
 		# text field
-		text_field = QtGui.QTextEdit(parent = line_frame)
+		text_field = QtWidgets.QTextEdit(parent = line_frame)
 		#text_field = QtGui.QTextBrowser(parent = line_frame)
 		text_field.setMaximumHeight(100)
 		text_field.setFrameStyle(0)
 		h_layout.addWidget(text_field)
 		line_frame.setLayout(h_layout)
 		# V
-		v_layout = QtGui.QVBoxLayout()
+		v_layout = QtWidgets.QVBoxLayout()
 		v_layout.addWidget(line_frame)
 		add_window.new_topics_frame.setLayout(v_layout)
 		
@@ -369,7 +371,7 @@ class lineyka_chat:
 		rand  = uuid.uuid4().hex
 		img_path = os.path.join(self.db_chat.tmp_folder, ('tmp_image_' + rand + '.png')).replace('\\','/')
 		
-		clipboard = QtGui.QApplication.clipboard()
+		clipboard = QtWidgets.QApplication.clipboard()
 		img = clipboard.image()
 		if img:
 			img.save(img_path)
@@ -402,7 +404,7 @@ class lineyka_chat:
 		img_window.setWindowTitle(button.img_path)
 			
 		img_window.image_label.setBackgroundRole(QtGui.QPalette.Base)
-		img_window.image_label.setSizePolicy(QtGui.QSizePolicy.Minimum, QtGui.QSizePolicy.Minimum)
+		img_window.image_label.setSizePolicy(QtWidgets.QSizePolicy.Minimum, QtWidgets.QSizePolicy.Minimum)
 		img_window.image_label.setScaledContents(True)
 		
 		img_window.image_label.setPixmap(QtGui.QPixmap.fromImage(image))
@@ -416,10 +418,10 @@ class lineyka_chat:
 	def chat_add_line_to_message(self, add_window, v_layout):
 		pass
 		# H
-		h_layout = QtGui.QHBoxLayout()
-		line_frame = QtGui.QFrame(parent = add_window.new_topics_frame)
+		h_layout = QtWidgets.QHBoxLayout()
+		line_frame = QtWidgets.QFrame(parent = add_window.new_topics_frame)
 		# button
-		button = QtGui.QPushButton('img', parent = line_frame)
+		button = QtWidgets.QPushButton('img', parent = line_frame)
 		button.setFixedSize(100, 100)
 		button.img_path = False
 		button.setFlat(True)
@@ -427,12 +429,12 @@ class lineyka_chat:
 		# -- button connect
 		button.clicked.connect(partial(self.chat_image_view_ui, button))
 		button.setContextMenuPolicy( QtCore.Qt.ActionsContextMenu )
-		addgrup_action = QtGui.QAction( 'Inser Image From Clipboard', add_window)
+		addgrup_action = QtWidgets.QAction( 'Inser Image From Clipboard', add_window)
 		addgrup_action.triggered.connect(partial(self.chat_add_img_to_line, button))
 		button.addAction( addgrup_action )
 		
 		# text field
-		text_field = QtGui.QTextEdit(parent = line_frame)
+		text_field = QtWidgets.QTextEdit(parent = line_frame)
 		text_field.setMaximumHeight(100)
 		text_field.setFrameStyle(0)
 		h_layout.addWidget(text_field)
@@ -450,6 +452,9 @@ class lineyka_chat:
 		
 	def chat_new_topic_action(self, add_window, status, message_id=False):
 		nik_name = self.db_artist.nik_name
+		if not self.db_chat.convert_exe:
+			self.message('Convert_exe is not defined!\nLook: MainWindow menu/setting/set studio', 3)
+			return
 		
 		# get color
 		if status == 'manager' or status == 'manager_to_outsource':
@@ -530,3 +535,32 @@ class lineyka_chat:
 		
 	def chat_edit_topic_action(self, add_window, status):
 		pass
+	
+	def message(self, m, i):
+		#m = str(m)
+		
+		mBox = QtWidgets.QMessageBox()
+		mBox.setText(m)
+		#mBox.setStandardButtons( QtWidgets.QMessageBox.Cancel | QtWidgets.QMessageBox.Ok )
+		ok_button = mBox.addButton(QtWidgets.QMessageBox.Ok)
+		cancel_button = mBox.addButton(QtWidgets.QMessageBox.Cancel)
+    
+		if i==1:
+			mBox.setIcon(QtWidgets.QMessageBox.Information)
+			mBox.setWindowTitle('Info')
+		elif i == 2:
+			mBox.setIcon(QtWidgets.QMessageBox.Warning)
+			mBox.setWindowTitle('Warning!')
+		elif i == 3:
+			mBox.setIcon(QtWidgets.QMessageBox.Critical)
+			mBox.setWindowTitle('Error!')
+		elif i == 0:
+			mBox.setIcon(QtWidgets.QMessageBox.Question)
+			mBox.setWindowTitle('Confirm!')
+    
+		com = mBox.exec_()
+    
+		if mBox.clickedButton() == ok_button:
+			return(True)
+		elif mBox.clickedButton() == cancel_button:
+			return(False)
