@@ -1,1 +1,52 @@
-echo $PATH
+#!/bin/bash
+
+#(1) test python version
+version=$(python3 -V 2>&1 | grep -Po '(?<=Python )(.+)')
+parsedVersion=$(echo "${version//./}")
+
+lenth=$( echo -n $parsedVersion | wc -c)
+
+if [ $lenth -gt 3 ]
+then
+d=$(( $lenth - 3 )); parsedVersion=${parsedVersion::${#parsedVersion}-$d}
+fi
+
+if [ $parsedVersion -ge 373 ]
+then
+echo "Python version: $version"
+else
+echo "Installation failed! Install python version 3.7.3 or higher. Exists python version: $version"; exit
+fi
+
+#(2) make env
+if [ -d ~/.lineyka ]
+then
+echo "./lineyka exists"
+    if [ -d ~/.lineyka/env ]
+    then
+    rm -r ~/.lineyka/env | echo "removed ~/.lineyka/env"
+    fi
+python3 -m venv ~/.lineyka/env | echo "Created env" 
+else
+echo "./lineyka no exists"
+mkdir ~/.lineyka | python3 -m venv ~/.lineyka/env | echo "Created ~/.lineyka and env"
+fi
+
+#(3) installing libs to env
+source ~/.lineyka/env/bin/activate
+# pip install -r requirements.txt
+
+#(4) installing other dependencies
+depsList=(imagemagick)
+for App in ${depsList[@]};
+do
+    exApp=`dpkg -s $App | grep "Status"`
+    if [ -n "$exApp" ]
+    then
+    echo "$App allready exists"
+    else
+    sudo apt-get install $App | echo "Installed $App"
+    fi
+done
+
+#(5) 
