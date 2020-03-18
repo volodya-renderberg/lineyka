@@ -2480,7 +2480,7 @@ class MainWindow(QtWidgets.QMainWindow):
 		
 		menu_items = []
 		if item.column_name == 'extension':
-			menu_items = self.db_set_of_tasks.extensions
+			menu_items = self.db_set_of_tasks.EXTENSIONS
 		elif item.column_name == 'task_type':
 			menu_items = self.db_set_of_tasks.task_types
 		elif item.column_name == 'activity':
@@ -7346,7 +7346,7 @@ class MainWindow(QtWidgets.QMainWindow):
 		window.setAttribute(QtCore.Qt.WA_DeleteOnClose, True)
 		
 		# edit window
-		content_list = self.db_studio.extensions
+		content_list = self.db_studio.EXTENSIONS
 		content_list.sort()
 		window.setWindowTitle(('Change Extension: %s' % self.selected_task.task_name))
 		window.combo_dialog_label.setText('Select Extension:')
@@ -7473,15 +7473,15 @@ class MainWindow(QtWidgets.QMainWindow):
 	
 	def tm_paste_image_from_clipboard(self, img_label): # v2
 		rand  = uuid.uuid4().hex
-		img_path = os.path.normpath(os.path.join(self.db_studio.tmp_folder, ('tmp_image_%s.png' % rand)))
+		img_path = os.path.normpath(os.path.join(self.db_studio.TMP_FOLDER, ('tmp_image_%s.png' % rand)))
 		
 		clipboard = QtGui.QApplication.clipboard()
 		img = clipboard.image()
 		if img:
 			img.save(img_path)
-			cmd = '%s %s -resize 300 %s' % (os.path.normpath(self.db_studio.convert_exe), img_path, img_path)
-			cmd2 = '%s %s -resize 300x300 %s' % (os.path.normpath(self.db_studio.convert_exe), img_path, img_path)
-			cmd3 = '\"%s\" \"%s\" -resize 300 \"%s\"' % (os.path.normpath(self.db_studio.convert_exe), img_path, img_path)
+			cmd = '%s %s -resize 300 %s' % (os.path.normpath(self.db_studio.CONVERT_EXE), img_path, img_path)
+			cmd2 = '%s %s -resize 300x300 %s' % (os.path.normpath(self.db_studio.CONVERT_EXE), img_path, img_path)
+			cmd3 = '\"%s\" \"%s\" -resize 300 \"%s\"' % (os.path.normpath(self.db_studio.CONVERT_EXE), img_path, img_path)
 			print(cmd)
 			print(cmd2)
 			print(cmd3)
@@ -7521,9 +7521,9 @@ class MainWindow(QtWidgets.QMainWindow):
 		shutil.copyfile(window.img_path, save_path)
 		
 		# -- resize
-		cmd = '%s %s -resize 100 %s' % (os.path.normpath(self.db_studio.convert_exe), window.img_path, tmp_icon_path)
-		cmd2 = '%s %s -resize 100x100 %s' % (os.path.normpath(self.db_studio.convert_exe), window.img_path, tmp_icon_path)
-		cmd3 = '\"%s\" \"%s\" -resize 100 \"%s\"' % (os.path.normpath(self.db_studio.convert_exe), window.img_path, tmp_icon_path)
+		cmd = '%s %s -resize 100 %s' % (os.path.normpath(self.db_studio.CONVERT_EXE), window.img_path, tmp_icon_path)
+		cmd2 = '%s %s -resize 100x100 %s' % (os.path.normpath(self.db_studio.CONVERT_EXE), window.img_path, tmp_icon_path)
+		cmd3 = '\"%s\" \"%s\" -resize 100 \"%s\"' % (os.path.normpath(self.db_studio.CONVERT_EXE), window.img_path, tmp_icon_path)
 		try:
 			os.system(cmd)
 		except:
@@ -7614,7 +7614,7 @@ class MainWindow(QtWidgets.QMainWindow):
 				if head == 'activity':
 					textes = self.selected_task.asset.ACTIVITY_FOLDER[self.selected_task.asset.type].keys()
 				elif head == 'extension':
-					textes = self.selected_task.extensions
+					textes = self.selected_task.EXTENSIONS
 				elif head == 'task_type':
 					textes = self.selected_task.task_types
 				elif head == 'input':
@@ -7803,14 +7803,14 @@ class MainWindow(QtWidgets.QMainWindow):
 		# fill field
 		data = self.db_studio.get_studio()
 		if data[0]:
-			self.setWindow.set_studio_field.setText(str(self.db_studio.studio_folder))
-			self.setWindow.set_tmp_field.setText(str(self.db_studio.tmp_folder))
-			self.setWindow.set_convert_exe_field.setText(str(self.db_studio.convert_exe))
-			self.wf_line.setText(str(self.db_studio.work_folder))
+			self.setWindow.set_studio_field.setText(str(self.db_studio.STUDIO_FOLDER))
+			self.setWindow.set_tmp_field.setText(str(self.db_studio.TMP_FOLDER))
+			self.setWindow.set_convert_exe_field.setText(str(self.db_studio.CONVERT_EXE))
+			self.wf_line.setText(str(self.db_studio.WORK_FOLDER))
 	
 		else:
-			self.setWindow.set_studio_field.setText('set studio_folder')
-			self.setWindow.set_tmp_field.setText('set tmp_folder')
+			self.setWindow.set_studio_field.setText('set STUDIO_FOLDER')
+			self.setWindow.set_tmp_field.setText('set TMP_FOLDER')
 			print(data[0])
 			
 		# connect fields
@@ -8098,10 +8098,10 @@ class MainWindow(QtWidgets.QMainWindow):
     
 	#*********************** UTILITS *******************************************
 	def launcher(self):
-		if not self.db_studio.studio_folder:
+		if not self.db_studio.STUDIO_FOLDER:
 			self.message('Path to the studio directory is not specified or not correct!', 2)
 			self.set_studio_ui()
-		elif not os.path.exists(self.db_studio.studio_folder):
+		elif not os.path.exists(self.db_studio.STUDIO_FOLDER):
 			self.message('Path to the studio directory is not specified or not correct!', 2)
 			self.set_studio_ui()
 		elif not self.artist.nik_name:

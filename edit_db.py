@@ -43,17 +43,18 @@ class studio:
     Создание экземпляра обязательно, прежде всего.
     """
 
-    farme_offset = 100
+    HOST = "http://localhost:8000/"
+    FARME_OFFSET = 100
     """int: Номер кадра, который будет считаться стартовым для сцен анимации. """
-    studio_folder = False
+    STUDIO_FOLDER = False
     """str: Директория студии. """
-    tmp_folder = False
+    TMP_FOLDER = False
     """str: *tmp* директория пользователя, в неё копируются открываемые сцены. """
-    work_folder = False
+    WORK_FOLDER = False
     """str: Директория для локального хранения ассетов пользователя. Создаётся вся файловая структура ``project/assets/asset/activity/version_dir/file``. Определяе методом :func:`edit_db.studio.set_work_folder`. """
-    convert_exe = False
+    CONVERT_EXE = False
     """str: Путь к исполняемому файлу *convert* приложения 'Imagemagick' """
-    studio_database = ['sqlite3', False]
+    STUDIO_DATABASE = ['sqlite3', False]
     """list: Определение используемой в студии базы данных. """
     init_path = False
     """str: ``?`` """
@@ -65,7 +66,7 @@ class studio:
     """list: ``?`` """
     list_active_projects = []
     """list: ``?`` """
-    extensions = ['.blend', '.ma', '.tiff', '.ntp']
+    EXTENSIONS = ['.blend', '.ma', '.tiff', '.ntp']
     """list: Список возможных расширений для рабочих файлов, которым будет сопоставляться приложение. 
     
     Заполняется в :func:`edit_db.studio.get_studio`
@@ -505,10 +506,10 @@ class studio:
         if not os.path.exists(self.init_path):
             # make jason
             d = {
-                'studio_folder': None,
-                'work_folder': None,
-                'convert_exe': None,
-                'tmp_folder': tempfile.gettempdir(),
+                'STUDIO_FOLDER': None,
+                'WORK_FOLDER': None,
+                'CONVERT_EXE': None,
+                'TMP_FOLDER': tempfile.gettempdir(),
                 'use_database': ['sqlite3', False],
                 }
             m_json = json.dumps(d, sort_keys=True, indent=4)
@@ -556,7 +557,7 @@ class studio:
         try:
             with open(init_path, 'r') as read:
                 data = json.load(read)
-                data['studio_folder'] = path
+                data['STUDIO_FOLDER'] = path
                 read.close()
         except:
             return(False, "****** in set_studio() -> init file  can not be read")
@@ -568,13 +569,13 @@ class studio:
         except:
             return(False, "****** in set_studio() ->  init file  can not be read")
 
-        self.studio_folder = path
+        self.STUDIO_FOLDER = path
         
         return(True, 'Ok')
 
     @classmethod
     def set_tmp_dir(self, path):
-        """Определение пользовательской *tmp* директории - :attr:`edit_db.studio.tmp_folder`, в неё копируются открываемые сцены.
+        """Определение пользовательской *tmp* директории - :attr:`edit_db.studio.TMP_FOLDER`, в неё копируются открываемые сцены.
         
         Parameters
         ----------
@@ -598,7 +599,7 @@ class studio:
         try:
             with open(init_path, 'r') as read:
                 data = json.load(read)
-                data['tmp_folder'] = path
+                data['TMP_FOLDER'] = path
                 read.close()
         except:
             return "****** init file  can not be read"
@@ -610,13 +611,13 @@ class studio:
         except:
             return "****** init file  can not be read"
 
-        self.tmp_folder = path
+        self.TMP_FOLDER = path
                 
         return(True, 'Ok')
 
     @classmethod
     def set_convert_exe_path(self, path):
-        """Определение пути до исполняемого файла *convert* приложения ‘Imagemagick’, параметр :attr:`edit_db.studio.convert_exe`.
+        """Определение пути до исполняемого файла *convert* приложения ‘Imagemagick’, параметр :attr:`edit_db.studio.CONVERT_EXE`.
         
         Parameters
         ----------
@@ -641,7 +642,7 @@ class studio:
         try:
             with open(init_path, 'r') as read:
                 data = json.load(read)
-                data['convert_exe'] = NormPath(path)
+                data['CONVERT_EXE'] = NormPath(path)
                 read.close()
         except:
             return(False, "****** init file  can not be read")
@@ -653,13 +654,13 @@ class studio:
         except:
             return(False, "****** init file  can not be read")
 
-        self.convert_exe = path
+        self.CONVERT_EXE = path
         
         return(True, 'Ok!')
 
     @classmethod
     def set_work_folder(self, path):
-        """Определение директории для локального хранения ассетов пользователя, параметр :attr:`edit_db.studio.work_folder`.
+        """Определение директории для локального хранения ассетов пользователя, параметр :attr:`edit_db.studio.WORK_FOLDER`.
         
         Parameters
         ----------
@@ -683,7 +684,7 @@ class studio:
         try:
             with open(init_path, 'r') as read:
                 data = json.load(read)
-                data['work_folder'] = NormPath(path)
+                data['WORK_FOLDER'] = NormPath(path)
                 read.close()
         except:
             return(False, "****** init file  can not be read")
@@ -695,7 +696,7 @@ class studio:
         except:
             return(False, "****** init file  can not be read")
 
-        self.work_folder = path
+        self.WORK_FOLDER = path
         
         return True, 'Ok'
 
@@ -730,7 +731,7 @@ class studio:
             return (False, 'Wrong version format "%s"' %  str(version))
 
     def _template_get_work_path(self, c_task, version=False):
-        """Шаблонный путь к файлу или активити в рабочей директории пользователя (:attr:`edit_db.studio.work_folder`).
+        """Шаблонный путь к файлу или активити в рабочей директории пользователя (:attr:`edit_db.studio.WORK_FOLDER`).
         
         Examples
         --------
@@ -761,10 +762,10 @@ class studio:
         """
         pass
         # exists work folder
-        if not self.work_folder:
+        if not self.WORK_FOLDER:
             return(False, 'Working directory not defined!')
-        elif not os.path.exists(self.work_folder):
-            return(False, 'The path "%s" to working directory does not exist!' % self.work_folder)
+        elif not os.path.exists(self.WORK_FOLDER):
+            return(False, 'The path "%s" to working directory does not exist!' % self.WORK_FOLDER)
         
         if version or version==0:
             # test version
@@ -772,10 +773,10 @@ class studio:
             if not b:
                 return (b, str_version)
             # file path
-            return (True, NormPath(os.path.join(self.work_folder, c_task.asset.project.name, 'assets', c_task.asset.name, c_task.activity, str_version, '%s%s' % (c_task.asset.name, c_task.extension))))
+            return (True, NormPath(os.path.join(self.WORK_FOLDER, c_task.asset.project.name, 'assets', c_task.asset.name, c_task.activity, str_version, '%s%s' % (c_task.asset.name, c_task.extension))))
         else:
             # activity path
-            return (True, NormPath(os.path.join(self.work_folder, c_task.asset.project.name, 'assets', c_task.asset.name, c_task.activity)))
+            return (True, NormPath(os.path.join(self.WORK_FOLDER, c_task.asset.project.name, 'assets', c_task.asset.name, c_task.activity)))
 
     def _template_get_push_path(self, c_task, version=False, branches=False, look=False): # v2
         """Шаблонный путь к файлу или активити *push* версии на сервере студии.
@@ -1004,18 +1005,18 @@ class studio:
         
         Заполняемые атрибуты:
         
-        * :attr:`edit_db.studio.studio_folder`
-        * :attr:`edit_db.studio.work_folder`
-        * :attr:`edit_db.studio.convert_exe`
-        * :attr:`edit_db.studio.tmp_folder`
-        * :attr:`edit_db.studio.studio_database`
-        * :attr:`edit_db.studio.extensions`
+        * :attr:`edit_db.studio.STUDIO_FOLDER`
+        * :attr:`edit_db.studio.WORK_FOLDER`
+        * :attr:`edit_db.studio.CONVERT_EXE`
+        * :attr:`edit_db.studio.TMP_FOLDER`
+        * :attr:`edit_db.studio.STUDIO_DATABASE`
+        * :attr:`edit_db.studio.EXTENSIONS`
         * :attr:`edit_db.studio.soft_data`
         
         Returns
         -------
         tuple
-            (*True*, [self.studio_folder, self.tmp_folder]) или (*False*, comment)
+            (*True*, [self.STUDIO_FOLDER, self.TMP_FOLDER]) или (*False*, comment)
         
         """
         
@@ -1025,17 +1026,17 @@ class studio:
         try:
             with open(self.init_path, 'r') as read:
                 data = json.load(read)
-                #self.studio_folder = data['studio_folder']
-                #self.tmp_folder = data['tmp_folder']
+                #self.STUDIO_FOLDER = data['STUDIO_FOLDER']
+                #self.TMP_FOLDER = data['TMP_FOLDER']
                 read.close()
         except:
             return(False, "****** init file  can not be read")
         try:
-            self.studio_folder = data['studio_folder']
-            self.work_folder = data['work_folder']
-            self.convert_exe = data['convert_exe']
-            self.tmp_folder = data['tmp_folder']
-            self.studio_database = data['use_database']
+            self.STUDIO_FOLDER = data['STUDIO_FOLDER']
+            self.WORK_FOLDER = data['WORK_FOLDER']
+            self.CONVERT_EXE = data['CONVERT_EXE']
+            self.TMP_FOLDER = data['TMP_FOLDER']
+            self.STUDIO_DATABASE = data['use_database']
         except Exception as e:
             print(e)
             
@@ -1050,18 +1051,18 @@ class studio:
                     self.list_active_projects.append(key)
         '''
                 
-        # fill self.extensions
+        # fill self.EXTENSIONS
         try:
             with open(self.set_path, 'r') as read:
                 data = json.load(read)
-                self.extensions = data['extension'].keys()
+                self.EXTENSIONS = data['extension'].keys()
                 self.soft_data = data['extension']
                 read.close()
         except:
             return(False, 'in get_studio -> not read user_setting.json!')
         
         print('studio.get_studio')
-        return True, [self.studio_folder, self.tmp_folder]
+        return True, [self.STUDIO_FOLDER, self.TMP_FOLDER]
 
     # ****** SETTING ******
     # ------- EXTENSION -------------
@@ -1195,12 +1196,12 @@ class database():
 
     def __init__(self):
         self.sqlite3_db_folder_attr = {
-            'studio': 'studio_folder',
+            'studio': 'STUDIO_FOLDER',
             'project': 'path',
             }
         
         self.use_db_attr = {
-            'studio': 'studio_database',
+            'studio': 'STUDIO_DATABASE',
             'project': 'project_database',
             }
 
@@ -1996,7 +1997,7 @@ class project(studio):
             return(False, 'No options!')
             
         elif not project_path:
-            project_path = os.path.join(self.studio_folder, name)
+            project_path = os.path.join(self.STUDIO_FOLDER, name)
             #self.path=project_path
             try:
                 os.mkdir(project_path)
@@ -2940,7 +2941,7 @@ class asset(studio):
         # 7 - copy preview images
         
         # (0)
-        if not self.work_folder:
+        if not self.WORK_FOLDER:
             return(False, 'Working directory not defined!')
         
         # (1) edit name
@@ -5085,7 +5086,7 @@ class task(studio):
         return(True, 'Ok!')
 
     def commit(self, work_path, description, branch=False, artist_ob=False):
-        """Запись новой рабочей версии в ``work`` директорию пользователя (:attr:`edit_db.studio.work_folder`).
+        """Запись новой рабочей версии в ``work`` директорию пользователя (:attr:`edit_db.studio.WORK_FOLDER`).
         
         Parameters
         ----------
@@ -5247,10 +5248,10 @@ class task(studio):
                 return(False, 'No application found for this extension "%s"' % self.extension)
             
             # get tmp_path
-            if not os.path.exists(self.tmp_folder):
+            if not os.path.exists(self.TMP_FOLDER):
                 return(False, 'Tmp directory is not defined!')
             new_name = '%s_%s%s' % (os.path.basename(path).split('.')[0], uuid.uuid4().hex, self.extension)
-            tmp_path = NormPath(os.path.join(self.tmp_folder, new_name))
+            tmp_path = NormPath(os.path.join(self.TMP_FOLDER, new_name))
             
             # copy to tmp_path
             shutil.copyfile(path, tmp_path)
@@ -5467,7 +5468,7 @@ class task(studio):
                     
         # get tmp_file_path
         tmp_file_name = '%s_%s%s' % (task_ob.task_name.replace(':','_', 2), hex(random.randint(0, 1000000000)).replace('0x', ''), task_ob.extension)
-        tmp_file_path = os.path.join(self.tmp_folder, tmp_file_name)
+        tmp_file_path = os.path.join(self.TMP_FOLDER, tmp_file_name)
         # copy file to tmp
         #print(open_path)
         #print(tmp_file_path)
@@ -5579,8 +5580,8 @@ class task(studio):
                     # (2.1)
                     shutil.copyfile(source_path, push_path)
                     # (2.2)
-                    cmd = '%s %s %s' % (os.path.normpath(self.convert_exe), push_path, look_path)
-                    cmd2 = '\"%s\" \"%s\" \"%s\"' % (os.path.normpath(self.convert_exe), push_path, look_path)
+                    cmd = '%s %s %s' % (os.path.normpath(self.CONVERT_EXE), push_path, look_path)
+                    cmd2 = '\"%s\" \"%s\" \"%s\"' % (os.path.normpath(self.CONVERT_EXE), push_path, look_path)
                     try:
                         os.system(cmd)
                     except Exception as e:
