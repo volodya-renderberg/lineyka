@@ -44,6 +44,8 @@ class studio:
     """
 
     HOST = "http://localhost:8000/"
+    COOKIE_NAME = '.cookie'
+    USER_DATA_FILE_NAME = '.user_data'
     FARME_OFFSET = 100
     """int: Номер кадра, который будет считаться стартовым для сцен анимации. """
     STUDIO_FOLDER = False
