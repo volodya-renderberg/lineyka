@@ -921,8 +921,8 @@ class MainWindow(QtGui.QMainWindow):
 		copy = self.db_studio
 		data = copy.get_studio()
 		if data[0]:
-			self.setWindow.set_studio_field.setText(str(copy.STUDIO_FOLDER))
-			self.setWindow.set_tmp_field.setText(str(copy.TMP_FOLDER))
+			self.setWindow.set_studio_field.setText(str(copy.studio_folder))
+			self.setWindow.set_tmp_field.setText(str(copy.tmp_folder))
 			self.setWindow.set_convert_exe_field.setText(str(copy.CONVERT_EXE))
 			self.wf_line.setText(str(self.db_studio.WORK_FOLDER))
 			'''
@@ -931,8 +931,8 @@ class MainWindow(QtGui.QMainWindow):
 			'''
 	
 		else:
-			self.setWindow.set_studio_field.setText('set STUDIO_FOLDER')
-			self.setWindow.set_tmp_field.setText('set TMP_FOLDER')
+			self.setWindow.set_studio_field.setText('set studio_folder')
+			self.setWindow.set_tmp_field.setText('set tmp_folder')
 			print(data[0])
 			
 		# connect fields

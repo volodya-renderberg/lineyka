@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 
 import os
-#import sys
+import sys
 import platform
 import json
 import sqlite3
@@ -46,22 +46,31 @@ class studio:
     """
 
     HOST = "http://localhost:8000/"
+    """str: интернет адрес облака. """
     COOKIE_NAME = '.cookie'
+    """str: Наименование файла куки. """
     USER_DATA_FILE_NAME = '.user_data'
+    """str: Наименование текстового файла гдехранятся данные текущего пользователя (для облака). """
     FARME_OFFSET = 100
     """int: Номер кадра, который будет считаться стартовым для сцен анимации. """
-    STUDIO_FOLDER = False
+    studio_folder = False
     """str: Директория студии. """
-    TMP_FOLDER = False
+    STUDIO_SETTINGS_FILE = 'settings.py'
+    """str: Файл студийных настроек, хранится в директории студии."""
+    tmp_folder = False
     """str: *tmp* директория пользователя, в неё копируются открываемые сцены. """
     WORK_FOLDER = False
     """str: Директория для локального хранения ассетов пользователя. Создаётся вся файловая структура ``project/assets/asset/activity/version_dir/file``. Определяе методом :func:`edit_db.studio.set_work_folder`. """
     CONVERT_EXE = False
     """str: Путь к исполняемому файлу *convert* приложения 'Imagemagick' """
-    STUDIO_DATABASE = ['sqlite3', False]
+    studio_database = ['sqlite3', False]
     """list: Определение используемой в студии базы данных. """
-    INIT_PATH = False
-    """str: ``?`` """
+    studio_name = False
+    """str: Имя облачной студии. Уникальное, используется в адресной строке. """
+    studio_label = False
+    """str: Подпись облачной студии. Не уникальное. """
+    init_path = False
+    """str: Путь до файла :attr:`edit_db.INIT_FILE`, поле заполняется при создании экземпляра :obj:`edit_db.studio`. """
     set_path = False
     """str: ``?`` """
     share_dir = False
@@ -474,8 +483,13 @@ class studio:
     """dict: Имена служебных файлов графических изображений, которые не сохраняются в ``asset_folder/textures/`` при выполнении процедуры ``Save Images`` в блендер аддоне. """
         
     def __init__(self):
+        self._fill_class_attributes()
         self.make_init_file()
         self.get_studio()
+
+    @classmethod
+    def _fill_class_attributes(self):
+        self.init_path = NormPath(os.path.join(os.path.expanduser('~'), self.INIT_FOLDER, self.INIT_FILE))
 
     @classmethod
     def make_init_file(self):
@@ -497,7 +511,7 @@ class studio:
         
         folder = NormPath(os.path.join(home, self.INIT_FOLDER))
         empty_folder = NormPath(os.path.join(folder, self.EMPTY_FILES_DIR_NAME))
-        self.INIT_PATH = NormPath(os.path.join(home, self.INIT_FOLDER, self.INIT_FILE))
+        # self.init_path = NormPath(os.path.join(home, self.INIT_FOLDER, self.INIT_FILE))
         self.set_path = NormPath(os.path.join(folder, self.set_file))
         
         # make folder
@@ -507,18 +521,18 @@ class studio:
             os.mkdir(empty_folder)
         
         # make INIT_FILE
-        if not os.path.exists(self.INIT_PATH):
+        if not os.path.exists(self.init_path):
             # make jason
             d = {
-                'STUDIO_FOLDER': None,
+                'studio_folder': None,
                 'WORK_FOLDER': None,
                 'CONVERT_EXE': None,
-                'TMP_FOLDER': tempfile.gettempdir(),
-                'STUDIO_DATABASE': ['sqlite3', False],
+                'tmp_folder': tempfile.gettempdir(),
+                # 'studio_database': ['sqlite3', False],
                 }
             m_json = json.dumps(d, sort_keys=True, indent=4)
             # save
-            data_fale = open(self.INIT_PATH, 'w')
+            data_fale = open(self.init_path, 'w')
             data_fale.write(m_json)
             data_fale.close()
             
@@ -533,53 +547,78 @@ class studio:
             data_fale.close()
 
     @classmethod
-    def set_studio(self, path):
+    def set_studio(self, path, cloud_studio=False):
         """Инициализация студийной директории.
         
-        * Перезапись :attr:`edit_db.studio.INIT_FILE`
+        * Перезапись :attr:`edit_db.studio.INIT_FILE` (значение ``studio_folder``).
         * Создание файловой структуры, при остуствии.
+        * Создание директории студии (с именем ``<studio_name>_studio``) в указанном каталоге ``path`` если передавать ``cloud_studio``.
         
         Parameters
         ----------
         path : str
             Путь до новой директории студии.
+        cloud_studio : dict
+            Словарь данных облачной студии. Если передаётся данный параметр,\
+             то в указанной директории будет создана директория студии с именем <studio_name>_studio\
+              и уже путь к данной директории будет указан в инит файле.
             
         Returns
         -------
         tuple
             (*True*, 'Ok!') или (*False*, comment)
         """
+        # (0) tests
         if not os.path.exists(path):
             return(False, "****** to studio path not Found!")
+        if not os.path.exists(self.init_path):
+            return(False, "****** init_path not Found!")
+
+        # (1) make cloud studio folder
+        if cloud_studio:
+            studio_name=cloud_studio['studio_name']
+            studio_folder_name = f'{studio_name}_studio'
+            studio_folder_path = NormPath(os.path.join(path, studio_folder_name))
+            if not os.path.exists(studio_folder_path):
+                os.mkdir(studio_folder_path)
+                path=studio_folder_path
+            else:
+                return(False, f'A directory with the name "{studio_folder_name}" already exists!')
         
-        home = os.path.expanduser('~')	
-        INIT_PATH = os.path.join(home, self.INIT_FOLDER, self.INIT_FILE).replace('\\','/')
-        if not os.path.exists(INIT_PATH):
-            return(False, "****** INIT_PATH not Found!")
-        
-        # write studio path
+        # (2) write "studio_folder" in INIT_FILE
         try:
-            with open(INIT_PATH, 'r') as read:
-                data = json.load(read)
-                data['STUDIO_FOLDER'] = path
-                read.close()
+            with open(self.init_path, 'r') as f:
+                data = json.load(f)
+                data['studio_folder'] = path
         except:
             return(False, "****** in set_studio() -> init file  can not be read")
-
+        #
         try:
-            with open(INIT_PATH, 'w') as f:
+            with open(self.init_path, 'w') as f:
                 jsn = json.dump(data, f, sort_keys=True, indent=4)
-                f.close()
         except:
             return(False, "****** in set_studio() ->  init file  can not be read")
 
-        self.STUDIO_FOLDER = path
-        
+        self.studio_folder = path
+
+        # (3) STUDIO_SETTINGS_FILE
+        studio_settings_path = NormPath(os.path.join(self.studio_folder, self.STUDIO_SETTINGS_FILE))
+        head_text="""# -*- coding: utf-8 -*-\n\n"""
+        if not cloud_studio:
+            if not os.path.exists(studio_settings_path):
+                with open(studio_settings_path, 'w') as f:
+                    f.write(head_text)
+                    f.write('studio_database=[\'sqlite3\', False]')
+        else:
+            with open(studio_settings_path, 'w') as f:
+                f.write(head_text)
+                for key in cloud_studio:
+                    f.write(f'{key}={getattr(cloud_studio, key)}\n')
         return(True, 'Ok')
 
     @classmethod
     def set_tmp_dir(self, path):
-        """Определение пользовательской *tmp* директории - :attr:`edit_db.studio.TMP_FOLDER`, в неё копируются открываемые сцены.
+        """Определение пользовательской *tmp* директории - :attr:`edit_db.studio.tmp_folder`, в неё копируются открываемые сцены.
         
         Parameters
         ----------
@@ -595,27 +634,27 @@ class studio:
             return "****** to studio path not Found!"
         
         home = os.path.expanduser('~')	
-        INIT_PATH = os.path.join(home, self.INIT_FOLDER, self.INIT_FILE).replace('\\','/')
-        if not os.path.exists(INIT_PATH):
-            return "****** INIT_PATH not Found!"
+        # init_path = os.path.join(home, self.INIT_FOLDER, self.INIT_FILE).replace('\\','/')
+        if not os.path.exists(self.init_path):
+            return "****** init_path not Found!"
         
         # write studio path
         try:
-            with open(INIT_PATH, 'r') as read:
+            with open(self.init_path, 'r') as read:
                 data = json.load(read)
-                data['TMP_FOLDER'] = path
+                data['tmp_folder'] = path
                 read.close()
         except:
             return "****** init file  can not be read"
 
         try:
-            with open(INIT_PATH, 'w') as f:
+            with open(self.init_path, 'w') as f:
                 jsn = json.dump(data, f, sort_keys=True, indent=4)
                 f.close()
         except:
             return "****** init file  can not be read"
 
-        self.TMP_FOLDER = path
+        self.tmp_folder = path
                 
         return(True, 'Ok')
 
@@ -638,13 +677,13 @@ class studio:
             #return(False, "****** to convert.exe path not Found!")
         
         home = os.path.expanduser('~')
-        INIT_PATH = NormPath(os.path.join(home, self.INIT_FOLDER, self.INIT_FILE))
-        if not os.path.exists(INIT_PATH):
-            return(False, "****** INIT_PATH not Found!")
+        # init_path = NormPath(os.path.join(home, self.INIT_FOLDER, self.INIT_FILE))
+        if not os.path.exists(self.init_path):
+            return(False, "****** init_path not Found!")
         
         # write path
         try:
-            with open(INIT_PATH, 'r') as read:
+            with open(self.init_path, 'r') as read:
                 data = json.load(read)
                 data['CONVERT_EXE'] = NormPath(path)
                 read.close()
@@ -652,7 +691,7 @@ class studio:
             return(False, "****** init file  can not be read")
 
         try:
-            with open(INIT_PATH, 'w') as f:
+            with open(self.init_path, 'w') as f:
                 jsn = json.dump(data, f, sort_keys=True, indent=4)
                 f.close()
         except:
@@ -680,13 +719,13 @@ class studio:
             return(False, 'The path "%s" - not Found!' % path)
         
         home = os.path.expanduser('~')
-        INIT_PATH = NormPath(os.path.join(home, self.INIT_FOLDER, self.INIT_FILE))
-        if not os.path.exists(INIT_PATH):
-            return(False, "****** INIT_PATH not Found!")
+        # init_path = NormPath(os.path.join(home, self.INIT_FOLDER, self.INIT_FILE))
+        if not os.path.exists(self.init_path):
+            return(False, "****** init_path not Found!")
         
         # write path
         try:
-            with open(INIT_PATH, 'r') as read:
+            with open(self.init_path, 'r') as read:
                 data = json.load(read)
                 data['WORK_FOLDER'] = NormPath(path)
                 read.close()
@@ -694,7 +733,7 @@ class studio:
             return(False, "****** init file  can not be read")
 
         try:
-            with open(INIT_PATH, 'w') as f:
+            with open(self.init_path, 'w') as f:
                 jsn = json.dump(data, f, sort_keys=True, indent=4)
                 f.close()
         except:
@@ -954,13 +993,13 @@ class studio:
             return "****** to studio path not Found!"
         
         home = os.path.expanduser('~')	
-        INIT_PATH = os.path.join(home, self.INIT_FOLDER, self.INIT_FILE).replace('\\','/')
-        if not os.path.exists(INIT_PATH):
-            return "****** INIT_PATH not Found!"
+        # init_path = os.path.join(home, self.INIT_FOLDER, self.INIT_FILE).replace('\\','/')
+        if not os.path.exists(self.init_path):
+            return "****** init_path not Found!"
         
         # write studio path
         try:
-            with open(INIT_PATH, 'r') as read:
+            with open(self.init_path, 'r') as read:
                 data = json.load(read)
                 data['share_folder'] = path
                 read.close()
@@ -968,7 +1007,7 @@ class studio:
             return "****** init file  can not be read"
 
         try:
-            with open(INIT_PATH, 'w') as f:
+            with open(self.init_path, 'w') as f:
                 jsn = json.dump(data, f, sort_keys=True, indent=4)
                 f.close()
         except:
@@ -984,14 +1023,14 @@ class studio:
         pass
         # get lineyka_init.json
         home = os.path.expanduser('~')	
-        INIT_PATH = os.path.join(home, self.INIT_FOLDER, self.INIT_FILE).replace('\\','/')
-        if not os.path.exists(INIT_PATH):
-            return False, "****** INIT_PATH not Found!"
+        # init_path = os.path.join(home, self.INIT_FOLDER, self.INIT_FILE).replace('\\','/')
+        if not os.path.exists(self.init_path):
+            return False, "****** init_path not Found!"
             
         # write studio path
         
         try:
-            with open(INIT_PATH, 'r') as read:
+            with open(self.init_path, 'r') as read:
                 data = json.load(read)
                 try:
                     path = data['share_folder']
@@ -1009,36 +1048,34 @@ class studio:
         
         Заполняемые атрибуты:
         
-        * :attr:`edit_db.studio.STUDIO_FOLDER`
+        * :attr:`edit_db.studio.studio_folder`
         * :attr:`edit_db.studio.WORK_FOLDER`
         * :attr:`edit_db.studio.CONVERT_EXE`
-        * :attr:`edit_db.studio.TMP_FOLDER`
-        * :attr:`edit_db.studio.STUDIO_DATABASE`
+        * :attr:`edit_db.studio.tmp_folder`
+        * :attr:`edit_db.studio.studio_database`
         * :attr:`edit_db.studio.EXTENSIONS`
         * :attr:`edit_db.studio.SOFT_DATA`
         
         Returns
         -------
         tuple
-            (*True*, [self.STUDIO_FOLDER, self.TMP_FOLDER]) или (*False*, comment)
+            (*True*, [self.studio_folder, self.tmp_folder]) или (*False*, comment)
         
         """
         
-        if self.INIT_PATH == False:
-            return(False, '****** in get_studio() -> INIT_PATH = False!')
+        # READ USER SETTINGS
+        if self.init_path == False:
+            return(False, '****** in get_studio() -> init_path = False!')
         # write studio path
         try:
-            with open(self.INIT_PATH, 'r') as read:
+            with open(self.init_path, 'r') as read:
                 data = json.load(read)
                 read.close()
         except:
             return(False, "****** init file  can not be read")
         #
-        try:
-            for key in data:
-                setattr(self, data[key])
-        except Exception as e:
-            print(e)
+        for key in data:
+            setattr(self, key, data.get(key))
             
         #print('artist path: ', self.artists_path)
             
@@ -1051,9 +1088,21 @@ class studio:
                 read.close()
         except:
             return(False, 'in get_studio -> not read user_setting.json!')
+
+        # READ STUDIO SETTINGS
+        if self.studio_folder and os.path.exists(self.studio_folder):
+            if not self.studio_folder in sys.path:
+                sys.path.append(self.studio_folder)
+            # 
+            settings_path = NormPath(os.path.join(self.studio_folder, self.STUDIO_SETTINGS_FILE))
+            if os.path.exists(settings_path):
+                exec(f'import {os.path.splitext(self.STUDIO_SETTINGS_FILE)[0]} as settings_file', globals())
+                #
+                for key in [ i  for i in dir(settings_file) if not i.startswith('_')]:
+                    setattr(self, key, getattr(settings_file, key))
         
         print('studio.get_studio')
-        return True, [self.STUDIO_FOLDER, self.TMP_FOLDER]
+        return True, [self.studio_folder, self.tmp_folder]
 
     # ****** SETTING ******
     # ------- EXTENSION -------------
@@ -1187,12 +1236,12 @@ class database():
 
     def __init__(self):
         self.sqlite3_db_folder_attr = {
-            'studio': 'STUDIO_FOLDER',
+            'studio': 'studio_folder',
             'project': 'path',
             }
         
         self.use_db_attr = {
-            'studio': 'STUDIO_DATABASE',
+            'studio': 'studio_database',
             'project': 'project_database',
             }
 
@@ -1988,7 +2037,7 @@ class project(studio):
             return(False, 'No options!')
             
         elif not project_path:
-            project_path = os.path.join(self.STUDIO_FOLDER, name)
+            project_path = os.path.join(self.studio_folder, name)
             #self.path=project_path
             try:
                 os.mkdir(project_path)
@@ -5239,10 +5288,10 @@ class task(studio):
                 return(False, 'No application found for this extension "%s"' % self.extension)
             
             # get tmp_path
-            if not os.path.exists(self.TMP_FOLDER):
+            if not os.path.exists(self.tmp_folder):
                 return(False, 'Tmp directory is not defined!')
             new_name = '%s_%s%s' % (os.path.basename(path).split('.')[0], uuid.uuid4().hex, self.extension)
-            tmp_path = NormPath(os.path.join(self.TMP_FOLDER, new_name))
+            tmp_path = NormPath(os.path.join(self.tmp_folder, new_name))
             
             # copy to tmp_path
             shutil.copyfile(path, tmp_path)
@@ -5459,7 +5508,7 @@ class task(studio):
                     
         # get tmp_file_path
         tmp_file_name = '%s_%s%s' % (task_ob.task_name.replace(':','_', 2), hex(random.randint(0, 1000000000)).replace('0x', ''), task_ob.extension)
-        tmp_file_path = os.path.join(self.TMP_FOLDER, tmp_file_name)
+        tmp_file_path = os.path.join(self.tmp_folder, tmp_file_name)
         # copy file to tmp
         #print(open_path)
         #print(tmp_file_path)
@@ -9622,7 +9671,7 @@ class artist(studio):
          данное имя пользователя из под других ник-неймов.\
         Произойдёт заполнение полей :obj:`edit_db.artist.artists_keys` экземпляра класса.
         
-        Если ``cloud`` =*django* или :attr:`edit_db.studio.STUDIO_DATABASE` = *django*:\
+        Если ``cloud`` =*django* или :attr:`edit_db.studio.studio_database` = *django*:\
         логинится через сайт, записывая файлы ``cookie`` и ``user_data``.
         
         Parameters
@@ -9638,9 +9687,9 @@ class artist(studio):
         -------
         tuple
             Если ``cloud`` =*False*: (*True*, (``nik_name``, ``user_name``))  или (*False, comment*).
-            Если ``cloud`` =*django* или :attr:`edit_db.studio.STUDIO_DATABASE` = *django*: (*True*, {user_data}) или (*False, comment*).
+            Если ``cloud`` =*django* или :attr:`edit_db.studio.studio_database` = *django*: (*True*, {user_data}) или (*False, comment*).
         """
-        if cloud=='django' or self.STUDIO_DATABASE == 'django':
+        if cloud=='django' or self.studio_database == 'django':
             return djc.login(self, nik_name, password)
         else:
             pass

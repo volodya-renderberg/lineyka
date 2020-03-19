@@ -35,6 +35,8 @@ class MainWindow(QtWidgets.QMainWindow):
         self.lineyka_path = os.path.dirname(path)
         self.main_window_path = os.path.join(path, "lineyka_manager.ui")
         self.set_window_path = os.path.join(path, "qt_settings.ui")
+        self.create_cloud_studio_path = os.path.join(path, 'create_cloud_studio.ui')
+        self.set_dir_cloud_studio_path = os.path.join(path, 'set_dir_cloud_studio.ui')
         self.login_window_path = os.path.join(path, "qt_login.ui")
         self.user_registr_window_path = os.path.join(path, "qt_registration.ui")
         self.qt_set_project_path = os.path.join(path, "qt_set_project.ui")
@@ -207,7 +209,7 @@ class MainWindow(QtWidgets.QMainWindow):
         
         # ---- List Active Projects
         #self.get_list_active_projects()
-        self.list_active_projects = self.db_studio.list_active_projects
+        #self.list_active_projects = self.db_studio.list_active_projects
         
         # ---- self.WORKROOM ----------------------------
         self.db_workroom.get_list()
@@ -1060,8 +1062,7 @@ class MainWindow(QtWidgets.QMainWindow):
         # make table
         table.setColumnCount(num_column)
         table.setRowCount(num_row)
-        table.setHorizontalHeaderLabels(headers)
-    
+        table.setHorizontalHeaderLabels(headers)    
         
         # fill table
         for i, name in enumerate(sorted(self.db_workroom.dict_by_name.keys())):
@@ -4545,7 +4546,7 @@ class MainWindow(QtWidgets.QMainWindow):
         button10.setVisible(False)
         
         # edit combobox
-        projects = ['-- select project --'] + self.list_active_projects
+        projects = ['-- select project --'] + self.project.list_active_projects
         window.set_comboBox_01.setVisible(True)
         
         try:
@@ -7473,7 +7474,7 @@ class MainWindow(QtWidgets.QMainWindow):
     
     def tm_paste_image_from_clipboard(self, img_label): # v2
         rand  = uuid.uuid4().hex
-        img_path = os.path.normpath(os.path.join(self.db_studio.TMP_FOLDER, ('tmp_image_%s.png' % rand)))
+        img_path = os.path.normpath(os.path.join(self.db_studio.tmp_folder, ('tmp_image_%s.png' % rand)))
         
         clipboard = QtGui.QApplication.clipboard()
         img = clipboard.image()
@@ -7803,14 +7804,14 @@ class MainWindow(QtWidgets.QMainWindow):
         # fill field
         data = self.db_studio.get_studio()
         if data[0]:
-            self.setWindow.set_studio_field.setText(str(self.db_studio.STUDIO_FOLDER))
-            self.setWindow.set_tmp_field.setText(str(self.db_studio.TMP_FOLDER))
+            self.setWindow.set_studio_field.setText(str(self.db_studio.studio_folder))
+            self.setWindow.set_tmp_field.setText(str(self.db_studio.tmp_folder))
             self.setWindow.set_convert_exe_field.setText(str(self.db_studio.CONVERT_EXE))
             self.wf_line.setText(str(self.db_studio.WORK_FOLDER))
     
         else:
-            self.setWindow.set_studio_field.setText('set STUDIO_FOLDER')
-            self.setWindow.set_tmp_field.setText('set TMP_FOLDER')
+            self.setWindow.set_studio_field.setText('set studio_folder')
+            self.setWindow.set_tmp_field.setText('set tmp_folder')
             print(data[0])
             
         # connect fields
@@ -8098,10 +8099,11 @@ class MainWindow(QtWidgets.QMainWindow):
     
     #*********************** UTILITS *******************************************
     def launcher(self):
-        if not self.db_studio.STUDIO_FOLDER:
+        return
+        if not self.db_studio.studio_folder:
             self.message('Path to the studio directory is not specified or not correct!', 2)
             self.set_studio_ui()
-        elif not os.path.exists(self.db_studio.STUDIO_FOLDER):
+        elif not os.path.exists(self.db_studio.studio_folder):
             self.message('Path to the studio directory is not specified or not correct!', 2)
             self.set_studio_ui()
         elif not self.artist.nik_name:
