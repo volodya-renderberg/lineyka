@@ -23,27 +23,37 @@
       <enum>QFrame::Raised</enum>
      </property>
      <layout class="QGridLayout" name="gridLayout">
+      <item row="1" column="1">
+       <widget class="QLineEdit" name="password_field">
+        <property name="echoMode">
+         <enum>QLineEdit::Password</enum>
+        </property>
+       </widget>
+      </item>
+      <item row="1" column="0">
+       <widget class="QLabel" name="label_2">
+        <property name="text">
+         <string>* Password:</string>
+        </property>
+       </widget>
+      </item>
       <item row="0" column="0">
        <widget class="QLabel" name="label">
         <property name="text">
-         <string>* Enter The Nik Name:</string>
+         <string>*  Nik Name:</string>
         </property>
        </widget>
       </item>
       <item row="0" column="1">
        <widget class="QLineEdit" name="nik_name_field"/>
       </item>
-      <item row="1" column="0">
-       <widget class="QLabel" name="label_2">
-        <property name="text">
-         <string>* Enter The Password:</string>
-        </property>
-       </widget>
+      <item row="2" column="1">
+       <widget class="QLineEdit" name="email_field"/>
       </item>
-      <item row="1" column="1">
-       <widget class="QLineEdit" name="password_field">
-        <property name="echoMode">
-         <enum>QLineEdit::Password</enum>
+      <item row="2" column="0">
+       <widget class="QLabel" name="label_3">
+        <property name="text">
+         <string>* Email:</string>
         </property>
        </widget>
       </item>
@@ -59,20 +69,10 @@
       <enum>QFrame::Raised</enum>
      </property>
      <layout class="QGridLayout" name="gridLayout_2">
-      <item row="0" column="0">
-       <widget class="QLabel" name="label_3">
-        <property name="text">
-         <string>email:</string>
-        </property>
-       </widget>
-      </item>
-      <item row="0" column="1">
-       <widget class="QLineEdit" name="email_field"/>
-      </item>
       <item row="1" column="0">
        <widget class="QLabel" name="label_4">
         <property name="text">
-         <string>phone:</string>
+         <string>Phone:</string>
         </property>
        </widget>
       </item>
@@ -82,7 +82,7 @@
       <item row="2" column="0">
        <widget class="QLabel" name="label_5">
         <property name="text">
-         <string>speciality:</string>
+         <string>Speciality:</string>
         </property>
        </widget>
       </item>
