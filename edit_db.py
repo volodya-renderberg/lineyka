@@ -16,8 +16,10 @@ import subprocess
 
 try:
     from .lineyka_publish import publish
+    from . import django_connect as djc
 except:
     from lineyka_publish import publish
+    import django_connect as djc
 
 def NormPath(input_path):
     if not input_path:
@@ -9625,10 +9627,16 @@ class artist(studio):
 
         return(True, active_artists_list, artists_dict)
         
-    def login_user(self, nik_name, password):
-        """Логин юзера.\
-        Перезаписывает текущее имя пользователя пк, в соответствие указанного ник-нейма, при этом проверит и удалит данное имя пользователя из под других ник-неймов.\
+    def login_user(self, nik_name, password, cloud=False):
+        """Логин юзера.
+
+        Если ``cloud`` =*False*:\
+        Перезаписывает текущее имя пользователя пк, в соответствие указанного ник-нейма, при этом проверит и удалит\
+         данное имя пользователя из под других ник-неймов.\
         Произойдёт заполнение полей :obj:`edit_db.artist.artists_keys` экземпляра класса.
+        
+        Если ``cloud`` =*django* или :attr:`edit_db.studio.STUDIO_DATABASE` = *django*:\
+        логинится через сайт, записывая файлы ``cookie`` и ``user_data``.
         
         Parameters
         ----------
@@ -9636,44 +9644,49 @@ class artist(studio):
             Никнейм.
         password : str
             Пароль
+        cloud : bool, str
+            Определяет используемый интерфейс хранения данных. Если *False* то - локальная схема ``sqlite3``.
             
         Returns
         -------
         tuple
-            (*True*, (``nik_name``, ``user_name``))  или (*False, comment*).
-        
+            Если ``cloud`` =*False*: (*True*, (``nik_name``, ``user_name``))  или (*False, comment*).
+            Если ``cloud`` =*django* или :attr:`edit_db.studio.STUDIO_DATABASE` = *django*: (*True*, {user_data}) или (*False, comment*).
         """
-        pass
-        # проверка наличия юзера
-        # проверка пароля
-        # очистка данного юзернейма
-        # присвоение данного юзернейма пользователю
-        user_name = getpass.getuser()
-        bool_, user_data = database().read('studio', self, self.artists_t, self.artists_keys, where = {'nik_name': nik_name})
-        if not bool_:
-            return(bool_, user_data)
-        # test exists user
-        if not user_data:
-            return(False, 'User is not found!')
-        # test password
+        if cloud=='django' or self.STUDIO_DATABASE == 'django':
+            return djc.login(self, nik_name, password)
         else:
-            if user_data[0].get('password') != password:
-                return(False, 'Incorrect password!')
-        # clean
-        bool_, return_data = database().update('studio', self, self.artists_t, self.artists_keys, {'user_name': ''}, {'user_name': user_name})
-        if not bool_:
-            return(bool_, return_data)
-        # set user_name
-        bool_, return_data = database().update('studio', self, self.artists_t, self.artists_keys, {'user_name': user_name}, {'nik_name': nik_name})
-        if not bool_:
-            return(bool_, return_data)
-        
-        # fill fields
-        for key in self.artists_keys:
-            com = 'self.%s = user_data[0].get("%s")' % (key, key)
-            #print('#'*3, item[0], com)
-            exec(com)
-        return(True, (nik_name, user_name))
+            pass
+            # проверка наличия юзера
+            # проверка пароля
+            # очистка данного юзернейма
+            # присвоение данного юзернейма пользователю
+            user_name = getpass.getuser()
+            bool_, user_data = database().read('studio', self, self.artists_t, self.artists_keys, where = {'nik_name': nik_name})
+            if not bool_:
+                return(bool_, user_data)
+            # test exists user
+            if not user_data:
+                return(False, 'User is not found!')
+            # test password
+            else:
+                if user_data[0].get('password') != password:
+                    return(False, 'Incorrect password!')
+            # clean
+            bool_, return_data = database().update('studio', self, self.artists_t, self.artists_keys, {'user_name': ''}, {'user_name': user_name})
+            if not bool_:
+                return(bool_, return_data)
+            # set user_name
+            bool_, return_data = database().update('studio', self, self.artists_t, self.artists_keys, {'user_name': user_name}, {'nik_name': nik_name})
+            if not bool_:
+                return(bool_, return_data)
+            
+            # fill fields
+            for key in self.artists_keys:
+                com = 'self.%s = user_data[0].get("%s")' % (key, key)
+                #print('#'*3, item[0], com)
+                exec(com)
+            return(True, (nik_name, user_name))
 
     def get_user(self, outsource = False):
         """Определение текущего пользователя, инициализация текущего экземпляра.
