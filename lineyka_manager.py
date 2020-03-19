@@ -455,13 +455,13 @@ class MainWindow(QtWidgets.QMainWindow):
         if not self.artist.level:
             self.message('No Access! (you must register or login)', 3)
             return
-        elif self.artist.level not in self.artist.manager_levels:
+        elif self.artist.level not in self.artist.MANAGER_LEVELS:
             self.message('No Access! (level "%s" is not enough to perform this operation)' % self.artist.level, 3)
             return
             
         # get levels
         levels = []
-        for level in self.artist.user_levels:
+        for level in self.artist.USER_LEVELS:
             levels.append(level)
             if level == self.artist.level:
                 break
@@ -558,13 +558,13 @@ class MainWindow(QtWidgets.QMainWindow):
         
         level = getattr(self.selected_artist, 'level')
         
-        if self.artist.level not in self.artist.manager_levels:
+        if self.artist.level not in self.artist.MANAGER_LEVELS:
             self.message('No Access! your level: "%s"' % self.artist.level, 3)
             return
         
         # get levels
         levels = []
-        for level in self.artist.user_levels:
+        for level in self.artist.USER_LEVELS:
             levels.append(level)
             if level == self.artist.level:
                 break
@@ -1954,7 +1954,7 @@ class MainWindow(QtWidgets.QMainWindow):
         window.new_dialog_name.setVisible(False)
         
         window.units_combo = QtGui.QComboBox()
-        window.units_combo.addItems(self.db_studio.projects_units)
+        window.units_combo.addItems(self.db_studio.PROJECTS_UNITS)
         window.horizontalLayout.addWidget(window.units_combo)
         
         window.new_dialog_cancel.clicked.connect(partial(self.close_window, window))
@@ -3766,8 +3766,8 @@ class MainWindow(QtWidgets.QMainWindow):
                 
                 #newItem.setText(str(getattr(row, key)))
                 if key == 'name':
-                    if final_task.status in final_task.end_statuses:
-                        rgb = final_task.color_status[final_task.status]
+                    if final_task.status in final_task.END_STATUSES:
+                        rgb = final_task.COLOR_STATUS[final_task.status]
                         color =  QtGui.QColor(rgb[0]*255, rgb[1]*255, rgb[2]*255)
                     else:
                         color = self.asset_color
@@ -4716,7 +4716,7 @@ class MainWindow(QtWidgets.QMainWindow):
             newItem.setText(task['task_name'].replace((task['asset'] + ':'), ''))
             newItem.task = dict(task)
             
-            rgb = self.db_chat.color_status[task['status']]
+            rgb = self.db_chat.COLOR_STATUS[task['status']]
             r = (rgb[0]*255)
             g = (rgb[1]*255)
             b = (rgb[2]*255)
@@ -4823,7 +4823,7 @@ class MainWindow(QtWidgets.QMainWindow):
                     newItem.setText(asset_name)
                     newItem.task = inpun_tasks_data[input_task_name]
                     
-                    rgb = self.db_chat.color_status[inpun_tasks_data[input_task_name]['status']]
+                    rgb = self.db_chat.COLOR_STATUS[inpun_tasks_data[input_task_name]['status']]
                     r = (rgb[0]*255)
                     g = (rgb[1]*255)
                     b = (rgb[2]*255)
@@ -5377,7 +5377,7 @@ class MainWindow(QtWidgets.QMainWindow):
                     else:
                         item.task['input'] = json.dumps(input_task_list)
                         
-                    rgb = self.db_chat.color_status[new_status]
+                    rgb = self.db_chat.COLOR_STATUS[new_status]
                     r = (rgb[0]*255)
                     g = (rgb[1]*255)
                     b = (rgb[2]*255)
@@ -5397,7 +5397,7 @@ class MainWindow(QtWidgets.QMainWindow):
                     item.task['status'] = new_status
                     item.task['input'] = json.dumps(input_task_list)
                                             
-                    rgb = self.db_chat.color_status[new_status]
+                    rgb = self.db_chat.COLOR_STATUS[new_status]
                     r = (rgb[0]*255)
                     g = (rgb[1]*255)
                     b = (rgb[2]*255)
@@ -5426,7 +5426,7 @@ class MainWindow(QtWidgets.QMainWindow):
                     input_list.append(input_task_list[0])       
                     item.task['input'] = json.dumps(input_list)
                     # edit color                        
-                    rgb = self.db_chat.color_status[new_status]
+                    rgb = self.db_chat.COLOR_STATUS[new_status]
                     r = (rgb[0]*255)
                     g = (rgb[1]*255)
                     b = (rgb[2]*255)
@@ -5747,8 +5747,8 @@ class MainWindow(QtWidgets.QMainWindow):
                 elif header == 'action':
                     pass
                     #
-                    if self.conformity_colors[log[header]] in self.db_log.color_status.keys():
-                        rgb = self.db_log.color_status[self.conformity_colors[log[header]]]
+                    if self.conformity_colors[log[header]] in self.db_log.COLOR_STATUS.keys():
+                        rgb = self.db_log.COLOR_STATUS[self.conformity_colors[log[header]]]
                         color = QtGui.QColor(rgb[0]*255, rgb[1]*255, rgb[2]*255)
                     else:
                         color=self.conformity_colors[log[header]]
@@ -5824,7 +5824,7 @@ class MainWindow(QtWidgets.QMainWindow):
         b, r_data = self.db_workroom.get_list()
         if not self.artist.user_name:
             return
-        if self.db_workroom.user_levels.index(self.artist.level) >= self.db_workroom.user_levels.index('root'): # root и выше!!!! куда выше не известно, может super_root
+        if self.db_workroom.USER_LEVELS.index(self.artist.level) >= self.db_workroom.USER_LEVELS.index('root'): # root и выше!!!! куда выше не известно, может super_root
             if b:
                 wr_list = []
                 wr_type_list = []
@@ -6234,14 +6234,14 @@ class MainWindow(QtWidgets.QMainWindow):
                 
                 newItem = QtWidgets.QTableWidgetItem()
                 #item_text = '%s\n---' % task_ob.task_name.replace('%s:' % task_ob.asset.name, '')
-                #for attr in self.db_studio.setting_data['task_visible_fields']:
+                #for attr in self.db_studio.SETTING_DATA['task_visible_fields']:
                     #item_text = '%s\n%s: %s' % (item_text, attr, getattr(task_ob, attr))
                 item_text = self.tm_get_item_text(task_ob)
                 newItem.setText(item_text)
                 #newItem.setText('%s\ntype:%s\nartist: %s' % (task_ob.task_name.replace('%s:' % task_ob.asset.name, ''), task_ob.task_type, task_ob.artist))
                 newItem.task = task_ob
                 
-                rgb = self.db_studio.color_status[task_ob.status]
+                rgb = self.db_studio.COLOR_STATUS[task_ob.status]
                 r = (rgb[0]*255)
                 g = (rgb[1]*255)
                 b = (rgb[2]*255)
@@ -6274,7 +6274,7 @@ class MainWindow(QtWidgets.QMainWindow):
         
     def tm_get_item_text(self, task_ob):
         item_text = '%s\n---' % task_ob.task_name.replace('%s:' % task_ob.asset.name, '')
-        for attr in self.db_studio.setting_data['task_visible_fields']:
+        for attr in self.db_studio.SETTING_DATA['task_visible_fields']:
             item_text = '%s\n%s: %s' % (item_text, attr, getattr(task_ob, attr))
         return(item_text)
         
@@ -6303,7 +6303,7 @@ class MainWindow(QtWidgets.QMainWindow):
                 self.myWidget.tm_data_label_9.setText(self.selected_task.asset.loading_type)
             
             # -- ACCEPT button
-            if self.selected_task.status in self.db_studio.working_statuses or self.selected_task.status == 'checking':
+            if self.selected_task.status in self.db_studio.WORKING_STATUSES or self.selected_task.status == 'checking':
                 self.myWidget.assept_button.setEnabled(True)
             else:
                 self.myWidget.assept_button.setEnabled(False)
@@ -6321,13 +6321,13 @@ class MainWindow(QtWidgets.QMainWindow):
                 self.myWidget.to_rework_button.setEnabled(False)
                 
             # -- CLOSE button
-            if not self.selected_task.status in self.db_studio.end_statuses:
+            if not self.selected_task.status in self.db_studio.END_STATUSES:
                 self.myWidget.close_task_button.setEnabled(True)
             else:
                 self.myWidget.close_task_button.setEnabled(False)
             
             # -- RETURN A JOB button
-            if self.selected_task.status in self.db_studio.end_statuses:
+            if self.selected_task.status in self.db_studio.END_STATUSES:
                 self.myWidget.return_a_job_button.setEnabled(True)
             else:
                 self.myWidget.return_a_job_button.setEnabled(False)
@@ -6692,8 +6692,8 @@ class MainWindow(QtWidgets.QMainWindow):
             self.message(r, 2)
             return
         
-        # multi_publish_task_types
-        if not self.selected_task.task_type in self.selected_task.multi_publish_task_types:
+        # MULTI_PUBLISH_TASK_TYPES
+        if not self.selected_task.task_type in self.selected_task.MULTI_PUBLISH_TASK_TYPES:
             return
         
         # *************** viewers methods ******************
@@ -7194,7 +7194,7 @@ class MainWindow(QtWidgets.QMainWindow):
         #item_.task = task_data
         
         # change table color
-        rgb = self.db_task.color_status[self.selected_task.status]
+        rgb = self.db_task.COLOR_STATUS[self.selected_task.status]
         r = (rgb[0]*255)
         g = (rgb[1]*255)
         b = (rgb[2]*255)
@@ -7270,7 +7270,7 @@ class MainWindow(QtWidgets.QMainWindow):
         if new_status:
             item = self.myWidget.task_manager_table.currentItem()
             # change table color
-            rgb = self.db_studio.color_status[new_status]
+            rgb = self.db_studio.COLOR_STATUS[new_status]
             r = (rgb[0]*255)
             g = (rgb[1]*255)
             b = (rgb[2]*255)
@@ -8110,7 +8110,7 @@ class MainWindow(QtWidgets.QMainWindow):
         elif not self.artist.level:
             print('launcher - not level "%s"' % self.artist.level)
             self.login_or_registration_ui()
-        elif not self.artist.level in self.db_studio.manager_levels:
+        elif not self.artist.level in self.db_studio.MANAGER_LEVELS:
             self.message('Minimum required level - manager! "%s"' % self.artist.level, 2)
             self.login_or_registration_ui()
             

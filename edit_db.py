@@ -60,24 +60,24 @@ class studio:
     """str: Путь к исполняемому файлу *convert* приложения 'Imagemagick' """
     STUDIO_DATABASE = ['sqlite3', False]
     """list: Определение используемой в студии базы данных. """
-    init_path = False
+    INIT_PATH = False
     """str: ``?`` """
     set_path = False
     """str: ``?`` """
     share_dir = False
     """str: ``?`` """
-    list_projects = {}
+    # list_projects = {}
     """list: ``?`` """
-    list_active_projects = []
+    # list_active_projects = []
     """list: ``?`` """
     EXTENSIONS = ['.blend', '.ma', '.tiff', '.ntp']
     """list: Список возможных расширений для рабочих файлов, которым будет сопоставляться приложение. 
     
     Заполняется в :func:`edit_db.studio.get_studio`
     
-    .. note:: Возможно совершенно бесполезный атрибут, так как эти значения есть :attr:`edit_db.studio.setting_data` ['extension'].keys()
+    .. note:: Возможно совершенно бесполезный атрибут, так как эти значения есть :attr:`edit_db.studio.SETTING_DATA` ['extension'].keys()
     """
-    setting_data = {
+    SETTING_DATA = {
     'extension': {
         '.tiff':'krita',
         '.blend': 'blender',
@@ -98,34 +98,34 @@ class studio:
     
     .. note:: А возможно наоборот превратить этот словарь в два атрибута, соответсвующих его ключам.
     """
-    look_extension = '.jpg'
+    LOOK_EXTENSION = '.jpg'
     """str: расширение файла изображения, которое используется в просмотре. """
-    preview_extension = '.png'
+    PREVIEW_EXTENSION = '.png'
     """str: расширение файла изображения, которое используется при создании превью изображения. """
-    publish_folder_name = 'publish'
+    PUBLISH_FOLDER_NAME = 'publish'
     """str: имя паблиш директории """
-    soft_data = None
+    SOFT_DATA = None
     """ ``?`` """
-    priority = ('normal', 'high', 'top', 'ultra')
+    # priority = ('normal', 'high', 'top', 'ultra')
     """tuple: Список используемых приоритетов
     
     .. note:: Возможно устарело, так как мы перешли просто на множество натуральных чисел (от 0 до бесконечности).
     """
-    user_levels = ('user', 'extend_user', 'manager', 'root')
+    USER_LEVELS = ('user', 'extend_user', 'manager', 'root')
     """tuple: Список существующих пользователей
     
     .. note:: Возможно стоит добавить ``superroot`` - который будет всего один, когда root`ов может быть сколько угодно.
     """
-    manager_levels = ('manager', 'root')
+    MANAGER_LEVELS = ('manager', 'root')
     """tuple: Список пользовательских уровней, обладающих функцией менеджера. """
     task_status = ('null','ready', 'ready_to_send', 'work', 'work_to_outsorce', 'pause', 'recast', 'checking', 'done', 'close')
     """tuple: список существующих статусов задач. """
-    working_statuses = ('ready', 'ready_to_send', 'work', 'work_to_outsorce', 'pause', 'recast')
+    WORKING_STATUSES = ('ready', 'ready_to_send', 'work', 'work_to_outsorce', 'pause', 'recast')
     """tuple: Список статусов задач, не выполненного состояния.
     
-    .. note:: Возможно тупость, достаточно просто проверять, находится ли статуc в :attr:`edit_db.studio.end_statuses`
+    .. note:: Возможно тупость, достаточно просто проверять, находится ли статуc в :attr:`edit_db.studio.END_STATUSES`
     """
-    end_statuses = ('done', 'close')
+    END_STATUSES = ('done', 'close')
     """tuple: Статусы задач завершённого состояния. """
 
     #NOT_USED_EXTENSIONS = ['.blend','.tiff', '.ods', '.xcf', '.svg']
@@ -137,7 +137,7 @@ class studio:
     Расположение в директории: ``~/.lineyka/``
     """
 
-    color_status = {
+    COLOR_STATUS = {
     'null':(0.451000005, 0.451000005, 0.451000005),
     #'ready':(0.7627863884, 0, 1),
     'ready':(0.826, 0.249, 1),
@@ -154,7 +154,7 @@ class studio:
     }
     """dict: ключ - название статуса задачи, значение - соответствующий ему ``rgb`` (0 - 1) """
 
-    projects_units = ('m', 'cm', 'mm')
+    PROJECTS_UNITS = ('m', 'cm', 'mm')
     """tuple: Список возможных размерностей юнита 3d сцен. """
     
     PROJECTS_STATUSES = ('active', 'none')
@@ -188,7 +188,7 @@ class studio:
     )
     """tuple: Список используемых типов задач. """
 
-    multi_publish_task_types = ('sketch',)
+    MULTI_PUBLISH_TASK_TYPES = ('sketch',)
     """tuple: Список задач, для которых возможен паблиш всех существующих веток, подробнее тут :ref:`branch-page` и тут :ref:`commit-push-publish-page`. """
 
     service_tasks = ('all', 'pre')
@@ -384,21 +384,21 @@ class studio:
     }
     """dict: Обозначение данных хранимых в БД для тайм лога *артиста*. Заполнение вручную по дням, для корректировки автозаполнения. Строка - задача/день. Ключи - заголовки, значения - тип данных БД. Спецификация :ref:`time-log-page`"""
 
-    init_folder = '.lineyka'
+    INIT_FOLDER = '.lineyka'
     """str: Имя домашней директории линейки с файлами пользовательской конфигурации. Расположение в ``~/`` """
-    init_file = 'lineyka_init.json'
+    INIT_FILE = 'lineyka_init.json'
     """str: Имя *json* файла конфигурации. Содержит пути. 
     
     Создаётся в :func:`edit_db.studio.make_init_file`
     
-    Расположение в ~/:attr:`edit_db.studio.init_folder`/
+    Расположение в ~/:attr:`edit_db.studio.INIT_FOLDER`/
     """
     set_file = 'user_setting.json'
-    """str: Имя *json* файла конфигурации пользователя. Содержит словарь :attr:`edit_db.studio.setting_data`
+    """str: Имя *json* файла конфигурации пользователя. Содержит словарь :attr:`edit_db.studio.SETTING_DATA`
     
     Создаётся в :func:`edit_db.studio.make_init_file`
     
-    Расположение в ~/:attr:`edit_db.studio.init_folder`/
+    Расположение в ~/:attr:`edit_db.studio.INIT_FOLDER`/
     """
     location_position_file = 'location_content_position.json'
     """str: ``?`` """
@@ -481,11 +481,11 @@ class studio:
     def make_init_file(self):
         """Создание при их отсутствии:
         
-        * :attr:`edit_db.studio.init_file` 
+        * :attr:`edit_db.studio.INIT_FILE` 
         * :attr:`edit_db.studio.set_file`
         * :attr:`edit_db.studio.EMPTY_FILES_DIR_NAME`
         
-        Расположение файлов ~/:attr:`edit_db.studio.init_folder`/
+        Расположение файлов ~/:attr:`edit_db.studio.INIT_FOLDER`/
         
         Returns
         -------
@@ -495,9 +495,9 @@ class studio:
         
         home = os.path.expanduser('~')
         
-        folder = NormPath(os.path.join(home, self.init_folder))
+        folder = NormPath(os.path.join(home, self.INIT_FOLDER))
         empty_folder = NormPath(os.path.join(folder, self.EMPTY_FILES_DIR_NAME))
-        self.init_path = NormPath(os.path.join(home, self.init_folder, self.init_file))
+        self.INIT_PATH = NormPath(os.path.join(home, self.INIT_FOLDER, self.INIT_FILE))
         self.set_path = NormPath(os.path.join(folder, self.set_file))
         
         # make folder
@@ -506,26 +506,26 @@ class studio:
         if not os.path.exists(empty_folder):
             os.mkdir(empty_folder)
         
-        # make init_file
-        if not os.path.exists(self.init_path):
+        # make INIT_FILE
+        if not os.path.exists(self.INIT_PATH):
             # make jason
             d = {
                 'STUDIO_FOLDER': None,
                 'WORK_FOLDER': None,
                 'CONVERT_EXE': None,
                 'TMP_FOLDER': tempfile.gettempdir(),
-                'use_database': ['sqlite3', False],
+                'STUDIO_DATABASE': ['sqlite3', False],
                 }
             m_json = json.dumps(d, sort_keys=True, indent=4)
             # save
-            data_fale = open(self.init_path, 'w')
+            data_fale = open(self.INIT_PATH, 'w')
             data_fale.write(m_json)
             data_fale.close()
             
         # make set_file
         if not os.path.exists(self.set_path):
             # make jason
-            d = self.setting_data
+            d = self.SETTING_DATA
             m_json = json.dumps(d, sort_keys=True, indent=4)
             # save
             data_fale = open(self.set_path, 'w')
@@ -536,7 +536,7 @@ class studio:
     def set_studio(self, path):
         """Инициализация студийной директории.
         
-        * Перезапись :attr:`edit_db.studio.init_file`
+        * Перезапись :attr:`edit_db.studio.INIT_FILE`
         * Создание файловой структуры, при остуствии.
         
         Parameters
@@ -553,13 +553,13 @@ class studio:
             return(False, "****** to studio path not Found!")
         
         home = os.path.expanduser('~')	
-        init_path = os.path.join(home, self.init_folder, self.init_file).replace('\\','/')
-        if not os.path.exists(init_path):
-            return(False, "****** init_path not Found!")
+        INIT_PATH = os.path.join(home, self.INIT_FOLDER, self.INIT_FILE).replace('\\','/')
+        if not os.path.exists(INIT_PATH):
+            return(False, "****** INIT_PATH not Found!")
         
         # write studio path
         try:
-            with open(init_path, 'r') as read:
+            with open(INIT_PATH, 'r') as read:
                 data = json.load(read)
                 data['STUDIO_FOLDER'] = path
                 read.close()
@@ -567,7 +567,7 @@ class studio:
             return(False, "****** in set_studio() -> init file  can not be read")
 
         try:
-            with open(init_path, 'w') as f:
+            with open(INIT_PATH, 'w') as f:
                 jsn = json.dump(data, f, sort_keys=True, indent=4)
                 f.close()
         except:
@@ -595,13 +595,13 @@ class studio:
             return "****** to studio path not Found!"
         
         home = os.path.expanduser('~')	
-        init_path = os.path.join(home, self.init_folder, self.init_file).replace('\\','/')
-        if not os.path.exists(init_path):
-            return "****** init_path not Found!"
+        INIT_PATH = os.path.join(home, self.INIT_FOLDER, self.INIT_FILE).replace('\\','/')
+        if not os.path.exists(INIT_PATH):
+            return "****** INIT_PATH not Found!"
         
         # write studio path
         try:
-            with open(init_path, 'r') as read:
+            with open(INIT_PATH, 'r') as read:
                 data = json.load(read)
                 data['TMP_FOLDER'] = path
                 read.close()
@@ -609,7 +609,7 @@ class studio:
             return "****** init file  can not be read"
 
         try:
-            with open(init_path, 'w') as f:
+            with open(INIT_PATH, 'w') as f:
                 jsn = json.dump(data, f, sort_keys=True, indent=4)
                 f.close()
         except:
@@ -638,13 +638,13 @@ class studio:
             #return(False, "****** to convert.exe path not Found!")
         
         home = os.path.expanduser('~')
-        init_path = NormPath(os.path.join(home, self.init_folder, self.init_file))
-        if not os.path.exists(init_path):
-            return(False, "****** init_path not Found!")
+        INIT_PATH = NormPath(os.path.join(home, self.INIT_FOLDER, self.INIT_FILE))
+        if not os.path.exists(INIT_PATH):
+            return(False, "****** INIT_PATH not Found!")
         
         # write path
         try:
-            with open(init_path, 'r') as read:
+            with open(INIT_PATH, 'r') as read:
                 data = json.load(read)
                 data['CONVERT_EXE'] = NormPath(path)
                 read.close()
@@ -652,7 +652,7 @@ class studio:
             return(False, "****** init file  can not be read")
 
         try:
-            with open(init_path, 'w') as f:
+            with open(INIT_PATH, 'w') as f:
                 jsn = json.dump(data, f, sort_keys=True, indent=4)
                 f.close()
         except:
@@ -680,13 +680,13 @@ class studio:
             return(False, 'The path "%s" - not Found!' % path)
         
         home = os.path.expanduser('~')
-        init_path = NormPath(os.path.join(home, self.init_folder, self.init_file))
-        if not os.path.exists(init_path):
-            return(False, "****** init_path not Found!")
+        INIT_PATH = NormPath(os.path.join(home, self.INIT_FOLDER, self.INIT_FILE))
+        if not os.path.exists(INIT_PATH):
+            return(False, "****** INIT_PATH not Found!")
         
         # write path
         try:
-            with open(init_path, 'r') as read:
+            with open(INIT_PATH, 'r') as read:
                 data = json.load(read)
                 data['WORK_FOLDER'] = NormPath(path)
                 read.close()
@@ -694,7 +694,7 @@ class studio:
             return(False, "****** init file  can not be read")
 
         try:
-            with open(init_path, 'w') as f:
+            with open(INIT_PATH, 'w') as f:
                 jsn = json.dump(data, f, sort_keys=True, indent=4)
                 f.close()
         except:
@@ -795,8 +795,8 @@ class studio:
             >> # получаем объект текущей задачи current_task
             >> ...
             >> db._template_get_push_path(current_task, version=25, branches=['master', 'branch1'], look=True)
-            >> (True, {'master' : 'path_to_project/assets/asset_name/activity_name/'0025'/asset_name#master.look_extension',
-                       'branch1' : 'path_to_project/assets/asset_name/activity_name/'0025'/asset_name#branch1.look_extension'})
+            >> (True, {'master' : 'path_to_project/assets/asset_name/activity_name/'0025'/asset_name#master.LOOK_EXTENSION',
+                       'branch1' : 'path_to_project/assets/asset_name/activity_name/'0025'/asset_name#branch1.LOOK_EXTENSION'})
             >> db._template_get_push_path(current_task, version=25)
             >> (True, 'path_to_project/assets/asset_name/activity_name/'0025'/asset_name.ext')
             >> db._template_get_push_path(current_task)
@@ -811,16 +811,16 @@ class studio:
             Версия, число или строковое представление, если *False* - то возврат только пути до активити.
             
         branches : list, optional
-             Список веток из которых делался *push* - для *task_type* из списка :attr:`edit_db.studio.multi_publish_task_types` (например *'sketch'*).
+             Список веток из которых делался *push* - для *task_type* из списка :attr:`edit_db.studio.MULTI_PUBLISH_TASK_TYPES` (например *'sketch'*).
              
         look : bool, optional
-            Рассматривается только если *task_type* из списка :attr:`edit_db.studio.multi_publish_task_types` (например *'sketch'*), если *False* - то используется *c_task.extension*, если *True* - то используется :attr:`edit_db.studio.look_extension`.
+            Рассматривается только если *task_type* из списка :attr:`edit_db.studio.MULTI_PUBLISH_TASK_TYPES` (например *'sketch'*), если *False* - то используется *c_task.extension*, если *True* - то используется :attr:`edit_db.studio.LOOK_EXTENSION`.
             
         Returns
         -------
         tuple
             * (*True*, path) или (*False*, comment)
-            * (*True*, {branch_name : path1, ...}) или (*False*, comment) - для *task_type* из списка :attr:`edit_db.studio.multi_publish_task_types` (например *'sketch'*)
+            * (*True*, {branch_name : path1, ...}) или (*False*, comment) - для *task_type* из списка :attr:`edit_db.studio.MULTI_PUBLISH_TASK_TYPES` (например *'sketch'*)
         """
         pass
         # 1 - task_type = sketch
@@ -833,7 +833,7 @@ class studio:
         # 2.3 - путь до активити
         
         # (1)
-        if c_task.task_type in self.multi_publish_task_types:
+        if c_task.task_type in self.MULTI_PUBLISH_TASK_TYPES:
             #
             if not version is False:
                 # ( 1.1)
@@ -847,7 +847,7 @@ class studio:
                 path_dict = dict()
                 for branch in branches:
                     if look:
-                        path_dict[branch] = NormPath(os.path.join(c_task.asset.path, c_task.activity, str_version, '%s#%s%s' % (c_task.asset.name, branch, self.look_extension)))
+                        path_dict[branch] = NormPath(os.path.join(c_task.asset.path, c_task.activity, str_version, '%s#%s%s' % (c_task.asset.name, branch, self.LOOK_EXTENSION)))
                     else:
                         path_dict[branch] = NormPath(os.path.join(c_task.asset.path, c_task.activity, str_version, '%s#%s%s' % (c_task.asset.name, branch, c_task.extension)))
                 return(True, path_dict)
@@ -882,8 +882,8 @@ class studio:
             >> # получаем объект текущей задачи current_task
             >> ...
             >> db._template_get_publish_path(current_task, version=25, branches=['master', 'branch1'], look=True)
-            >> (True, {'master' : 'path_to_project/assets/asset_name/publish/activity_name/'0025'/asset_name#master.look_extension',
-                       'branch1' : 'path_to_project/assets/asset_name/publish/activity_name/'0025'/asset_name#branch1.look_extension'})
+            >> (True, {'master' : 'path_to_project/assets/asset_name/publish/activity_name/'0025'/asset_name#master.LOOK_EXTENSION',
+                       'branch1' : 'path_to_project/assets/asset_name/publish/activity_name/'0025'/asset_name#branch1.LOOK_EXTENSION'})
             >> db._template_get_publish_path(current_task, version=25)
             >> (True, 'path_to_project/assets/asset_name/publish/activity_name/'0025'/asset_name.ext')
             >> # Путь до финальной версии (для не скетч)
@@ -903,16 +903,16 @@ class studio:
             Версия, число или строковое представление, если *False* - то путь до финальной версии, которая сверху версий (в паблиш/активити).
             
         branches : list, optional
-             Список веток из которых делался *push* или *publish* (в случае репаблиша) - для *task_type* из списка :attr:`edit_db.studio.multi_publish_task_types` (например *'sketch'*).
+             Список веток из которых делался *push* или *publish* (в случае репаблиша) - для *task_type* из списка :attr:`edit_db.studio.MULTI_PUBLISH_TASK_TYPES` (например *'sketch'*).
              
         look : bool, optional
-            Рассматривается только если *task_type* из списка :attr:`edit_db.studio.multi_publish_task_types` (например *'sketch'*), если *False* - то используется *c_task.extension*, если *True* - то используется :attr:`edit_db.studio.look_extension`.
+            Рассматривается только если *task_type* из списка :attr:`edit_db.studio.MULTI_PUBLISH_TASK_TYPES` (например *'sketch'*), если *False* - то используется *c_task.extension*, если *True* - то используется :attr:`edit_db.studio.LOOK_EXTENSION`.
             
         Returns
         -------
         tuple
             * (*True*, path) или (*False*, comment)
-            * (*True*, {branch_name : path1, ...}) или (*False*, comment) - для *task_type* из списка :attr:`edit_db.studio.multi_publish_task_types` (например *'sketch'*)
+            * (*True*, {branch_name : path1, ...}) или (*False*, comment) - для *task_type* из списка :attr:`edit_db.studio.MULTI_PUBLISH_TASK_TYPES` (например *'sketch'*)
         """
         pass
         # 1 - 
@@ -923,30 +923,30 @@ class studio:
             if not b:
                 return (b, str_version)
             #
-            if c_task.task_type in self.multi_publish_task_types:
+            if c_task.task_type in self.MULTI_PUBLISH_TASK_TYPES:
                 path_dict = dict()
                 for branch in branches:
                     if look:
-                        path = os.path.join(c_task.asset.path, self.publish_folder_name, c_task.activity, str_version, '%s#%s%s' % (c_task.asset.name, branch, self.look_extension))
+                        path = os.path.join(c_task.asset.path, self.PUBLISH_FOLDER_NAME, c_task.activity, str_version, '%s#%s%s' % (c_task.asset.name, branch, self.LOOK_EXTENSION))
                     else:
-                        path = os.path.join(c_task.asset.path, self.publish_folder_name, c_task.activity, str_version, '%s#%s%s' % (c_task.asset.name, branch, c_task.extension))
+                        path = os.path.join(c_task.asset.path, self.PUBLISH_FOLDER_NAME, c_task.activity, str_version, '%s#%s%s' % (c_task.asset.name, branch, c_task.extension))
                     path_dict[branch] = NormPath(path)
                 return(True, path_dict)
             else:
-                path = os.path.join(c_task.asset.path, self.publish_folder_name, c_task.activity, str_version, '%s%s' % (c_task.asset.name, c_task.extension))
+                path = os.path.join(c_task.asset.path, self.PUBLISH_FOLDER_NAME, c_task.activity, str_version, '%s%s' % (c_task.asset.name, c_task.extension))
                 return (True, NormPath(path))
         else:
-            if c_task.task_type in self.multi_publish_task_types:
+            if c_task.task_type in self.MULTI_PUBLISH_TASK_TYPES:
                 path_dict = dict()
                 for branch in branches:
                     if look:
-                        path = os.path.join(c_task.asset.path, self.publish_folder_name, c_task.activity, '%s#%s%s' % (c_task.asset.name, branch, self.look_extension))
+                        path = os.path.join(c_task.asset.path, self.PUBLISH_FOLDER_NAME, c_task.activity, '%s#%s%s' % (c_task.asset.name, branch, self.LOOK_EXTENSION))
                     else:
-                        path = os.path.join(c_task.asset.path, self.publish_folder_name, c_task.activity, '%s#%s%s' % (c_task.asset.name, branch, c_task.extension))
+                        path = os.path.join(c_task.asset.path, self.PUBLISH_FOLDER_NAME, c_task.activity, '%s#%s%s' % (c_task.asset.name, branch, c_task.extension))
                     path_dict[branch] = NormPath(path)
                 return(True, path_dict)
             else:
-                return (True, NormPath(os.path.join(c_task.asset.path, self.publish_folder_name, c_task.activity, '%s%s' % (c_task.asset.name, c_task.extension))))
+                return (True, NormPath(os.path.join(c_task.asset.path, self.PUBLISH_FOLDER_NAME, c_task.activity, '%s%s' % (c_task.asset.name, c_task.extension))))
         
     def set_share_dir(self, path):
         """Пока не используется. """
@@ -954,13 +954,13 @@ class studio:
             return "****** to studio path not Found!"
         
         home = os.path.expanduser('~')	
-        init_path = os.path.join(home, self.init_folder, self.init_file).replace('\\','/')
-        if not os.path.exists(init_path):
-            return "****** init_path not Found!"
+        INIT_PATH = os.path.join(home, self.INIT_FOLDER, self.INIT_FILE).replace('\\','/')
+        if not os.path.exists(INIT_PATH):
+            return "****** INIT_PATH not Found!"
         
         # write studio path
         try:
-            with open(init_path, 'r') as read:
+            with open(INIT_PATH, 'r') as read:
                 data = json.load(read)
                 data['share_folder'] = path
                 read.close()
@@ -968,7 +968,7 @@ class studio:
             return "****** init file  can not be read"
 
         try:
-            with open(init_path, 'w') as f:
+            with open(INIT_PATH, 'w') as f:
                 jsn = json.dump(data, f, sort_keys=True, indent=4)
                 f.close()
         except:
@@ -984,14 +984,14 @@ class studio:
         pass
         # get lineyka_init.json
         home = os.path.expanduser('~')	
-        init_path = os.path.join(home, self.init_folder, self.init_file).replace('\\','/')
-        if not os.path.exists(init_path):
-            return False, "****** init_path not Found!"
+        INIT_PATH = os.path.join(home, self.INIT_FOLDER, self.INIT_FILE).replace('\\','/')
+        if not os.path.exists(INIT_PATH):
+            return False, "****** INIT_PATH not Found!"
             
         # write studio path
         
         try:
-            with open(init_path, 'r') as read:
+            with open(INIT_PATH, 'r') as read:
                 data = json.load(read)
                 try:
                     path = data['share_folder']
@@ -1015,7 +1015,7 @@ class studio:
         * :attr:`edit_db.studio.TMP_FOLDER`
         * :attr:`edit_db.studio.STUDIO_DATABASE`
         * :attr:`edit_db.studio.EXTENSIONS`
-        * :attr:`edit_db.studio.soft_data`
+        * :attr:`edit_db.studio.SOFT_DATA`
         
         Returns
         -------
@@ -1024,43 +1024,30 @@ class studio:
         
         """
         
-        if self.init_path == False:
-            return(False, '****** in get_studio() -> init_path = False!')
+        if self.INIT_PATH == False:
+            return(False, '****** in get_studio() -> INIT_PATH = False!')
         # write studio path
         try:
-            with open(self.init_path, 'r') as read:
+            with open(self.INIT_PATH, 'r') as read:
                 data = json.load(read)
-                #self.STUDIO_FOLDER = data['STUDIO_FOLDER']
-                #self.TMP_FOLDER = data['TMP_FOLDER']
                 read.close()
         except:
             return(False, "****** init file  can not be read")
+        #
         try:
-            self.STUDIO_FOLDER = data['STUDIO_FOLDER']
-            self.WORK_FOLDER = data['WORK_FOLDER']
-            self.CONVERT_EXE = data['CONVERT_EXE']
-            self.TMP_FOLDER = data['TMP_FOLDER']
-            self.STUDIO_DATABASE = data['use_database']
+            for key in data:
+                setattr(self, data[key])
         except Exception as e:
             print(e)
             
         #print('artist path: ', self.artists_path)
             
-        '''
-        # get list_active_projects
-        if self.list_projects:
-            self.list_active_projects = []
-            for key in self.list_projects:
-                if self.list_projects[key]['status'] == 'active':
-                    self.list_active_projects.append(key)
-        '''
-                
         # fill self.EXTENSIONS
         try:
             with open(self.set_path, 'r') as read:
                 data = json.load(read)
                 self.EXTENSIONS = data['extension'].keys()
-                self.soft_data = data['extension']
+                self.SOFT_DATA = data['extension']
                 read.close()
         except:
             return(False, 'in get_studio -> not read user_setting.json!')
@@ -1081,9 +1068,9 @@ class studio:
         extension_dict = dict()
         
         home = os.path.expanduser('~')
-        #folder = os.path.join(home, self.init_folder)
+        #folder = os.path.join(home, self.INIT_FOLDER)
         #set_path = os.path.join(folder, self.set_file)
-        set_path = NormPath(os.path.join(home, self.init_folder, self.set_file))
+        set_path = NormPath(os.path.join(home, self.INIT_FOLDER, self.set_file))
         
         if not os.path.exists(set_path):
             return(False, ('Not Path ' + set_path))
@@ -1111,9 +1098,9 @@ class studio:
         extension_dict = dict()
         
         home = os.path.expanduser('~')
-        #folder = os.path.join(home, self.init_folder)
+        #folder = os.path.join(home, self.INIT_FOLDER)
         #set_path = os.path.join(folder, self.set_file)
-        set_path = NormPath(os.path.join(home, self.init_folder, self.set_file))
+        set_path = NormPath(os.path.join(home, self.INIT_FOLDER, self.set_file))
         
         if not os.path.exists(set_path):
             return(False, ('Not Path ' + set_path))
@@ -1155,7 +1142,7 @@ class studio:
             
         # get file path
         home = os.path.expanduser('~')
-        folder = os.path.join(home, self.init_folder)
+        folder = os.path.join(home, self.INIT_FOLDER)
         set_path = os.path.join(folder, self.set_file)
         
         if not os.path.exists(set_path):
@@ -1879,7 +1866,7 @@ class project(studio):
         *fps* проекта (по умолчанию 24).
     
     units : str
-        Юниты 3d сцен, значение из списка: :attr:`edit_db.studio.projects_units` по умолчанию ``'m'``.
+        Юниты 3d сцен, значение из списка: :attr:`edit_db.studio.PROJECTS_UNITS` по умолчанию ``'m'``.
     
     list_active_projects : list
         ``атрибут класса`` Список активных проектов, только имена. Заполняется при выполнении метода :func:`edit_db.project.get_list`, значение по умолчанию - ``[]``.
@@ -2237,7 +2224,7 @@ class project(studio):
         Parameters
         ----------
         units : str
-            юниты для 3d сцен, значение из :attr:`edit_db.studio.projects_units`
+            юниты для 3d сцен, значение из :attr:`edit_db.studio.PROJECTS_UNITS`
         
         Returns
         -------
@@ -2245,7 +2232,7 @@ class project(studio):
             (*True, 'Ok!'*) или (*False, comment*)
         """
         
-        if not units in self.projects_units:
+        if not units in self.PROJECTS_UNITS:
             return(False, 'invalid value for Units: "%s"' % str(units))
         pass
 
@@ -3050,7 +3037,7 @@ class asset(studio):
             #
             description = 'copy asset from "%s"' % self.name
             #
-            if new_tsk.task_type in self.multi_publish_task_types:
+            if new_tsk.task_type in self.MULTI_PUBLISH_TASK_TYPES:
                 for branch, source_path in r[0]['push_path'].items():
                     new_tsk.open_time = datetime.datetime.now()
                     new_tsk.commit(source_path, description, branch=branch)
@@ -3063,10 +3050,10 @@ class asset(studio):
 
         # (7) copy preview image
         img_folder_path = NormPath(os.path.join(self.project.path, self.project.folders['preview_images']))
-        old_img_path = NormPath(os.path.join(img_folder_path, (self.name + self.preview_extension)))
-        old_img_icon_path = NormPath(os.path.join(img_folder_path, (self.name + '_icon%s' % self.preview_extension)))
-        new_img_path = NormPath(os.path.join(img_folder_path, (new_asset_name + self.preview_extension)))
-        new_img_icon_path = NormPath(os.path.join(img_folder_path, (new_asset_name + '_icon%s' % self.preview_extension)))
+        old_img_path = NormPath(os.path.join(img_folder_path, (self.name + self.PREVIEW_EXTENSION)))
+        old_img_icon_path = NormPath(os.path.join(img_folder_path, (self.name + '_icon%s' % self.PREVIEW_EXTENSION)))
+        new_img_path = NormPath(os.path.join(img_folder_path, (new_asset_name + self.PREVIEW_EXTENSION)))
+        new_img_icon_path = NormPath(os.path.join(img_folder_path, (new_asset_name + '_icon%s' % self.PREVIEW_EXTENSION)))
         
         if os.path.exists(old_img_path):
             shutil.copyfile(old_img_path, new_img_path)
@@ -3680,7 +3667,7 @@ class task(studio):
         
         # get status
         bool_statuses = []
-        # --------------- fill end_statuses -------------
+        # --------------- fill END_STATUSES -------------
         for task_name in input_list:
             # (2) asse id
             asset_name = task_name.split(':')[0]
@@ -3692,7 +3679,7 @@ class task(studio):
             task_ob = task(asset_ob).init(task_name)
             
             # (4) make status
-            if task_ob.status in self.end_statuses:
+            if task_ob.status in self.END_STATUSES:
                 bool_statuses.append(True)
             else:
                 bool_statuses.append(False)
@@ -3732,7 +3719,7 @@ class task(studio):
         new_status = 'null'
         # change status
         if input_task:
-            if input_task.status in self.end_statuses:
+            if input_task.status in self.END_STATUSES:
                 if not task_outsource:
                     if this_task.status == 'null':
                         new_status = 'ready'
@@ -3743,7 +3730,7 @@ class task(studio):
                 if this_task.status != 'close':
                     new_status = 'null'
         else:
-            if not this_task.status in self.end_statuses:
+            if not this_task.status in self.END_STATUSES:
                 if task_outsource:
                     new_status = 'ready_to_send'
                 else:
@@ -3974,7 +3961,7 @@ class task(studio):
         assets = result[1]
         
         bool_statuses = []
-        # --------------- fill end_statuses -------------
+        # --------------- fill END_STATUSES -------------
         
         # ****** connect to db
         conn = sqlite3.connect(self.tasks_path, detect_types=sqlite3.PARSE_DECLTYPES|sqlite3.PARSE_COLNAMES)
@@ -3998,7 +3985,7 @@ class task(studio):
                 conn.close()
                 return(False, ('in from_service_remove_input_tasks can not read ', string))
                 
-            if task_data['status'] in self.end_statuses:
+            if task_data['status'] in self.END_STATUSES:
                 bool_statuses.append(True)
             else:
                 bool_statuses.append(False)
@@ -4075,7 +4062,7 @@ class task(studio):
                     return(True, (version_path, end_log['version']))
             # (3)
             elif end_log['action'] == 'push':
-                if self.task_type not in self.multi_publish_task_types:
+                if self.task_type not in self.MULTI_PUBLISH_TASK_TYPES:
                     pass
                     # (4)
                     b, version_path = self._template_get_work_path(self, version=end_log['source'])
@@ -4233,7 +4220,7 @@ class task(studio):
         Returns
         -------
         tuple
-            * для задач с типом из :attr:`edit_db.studio.multi_publish_task_types` - (*True*, (``{path_data}`` [1]_, ``version``)) или (*False*, comment)
+            * для задач с типом из :attr:`edit_db.studio.MULTI_PUBLISH_TASK_TYPES` - (*True*, (``{path_data}`` [1]_, ``version``)) или (*False*, comment)
             * для остальных - (*True*, (``path``, ``version``)) - или (*False*, comment)
             
             .. [1] Структура словаря ``{path_data}`` :
@@ -4282,7 +4269,7 @@ class task(studio):
         # (3)
         if end_log:
             version = end_log['version']
-            if self.task_type in self.multi_publish_task_types:
+            if self.task_type in self.MULTI_PUBLISH_TASK_TYPES:
                 pass
                 r_data = dict()
                 # -- push path
@@ -4332,7 +4319,7 @@ class task(studio):
         Returns
         -------
         tuple
-            * для задач с типом из :attr:`edit_db.studio.multi_publish_task_types` - (*True*, ``{path_data}`` [2]_) или (*False*, comment)
+            * для задач с типом из :attr:`edit_db.studio.MULTI_PUBLISH_TASK_TYPES` - (*True*, ``{path_data}`` [2]_) или (*False*, comment)
             * для остальных - (*True*, ``path``) - или (*False*, comment)
             
             .. [2] Структура словаря ``{path_data}`` :
@@ -4380,7 +4367,7 @@ class task(studio):
             return(False, 'The push log of this version "%s" was not found' % version)
         
         # (3)
-        if self.task_type in self.multi_publish_task_types:
+        if self.task_type in self.MULTI_PUBLISH_TASK_TYPES:
             pass
             r_data = dict()
             # -- push path
@@ -4393,7 +4380,7 @@ class task(studio):
                 return(b,r_look)
             #
             r_data['push_path'] = r_push
-            if self.task_type in self.multi_publish_task_types:
+            if self.task_type in self.MULTI_PUBLISH_TASK_TYPES:
                 r_data['look_path'] = r_look
             else:
                 r_data['look_path'] = r_push
@@ -4421,14 +4408,14 @@ class task(studio):
         Parameters
         ----------
         version : str, int, optional
-            Коммит версия исходника (не для задач с типом из :attr:`edit_db.studio.multi_publish_task_types`, для задач с этим типом делается ``push`` только последних версий каждой ветки).
+            Коммит версия исходника (не для задач с типом из :attr:`edit_db.studio.MULTI_PUBLISH_TASK_TYPES`, для задач с этим типом делается ``push`` только последних версий каждой ветки).
         current_artist : :obj:`edit_db.artist`, optional
             Текущий пользователь, если не передавать, будет сделано :func:`edit_db.artist.get_user`
             
         Returns
         -------
         tuple
-            * для задач с типом из :attr:`edit_db.studio.multi_publish_task_types` - (*True*, (``{path_data}`` [3]_, ``new_version``)) или (*False*, comment)
+            * для задач с типом из :attr:`edit_db.studio.MULTI_PUBLISH_TASK_TYPES` - (*True*, (``{path_data}`` [3]_, ``new_version``)) или (*False*, comment)
             * для остальных - (*True*, (``source_path``, ``source_version``, ``source_branch``, ``new_path``, ``new_version``)) - или (*False*, comment)
             
             .. [3] Структура словаря ``{path_data}`` :
@@ -4507,7 +4494,7 @@ class task(studio):
         end_work_log = work_log_list[-1:][0]
         
         # (3)
-        if self.task_type in self.multi_publish_task_types:
+        if self.task_type in self.MULTI_PUBLISH_TASK_TYPES:
             pass
             # (3.1)
             # -- clean branches
@@ -4606,7 +4593,7 @@ class task(studio):
         Returns
         -------
         tuple
-            * для задач с типом из :attr:`edit_db.studio.multi_publish_task_types` - (*True*, ``{path_data}`` [4]_) или (*False*, comment)
+            * для задач с типом из :attr:`edit_db.studio.MULTI_PUBLISH_TASK_TYPES` - (*True*, ``{path_data}`` [4]_) или (*False*, comment)
             * для остальных - (*True*, ``path``) - или (*False*, comment)
             
             .. [4] Структура словаря ``{path_data}`` :
@@ -4647,7 +4634,7 @@ class task(studio):
                     return(False, 'No exists publish version - "%s" !' % version)
 
         # (2)
-        if self.task_type in self.multi_publish_task_types:
+        if self.task_type in self.MULTI_PUBLISH_TASK_TYPES:
             pass
             r_dict = dict()
             #
@@ -4678,7 +4665,7 @@ class task(studio):
         Returns
         -------
         tuple
-            * для задач с типом из :attr:`edit_db.studio.multi_publish_task_types` - (*True*, ``{path_data}`` [5]_) или (*False*, comment)
+            * для задач с типом из :attr:`edit_db.studio.MULTI_PUBLISH_TASK_TYPES` - (*True*, ``{path_data}`` [5]_) или (*False*, comment)
             * для остальных - (*True*, ``path``) - или (*False*, comment)
             
             .. [5] Структура словаря ``{path_data}`` :
@@ -4711,7 +4698,7 @@ class task(studio):
             return(False, 'No exists publish version!')
         
         # (2)
-        if self.task_type in self.multi_publish_task_types:
+        if self.task_type in self.MULTI_PUBLISH_TASK_TYPES:
             pass
             branches = end_log['branch']
             r_dict = dict()
@@ -4753,7 +4740,7 @@ class task(studio):
         Returns
         -------
         tuple
-            * для задач с типом из :attr:`edit_db.studio.multi_publish_task_types` - (*True*, (``{path_data}`` [6]_, ``new_version``, ``source`` [7]_, ``branches`` [8]_)) или (*False*, comment)
+            * для задач с типом из :attr:`edit_db.studio.MULTI_PUBLISH_TASK_TYPES` - (*True*, (``{path_data}`` [6]_, ``new_version``, ``source`` [7]_, ``branches`` [8]_)) или (*False*, comment)
             * для остальных - (*True*, (``{path_data}`` [9]_, ``new_version``, ``source`` [7]_)) или (*False*, comment)
             
             .. [6] Структура словаря ``{path_data}`` :
@@ -4864,7 +4851,7 @@ class task(studio):
                 else:
                     return(False, 'No exists push version!')
             #
-            if self.task_type in self.multi_publish_task_types and not branches:
+            if self.task_type in self.MULTI_PUBLISH_TASK_TYPES and not branches:
                 return(False, 'No exists source (push or pulish version)!')
             if source is False or source is None:
                 return(False, 'No exists source (push or pulish version)!')
@@ -4880,7 +4867,7 @@ class task(studio):
             b, source_path = self.get_version_publish_file_path(version=source_version, branches=branches)
             if not b:
                 return(b, source_path)
-            if self.task_type in self.multi_publish_task_types:
+            if self.task_type in self.MULTI_PUBLISH_TASK_TYPES:
                 source_look_path = source_path['look_path']
                 source_path = source_path['publish_path']
         else:
@@ -4891,11 +4878,11 @@ class task(studio):
                 source_path = source_path[0]
             if not b:
                 return(b, source_path)
-            if self.task_type in self.multi_publish_task_types:
+            if self.task_type in self.MULTI_PUBLISH_TASK_TYPES:
                 source_look_path = source_path['look_path']
                 source_path = source_path['push_path']
         # (4)
-        if self.task_type in self.multi_publish_task_types:
+        if self.task_type in self.MULTI_PUBLISH_TASK_TYPES:
             pass
             #
             b, r_top = self._template_get_publish_path(self, branches=branches)
@@ -5054,7 +5041,7 @@ class task(studio):
             return(False, 'No Found Task with this activity: "%s"!' % activity)
         
         # -- -- get publish dir
-        publish_dir = NormPath(os.path.join(self.asset.path, self.publish_folder_name))
+        publish_dir = NormPath(os.path.join(self.asset.path, self.PUBLISH_FOLDER_NAME))
         if not os.path.exists(publish_dir):
             return(False, 'in task.get_publish_file_path() - Not Publish Folder! (%s)' % publish_dir)
         # -- -- get activity_dir
@@ -5247,7 +5234,7 @@ class task(studio):
                 return(False, 'System not defined!')
         else:
             # get soft
-            soft = self.soft_data.get(self.extension)
+            soft = self.SOFT_DATA.get(self.extension)
             if not soft:
                 return(False, 'No application found for this extension "%s"' % self.extension)
             
@@ -5275,7 +5262,7 @@ class task(studio):
     def look(self, action='push', version=False, launch=True):
         """Просмотр какой-либо версии файла для менеджеров (``push``, ``publish`` версии).
         
-        .. note:: Если тип задачи из :attr:`edit_db.studio.multi_publish_task_types` (например ``sketch``) то запуска не будет, но будут возвращены пути.
+        .. note:: Если тип задачи из :attr:`edit_db.studio.MULTI_PUBLISH_TASK_TYPES` (например ``sketch``) то запуска не будет, но будут возвращены пути.
         
         Parameters
         ----------
@@ -5319,7 +5306,7 @@ class task(studio):
                 return(b, r)
         
         # (2)
-        if self.task_type in self.multi_publish_task_types or not launch:
+        if self.task_type in self.MULTI_PUBLISH_TASK_TYPES or not launch:
             pass
             return(True, r)
         else:
@@ -5373,7 +5360,7 @@ class task(studio):
                 if not b:
                     return(b,r)
             if not tasks:
-                b, r = current_artist.get_working_tasks(self.asset.project, statuses = self.working_statuses)
+                b, r = current_artist.get_working_tasks(self.asset.project, statuses = self.WORKING_STATUSES)
                 if not b:
                     return(b,r)
                 tasks = r
@@ -5456,7 +5443,7 @@ class task(studio):
                     return(False, 'No found saved version!')
                 '''
                 global_empty_path = NormPath(os.path.join(os.path.dirname(__file__), self.EMPTY_FILES_DIR_NAME, 'empty%s' % task_ob.extension))
-                user_empty_path = NormPath(os.path.join(os.path.expanduser('~'), self.init_folder, self.EMPTY_FILES_DIR_NAME, 'empty%s' % task_ob.extension))
+                user_empty_path = NormPath(os.path.join(os.path.expanduser('~'), self.INIT_FOLDER, self.EMPTY_FILES_DIR_NAME, 'empty%s' % task_ob.extension))
                 print('*'*5, global_empty_path, os.path.exists(global_empty_path))
                 print('*'*5, user_empty_path, os.path.exists(user_empty_path))
                 #
@@ -5481,7 +5468,7 @@ class task(studio):
         
         # (3) open file
         if launch:
-            soft = self.soft_data.get(task_ob.extension)
+            soft = self.SOFT_DATA.get(task_ob.extension)
             if not soft:
                 return(False, 'No application found for this extension "%s"' % task_ob.extension)
             cmd = '"%s" "%s"' % (soft, tmp_file_path)
@@ -5519,7 +5506,7 @@ class task(studio):
         description : str
             Краткое описание.
         version : str, int, optional
-            ``work`` версия из которой делается ``push``, не имеет смысла для задач с типом из :attr:`edit_db.studio.multi_publish_task_types`, там только из последней версии.
+            ``work`` версия из которой делается ``push``, не имеет смысла для задач с типом из :attr:`edit_db.studio.MULTI_PUBLISH_TASK_TYPES`, там только из последней версии.
         current_artist : :obj:`edit_db.artist`, optional
             Текущий пользователь, если не передавать, будет сделано :func:`edit_db.artist.get_user`
             
@@ -5566,7 +5553,7 @@ class task(studio):
         
         if not current_artist.outsource:
             # (2)
-            if self.task_type in self.multi_publish_task_types:
+            if self.task_type in self.MULTI_PUBLISH_TASK_TYPES:
                 pass
                 branches = list()
                 source_versions = list()
@@ -5635,7 +5622,7 @@ class task(studio):
         # (4)
         else:
             # (5)
-            if self.task_type in self.multi_publish_task_types:
+            if self.task_type in self.MULTI_PUBLISH_TASK_TYPES:
                 pass
             # (6)
             else:
@@ -5738,7 +5725,7 @@ class task(studio):
         # (3)
         # (3.1)
         pass
-        if self.task_type in self.multi_publish_task_types:
+        if self.task_type in self.MULTI_PUBLISH_TASK_TYPES:
             publish_dir = os.path.dirname(r[0]['top_path'][r[0]['top_path'].keys()[0]])
         else:
             publish_dir = os.path.dirname(r[0]['top_path'])
@@ -5751,14 +5738,14 @@ class task(studio):
         
         # (3.2)
         # -- mk dir
-        if self.task_type in self.multi_publish_task_types:
+        if self.task_type in self.MULTI_PUBLISH_TASK_TYPES:
             version_dir = os.path.dirname(r[0]['version_path'][r[0]['version_path'].keys()[0]])
         else:
             version_dir = os.path.dirname(r[0]['version_path'])
         if not os.path.exists(version_dir):
             os.makedirs(version_dir)
         # -- copy files
-        if self.task_type in self.multi_publish_task_types:
+        if self.task_type in self.MULTI_PUBLISH_TASK_TYPES:
             for branch in r[0]['source_path']:
                 shutil.copyfile(r[0]['source_path'][branch], r[0]['top_path'][branch])
                 shutil.copyfile(r[0]['source_path'][branch], r[0]['version_path'][branch])
@@ -5776,7 +5763,7 @@ class task(studio):
         new_log_keys['action'] = 'publish'
         new_log_keys['version'] = r[1]
         new_log_keys['description']=description
-        if self.task_type in self.multi_publish_task_types:
+        if self.task_type in self.MULTI_PUBLISH_TASK_TYPES:
             new_log_keys['branch']=r[3]
         new_log_keys['source']=r[2]
         #print(new_log_keys)
@@ -6287,7 +6274,7 @@ class task(studio):
             input_status = 'done'
             
         
-        ######### self.working_statuses self.end_statuses
+        ######### self.WORKING_STATUSES self.END_STATUSES
         
         # CHANGE STATUS
         try:
@@ -6295,7 +6282,7 @@ class task(studio):
         except:
             pass
         else:
-            if not (input_status in self.end_statuses):
+            if not (input_status in self.END_STATUSES):
                 task_key_data['status'] = "null"
             elif task_key_data['status'] == "ready" and outsource:
                 task_key_data['status'] = "ready_to_send"
@@ -6303,16 +6290,16 @@ class task(studio):
                 task_key_data['status'] = "work_to_outsorce"
             elif task_key_data['status'] == "work_to_outsorce" and not outsource:
                 task_key_data['status'] = "work"
-            elif task_key_data['status'] == "null" and (input_status in self.end_statuses) and outsource:
+            elif task_key_data['status'] == "null" and (input_status in self.END_STATUSES) and outsource:
                 task_key_data['status'] = "ready_to_send"
-            elif task_key_data['status'] == "null" and (input_status in self.end_statuses) and (not outsource):
+            elif task_key_data['status'] == "null" and (input_status in self.END_STATUSES) and (not outsource):
                 task_key_data['status'] = "ready"
             # SET OUTPUT STATUS
-            elif task_key_data['status'] in self.end_statuses:
+            elif task_key_data['status'] in self.END_STATUSES:
                 #print('w'*25, task_key_data['status'])
                 self.edit_status_to_output(project_name, task_key_data['task_name'])
             
-            if (current_task_data['status'] in self.end_statuses) and (task_key_data['status'] not in self.end_statuses):
+            if (current_task_data['status'] in self.END_STATUSES) and (task_key_data['status'] not in self.END_STATUSES):
                 self.edit_status_to_output(project_name, task_key_data['task_name'], new_status = task_key_data['status'])
             
         # write task to db
@@ -6403,7 +6390,7 @@ class task(studio):
                     else:	
                         string2 = 'UPDATE ' +  table + ' SET status = \"ready\" WHERE task_name = \"' + row['task_name'] + '\"'
                     c.execute(string2)
-            elif new_status not in self.end_statuses and row['status'] != 'close':
+            elif new_status not in self.END_STATUSES and row['status'] != 'close':
                 string2 = 'UPDATE ' +  table + ' SET status = \"null\" WHERE task_name = \"' + row['task_name'] + '\"'
                 c.execute(string2)
             
@@ -6757,7 +6744,7 @@ class task(studio):
                 if row_['task_name'] == task_data['input']:
                     row = row_
             #print(row['status'])
-            if row['status'] in self.end_statuses:
+            if row['status'] in self.END_STATUSES:
                 task_data['status'] = 'ready'
             else:
                 task_data['status'] = 'null'
@@ -6836,7 +6823,7 @@ class task(studio):
             
         if old_input:
             # change status to output
-            if (old_status != 'close') and (old_status in self.end_statuses):
+            if (old_status != 'close') and (old_status in self.END_STATUSES):
                 #print('change status')
                 self._this_change_from_end(project_name, dict(output_row))
         '''
@@ -7487,7 +7474,7 @@ class task(studio):
         # ???
         # change status
         new_status = self._from_input_status(new_input_task)
-        if self.status in self.end_statuses and not new_status in self.end_statuses:
+        if self.status in self.END_STATUSES and not new_status in self.END_STATUSES:
             self._this_change_from_end()
                 
         # change outputs
@@ -7808,7 +7795,7 @@ class task(studio):
         return(True, 'Ok!')
 
     def return_a_job_task(self): # v2
-        """Возврат в работу задачи из завершённых статусов - :attr:`edit_db.studio.end_statuses`, со всеми вытекающими изменениями статусов исходящих задачь. Изменяемый параметр :attr:`edit_db.task.status`.
+        """Возврат в работу задачи из завершённых статусов - :attr:`edit_db.studio.END_STATUSES`, со всеми вытекающими изменениями статусов исходящих задачь. Изменяемый параметр :attr:`edit_db.task.status`.
         
         Returns
         -------
@@ -7878,7 +7865,7 @@ class task(studio):
             task_ob = data[0]
             new_status = data[1]
             #
-            if new_status not in (self.working_statuses + ['checking']):
+            if new_status not in (self.WORKING_STATUSES + ['checking']):
                 continue
             #
             update_data = {'status': new_status}
@@ -8019,7 +8006,7 @@ class task(studio):
                     continue
             inputs.append(task_ob.task_name)
             # -- get done statuses
-            done_statuses.append(task_ob.status in self.end_statuses)
+            done_statuses.append(task_ob.status in self.END_STATUSES)
             
             # edit outputs
             if task_ob.output:
@@ -8048,7 +8035,7 @@ class task(studio):
             self.input = ex_inputs + inputs
         
         # (3) change status
-        if self.status in self.end_statuses:
+        if self.status in self.END_STATUSES:
             if False in done_statuses:
                 self.status = 'null'
                 self._this_change_from_end()
@@ -8291,7 +8278,7 @@ class task(studio):
                     else:
                         continue
                 
-                if inp_task_data['status'] in self.end_statuses:
+                if inp_task_data['status'] in self.END_STATUSES:
                     bool_statuses.append(True)
                 else:
                     bool_statuses.append(False)
@@ -8335,7 +8322,7 @@ class task(studio):
                     conn.close()
                     return(False, ('in from_service_remove_input_tasks can not read ' + string))
                     
-                if inp_task_data['status'] in self.end_statuses:
+                if inp_task_data['status'] in self.END_STATUSES:
                     bool_statuses.append(True)
                 else:
                     bool_statuses.append(False)
@@ -9375,7 +9362,7 @@ class artist(studio):
     workroom : list
         Список id отделов, в которых сосотоит артист.
     level :  str
-        Уровень, значение из :attr:`edit_db.studio.user_levels`
+        Уровень, значение из :attr:`edit_db.studio.USER_LEVELS`
     share_dir : str
         Путь к директории обмена ``пока не используется``
     status : str
@@ -9765,13 +9752,13 @@ class artist(studio):
             
             # (3)
             # -- user не менеджер
-            if not current_user.level in self.manager_levels:
+            if not current_user.level in self.MANAGER_LEVELS:
                 return(False, 'Not Access! (your level does not allow you to make similar changes)')
             # -- попытка возвести в ранг выше себя
-            elif keys.get("level") and self.user_levels.index(current_user.level) < self.user_levels.index(keys.get("level")):
+            elif keys.get("level") and self.USER_LEVELS.index(current_user.level) < self.USER_LEVELS.index(keys.get("level")):
                 return(False, 'Not Access! (attempt to assign a level higher than yourself)')
             # -- попытка сделать изменения пользователя с более высоким уровнем.
-            elif self.user_levels.index(current_user.level) < self.user_levels.index(self.level):
+            elif self.USER_LEVELS.index(current_user.level) < self.USER_LEVELS.index(self.level):
                 return(False, 'Not Access! (attempt to change a user with a higher level)')
         
         # (4)

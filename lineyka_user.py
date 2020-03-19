@@ -245,7 +245,7 @@ class MainWindow(QtGui.QMainWindow):
 						newItem.setBackground(brush)
 						
 					elif key == 'status':
-						rgb = self.db_studio.color_status[self.tasks_list[task_name].status]
+						rgb = self.db_studio.COLOR_STATUS[self.tasks_list[task_name].status]
 						r = (rgb[0]*255)
 						g = (rgb[1]*255)
 						b = (rgb[2]*255)
@@ -628,7 +628,7 @@ class MainWindow(QtGui.QMainWindow):
 			return
 		
 		# make widjet
-		if self.selected_task.task_type in self.db_studio.multi_publish_task_types:
+		if self.selected_task.task_type in self.db_studio.MULTI_PUBLISH_TASK_TYPES:
 			ui_path = self.new_dialog_path
 		else:
 			ui_path = self.new_dialog_2_path
@@ -644,7 +644,7 @@ class MainWindow(QtGui.QMainWindow):
 		window.setAttribute(QtCore.Qt.WA_DeleteOnClose, True)
 		
 		# edit widget new
-		if not self.selected_task.task_type in self.db_studio.multi_publish_task_types:
+		if not self.selected_task.task_type in self.db_studio.MULTI_PUBLISH_TASK_TYPES:
 			window.new_dialog_label_2.setText('Push of version:') # latest
 			window.new_dialog_combo_box.setVisible(False)
 			#
