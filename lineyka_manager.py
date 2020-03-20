@@ -7821,13 +7821,13 @@ class MainWindow(QtWidgets.QMainWindow):
         self.wf_line.returnPressed.connect(self.set_the_work_folder_action_from_line)
             
         # set modal window
-        self.setWindow.setWindowModality(QtCore.Qt.WindowModal)
-        self.setWindow.setAttribute(QtCore.Qt.WA_DeleteOnClose, True)
-    
+        self.set_modal(self.setWindow)
+        # show   
         self.setWindow.show()
 
         # edit button
         self.setWindow.set_studio_button.clicked.connect(self.set_studio_action)
+        self.setWindow.cloud_button_02.clicked.connect(self.set_dir_cloud_studio_ui)
         self.setWindow.set_tmp_button.clicked.connect(self.set_tmp_path_action)
         self.setWindow.set_convert_button.clicked.connect(self.set_convert_path_action)
         wf_button.clicked.connect(self.set_the_work_folder_action)
@@ -7835,6 +7835,22 @@ class MainWindow(QtWidgets.QMainWindow):
         self.setWindow.rejected.connect(self.launcher)
 
         print('set studio ui')
+
+    def set_dir_cloud_studio_ui(self):
+        loader = QtUiTools.QUiLoader()
+        file = QtCore.QFile(self.set_dir_cloud_studio_path)
+        # file.open(QtCore.QFile.ReadOnly)
+        self.setCloudWindow = loader.load(file, self)
+        file.close()
+
+        # buttons 
+        self.setCloudWindow.button_box.rejected.connect(self.close_window(self.setCloudWindow))
+        self.setCloudWindow.button_box.accepted.connect(self.close_window(self.setCloudWindow))
+
+        # set modal window
+        self.set_modal(self.setCloudWindow)
+        # show
+        self.setCloudWindow.show()
 
     def set_studio_action(self):
         # get path
@@ -8172,6 +8188,10 @@ class MainWindow(QtWidgets.QMainWindow):
         if window:
             window.close()
     
+    def set_modal(self, window):
+        window.setWindowModality(QtCore.Qt.WindowModal)
+        window.setAttribute(QtCore.Qt.WA_DeleteOnClose, True)
+
     def clear_table(self, table = False):
         if not table:
             table = self.myWidget.studio_editor_table
