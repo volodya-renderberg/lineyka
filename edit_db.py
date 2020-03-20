@@ -49,7 +49,7 @@ class studio:
     """str: интернет адрес облака. """
     COOKIE_NAME = '.cookie'
     """str: Наименование файла куки. """
-    USER_DATA_FILE_NAME = '.user_data'
+    USER_DATA_FILE_NAME = '.user_data.json'
     """str: Наименование текстового файла гдехранятся данные текущего пользователя (для облака). """
     FARME_OFFSET = 100
     """int: Номер кадра, который будет считаться стартовым для сцен анимации. """
@@ -59,9 +59,9 @@ class studio:
     """str: Файл студийных настроек, хранится в директории студии."""
     tmp_folder = False
     """str: *tmp* директория пользователя, в неё копируются открываемые сцены. """
-    WORK_FOLDER = False
+    work_folder = False
     """str: Директория для локального хранения ассетов пользователя. Создаётся вся файловая структура ``project/assets/asset/activity/version_dir/file``. Определяе методом :func:`edit_db.studio.set_work_folder`. """
-    CONVERT_EXE = False
+    convert_exe = False
     """str: Путь к исполняемому файлу *convert* приложения 'Imagemagick' """
     studio_database = ['sqlite3', False]
     """list: Определение используемой в студии базы данных. """
@@ -525,8 +525,8 @@ class studio:
             # make jason
             d = {
                 'studio_folder': None,
-                'WORK_FOLDER': None,
-                'CONVERT_EXE': None,
+                'work_folder': None,
+                'convert_exe': None,
                 'tmp_folder': tempfile.gettempdir(),
                 # 'studio_database': ['sqlite3', False],
                 }
@@ -660,7 +660,7 @@ class studio:
 
     @classmethod
     def set_convert_exe_path(self, path):
-        """Определение пути до исполняемого файла *convert* приложения ‘Imagemagick’, параметр :attr:`edit_db.studio.CONVERT_EXE`.
+        """Определение пути до исполняемого файла *convert* приложения ‘Imagemagick’, параметр :attr:`edit_db.studio.convert_exe`.
         
         Parameters
         ----------
@@ -685,7 +685,7 @@ class studio:
         try:
             with open(self.init_path, 'r') as read:
                 data = json.load(read)
-                data['CONVERT_EXE'] = NormPath(path)
+                data['convert_exe'] = NormPath(path)
                 read.close()
         except:
             return(False, "****** init file  can not be read")
@@ -697,13 +697,13 @@ class studio:
         except:
             return(False, "****** init file  can not be read")
 
-        self.CONVERT_EXE = path
+        self.convert_exe = path
         
         return(True, 'Ok!')
 
     @classmethod
     def set_work_folder(self, path):
-        """Определение директории для локального хранения ассетов пользователя, параметр :attr:`edit_db.studio.WORK_FOLDER`.
+        """Определение директории для локального хранения ассетов пользователя, параметр :attr:`edit_db.studio.work_folder`.
         
         Parameters
         ----------
@@ -727,7 +727,7 @@ class studio:
         try:
             with open(self.init_path, 'r') as read:
                 data = json.load(read)
-                data['WORK_FOLDER'] = NormPath(path)
+                data['work_folder'] = NormPath(path)
                 read.close()
         except:
             return(False, "****** init file  can not be read")
@@ -739,7 +739,7 @@ class studio:
         except:
             return(False, "****** init file  can not be read")
 
-        self.WORK_FOLDER = path
+        self.work_folder = path
         
         return True, 'Ok'
 
@@ -774,7 +774,7 @@ class studio:
             return (False, 'Wrong version format "%s"' %  str(version))
 
     def _template_get_work_path(self, c_task, version=False):
-        """Шаблонный путь к файлу или активити в рабочей директории пользователя (:attr:`edit_db.studio.WORK_FOLDER`).
+        """Шаблонный путь к файлу или активити в рабочей директории пользователя (:attr:`edit_db.studio.work_folder`).
         
         Examples
         --------
@@ -805,10 +805,10 @@ class studio:
         """
         pass
         # exists work folder
-        if not self.WORK_FOLDER:
+        if not self.work_folder:
             return(False, 'Working directory not defined!')
-        elif not os.path.exists(self.WORK_FOLDER):
-            return(False, 'The path "%s" to working directory does not exist!' % self.WORK_FOLDER)
+        elif not os.path.exists(self.work_folder):
+            return(False, 'The path "%s" to working directory does not exist!' % self.work_folder)
         
         if version or version==0:
             # test version
@@ -816,10 +816,10 @@ class studio:
             if not b:
                 return (b, str_version)
             # file path
-            return (True, NormPath(os.path.join(self.WORK_FOLDER, c_task.asset.project.name, 'assets', c_task.asset.name, c_task.activity, str_version, '%s%s' % (c_task.asset.name, c_task.extension))))
+            return (True, NormPath(os.path.join(self.work_folder, c_task.asset.project.name, 'assets', c_task.asset.name, c_task.activity, str_version, '%s%s' % (c_task.asset.name, c_task.extension))))
         else:
             # activity path
-            return (True, NormPath(os.path.join(self.WORK_FOLDER, c_task.asset.project.name, 'assets', c_task.asset.name, c_task.activity)))
+            return (True, NormPath(os.path.join(self.work_folder, c_task.asset.project.name, 'assets', c_task.asset.name, c_task.activity)))
 
     def _template_get_push_path(self, c_task, version=False, branches=False, look=False): # v2
         """Шаблонный путь к файлу или активити *push* версии на сервере студии.
@@ -1049,8 +1049,8 @@ class studio:
         Заполняемые атрибуты:
         
         * :attr:`edit_db.studio.studio_folder`
-        * :attr:`edit_db.studio.WORK_FOLDER`
-        * :attr:`edit_db.studio.CONVERT_EXE`
+        * :attr:`edit_db.studio.work_folder`
+        * :attr:`edit_db.studio.convert_exe`
         * :attr:`edit_db.studio.tmp_folder`
         * :attr:`edit_db.studio.studio_database`
         * :attr:`edit_db.studio.EXTENSIONS`
@@ -2981,7 +2981,7 @@ class asset(studio):
         # 7 - copy preview images
         
         # (0)
-        if not self.WORK_FOLDER:
+        if not self.work_folder:
             return(False, 'Working directory not defined!')
         
         # (1) edit name
@@ -5126,7 +5126,7 @@ class task(studio):
         return(True, 'Ok!')
 
     def commit(self, work_path, description, branch=False, artist_ob=False):
-        """Запись новой рабочей версии в ``work`` директорию пользователя (:attr:`edit_db.studio.WORK_FOLDER`).
+        """Запись новой рабочей версии в ``work`` директорию пользователя (:attr:`edit_db.studio.work_folder`).
         
         Parameters
         ----------
@@ -5620,8 +5620,8 @@ class task(studio):
                     # (2.1)
                     shutil.copyfile(source_path, push_path)
                     # (2.2)
-                    cmd = '%s %s %s' % (os.path.normpath(self.CONVERT_EXE), push_path, look_path)
-                    cmd2 = '\"%s\" \"%s\" \"%s\"' % (os.path.normpath(self.CONVERT_EXE), push_path, look_path)
+                    cmd = '%s %s %s' % (os.path.normpath(self.convert_exe), push_path, look_path)
+                    cmd2 = '\"%s\" \"%s\" \"%s\"' % (os.path.normpath(self.convert_exe), push_path, look_path)
                     try:
                         os.system(cmd)
                     except Exception as e:

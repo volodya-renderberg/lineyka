@@ -923,8 +923,8 @@ class MainWindow(QtGui.QMainWindow):
 		if data[0]:
 			self.setWindow.set_studio_field.setText(str(copy.studio_folder))
 			self.setWindow.set_tmp_field.setText(str(copy.tmp_folder))
-			self.setWindow.set_convert_exe_field.setText(str(copy.CONVERT_EXE))
-			self.wf_line.setText(str(self.db_studio.WORK_FOLDER))
+			self.setWindow.set_convert_exe_field.setText(str(copy.convert_exe))
+			self.wf_line.setText(str(self.db_studio.work_folder))
 			'''
 			for row in data[1]:
 			print row
@@ -1064,7 +1064,7 @@ class MainWindow(QtGui.QMainWindow):
 			result = self.db_studio.set_work_folder(folder)
 			if not result[0]:
 				self.message(result[1], 2)
-				self.wf_line.setText(str(self.db_studio.WORK_FOLDER))
+				self.wf_line.setText(str(self.db_studio.work_folder))
 				return
 		# finish
 		self.message('Data saved!', 1)

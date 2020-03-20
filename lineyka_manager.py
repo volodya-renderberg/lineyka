@@ -7480,9 +7480,9 @@ class MainWindow(QtWidgets.QMainWindow):
         img = clipboard.image()
         if img:
             img.save(img_path)
-            cmd = '%s %s -resize 300 %s' % (os.path.normpath(self.db_studio.CONVERT_EXE), img_path, img_path)
-            cmd2 = '%s %s -resize 300x300 %s' % (os.path.normpath(self.db_studio.CONVERT_EXE), img_path, img_path)
-            cmd3 = '\"%s\" \"%s\" -resize 300 \"%s\"' % (os.path.normpath(self.db_studio.CONVERT_EXE), img_path, img_path)
+            cmd = '%s %s -resize 300 %s' % (os.path.normpath(self.db_studio.convert_exe), img_path, img_path)
+            cmd2 = '%s %s -resize 300x300 %s' % (os.path.normpath(self.db_studio.convert_exe), img_path, img_path)
+            cmd3 = '\"%s\" \"%s\" -resize 300 \"%s\"' % (os.path.normpath(self.db_studio.convert_exe), img_path, img_path)
             print(cmd)
             print(cmd2)
             print(cmd3)
@@ -7522,9 +7522,9 @@ class MainWindow(QtWidgets.QMainWindow):
         shutil.copyfile(window.img_path, save_path)
         
         # -- resize
-        cmd = '%s %s -resize 100 %s' % (os.path.normpath(self.db_studio.CONVERT_EXE), window.img_path, tmp_icon_path)
-        cmd2 = '%s %s -resize 100x100 %s' % (os.path.normpath(self.db_studio.CONVERT_EXE), window.img_path, tmp_icon_path)
-        cmd3 = '\"%s\" \"%s\" -resize 100 \"%s\"' % (os.path.normpath(self.db_studio.CONVERT_EXE), window.img_path, tmp_icon_path)
+        cmd = '%s %s -resize 100 %s' % (os.path.normpath(self.db_studio.convert_exe), window.img_path, tmp_icon_path)
+        cmd2 = '%s %s -resize 100x100 %s' % (os.path.normpath(self.db_studio.convert_exe), window.img_path, tmp_icon_path)
+        cmd3 = '\"%s\" \"%s\" -resize 100 \"%s\"' % (os.path.normpath(self.db_studio.convert_exe), window.img_path, tmp_icon_path)
         try:
             os.system(cmd)
         except:
@@ -7806,8 +7806,8 @@ class MainWindow(QtWidgets.QMainWindow):
         if data[0]:
             self.setWindow.set_studio_field.setText(str(self.db_studio.studio_folder))
             self.setWindow.set_tmp_field.setText(str(self.db_studio.tmp_folder))
-            self.setWindow.set_convert_exe_field.setText(str(self.db_studio.CONVERT_EXE))
-            self.wf_line.setText(str(self.db_studio.WORK_FOLDER))
+            self.setWindow.set_convert_exe_field.setText(str(self.db_studio.convert_exe))
+            self.wf_line.setText(str(self.db_studio.work_folder))
     
         else:
             self.setWindow.set_studio_field.setText('set studio_folder')
