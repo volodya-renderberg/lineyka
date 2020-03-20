@@ -112,3 +112,30 @@ def login(studio, username, password):
     _write_user_data(studio, r2.text)
     # 
     return (True, json.loads(r2.text))
+
+def studio_get_list(studio):
+    '''
+    Parameters
+    ----------
+    studio : :obj:`edit_db.studio`
+        Экземпляр объетка :obj:`edit_db.studio` или любого из его потомков.
+
+    Returns
+    -------
+    tuple
+        (*True*, [список словарей]) или (*False, comment*)
+    '''
+    url=f'{studio.HOST}db/studio/get_list/'
+    cookie=_read_cookie(studio)
+    
+    # (1) session
+    sess = requests.Session()
+    cj=requests.utils.cookiejar_from_dict(cookie)
+    sess.cookies=cj
+    # (2) get to create
+    r1=sess.get(url, cookies = cookie)
+    
+    if not r1.ok:
+        return(False, r1.text)
+
+    return (True, r1.json())

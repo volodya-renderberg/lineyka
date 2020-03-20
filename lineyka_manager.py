@@ -7825,7 +7825,7 @@ class MainWindow(QtWidgets.QMainWindow):
         # show   
         self.setWindow.show()
 
-        # edit button
+        # connect button
         self.setWindow.set_studio_button.clicked.connect(self.set_studio_action)
         self.setWindow.cloud_button_02.clicked.connect(self.set_dir_cloud_studio_ui)
         self.setWindow.set_tmp_button.clicked.connect(self.set_tmp_path_action)
@@ -7840,17 +7840,55 @@ class MainWindow(QtWidgets.QMainWindow):
         loader = QtUiTools.QUiLoader()
         file = QtCore.QFile(self.set_dir_cloud_studio_path)
         # file.open(QtCore.QFile.ReadOnly)
-        self.setCloudWindow = loader.load(file, self)
+        dialog = loader.load(file, self)
         file.close()
 
+        # get studios list
+        b,r = self.studio.get_studios_list()
+        if not b:
+            self.message(r, 2)
+            del dialog
+            return
+        self.studios = dict()
+        for item in r:
+            self.studios[item['studio_name']]=item
+
+        # edit gui
+        items = ['select studio']
+        items.extend(list(self.studios.keys()))
+        dialog.combo_box.addItems(items)
+        dialog.select_button.setText('<<Set Folder')
+        # dialog.text_browser.setEnabled(False)
+        dialog.text_browser.setReadOnly(True)
+        message="""A studio directory will be created in the selected folder with the name: "<studio name> _ studio". """
+        dialog.text_browser.setText(message)
+        dialog.setWindowTitle('Set Directory of Cloud Studio')
+        if hasattr(self, 'set_cloud_studio_path'):
+            dialog.path.setText(self.set_cloud_studio_path)
+
         # buttons 
-        self.setCloudWindow.button_box.rejected.connect(self.close_window(self.setCloudWindow))
-        self.setCloudWindow.button_box.accepted.connect(self.close_window(self.setCloudWindow))
+        dialog.button_box.rejected.connect(partial(self.close_window, dialog))
+        dialog.button_box.accepted.connect(partial(self.set_dir_cloud_studio_action, dialog))
 
         # set modal window
-        self.set_modal(self.setCloudWindow)
+        self.set_modal(dialog)
         # show
-        self.setCloudWindow.show()
+        dialog.show()
+
+    def set_dir_cloud_studio_action(self, dialog):
+        studio_name=dialog.combo_box.currentText()
+        path=dialog.path.text()
+        # print(studio_name)
+        if not studio_name in self.studios.keys():
+            self.set_cloud_studio_path = path
+            self.message('Studio not selected!', 1)
+            return
+        else:
+            b,r=self.studio.set_studio(path, self.studios[studio_name])
+            if not b:
+                self.message(r, 2)
+                return
+            self.set_cloud_studio_path=''
 
     def set_studio_action(self):
         # get path

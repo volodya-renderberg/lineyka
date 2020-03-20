@@ -547,6 +547,68 @@ class studio:
             data_fale.close()
 
     @classmethod
+    def get_studio(self):
+        """Заполнение атрибутов класса текущей студии. Которая определяется в :func:`edit_db.studio.set_studio`.
+        
+        Заполняемые атрибуты:
+        
+        * :attr:`edit_db.studio.studio_folder`
+        * :attr:`edit_db.studio.work_folder`
+        * :attr:`edit_db.studio.convert_exe`
+        * :attr:`edit_db.studio.tmp_folder`
+        * :attr:`edit_db.studio.studio_database`
+        * :attr:`edit_db.studio.EXTENSIONS`
+        * :attr:`edit_db.studio.SOFT_DATA`
+        
+        Returns
+        -------
+        tuple
+            (*True*, [self.studio_folder, self.tmp_folder]) или (*False*, comment)
+        
+        """
+        
+        # READ USER SETTINGS
+        if self.init_path == False:
+            return(False, '****** in get_studio() -> init_path = False!')
+        # write studio path
+        try:
+            with open(self.init_path, 'r') as read:
+                data = json.load(read)
+                read.close()
+        except:
+            return(False, "****** init file  can not be read")
+        #
+        for key in data:
+            setattr(self, key, data.get(key))
+            
+        #print('artist path: ', self.artists_path)
+            
+        # fill self.EXTENSIONS
+        try:
+            with open(self.set_path, 'r') as read:
+                data = json.load(read)
+                self.EXTENSIONS = data['extension'].keys()
+                self.SOFT_DATA = data['extension']
+                read.close()
+        except:
+            return(False, 'in get_studio -> not read user_setting.json!')
+
+        # READ STUDIO SETTINGS
+        if self.studio_folder and os.path.exists(self.studio_folder):
+            if not self.studio_folder in sys.path:
+                sys.path.append(self.studio_folder)
+            # 
+            settings_path = NormPath(os.path.join(self.studio_folder, self.STUDIO_SETTINGS_FILE))
+            if os.path.exists(settings_path):
+                exec(f'import {os.path.splitext(self.STUDIO_SETTINGS_FILE)[0]} as settings_file', globals())
+                #
+                for key in [ i  for i in dir(settings_file) if not i.startswith('_')]:
+                    setattr(self, key, getattr(settings_file, key))
+        
+        print('studio.get_studio')
+        return True, [self.studio_folder, self.tmp_folder]
+
+    @classmethod
     def set_studio(self, path, cloud_studio=False):
         """Инициализация студийной директории.
         
@@ -613,7 +675,10 @@ class studio:
             with open(studio_settings_path, 'w') as f:
                 f.write(head_text)
                 for key in cloud_studio:
-                    f.write(f'{key}={getattr(cloud_studio, key)}\n')
+                    if isinstance(cloud_studio.get(key), str):
+                        f.write(f'{key}="{cloud_studio.get(key)}"\n')
+                    else:
+                        f.write(f'{key}={cloud_studio.get(key)}\n')
         return(True, 'Ok')
 
     @classmethod
@@ -703,7 +768,7 @@ class studio:
 
     @classmethod
     def set_work_folder(self, path):
-        """Определение директории для локального хранения ассетов пользователя, параметр :attr:`edit_db.studio.work_folder`.
+        """Установка директории для локального хранения ассетов пользователя, параметр :attr:`edit_db.studio.work_folder`.
         
         Parameters
         ----------
@@ -742,6 +807,12 @@ class studio:
         self.work_folder = path
         
         return True, 'Ok'
+
+    def get_studios_list(self, studio_database='django'):
+        """Получение списка облачных студий пользователя (словари). """
+        if self.studio_database=='django' or studio_database=='django':
+            return djc.studio_get_list(self)
+        return(False, f'Getting a list of studios is not available for the type of database used: \"{self.studio_database}\"')
 
     def _template_version_num(self, version):
         """Приобразование номера версии к строке нужного формата (от 4 симолов).
@@ -1041,68 +1112,6 @@ class studio:
                 read.close()
         except:
             return False, '****** init file not Read!'
-
-    @classmethod
-    def get_studio(self):
-        """Заполнение атрибутов класса текущей студии. Которая определяется в :func:`edit_db.studio.set_studio`.
-        
-        Заполняемые атрибуты:
-        
-        * :attr:`edit_db.studio.studio_folder`
-        * :attr:`edit_db.studio.work_folder`
-        * :attr:`edit_db.studio.convert_exe`
-        * :attr:`edit_db.studio.tmp_folder`
-        * :attr:`edit_db.studio.studio_database`
-        * :attr:`edit_db.studio.EXTENSIONS`
-        * :attr:`edit_db.studio.SOFT_DATA`
-        
-        Returns
-        -------
-        tuple
-            (*True*, [self.studio_folder, self.tmp_folder]) или (*False*, comment)
-        
-        """
-        
-        # READ USER SETTINGS
-        if self.init_path == False:
-            return(False, '****** in get_studio() -> init_path = False!')
-        # write studio path
-        try:
-            with open(self.init_path, 'r') as read:
-                data = json.load(read)
-                read.close()
-        except:
-            return(False, "****** init file  can not be read")
-        #
-        for key in data:
-            setattr(self, key, data.get(key))
-            
-        #print('artist path: ', self.artists_path)
-            
-        # fill self.EXTENSIONS
-        try:
-            with open(self.set_path, 'r') as read:
-                data = json.load(read)
-                self.EXTENSIONS = data['extension'].keys()
-                self.SOFT_DATA = data['extension']
-                read.close()
-        except:
-            return(False, 'in get_studio -> not read user_setting.json!')
-
-        # READ STUDIO SETTINGS
-        if self.studio_folder and os.path.exists(self.studio_folder):
-            if not self.studio_folder in sys.path:
-                sys.path.append(self.studio_folder)
-            # 
-            settings_path = NormPath(os.path.join(self.studio_folder, self.STUDIO_SETTINGS_FILE))
-            if os.path.exists(settings_path):
-                exec(f'import {os.path.splitext(self.STUDIO_SETTINGS_FILE)[0]} as settings_file', globals())
-                #
-                for key in [ i  for i in dir(settings_file) if not i.startswith('_')]:
-                    setattr(self, key, getattr(settings_file, key))
-        
-        print('studio.get_studio')
-        return True, [self.studio_folder, self.tmp_folder]
 
     # ****** SETTING ******
     # ------- EXTENSION -------------

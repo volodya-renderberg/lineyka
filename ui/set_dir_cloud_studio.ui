@@ -7,7 +7,7 @@
     <x>0</x>
     <y>0</y>
     <width>527</width>
-    <height>238</height>
+    <height>201</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -25,13 +25,6 @@
      <layout class="QGridLayout" name="gridLayout">
       <item row="1" column="0">
        <widget class="QLineEdit" name="path"/>
-      </item>
-      <item row="3" column="0">
-       <widget class="QPushButton" name="set_button">
-        <property name="text">
-         <string>PushButton</string>
-        </property>
-       </widget>
       </item>
       <item row="0" column="0" colspan="2">
        <widget class="QComboBox" name="combo_box"/>
