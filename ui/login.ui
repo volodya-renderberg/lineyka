@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>303</width>
-    <height>154</height>
+    <width>304</width>
+    <height>196</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -15,6 +15,13 @@
   </property>
   <widget class="QWidget" name="centralwidget">
    <layout class="QVBoxLayout" name="verticalLayout">
+    <item>
+     <widget class="QCheckBox" name="check_box">
+      <property name="text">
+       <string>Cloud</string>
+      </property>
+     </widget>
+    </item>
     <item>
      <widget class="QFrame" name="frame">
       <property name="frameShape">
@@ -65,8 +72,8 @@
     <rect>
      <x>0</x>
      <y>0</y>
-     <width>303</width>
-     <height>21</height>
+     <width>304</width>
+     <height>22</height>
     </rect>
    </property>
   </widget>

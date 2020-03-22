@@ -9733,44 +9733,60 @@ class artist(studio):
                 exec(com)
             return(True, (nik_name, user_name))
 
-    def get_user(self, outsource = False):
+    def get_user(self, outsource = False, cloud=False):
         """Определение текущего пользователя, инициализация текущего экземпляра.
+        В случае ``sqlite3`` происходит чтение БД, в случае ``django`` - чтение файла :attr:`edit_db.studio.USER_DATA_FILE_NAME`.
         
         Parameters
         ----------
         outsource : bool
             С точки зрения удалённого пользователя или нет.
+        cloud : bool, str
+            Определяет используемый интерфейс хранения данных. Если *False* то - локальная схема ``sqlite3``.
             
         Returns
         -------
         tuple
-            (*True*, (``nik_name``, ``user_name``, ``outsource`` (bool), {``данные артиста - словарь``})) или (*False, comment*)
-        
+            если ``cloud`` = *False*: (*True*, (``nik_name``, ``user_name``, ``outsource`` (bool), {``данные артиста - словарь``})) или (*False, comment*).
+            если ``cloud`` = ``django``: (*True, 'ok!'*) или (*False, comment*).
         """
-        user_name = getpass.getuser()
-        bool_, return_data = database().read('studio', self, self.artists_t, self.artists_keys, where = {'user_name': user_name})
-        if not bool_:
-            return(bool_, return_data)
-        rows = return_data
-        # conditions # return
-        if not rows:
-            return False, 'not user'
-        elif len(rows)>1:
-            return False, 'more than one user'
-        else:
-            # fill fields
-            for key in self.artists_keys:
-                setattr(self, key, rows[0].get(key))
-                #com = 'self.%s = rows[0].get("%s")' % (key, key)
-                #exec(com)
-            if not outsource:
-                return True, (rows[0]['nik_name'], rows[0]['user_name'], None, rows[0])
-            else:
-                if rows[0]['outsource']:
-                    out_source = bool(rows[0]['outsource'])
+        if cloud=='django' or self.studio_database == 'django':
+            b,r = djc.get_user_data(self)
+            if not b:
+                return(b,r)
+            for key in r:
+                if key=='username':
+                    setattr(self, 'nik_name', r[key])
                 else:
-                    out_source = False
-                return True, (rows[0]['nik_name'], rows[0]['user_name'], out_source, rows[0])
+                    setattr(self, key, r[key])
+            self.cloud=cloud # на случай когда студия ещё не определена.
+            return(True, 'Ok!')
+
+        else:
+            user_name = getpass.getuser()
+            bool_, return_data = database().read('studio', self, self.artists_t, self.artists_keys, where = {'user_name': user_name})
+            if not bool_:
+                return(bool_, return_data)
+            rows = return_data
+            # conditions # return
+            if not rows:
+                return False, 'not user'
+            elif len(rows)>1:
+                return False, 'more than one user'
+            else:
+                # fill fields
+                for key in self.artists_keys:
+                    setattr(self, key, rows[0].get(key))
+                    #com = 'self.%s = rows[0].get("%s")' % (key, key)
+                    #exec(com)
+                if not outsource:
+                    return True, (rows[0]['nik_name'], rows[0]['user_name'], None, rows[0])
+                else:
+                    if rows[0]['outsource']:
+                        out_source = bool(rows[0]['outsource'])
+                    else:
+                        out_source = False
+                    return True, (rows[0]['nik_name'], rows[0]['user_name'], out_source, rows[0])
 
     def edit_artist(self, keys, current_user=False):
         """Редактирование данного (инициализированного) экземпляра артиста.

@@ -28,6 +28,7 @@ class G(object):
 class MainWindow(QtWidgets.QMainWindow):
     def __init__(self, parent = None):
         pass
+        self.cloud='django' # тип используемого облака
         # get Path
         root_dir = os.path.dirname(db.__file__)
         path = db.NormPath(os.path.join(root_dir, 'ui'))
@@ -104,7 +105,7 @@ class MainWindow(QtWidgets.QMainWindow):
         self.db_workroom = db.workroom()
         self.db_set_of_tasks = db.set_of_tasks()
         self.project = db.project() # он же текущий проект
-        self.project.get_list() # заполнение полей списков проектов.
+        # self.project.get_list() # заполнение полей списков проектов. # debug
         # project level
         self.db_season = db.season(self.project)
         self.db_asset = db.asset(self.project)
@@ -153,7 +154,7 @@ class MainWindow(QtWidgets.QMainWindow):
         file.close()
         
         # ---- get artist data
-        self.get_artist_data()
+        self.get_artist_data() # debug
         
         # menu
         self.myWidget.actionSet_studio.triggered.connect(self.set_studio_ui)
@@ -212,12 +213,12 @@ class MainWindow(QtWidgets.QMainWindow):
         #self.list_active_projects = self.db_studio.list_active_projects
         
         # ---- self.WORKROOM ----------------------------
-        self.db_workroom.get_list()
+        # self.db_workroom.get_list() # debug
         
         self.launcher()
         
         # ---- TASKS MANAGER ----------------------------
-        self.preparation_to_task_manager()
+        # self.preparation_to_task_manager() # debug
         
         # -----STILE-------
         self.setStyleSheet(open(os.path.join(root_dir,'darkorange.qss')).read())
@@ -4755,8 +4756,8 @@ class MainWindow(QtWidgets.QMainWindow):
             input_list = json.loads(task_data['input'])
         
         # debug
-        print('\n')
-        print(task_data['input'], task_data['output'])
+        # print('\n')
+        # print(task_data['input'], task_data['output'])
         
         # ************* view color status *********************** start
         # get asset data list
@@ -4862,7 +4863,6 @@ class MainWindow(QtWidgets.QMainWindow):
         self.myWidget.studio_editor_table_2.resizeRowsToContents()
         self.myWidget.studio_editor_table_2.resizeColumnsToContents()
         
-        # debug
         try:
             self.myWidget.studio_editor_table_2.itemClicked.disconnect()
         except:
@@ -5808,7 +5808,8 @@ class MainWindow(QtWidgets.QMainWindow):
         self.clear_table(table = self.myWidget.task_manager_table)
                 
     def tm_fill_project_list(self):
-        pass    
+        pass
+        return # debug
         
         self.project.get_list() # ?????? скорее всего надо
                 
@@ -8064,10 +8065,12 @@ class MainWindow(QtWidgets.QMainWindow):
         #file.open(QtCore.QFile.ReadOnly)
         self.loginWindow = loader.load(file, self)
         file.close()
+
+        # edit window
+        self.loginWindow.check_box.setChecked(True)
         
         # set modal window
-        self.loginWindow.setWindowModality(QtCore.Qt.WindowModal)
-        self.loginWindow.setAttribute(QtCore.Qt.WA_DeleteOnClose, True)
+        self.set_modal(self.loginWindow)
         
         self.loginWindow.show()
 
@@ -8084,17 +8087,21 @@ class MainWindow(QtWidgets.QMainWindow):
 
         nik_name = self.loginWindow.login_nik_name_field.text()
         password = self.loginWindow.login_password_field.text()
+        
+        cloud=False
+        if self.loginWindow.check_box.isChecked():
+            cloud=self.cloud
 
-        login = self.artist.login_user(nik_name, password)
+        login = self.artist.login_user(nik_name, password, cloud=cloud)
     
         if login[0]:
             self.loginWindow.accept()
         else:
             self.message(login[1], 2)
             return
-            
+        
         # ---- get artist data
-        self.get_artist_data(read=True)
+        self.get_artist_data(read=True, cloud=cloud)
                     
         # finish
         self.tm_fill_project_list()
@@ -8209,10 +8216,10 @@ class MainWindow(QtWidgets.QMainWindow):
         dialog.accept()
         self.user_registration_ui()
     
-    def get_artist_data(self, read = True):
+    def get_artist_data(self, read = True, cloud=False):
         # ---- get artist data
         if read:
-            result = self.artist.get_user()
+            result = self.artist.get_user(cloud=cloud)
             if not result[0]:
                 self.message(result[1], 2)
             try:

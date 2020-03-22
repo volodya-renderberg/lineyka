@@ -24,6 +24,7 @@ class G(object):
 
 class MainWindow(QtGui.QMainWindow):
 	def __init__(self, parent = None):
+		self.cloud='django' # тип используемого облака
 		# moduls
 		root_dir = os.path.dirname(db.__file__)
 		self.db_studio = db.studio
