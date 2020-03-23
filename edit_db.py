@@ -9500,7 +9500,7 @@ class artist(studio):
             #self.asset_path = keys.get('asset_path')
             return(True, 'Ok')
 
-    def add_artist(self, keys, registration = True):
+    def add_artist(self, keys, registration = True, cloud=False):
         """Добавление нового пользователя.
         
         Parameters
@@ -9522,59 +9522,65 @@ class artist(studio):
             return(False, '\"Nik Name\" not specified!')
         if not keys.get('password'):
             return(False, '\"Password\" not specified!')
-        if not keys.get('outsource'):
-            keys['outsource'] = 0
+        if not keys.get('email'):
+            return(False, '\"Email\" not specified!')
+        #
+        if cloud=='django' or self.studio_database == 'django':
+            return djc.user_registration(self, keys['nik_name'], keys['email'], keys['password'], login=registration)
+        else:
+            if not keys.get('outsource'):
+                keys['outsource'] = 0
 
-        # создание таблицы, если отсутствует.
-        # определение level - если первый юзер то рут.
-        # проверка на совпадение имени.
-        # проверка на совпадение user_name и перезапись существующих в пустую строку.
-        # запиь нового юзера
-        
-        # create table
-        bool_, return_data = database().create_table('studio', self, self.artists_t, self.artists_keys)
-        if not bool_:
-            return(bool_, return_data)
-        
-        # read table
-        bool_, return_data = database().read('studio', self, self.artists_t, self.artists_keys)
-        if not bool_:
-            return(bool_, return_data)
-        # -- set level
-        if not return_data:
-            keys['level'] = 'root'
-        else:
-            if not keys.get('level'):
-                keys['level'] = 'user'
-        # -- date_time
-        keys['date_time'] = datetime.datetime.now()
-        # -- test exist name, user_name
-        if registration:
-            keys['user_name'] = getpass.getuser()
-        else:
-            keys['user_name'] = ''
-        for item in return_data:
-            # test nik_name
-            if item.get('nik_name') == keys['nik_name']:
-                return(False, 'User "%s" Already Exists!' % keys['nik_name'])
-            # test user_name
+            # создание таблицы, если отсутствует.
+            # определение level - если первый юзер то рут.
+            # проверка на совпадение имени.
+            # проверка на совпадение user_name и перезапись существующих в пустую строку.
+            # запиь нового юзера
+            
+            # create table
+            bool_, return_data = database().create_table('studio', self, self.artists_t, self.artists_keys)
+            if not bool_:
+                return(bool_, return_data)
+            
+            # read table
+            bool_, return_data = database().read('studio', self, self.artists_t, self.artists_keys)
+            if not bool_:
+                return(bool_, return_data)
+            # -- set level
+            if not return_data:
+                keys['level'] = 'root'
+            else:
+                if not keys.get('level'):
+                    keys['level'] = 'user'
+            # -- date_time
+            keys['date_time'] = datetime.datetime.now()
+            # -- test exist name, user_name
             if registration:
-                if item.get('user_name') == keys['user_name']:
-                    bool_, return_data = database().update('studio', self, self.artists_t, self.artists_keys, {'user_name': ''}, {'user_name': keys['user_name']})
-                    if not bool_:
-                        return(bool_, return_data)
-                
-        # create user
-        bool_, return_data = database().insert('studio', self, self.artists_t, self.artists_keys, keys)
-        if not bool_:
-            return(bool_, return_data)
-        else:
-            # fill fields
-            if registration:
-                for key in self.artists_keys:
-                    com = 'self.%s = keys.get("%s")' % (key, key)
-                    exec(com)
-            return(True, 'ok')
+                keys['user_name'] = getpass.getuser()
+            else:
+                keys['user_name'] = ''
+            for item in return_data:
+                # test nik_name
+                if item.get('nik_name') == keys['nik_name']:
+                    return(False, 'User "%s" Already Exists!' % keys['nik_name'])
+                # test user_name
+                if registration:
+                    if item.get('user_name') == keys['user_name']:
+                        bool_, return_data = database().update('studio', self, self.artists_t, self.artists_keys, {'user_name': ''}, {'user_name': keys['user_name']})
+                        if not bool_:
+                            return(bool_, return_data)
+                    
+            # create user
+            bool_, return_data = database().insert('studio', self, self.artists_t, self.artists_keys, keys)
+            if not bool_:
+                return(bool_, return_data)
+            else:
+                # fill fields
+                if registration:
+                    for key in self.artists_keys:
+                        com = 'self.%s = keys.get("%s")' % (key, key)
+                        exec(com)
+                return(True, 'ok')
         
     def read_artist(self, keys, objects=True):
         """Чтение списка данных артистов.

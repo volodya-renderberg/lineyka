@@ -70,8 +70,8 @@ class MainWindow(QtGui.QMainWindow):
 		self.chat_img_viewer_path = os.path.join(path, "chat_img_viewer.ui")
 		# -- other
 		self.set_window_path = os.path.join(path, "qt_settings.ui")
-		self.login_window_path = os.path.join(path, "qt_login.ui")
-		self.user_registr_window_path = os.path.join(path, "qt_registration.ui")
+		self.login_window_path = os.path.join(path, "login.ui")
+		self.user_registr_window_path = os.path.join(path, "registration.ui")
 		self.qt_set_project_path = os.path.join(path, "qt_set_project.ui")
 		self.new_dialog_path = os.path.join(path, "new_dialog.ui")
 		self.combo_dialog_path = os.path.join(path, "combo_dialog.ui")

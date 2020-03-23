@@ -23,13 +23,6 @@
       <enum>QFrame::Raised</enum>
      </property>
      <layout class="QGridLayout" name="gridLayout">
-      <item row="4" column="1">
-       <widget class="QPushButton" name="create_button">
-        <property name="text">
-         <string>Create Studio</string>
-        </property>
-       </widget>
-      </item>
       <item row="0" column="0">
        <widget class="QLabel" name="label_1">
         <property name="text">

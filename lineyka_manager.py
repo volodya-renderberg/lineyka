@@ -18,6 +18,7 @@ import datetime
 #import ui
 import edit_db as db
 import lineyka_chat
+import django_connect as djc
 #import lineyka_publish
 
 # sudo chmod +x "/home/vofka/Yandex.Disk/Lineyka/lineyka_manager.py"
@@ -38,8 +39,8 @@ class MainWindow(QtWidgets.QMainWindow):
         self.set_window_path = os.path.join(path, "qt_settings.ui")
         self.create_cloud_studio_path = os.path.join(path, 'create_cloud_studio.ui')
         self.set_dir_cloud_studio_path = os.path.join(path, 'set_dir_cloud_studio.ui')
-        self.login_window_path = os.path.join(path, "qt_login.ui")
-        self.user_registr_window_path = os.path.join(path, "qt_registration.ui")
+        self.login_window_path = os.path.join(path, "login.ui")
+        self.user_registr_window_path = os.path.join(path, "registration.ui")
         self.qt_set_project_path = os.path.join(path, "qt_set_project.ui")
         self.new_dialog_path = os.path.join(path, "new_dialog.ui")
         self.combo_dialog_path = os.path.join(path, "combo_dialog.ui")
@@ -494,8 +495,7 @@ class MainWindow(QtWidgets.QMainWindow):
         self.newArtistDialog.setAttribute(QtCore.Qt.WA_DeleteOnClose, True)
         
         self.newArtistDialog.show()
-            
-                
+
     def add_artist_action(self, action):
         if not action:
             self.newArtistDialog.close()
@@ -8113,46 +8113,64 @@ class MainWindow(QtWidgets.QMainWindow):
         loader = QtUiTools.QUiLoader()
         f = QtCore.QFile(self.user_registr_window_path)
         #file.open(QtCore.QFile.ReadOnly)
-        self.myWidget.registrWindow = loader.load(f, self)
+        self.registrWindow = loader.load(f, self)
         f.close()
+
+        # edit window
+        self.registrWindow.check_box.setChecked(True)
+        self.registrWindow.frame_2.setVisible(False)
         
         # set modal window
-        self.myWidget.registrWindow.setWindowModality(QtCore.Qt.WindowModal)
-        self.myWidget.registrWindow.setAttribute(QtCore.Qt.WA_DeleteOnClose, True)
+        self.set_modal(self.registrWindow)
         
-        self.myWidget.registrWindow.show()
+        self.registrWindow.show()
 
         # connect
-        self.myWidget.registrWindow.rejected.connect(self.launcher)
-        self.myWidget.registrWindow.user_registration_button.clicked.connect(self.user_registration_action)
+        self.registrWindow.exists_button.clicked.connect(partial(self.test_exists_artist, self.registrWindow))
+        self.registrWindow.rejected.connect(self.launcher)
+        self.registrWindow.user_registration_button.clicked.connect(self.user_registration_action)
 
         # finish
         print('registration ui')
+
+    def test_exists_artist(self, window):
+        name=window.nik_name_field.text()
+        if not name:
+            return
+        b,r = djc.test_exists_object(self.studio, 'User', 'username', name)
+        if not b:
+            self.message(r, 2)
+        else:
+            self.message(r, 1)
     
     def user_registration_action(self):
         pass
         # get Data
         data = {
-        'nik_name' : self.myWidget.registrWindow.nik_name_field.text(),
-        'password' : self.myWidget.registrWindow.password_field.text(),
-        'email' : self.myWidget.registrWindow.email_field.text(),
-        'phone' : self.myWidget.registrWindow.phone_field.text(),
-        'speciality' : self.myWidget.registrWindow.specialty_field.text(),
+        'nik_name' : self.registrWindow.nik_name_field.text(),
+        'password' : self.registrWindow.password_field.text(),
+        'email' : self.registrWindow.email_field.text(),
+        'phone' : self.registrWindow.phone_field.text(),
+        'speciality' : self.registrWindow.specialty_field.text(),
         'status' : 'active'
         }
+
+        cloud=False
+        if self.registrWindow.check_box.isChecked():
+            cloud=self.cloud
     
         # add artist
-        result = self.artist.add_artist(data)
+        result = self.artist.add_artist(data, cloud=cloud)
         if result[0]:
-            self.myWidget.registrWindow.accept()
+            self.registrWindow.accept()
         else:
             self.message(result[1], 2)
             return
         
-        self.get_artist_data(read = True)
+        self.get_artist_data(read = True, cloud=cloud)
                 
         # finish
-        self.reload_artist_list()
+        # self.reload_artist_list() # debug
         self.tm_fill_project_list()
         print('user registration action')
         

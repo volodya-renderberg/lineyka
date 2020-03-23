@@ -4,6 +4,8 @@ import requests
 import os
 import json
 
+HTML = '/tmp/mtest.html'
+
 def _get_cookie_path(studio):
     '''
     Parameters
@@ -82,8 +84,97 @@ def get_user_data(studio):
         user_data=json.load(f)
     return (True, user_data)
 
+def test_exists_object(studio, model, field, value, translit=True):
+    """
+    Проверка наличия модели со значением определённого параметра.
+
+    .. note:: Выполняется запрос ``count={model}.objects.filter({field}="{value}").count()``
+
+    Parameters
+    ----------
+    studio : :obj:`edit_db.studio`
+        Экземпляр объетка :obj:`edit_db.studio` или любого из его потомков.
+    model : str
+        Название *django* модели, нпример ``User``.
+    field : str
+        Название поля модели, например ``username``.
+    value : str
+        Значение данного поля. Для данного значения может быть сделана транслитерация.
+    translit : bool, optional
+        Если *True* - то будет произведена транслитерация ``value``.
+
+    Returns
+    -------
+    tuple
+        (*True, comment*) если совпадений нет, или (*False, comment*) если совпадение есть.
+    """
+    url=f'{studio.HOST}db/test_exists/'
+    #
+    sess = requests.Session()
+    # (1) GET
+    r1=sess.get(url)
+    # (2) POST
+    csrf_token = r1.cookies.get('csrftoken')
+    r2 = sess.post(url, data=dict(model=model, field=field, value=value, translit=translit, csrfmiddlewaretoken=csrf_token))
+    # (3) return
+    if not r2.ok:
+        return(False, r2.text)
+    return (True, r2.text)
+
+def user_registration(studio, username, email, password, login=False):
+    '''
+    Создание облачных пользователей.
+
+    Parameters
+    ----------
+    studio : :obj:`edit_db.studio`
+        Экземпляр объетка :obj:`edit_db.studio` или любого из его потомков.
+    username : str
+        ...
+    email : str
+        ...
+    password : str
+        ...
+    login : bool, optional
+        Если *True* - то будут записаны файлы :attr:`edit_db.studio.COOKIE_NAME` и :attr:`edit_db.studio.USER_DATA_FILE_NAME`.
+    
+    Returns
+    -------
+    tuple
+        (*True*, {User.__dict__}) или (*False, comment*)
+
+    '''
+
+    url=f'{studio.HOST}db/user/rgistration/'
+        
+    sess = requests.Session()
+    # (1) get to login
+    r1=sess.get(url)
+    # (2) post to login
+    csrf_token = r1.cookies.get('csrftoken')
+    r2 = sess.post(url, data=dict(username=username, password=password, email=email, csrfmiddlewaretoken=csrf_token))
+        
+    if not r2.ok:
+        # with open(HTML, 'w') as f:
+        #     f.write(r2.text)
+        # webbrowser.open(HTML)
+
+        return(False, r2.text)
+
+    if login:
+        # (3) write cookie
+        cookie=r2.cookies
+        _write_cookie(studio, dict(cookie))
+
+        # (4) write user_data
+        _write_user_data(studio, r2.text)
+    # 
+    return (True, json.loads(r2.text))
+
 def login(studio, username, password):
     '''
+    Логин, запись файлов :attr:`edit_db.studio.COOKIE_NAME` и :attr:`edit_db.studio.USER_DATA_FILE_NAME`.
+
     Parameters
     ----------
     studio : :obj:`edit_db.studio`
@@ -92,6 +183,11 @@ def login(studio, username, password):
         ...
     password : str
         ...
+
+    Returns
+    -------
+    tuple
+        (*True*, {User.__dict__}) или (*False, comment*)
     '''
     login_url=f'{studio.HOST}db/user/login/'
        
@@ -101,12 +197,13 @@ def login(studio, username, password):
     # (2) post to login
     csrf_token = r1.cookies.get('csrftoken')
     r2 = sess.post(login_url, data=dict(username=username, password=password, csrfmiddlewaretoken=csrf_token))
+        
+    if not r2.ok:
+        return(False, r2.text)
+
     # (3) write cookie
     cookie=r2.cookies
     _write_cookie(studio, dict(cookie))
-    
-    if not r2.ok:
-        return(False, r2.text)
 
     # (4) write user_data
     _write_user_data(studio, r2.text)
