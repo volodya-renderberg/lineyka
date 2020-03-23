@@ -210,6 +210,43 @@ def login(studio, username, password):
     # 
     return (True, json.loads(r2.text))
 
+def studio_create(studio, studio_name, studio_label):
+    """Создание студии.
+
+    * Создание объекта *Studio*.
+    * Создание группы (*Group*) с именем ``<studio_name>_head``.
+    * Создание для группы ``permissions`` расширенных прав: ``'add'``, ``'change'``, ``'delete'``, ``'view'``.
+    * Добавление текущего пользователя в группу и в студию.
+
+    Parameters
+    ----------
+    studio_name : str
+        Имя студии.
+    studio_label : str
+        Лейбл студии.
+
+    Returns
+    -------
+    tuple
+        (*True*, {studio_dict}) или (*False, comment*).
+    """
+    url=f'{studio.HOST}db/studio/create/'
+    cookie=_read_cookie(studio)
+    
+    # (1) session
+    sess = requests.Session()
+    cj=requests.utils.cookiejar_from_dict(cookie)
+    sess.cookies=cj
+    # (2) get to create
+    r1=sess.get(url, cookies = cookie)
+    # (3) post to create
+    csrf_token = r1.cookies.get('csrftoken')
+    r2=sess.post(url, data=dict(csrfmiddlewaretoken=csrf_token, cookies=cookie, studio_label=studio_label, studio_name=studio_name))
+
+    if not r2.ok:
+        return(False, r2.text)
+    return (True, r2.text)
+
 def studio_get_list(studio):
     '''
     Parameters

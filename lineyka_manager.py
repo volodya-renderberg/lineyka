@@ -7828,6 +7828,7 @@ class MainWindow(QtWidgets.QMainWindow):
 
         # connect button
         self.setWindow.set_studio_button.clicked.connect(self.set_studio_action)
+        self.setWindow.cloud_button_01.clicked.connect(self.create_cloud_studio_ui)
         self.setWindow.cloud_button_02.clicked.connect(self.set_dir_cloud_studio_ui)
         self.setWindow.set_tmp_button.clicked.connect(self.set_tmp_path_action)
         self.setWindow.set_convert_button.clicked.connect(self.set_convert_path_action)
@@ -7836,6 +7837,49 @@ class MainWindow(QtWidgets.QMainWindow):
         self.setWindow.rejected.connect(self.launcher)
 
         print('set studio ui')
+
+    def create_cloud_studio_ui(self):
+        loader = QtUiTools.QUiLoader()
+        file = QtCore.QFile(self.create_cloud_studio_path)
+        # file.open(QtCore.QFile.ReadOnly)
+        dialog = loader.load(file, self)
+        file.close()
+
+        dialog.exists_button.clicked.connect(partial(self.test_exists_studio, dialog))
+        dialog.button_box.accepted.connect(partial(self.create_cloud_studio_action, dialog))
+
+        # set modal window
+        self.set_modal(dialog)
+        # show
+        dialog.show()
+
+    def test_exists_studio(self, dialog):
+        name=dialog.text_1.text()
+        if not name:
+            return
+        b,r = djc.test_exists_object(self.studio, 'Studio', 'studio_name', name)
+        if not b:
+            self.message(r, 2)
+        else:
+            self.message(r, 1)
+
+    def create_cloud_studio_action(self, dialog):
+        name=dialog.text_1.text()
+        label=dialog.text_2.text()
+
+        if not name:
+            self.message('Studio name not specified!', 2)
+            return
+        if not label:
+            label=name
+
+        b,r = djc.studio_create(self.studio, name, label)
+
+        if not b:
+            self.message(r, 2)
+        else:
+            self.message(f'Studio with the name "{name}", successfully created!', 1)
+
 
     def set_dir_cloud_studio_ui(self):
         loader = QtUiTools.QUiLoader()
@@ -7861,8 +7905,6 @@ class MainWindow(QtWidgets.QMainWindow):
         dialog.select_button.setText('<<Set Folder')
         # dialog.text_browser.setEnabled(False)
         dialog.text_browser.setReadOnly(True)
-        message="""A studio directory will be created in the selected folder with the name: "<studio name> _ studio". """
-        dialog.text_browser.setText(message)
         dialog.setWindowTitle('Set Directory of Cloud Studio')
         if hasattr(self, 'set_cloud_studio_path'):
             dialog.path.setText(self.set_cloud_studio_path)
