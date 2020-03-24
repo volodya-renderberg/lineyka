@@ -80,6 +80,7 @@ class MainWindow(QtWidgets.QMainWindow):
         #self.asset_color = QtGui.QColor(255, 218, 160)
         self.asset_color = QtGui.QColor(166, 125, 61)
         self.stop_color = QtGui.QColor(142, 160, 193)
+        self.red_text_color = QtGui.QColor(223, 45, 32)
         #
         self.conformity_colors = {
         'pull':self.project_color,
@@ -8230,25 +8231,27 @@ class MainWindow(QtWidgets.QMainWindow):
     
     #*********************** UTILITS *******************************************
     def launcher(self):
-        return
-        if not self.db_studio.studio_folder:
-            self.message('Path to the studio directory is not specified or not correct!', 2)
-            self.set_studio_ui()
-        elif not os.path.exists(self.db_studio.studio_folder):
-            self.message('Path to the studio directory is not specified or not correct!', 2)
-            self.set_studio_ui()
+        # return # debug
+        if not self.db_studio.studio_folder or not os.path.exists(self.db_studio.studio_folder):
+            self.login_or_registration_ui(message='Path to the studio directory is not specified or not correct!')
         elif not self.artist.nik_name:
-            print('launcher - not nik_name "%s"' % self.artist.nik_name)
-            self.login_or_registration_ui()
-        elif not self.artist.level:
-            print('launcher - not level "%s"' % self.artist.level)
-            self.login_or_registration_ui()
-        elif not self.artist.level in self.db_studio.MANAGER_LEVELS:
-            self.message('Minimum required level - manager! "%s"' % self.artist.level, 2)
-            self.login_or_registration_ui()
+            self.login_or_registration_ui(message='Nikname is: "%s"' % self.artist.nik_name)
+        elif not self.artist.level or not self.artist.level in self.db_studio.MANAGER_LEVELS:
+            self.login_or_registration_ui(message='No permission. Level is: "%s"' % self.artist.level)
             
-    def login_or_registration_ui(self):
-        pass
+    def login_or_registration_ui(self, message=False):
+        def login_or_registration_to_login(dialog):
+            dialog.accept()
+            self.user_login_ui()
+            
+        def login_or_registration_to_registration(dialog):
+            dialog.accept()
+            self.user_registration_ui()
+        
+        def login_or_registration_to_set_studio(dialog):
+            dialog.accept()
+            self.set_studio_ui()
+        #
         dialog = QtWidgets.QDialog(self)
         dialog.setWindowTitle('Login or register')
         dialog.setModal(True)
@@ -8257,18 +8260,34 @@ class MainWindow(QtWidgets.QMainWindow):
         #
         v_layout = QtWidgets.QVBoxLayout()
         button_frame = QtWidgets.QFrame(parent = dialog)
-        
+
+        if message:
+            text_block = QtWidgets.QTextBrowser()
+            m=f"<span style=\" color:#ff6600;\" > {message} </span>"
+            text_block.setText(m)
+            text_block.setReadOnly(True)
+
+        # set_studio_button
+        set_studio_button = QtWidgets.QPushButton()
+        # set_studio_button.setMaximumWidth(200)
+        set_studio_button.setMinimumHeight(40)
+        set_studio_button.setText('Set Studio')
+        set_studio_button.clicked.connect(partial(login_or_registration_to_set_studio, dialog))
         # login_button
         login_button = QtWidgets.QPushButton()
-        login_button.setMaximumWidth(100)
+        # login_button.setMaximumWidth(200)
+        login_button.setMinimumHeight(40)
         login_button.setText('Login')
-        login_button.clicked.connect(partial(self.login_or_registration_to_login, dialog))
+        login_button.clicked.connect(partial(login_or_registration_to_login, dialog))
         # reg_button
         reg_button = QtWidgets.QPushButton()
-        reg_button.setMaximumWidth(100)
+        # reg_button.setMaximumWidth(200)
+        reg_button.setMinimumHeight(40)
         reg_button.setText('Registration')
-        reg_button.clicked.connect(partial(self.login_or_registration_to_registration, dialog))
+        reg_button.clicked.connect(partial(login_or_registration_to_registration, dialog))
         
+        v_layout.addWidget(text_block)
+        v_layout.addWidget(set_studio_button)
         v_layout.addWidget(login_button)
         v_layout.addWidget(reg_button)
         
@@ -8278,14 +8297,6 @@ class MainWindow(QtWidgets.QMainWindow):
         dialog.rejected.connect(partial(self.close_window, self))
         dialog.show()
         
-    def login_or_registration_to_login(self, dialog):
-        dialog.accept()
-        self.user_login_ui()
-        
-    def login_or_registration_to_registration(self, dialog):
-        dialog.accept()
-        self.user_registration_ui()
-    
     def get_artist_data(self, read = True, cloud=False):
         # ---- get artist data
         if read:
