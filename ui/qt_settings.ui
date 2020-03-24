@@ -88,6 +88,12 @@
         <property name="enabled">
          <bool>true</bool>
         </property>
+        <property name="minimumSize">
+         <size>
+          <width>0</width>
+          <height>40</height>
+         </size>
+        </property>
         <property name="text">
          <string>Create Cloud Studio</string>
         </property>

@@ -7844,7 +7844,12 @@ class MainWindow(QtWidgets.QMainWindow):
         # file.open(QtCore.QFile.ReadOnly)
         dialog = loader.load(file, self)
         file.close()
-
+        #
+        if hasattr(self, 'cache_cloud_studio_name'):
+            dialog.text_1.setText(self.cache_cloud_studio_name)
+        if hasattr(self, 'cache_cloud_studio_label'):
+            dialog.text_2.setText(self.cache_cloud_studio_label)
+        #
         dialog.exists_button.clicked.connect(partial(self.test_exists_studio, dialog))
         dialog.button_box.accepted.connect(partial(self.create_cloud_studio_action, dialog))
 
@@ -7866,18 +7871,23 @@ class MainWindow(QtWidgets.QMainWindow):
     def create_cloud_studio_action(self, dialog):
         name=dialog.text_1.text()
         label=dialog.text_2.text()
-
+        #
         if not name:
             self.message('Studio name not specified!', 2)
             return
         if not label:
             label=name
+        #
+        self.cache_cloud_studio_name = name
+        self.cache_cloud_studio_label = label
 
         b,r = djc.studio_create(self.studio, name, label)
 
         if not b:
             self.message(r, 2)
         else:
+            self.cache_cloud_studio_name = ''
+            self.cache_cloud_studio_label = ''
             self.message(f'Studio with the name "{name}", successfully created!', 1)
 
 
@@ -7906,8 +7916,8 @@ class MainWindow(QtWidgets.QMainWindow):
         # dialog.text_browser.setEnabled(False)
         dialog.text_browser.setReadOnly(True)
         dialog.setWindowTitle('Set Directory of Cloud Studio')
-        if hasattr(self, 'set_cloud_studio_path'):
-            dialog.path.setText(self.set_cloud_studio_path)
+        if hasattr(self, 'cache_cloud_studio_path'):
+            dialog.path.setText(self.cache_cloud_studio_path)
 
         # buttons 
         dialog.button_box.rejected.connect(partial(self.close_window, dialog))
@@ -7923,7 +7933,7 @@ class MainWindow(QtWidgets.QMainWindow):
         path=dialog.path.text()
         # print(studio_name)
         if not studio_name in self.studios.keys():
-            self.set_cloud_studio_path = path
+            self.cache_cloud_studio_path = path
             self.message('Studio not selected!', 1)
             return
         else:
@@ -7931,7 +7941,7 @@ class MainWindow(QtWidgets.QMainWindow):
             if not b:
                 self.message(r, 2)
                 return
-            self.set_cloud_studio_path=''
+            self.cache_cloud_studio_path=''
 
     def set_studio_action(self):
         # get path
