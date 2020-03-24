@@ -18,7 +18,6 @@ import datetime
 #import ui
 import edit_db as db
 import lineyka_chat
-import django_connect as djc
 #import lineyka_publish
 
 # sudo chmod +x "/home/vofka/Yandex.Disk/Lineyka/lineyka_manager.py"
@@ -7863,7 +7862,7 @@ class MainWindow(QtWidgets.QMainWindow):
         name=dialog.text_1.text()
         if not name:
             return
-        b,r = djc.test_exists_object(self.studio, 'Studio', 'studio_name', name)
+        b,r = self.studio.test_unicum(name)
         if not b:
             self.message(r, 2)
         else:
@@ -7882,7 +7881,7 @@ class MainWindow(QtWidgets.QMainWindow):
         self.cache_cloud_studio_name = name
         self.cache_cloud_studio_label = label
 
-        b,r = djc.studio_create(self.studio, name, label)
+        b,r = self.studio.studio_create(name, label)
 
         if not b:
             self.message(r, 2)
@@ -8190,7 +8189,7 @@ class MainWindow(QtWidgets.QMainWindow):
         name=window.nik_name_field.text()
         if not name:
             return
-        b,r = djc.test_exists_object(self.studio, 'User', 'username', name)
+        b,r = self.artist.test_unicum( name)
         if not b:
             self.message(r, 2)
         else:
@@ -8236,8 +8235,10 @@ class MainWindow(QtWidgets.QMainWindow):
             self.login_or_registration_ui(message='Path to the studio directory is not specified or not correct!')
         elif not self.artist.nik_name:
             self.login_or_registration_ui(message='Nikname is: "%s"' % self.artist.nik_name)
+        ''' # debug
         elif not self.artist.level or not self.artist.level in self.db_studio.MANAGER_LEVELS:
             self.login_or_registration_ui(message='No permission. Level is: "%s"' % self.artist.level)
+        '''
             
     def login_or_registration_ui(self, message=False):
         def login_or_registration_to_login(dialog):

@@ -491,6 +491,30 @@ class studio:
     def _fill_class_attributes(self):
         self.init_path = NormPath(os.path.join(os.path.expanduser('~'), self.INIT_FOLDER, self.INIT_FILE))
 
+    def studio_create(self, name, label, studio_database='django'):
+        """
+        Создание облачной студии.
+
+        Parameters
+        ----------
+        name : str
+            Имя создаваемой студии, уникальное, используется в *url*, только латинские буквы и цифры.\
+             Транслитерация и перевод в нижний регистр будут сделаны автоматически.
+        label : str
+            Лейбл создаваемой студии. То что будет использоваться в заголовках. Уникальность не требуется.
+        studio_database : str
+            Тип облака.
+
+        Returns
+        -------
+        tuple
+            (*True, comment*) или (*False, comment*)
+        """
+        if self.studio_database=='django' or studio_database=='django':
+            return djc.studio_create(self, name, label)
+        else:
+            return (False, 'No verification for this type of cloud!')
+
     @classmethod
     def make_init_file(self):
         """Создание при их отсутствии:
@@ -809,10 +833,38 @@ class studio:
         return True, 'Ok'
 
     def get_studios_list(self, studio_database='django'):
-        """Получение списка облачных студий пользователя (словари). """
+        """Получение списка облачных студий пользователя (словари).
+
+        Parameters
+        ----------
+        studio_database : str
+            Тип облака.
+        """
         if self.studio_database=='django' or studio_database=='django':
             return djc.studio_get_list(self)
         return(False, f'Getting a list of studios is not available for the type of database used: \"{self.studio_database}\"')
+
+    def test_unicum(self, name, studio_database='django'):
+        """
+        Проверка уникальности имени. Применяется при выборе имени для создания новой студии.
+
+        Parameters
+        ----------
+        name : str
+            Проверяемое имя.
+        studio_database : str
+            Тип облака.
+
+        Returns
+        -------
+        tuple
+            Если имя уникально: (*True, comment*)
+            или: (*False, comment*)
+        """
+        if self.studio_database=='django' or studio_database=='django':
+            return djc.test_exists_object(self, 'Studio', 'studio_name', name)
+        else:
+            return (False, 'No verification for this type of cloud!')
 
     def _template_version_num(self, version):
         """Приобразование номера версии к строке нужного формата (от 4 симолов).
@@ -9499,6 +9551,28 @@ class artist(studio):
                 exec('self.%s = keys.get("%s")' % (key, key))
             #self.asset_path = keys.get('asset_path')
             return(True, 'Ok')
+
+    def test_unicum(self, name, studio_database='django'):
+        """
+        Проверка уникальности имени. Применяется при выборе имени для регистрации нового пользователя.
+
+        Parameters
+        ----------
+        name : str
+            Проверяемое имя.
+        studio_database : str
+            Тип облака.
+
+        Returns
+        -------
+        tuple
+            Если имя уникально: (*True, comment*)
+            или: (*False, comment*)
+        """
+        if self.studio_database=='django' or studio_database=='django':
+            return djc.test_exists_object(self, 'User', 'username', name)
+        else:
+            return (False, 'No verification for this type of cloud!')
 
     def add_artist(self, keys, registration = True, cloud=False):
         """Добавление нового пользователя.
