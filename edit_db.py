@@ -9574,6 +9574,17 @@ class artist(studio):
         else:
             return (False, 'No verification for this type of cloud!')
 
+    def is_member(self):
+        """
+        Проверка является ли данный юзер, в составе данной студии. Для случая смены студии или перелогинивания пользователя.
+
+        Returns
+        -------
+        tuple
+            (*True, 'Ok!'*) или (*False, commit*)
+        """
+        pass
+
     def add_artist(self, keys, registration = True, cloud=False):
         """Добавление нового пользователя.
         

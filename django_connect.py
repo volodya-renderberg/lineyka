@@ -84,6 +84,17 @@ def get_user_data(studio):
         user_data=json.load(f)
     return (True, user_data)
 
+def is_member(studio, username):
+    """
+    Проверка является ли данный юзер, в составе данной студии. Для случая смены студии или перелогинивания пользователя.
+
+    Returns
+    -------
+    tuple
+        (*True, 'Ok!'*) или (*False, commit*)
+    """
+    pass
+
 def test_exists_object(studio, model, field, value, translit=True):
     """
     Проверка наличия модели со значением определённого параметра.

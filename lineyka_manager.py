@@ -8299,17 +8299,25 @@ class MainWindow(QtWidgets.QMainWindow):
         dialog.show()
         
     def get_artist_data(self, read = True, cloud=False):
+        # get studio data $ 
+        studio = 'Undefined Studio'
+        if os.path.exists(self.studio.studio_folder):
+            if self.studio.studio_database[0] == 'sqlite3':
+                studio = 'Local Studio'
+            elif self.studio.studio_label:
+                studio = self.studio.studio_label
+
         # ---- get artist data
         if read:
-            result = self.artist.get_user(cloud=cloud)
-            if not result[0]:
-                self.message(result[1], 2)
-            try:
-                self.setWindowTitle(('Lineyka  %s' % self.artist.nik_name))
-            except:
-                self.setWindowTitle('Lineyka  Not User!')
+            b,r = self.artist.get_user(cloud=cloud)
+            if not b:
+                self.message(r, 2)
+                self.setWindowTitle(f'Lineyka : {studio} : Undefined User')
+            else:
+                self.setWindowTitle(f'Lineyka : {studio} : {self.artist.nik_name}')
+                
         else:
-            self.setWindowTitle(('Lineyka  ' + self.artist.nik_name))
+            self.setWindowTitle(f'Lineyka : {studio} : {self.artist.nik_name}')
     
     def close_window(self, window):
         if window:
