@@ -3,6 +3,7 @@
 import requests
 import os
 import json
+import datetime
 
 HTML = '/tmp/mtest.html'
 
@@ -69,6 +70,34 @@ def _write_user_data(studio, user_data):
             f.write(user_data)
         if isinstance(user_data, dict):
             f.write(json.dumps(user_data))
+
+def _data_converter(c_dict, data):
+    """Преобразует данные согласно типу.
+
+    Преобразует:
+
+    * дату время из ``iso``.
+    * строки в ``json``.
+
+    Parameters
+    ----------
+    c_dict : dict
+        Словарь данных данного объекта в Линейке.
+    data : dict
+        Словарь объекта полученного от ``django``.
+
+    Returns
+    -------
+    dict
+        Словарь объекта с преобразованными данными.
+    """
+    for key in data.keys():
+        if c_dict.get(key)=='json':
+            data[key]=json.loads(data[key])
+        elif c_dict.get(key)=='timestamp':
+            data[key]=datetime.datetime.fromisoformat(data[key])
+
+    return data
 
 def get_user_data(studio):
     '''
@@ -284,3 +313,35 @@ def studio_get_list(studio):
         return(False, r1.text)
 
     return (True, r1.json())
+
+def workroom_get_list(studio):
+    '''
+    Parameters
+    ----------
+    studio : :obj:`edit_db.studio`
+        Экземпляр объетка :obj:`edit_db.studio` или любого из его потомков.
+
+    Returns
+    -------
+    tuple
+        (*True*, [список словарей]) или (*False, comment*)
+    '''
+    url=f'{studio.HOST}db/workroom/get_list/{studio.studio_name}'
+    cookie=_read_cookie(studio)
+
+    # (1) session
+    sess = requests.Session()
+    cj=requests.utils.cookiejar_from_dict(cookie)
+    sess.cookies=cj
+    # (2) get to create
+    r1=sess.get(url, cookies = cookie)
+    
+    if not r1.ok:
+        return(False, r1.text)
+
+    data = r1.json()
+    r_data=list()
+    for item in data:
+        r_data.append(_data_converter(studio.workroom_keys, item))
+
+    return (True, r_data)

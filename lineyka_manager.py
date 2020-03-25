@@ -213,9 +213,6 @@ class MainWindow(QtWidgets.QMainWindow):
         #self.get_list_active_projects()
         #self.list_active_projects = self.db_studio.list_active_projects
         
-        # ---- self.WORKROOM ----------------------------
-        # self.db_workroom.get_list() # debug
-        
         self.launcher()
         
         # ---- TASKS MANAGER ----------------------------
@@ -8235,6 +8232,12 @@ class MainWindow(QtWidgets.QMainWindow):
             self.login_or_registration_ui(message='Path to the studio directory is not specified or not correct!')
         elif not self.artist.nik_name:
             self.login_or_registration_ui(message='Nikname is: "%s"' % self.artist.nik_name)
+
+        # ---- self.WORKROOM ---- загрузка списка отделов с проверкой на причастность юзера к данной студии.
+        b,r = self.db_workroom.get_list() # debug
+        if not b:
+            self.login_or_registration_ui(message=r)
+
         ''' # debug
         elif not self.artist.level or not self.artist.level in self.db_studio.MANAGER_LEVELS:
             self.login_or_registration_ui(message='No permission. Level is: "%s"' % self.artist.level)

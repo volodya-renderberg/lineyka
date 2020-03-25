@@ -10171,16 +10171,19 @@ class workroom(studio):
             * Если return_type= ``'by_name'`` - (*True*, {словарь по ``name`` - значения отделы (экземпляры или словари)}) или (*False, comment*).
             * Если return_type= ``'by_id'`` - (*True*, {словарь по ``id`` - значения отделы (экземпляры или словари)}) или (*False, comment*).
         """
-        pass
-        bool_, return_data = database().read('studio', self, self.workroom_t, self.workroom_keys, table_root=self.workroom_db)
-        if not bool_:
-            return(bool_, return_data)
+        if self.studio_database=='django':
+            b,r = djc.workroom_get_list(self)
+        else:
+            b,r = database().read('studio', self, self.workroom_t, self.workroom_keys, table_root=self.workroom_db)
+        #
+        if not b:
+            return(b, r)
 
         return_data_0 = {}
         return_data_1 = []
         return_data_2 = {}
-        for row in return_data:
-            #return_data['name'] = row['name']
+        for row in r:
+            #r['name'] = row['name']
             work_room_data = {}
             work_room_data_1 = {}
             work_room_data_2 = {}
