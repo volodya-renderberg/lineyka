@@ -10217,116 +10217,63 @@ class workroom(studio):
         self.dict_by_name = dict_by_name
         self.dict_by_id = dict_by_id
 
-
-    def get_name_by_id(self, id_):
-        """Возвращает имя отдела по его ``id``. Обращение к БД.
-  
-        .. attention:: Возможно лучше не использовать, или переписать без обращения к БД - чисто через класс атрибуты.
-
-        Parameters
-        ----------
-        id_ : str
-            ``id`` отдела.
-
-        Returns
-        -------
-        tuple
-            (*True*, workroom_name) или (*False, комментарий*).
-        """
-        where = {'id': id_}
-        bool_, return_data = database().read('studio', self, self.workroom_t, self.workroom_keys, columns = ['name'], where = where, table_root=self.artists_db)
-        if not bool_:
-            return(bool_, return_data)
-        else:
-            if return_data:
-                return(True, return_data[0]['name'])
-            else:
-                print('#'*3, 'workroom.get_name_by_id() - id is incorrect!')
-                print('#'*3, 'id:', id_)
-                return(False, 'Look the terminal!')
-
-    def get_id_by_name(self, name):
-        """Возвращает ``id`` отдела по его имени. Обращение к БД.
-
-        .. attention:: Возможно лучше не использовать, или переписать без обращения к БД - чисто через класс атрибуты.
-
-        Parameters
-        ----------
-        name : str
-            ``name`` отдела.
-
-        Returns
-        -------
-        tuple
-            (*True*, workroom_id) или (*False, комментарий*).
-        """
-        where = {'name': name}
-        bool_, return_data = database().read('studio', self, self.workroom_t, self.workroom_keys, columns = ['id'], where = where, table_root=self.artists_db)
-        if not bool_:
-            return(bool_, return_data)
-        else:
-            if return_data:
-                return(True, return_data[0]['id'])
-            else:
-                print('#'*3, 'workroom.get_id_by_name() - name is incorrect!')
-                print('#'*3, 'name:', name)
-                return(False, 'Look the terminal!')
-
-    def name_list_to_id_list(self, name_list):
-        """Возвращает список ``id`` отделов по списку имён. Обращение к БД.
-
-        .. attention:: Возможно лучше не использовать, или переписать без обращения к БД - чисто через класс атрибуты.
+    def name_list_to_id_list(self, name_list, read_db=False):
+        """Возвращает список ``id`` отделов по списку имён.
 
         Parameters
         ----------
         name_list : list
             Список имён отделов.
+        read_db : bool
+            Если *False* и данные по отделам уже считывались - то чтение базы данных не будет.
 
         Returns
         -------
         tuple
             (*True*, list_of_id) или (*False, comment*).
         """
-        bool_, data = self.get_list('by_name', False)
-        if not bool_:
-            return(bool_, data)
-        if data:
-            return_data = []
-            for key in data:
+        if read_db or not self.dict_by_name:
+            b, r = self.get_list()
+            if not b:
+                return(b, r)
+        if self.dict_by_name:
+            r_data = list()
+            for key in self.dict_by_name.keys():
                 if key in name_list:
-                    return_data.append(data[key]['id'])
-            return(True, return_data)
+                    r_data.append(self.dict_by_name[key].id)
+            return(True, r_data)
         else:
             print('#'*3, 'workroom.name_list_to_id_list() - list of names is incorrect!')
             print('#'*3, 'name list:', name_list)
             return(False, 'Look the terminal!')
 
-    def id_list_to_name_list(self, id_list):
-        """Возвращает список имён отделов по списку ``id``. Обращение к БД.
+    def id_list_to_name_list(self, id_list, read_db=False):
+        """Возвращает список имён отделов по списку ``id``.
 
         .. note:: Используется при записи.
-
-        .. attention:: Возможно лучше не использовать, или переписать без обращения к БД - чисто через класс атрибуты.
 
         Parameters
         ----------
         id_list : list
             Список ``id`` отделов.
+        read_db : bool
+            Если *False* и данные по отделам уже считывались - то чтение базы данных не будет.
 
         Returns
         -------
         tuple
             (*True*, list_of_names) или (*False, comment*).
         """
-        bool_, data = self.get_list('by_id', False)
-        if not bool_:
-            return(bool_, data)
-        if data:
-            return_data = []
-            for key in data:
+        if read_db or not self.dict_by_id:
+            b, r = self.get_list()
+            if not b:
+                return(b, r)
+        if self.dict_by_id:
+            r_data = list()
+            for key in self.dict_by_id.keys():
                 if key in id_list:
-                    return_data.append(data[key]['name'])
-            return(True, return_data)
+                    r_data.append(self.dict_by_id[key].name)
+            return(True, r_data)
         else:
             print('#'*3, 'workroom.id_list_to_name_list() - list of id is incorrect!')
             print('#'*3, 'id list:', id_list)
@@ -10354,18 +10301,23 @@ class workroom(studio):
         # (1)
         if self.name == new_name:
             return(False, 'Match names!')
-        bool_, return_data = self.get_list('by_name', False)
-        if not bool_:
-            return(bool_, return_data)
-        if new_name in return_data:
+        if not self.dict_by_name:
+            b,r = self.get_list()
+            if not b:
+                return(b,r)
+        if new_name in self.dict_by_name:
             return(False, 'This name of workroom already exists! "%s"' % new_name)
         
         # (2)
-        update_data = {'name':new_name}
-        where = {'id': self.id}
-        bool_, return_data = database().update('studio', self, self.workroom_t, self.workroom_keys, update_data, where, table_root=self.workroom_db)
-        if not bool_:
-            return(bool_, return_data)
+        if self.studio_database=='django':
+            b,r =djc.workroom_rename(self, new_name)
+        else:
+            update_data = {'name':new_name}
+            where = {'id': self.id}
+            b,r = database().update('studio', self, self.workroom_t, self.workroom_keys, update_data, where, table_root=self.workroom_db)
+        #
+        if not b:
+            return(b,r)
         
         # (3)
         self.name = new_name

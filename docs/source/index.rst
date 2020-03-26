@@ -23,6 +23,7 @@ Contents:
    log
    chat
    list_of_assets
+   django_connect
    examples
    specifications
 

@@ -4,6 +4,7 @@ import requests
 import os
 import json
 import datetime
+import uuid
 
 HTML = '/tmp/mtest.html'
 
@@ -71,18 +72,19 @@ def _write_user_data(studio, user_data):
         if isinstance(user_data, dict):
             f.write(json.dumps(user_data))
 
-def _data_converter(c_dict, data):
-    """Преобразует данные согласно типу.
+def _input_data_converter(type_dict, data):
+    """Преобразует данные полученные от ``django`` согласно типу.
 
     Преобразует:
 
     * дату время из ``iso``.
     * строки в ``json``.
+    * hex в ``uuid`` (для *id*)
 
     Parameters
     ----------
-    c_dict : dict
-        Словарь данных данного объекта в Линейке.
+    type_dict : dict
+        Словарь типа данных данного объекта в Линейке.
     data : dict
         Словарь объекта полученного от ``django``.
 
@@ -92,12 +94,49 @@ def _data_converter(c_dict, data):
         Словарь объекта с преобразованными данными.
     """
     for key in data.keys():
-        if c_dict.get(key)=='json':
+        if key=='id' and len(data[key])==32:
+            data[key]=uuid.UUID(data[key])
+        if type_dict.get(key)=='json':
             data[key]=json.loads(data[key])
-        elif c_dict.get(key)=='timestamp':
+        elif type_dict.get(key)=='timestamp':
             data[key]=datetime.datetime.fromisoformat(data[key])
 
     return data
+
+def _output_data_converter(type_dict, inst):
+    """Преобразует данные для отправки в ``django``.
+
+    Преобразует:
+
+    * дату время в ``iso``.
+    * ``json`` в строки.
+    * ``uuid`` в hex (для *id*)
+    * добавляет ``studio_name``
+
+    Parameters
+    ----------
+    type_dict : dict
+        Словарь типа данных данного объекта в Линейке.
+    inst : объект линейки
+        Объект линейки, преобразуемый в словарь для передачи в линейку.
+
+    Returns
+    -------
+    dict
+        Словарь объекта с преобразованными данными.
+    """
+    data = inst.__dict__
+    for key in data.keys():
+        if key=='id' and isinstance(data[key], uuid.UUID):
+            data[key]=data[key].hex
+        elif type_dict.get(key)=='json':
+            data[key]=json.dumps(data[key])
+        elif type_dict.get(key)=='timestamp':
+            data[key]=datetime.datetime.isoformat(data[key])
+
+    data['studio_name']=inst.studio_name
+
+    return json.dumps(data)
 
 def get_user_data(studio):
     '''
@@ -333,7 +372,7 @@ def workroom_get_list(studio):
     sess = requests.Session()
     cj=requests.utils.cookiejar_from_dict(cookie)
     sess.cookies=cj
-    # (2) get to create
+    # (2) GET
     r1=sess.get(url, cookies = cookie)
     
     if not r1.ok:
@@ -342,6 +381,46 @@ def workroom_get_list(studio):
     data = r1.json()
     r_data=list()
     for item in data:
-        r_data.append(_data_converter(studio.workroom_keys, item))
+        r_data.append(_input_data_converter(studio.workroom_keys, item))
 
     return (True, r_data)
+
+def workroom_rename(workroom, new_name):
+    '''
+    Parameters
+    ----------
+    workroom : :obj:`edit_db.workroom`
+        Экземпляр объетка :obj:`edit_db.workroom`.
+    new_name : str
+        Новое имя отдела.
+
+    Returns
+    -------
+    tuple
+        (*True*, [список словарей]) или (*False, comment*)
+    '''
+    url=f'{workroom.HOST}db/workroom/rename/'
+    cookie=_read_cookie(workroom)
+    
+    # (1) session
+    sess = requests.Session()
+    cj=requests.utils.cookiejar_from_dict(cookie)
+    sess.cookies=cj
+    # (2) GET
+    params=dict(studio_name=workroom.studio_name)
+    r1=sess.get(url, cookies = cookie, params=params)
+    #
+    if not r1.ok:
+        return(False, r1.text)
+
+    # (3) POST
+    csrf_token = r1.cookies.get('csrftoken')
+    #
+    wr_dict=_output_data_converter(workroom.workroom_keys, workroom)
+    #
+    r2=sess.post(url, data=dict(csrfmiddlewaretoken=csrf_token, cookies=cookie, new_name=new_name, inst=wr_dict))
+    
+    if not r2.ok:
+        return(False, r2.text)
+    #
+    return(True, _input_data_converter(workroom.workroom_keys, r2.json()) )
