@@ -10106,11 +10106,9 @@ class workroom(studio):
         """
         pass
         # test name
-        try:
-            name = keys['name']
-        except:
-            return(False, 'not Name!')
-            
+        if not keys.get('name'):
+            return(False, '"Name" not specified!')
+        name=keys['name']
         keys['id'] = uuid.uuid4().hex
         
         # 1 - создание таблицы, если отсутствует. чтобы без вылетов сработала проверка на совпадение имени.
@@ -10118,17 +10116,19 @@ class workroom(studio):
         # 3 - проверка чтобы типы задач были из task_types
         # 4 - запись строки в таблицу
         
-        # (1) create table 
-        bool_, return_data = database().create_table('studio', self, self.workroom_t, self.workroom_keys, table_root = self.workroom_db)
-        if not bool_:
-            return(bool_, return_data)
+        # (1) create table
+        if self.studio_database != 'django':
+            bool_, return_data = database().create_table('studio', self, self.workroom_t, self.workroom_keys, table_root = self.workroom_db)
+            if not bool_:
+                return(bool_, return_data)
         
         # (2) test exists name
-        bool_, return_data = database().read('studio', self, self.workroom_t, self.workroom_keys, where={'name': name}, table_root=self.workroom_db)
-        if not bool_:
-            return(bool_, return_data)
-        elif return_data:
-            return(False, 'This workroom name: "%s" already exists!' % name)
+        if not self.dict_by_name:
+            b,r=self.get_list()
+            if not b:
+                return(b,r)
+        if name in self.dict_by_name.keys():
+            return(False, f'This workroom name: {name} already exists!')
         
         # (3) test type
         type_ = keys.get('type')
@@ -10141,9 +10141,15 @@ class workroom(studio):
                 return(False, 'This type of keys[type]: "%s" is not correct (must be a list, False or None)' % str(type_))
             
         # (4) insert string
-        bool_, return_data = database().insert('studio', self, self.workroom_t, self.workroom_keys, keys, table_root=self.workroom_db)
-        if not bool_:
-            return(bool_, return_data)
+        if self.studio_database == 'django':
+            b,r=djc.workroom_add(self, name, type_)
+            if b:
+                keys=r
+        else:
+            b,r = database().insert('studio', self, self.workroom_t, self.workroom_keys, keys, table_root=self.workroom_db)
+        #
+        if not b:
+            return(b,r)
         
         if not new:
             return(True, 'ok')
@@ -10347,11 +10353,15 @@ class workroom(studio):
             else:
                 return(False, 'This type of keys[type]: "%s" is not correct (must be a list, False or None)' % str(new_type_list))
         # (2)
-        update_data = {'type': new_type_list}
-        where = {'id': self.id}
-        bool_, return_data = database().update('studio', self, self.workroom_t, self.workroom_keys, update_data, where, table_root=self.workroom_db)
-        if not bool_:
-            return(bool_, return_data)
+        if self.studio_database=='django':
+            b,r=djc.workroom_edit_type(self, new_type_list)
+        else:
+            update_data = {'type': new_type_list}
+            where = {'id': self.id}
+            b,r = database().update('studio', self, self.workroom_t, self.workroom_keys, update_data, where, table_root=self.workroom_db)
+        #
+        if not b:
+            return(b,r)
         self.type = new_type_list
         return(True, 'Ok!')
 

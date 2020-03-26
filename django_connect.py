@@ -94,7 +94,7 @@ def _input_data_converter(type_dict, data):
         Словарь объекта с преобразованными данными.
     """
     for key in data.keys():
-        if key=='id' and len(data[key])==32:
+        if key=='id' and data.get(key) and len(data[key])==32:
             data[key]=uuid.UUID(data[key])
         if type_dict.get(key)=='json':
             data[key]=json.loads(data[key])
@@ -103,7 +103,7 @@ def _input_data_converter(type_dict, data):
 
     return data
 
-def _output_data_converter(type_dict, inst):
+def _output_data_converter(type_dict, inst, from_dict=False):
     """Преобразует данные для отправки в ``django``.
 
     Преобразует:
@@ -117,15 +117,21 @@ def _output_data_converter(type_dict, inst):
     ----------
     type_dict : dict
         Словарь типа данных данного объекта в Линейке.
-    inst : объект линейки
+    inst : объект линейки, dict
         Объект линейки, преобразуемый в словарь для передачи в линейку.
+    from_dict : bool
+        Если *False* - то ``inst`` это объект линейки, если *True* - то словарь. 
 
     Returns
     -------
-    dict
-        Словарь объекта с преобразованными данными.
+    str
+        Словарь объекта с преобразованными данными в строковом представлении.
     """
-    data = inst.__dict__
+    if from_dict:
+        data=inst
+    else:
+        data = inst.__dict__.copy()
+        data['studio_name']=inst.studio_name
     for key in data.keys():
         if key=='id' and isinstance(data[key], uuid.UUID):
             data[key]=data[key].hex
@@ -134,9 +140,9 @@ def _output_data_converter(type_dict, inst):
         elif type_dict.get(key)=='timestamp':
             data[key]=datetime.datetime.isoformat(data[key])
 
-    data['studio_name']=inst.studio_name
-
-    return json.dumps(data)
+    r_data = json.dumps(data)
+    del data
+    return r_data
 
 def get_user_data(studio):
     '''
@@ -353,6 +359,52 @@ def studio_get_list(studio):
 
     return (True, r1.json())
 
+def workroom_add(workroom, wr_name, wr_type):
+    '''
+    Parameters
+    ----------
+    workroom : :obj:`edit_db.workroom`
+        Экземпляр объетка :obj:`edit_db.workroom`.
+    wr_name : str
+        Имя создаваемого объекта.
+    wr_type : list
+        Список типов для создаваемого отдела.
+
+    Returns
+    -------
+    tuple
+        (*True*, {Словарь созданного отдела}) или (*False, comment*)
+    '''
+    url=f'{workroom.HOST}db/workroom/add/'
+    cookie=_read_cookie(workroom)
+
+    # (1) session
+    sess = requests.Session()
+    cj=requests.utils.cookiejar_from_dict(cookie)
+    sess.cookies=cj
+    # (2) GET
+    params=dict(studio_name=workroom.studio_name)
+    r1=sess.get(url, cookies = cookie, params=params)
+    #
+    if not r1.ok:
+        return(False, r1.text)
+
+    # (3) POST
+    csrf_token = r1.cookies.get('csrftoken')
+    # ()
+    wr_dict=_output_data_converter(workroom.workroom_keys, workroom)
+    try:
+        wr_type=json.dumps(wr_type)
+    except:
+        wr_type='[]'
+    #
+    r2=sess.post(url, data=dict(csrfmiddlewaretoken=csrf_token, cookies=cookie, wr_name=wr_name, wr_type=wr_type, inst=wr_dict))
+    
+    if not r2.ok:
+        return(False, r2.text)
+    #
+    return(True, _input_data_converter(workroom.workroom_keys, r2.json()) )
+
 def workroom_get_list(studio):
     '''
     Parameters
@@ -390,14 +442,14 @@ def workroom_rename(workroom, new_name):
     Parameters
     ----------
     workroom : :obj:`edit_db.workroom`
-        Экземпляр объетка :obj:`edit_db.workroom`.
+        Экземпляр изменяемого объетка :obj:`edit_db.workroom`.
     new_name : str
         Новое имя отдела.
 
     Returns
     -------
     tuple
-        (*True*, [список словарей]) или (*False, comment*)
+        (*True*, {словарь отдела}) или (*False, comment*)
     '''
     url=f'{workroom.HOST}db/workroom/rename/'
     cookie=_read_cookie(workroom)
@@ -419,6 +471,46 @@ def workroom_rename(workroom, new_name):
     wr_dict=_output_data_converter(workroom.workroom_keys, workroom)
     #
     r2=sess.post(url, data=dict(csrfmiddlewaretoken=csrf_token, cookies=cookie, new_name=new_name, inst=wr_dict))
+    
+    if not r2.ok:
+        return(False, r2.text)
+    #
+    return(True, _input_data_converter(workroom.workroom_keys, r2.json()) )
+
+def workroom_edit_type(workroom, new_type):
+    '''
+    Parameters
+    ----------
+    workroom : :obj:`edit_db.workroom`
+        Экземпляр изменяемого объетка :obj:`edit_db.workroom`.
+    new_type : list
+        Список новых типов задач для отдела.
+
+    Returns
+    -------
+    tuple
+        (*True*, {словарь отдела}) или (*False, comment*)
+    '''
+    url=f'{workroom.HOST}db/workroom/edit_type/'
+    cookie=_read_cookie(workroom)
+    
+    # (1) session
+    sess = requests.Session()
+    cj=requests.utils.cookiejar_from_dict(cookie)
+    sess.cookies=cj
+    # (2) GET
+    params=dict(studio_name=workroom.studio_name)
+    r1=sess.get(url, cookies = cookie, params=params)
+    #
+    if not r1.ok:
+        return(False, r1.text)
+
+    # (3) POST
+    csrf_token = r1.cookies.get('csrftoken')
+    #
+    wr_dict=_output_data_converter(workroom.workroom_keys, workroom)
+    #
+    r2=sess.post(url, data=dict(csrfmiddlewaretoken=csrf_token, cookies=cookie, new_type=json.dumps(new_type), inst=wr_dict))
     
     if not r2.ok:
         return(False, r2.text)
