@@ -8230,11 +8230,13 @@ class MainWindow(QtWidgets.QMainWindow):
         # return # debug
         if not self.db_studio.studio_folder or not os.path.exists(self.db_studio.studio_folder):
             self.login_or_registration_ui(message='Path to the studio directory is not specified or not correct!')
+            return
         elif not self.artist.nik_name:
             self.login_or_registration_ui(message='Nikname is: "%s"' % self.artist.nik_name)
+            return
 
-        # ---- self.WORKROOM ---- загрузка списка отделов с проверкой на причастность юзера к данной студии.
-        b,r = self.db_workroom.get_list() # debug
+        # ---- self.WORKROOM ---- 
+        b,r = self.db_workroom.get_list() # загрузка списка отделов с проверкой на причастность юзера к данной студии.
         if not b:
             self.login_or_registration_ui(message=r)
 

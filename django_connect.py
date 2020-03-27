@@ -10,10 +10,17 @@ HTML = '/tmp/mtest.html'
 
 def _get_cookie_path(studio):
     '''
+    Возвращает путь до файла ``cookie``.
+
     Parameters
     ----------
     studio : :obj:`edit_db.studio`
-        Экземпляр объетка :obj:`edit_db.studio` или любого из его потомков.
+        Экземпляр объетка студии или любого из его потомков.
+
+    Returns
+    -------
+    path
+        Путь до файла ``cookie``.
     '''
     path=os.path.join(os.path.expanduser('~'), studio.INIT_FOLDER, studio.COOKIE_NAME)
     if not os.path.exists(os.path.dirname(path)):
@@ -25,7 +32,7 @@ def _get_user_data_path(studio):
     Parameters
     ----------
     studio : :obj:`edit_db.studio`
-        Экземпляр объетка :obj:`edit_db.studio` или любого из его потомков.
+        Экземпляр объетка студии или любого из его потомков.
     '''
     path=os.path.join(os.path.expanduser('~'), studio.INIT_FOLDER, studio.USER_DATA_FILE_NAME)
     if not os.path.exists(os.path.dirname(path)):
@@ -37,7 +44,7 @@ def _write_cookie(studio, cookie):
     Parameters
     ----------
     studio : :obj:`edit_db.studio`
-        Экземпляр объетка :obj:`edit_db.studio` или любого из его потомков.
+        Экземпляр объетка студии или любого из его потомков.
     cookie: dict
         словарь кука
     '''
@@ -49,7 +56,7 @@ def _read_cookie(studio):
     Parameters
     ----------
     studio : :obj:`edit_db.studio`
-        Экземпляр объетка :obj:`edit_db.studio` или любого из его потомков.
+        Экземпляр объетка студии или любого из его потомков.
     '''
     if not os.path.exists(_get_cookie_path(studio)):
         raise Exception('No Auth!')
@@ -62,7 +69,7 @@ def _write_user_data(studio, user_data):
     Parameters
     ----------
     studio : :obj:`edit_db.studio`
-        Экземпляр объетка :obj:`edit_db.studio` или любого из его потомков.
+        Экземпляр объетка студии или любого из его потомков.
     user_data : dict, str
         Словарь данных пользователя.
     '''
@@ -94,7 +101,7 @@ def _input_data_converter(type_dict, data):
         Словарь объекта с преобразованными данными.
     """
     for key in data.keys():
-        if key=='id' and data.get(key) and len(data[key])==32:
+        if key=='id' and data.get(key) and isinstance(data[key], str) and len(data[key])==32:
             data[key]=uuid.UUID(data[key])
         if type_dict.get(key)=='json':
             data[key]=json.loads(data[key])
@@ -118,7 +125,7 @@ def _output_data_converter(type_dict, inst, from_dict=False):
     type_dict : dict
         Словарь типа данных данного объекта в Линейке.
     inst : объект линейки, dict
-        Объект линейки, преобразуемый в словарь для передачи в линейку.
+        Объект линейки, преобразуемый в словарь для передачи в линейку или уже словарь (если ``from_dict`` = *True*).
     from_dict : bool
         Если *False* - то ``inst`` это объект линейки, если *True* - то словарь. 
 
@@ -146,6 +153,8 @@ def _output_data_converter(type_dict, inst, from_dict=False):
 
 def get_user_data(studio):
     '''
+    Чтение словаря данных залогиненного пользователя из локального файла.
+
     Parameters
     ----------
     studio : :obj:`edit_db.studio`
@@ -161,6 +170,8 @@ def get_user_data(studio):
 def is_member(studio, username):
     """
     Проверка является ли данный юзер, в составе данной студии. Для случая смены студии или перелогинивания пользователя.
+
+    .. attention:: Пустая процедура. Принадлежность к студии проверяется декоратором ``permissions.is_studio_member``
 
     Returns
     -------

@@ -308,6 +308,16 @@ class studio:
     'checking_tasks': 'json',# список имён назначенных на проверку задач
     }
     """dict: Обозначение данных хранимых в БД для объектов :obj:`edit_db.artist` . Ключи - заголовки, значения - тип данных БД. """
+
+    django_artists_keys={
+    'last_login': 'timestamp',
+    'date_joined': 'timestamp',
+    'date_joined_to_studio': 'timestamp',
+    'workroom': 'json',
+    'working_tasks': 'json',
+    'checking_tasks': 'json',
+    }
+    """dict: Обозначение типа данных хранимых в ``django`` для конвертации в :func:`django_connect._input_data_converter` . Ключи - заголовки, значения - тип данных БД. """
     
     chats_keys = {
     'message_id':'text',
@@ -9491,7 +9501,7 @@ class artist(studio):
         #studio.__init__(self)
         pass
 
-    def init(self, nik_name, new = True):
+    def init(self, nik_name, new = True, cloud=False):
         """Инициализация по имени, возвращает новый, или инициализирует текущий экземпляр.
         
         Parameters
@@ -9500,6 +9510,8 @@ class artist(studio):
             Ник нейм артиста.
         new : bool
             Если *True* - возвращает новый инициализированный экземпляр, если *False* то инициализирует текущий экземпляр.
+        cloud : bool, str
+            Определяет используемый интерфейс хранения данных. Если *False* то - локальная схема ``sqlite3``.
             
         Returns
         -------
@@ -9509,21 +9521,24 @@ class artist(studio):
         """
         pass
         # get keys
-        bool_, artists = self.read_artist({'nik_name': nik_name})
-        if not bool_:
-            return(bool_, artists)
-                
-        # fill fields
-        if new:
-            return artists[0]
+        if cloud=='django' or self.studio_database == 'django':
+            return (False, '"artist.init" procedure not defined for cloud!')
         else:
-            for key in self.artists_keys:
-                #exec('self.%s = keys[0].get("%s")' % (key, key))
-                setattr(self, key, getattr(artists[0], key))
-            #self.asset_path = keys.get('asset_path')
-            return(True, 'Ok')
+            bool_, artists = self.read_artist({'nik_name': nik_name})
+            if not bool_:
+                return(bool_, artists)
+                    
+            # fill fields
+            if new:
+                return artists[0]
+            else:
+                for key in self.artists_keys:
+                    #exec('self.%s = keys[0].get("%s")' % (key, key))
+                    setattr(self, key, getattr(artists[0], key))
+                #self.asset_path = keys.get('asset_path')
+                return(True, 'Ok')
         
-    def init_by_keys(self, keys, new = True):
+    def init_by_keys(self, keys, new = True, cloud=False):
         """Инициализация по словарю (без чтения БД), возвращает новый, или инициализирует текущий экземпляр.
         
         Parameters
@@ -9532,6 +9547,8 @@ class artist(studio):
             Словарь по :attr:`edit_db.studio.artists_keys`
         new : bool, optional
             Если *True* - возвращает новый инициализированный экземпляр, если *False* то инициализирует текущий.
+        cloud : bool, str
+            Определяет используемый интерфейс хранения данных. Если *False* то - локальная схема ``sqlite3``.
         
         Returns
         -------
@@ -9541,16 +9558,39 @@ class artist(studio):
         """
         pass
         # fill fields
-        if new:
-            new_artist = artist()
-            for key in self.artists_keys:
-                exec('new_artist.%s = keys.get("%s")' % (key, key))
-            return new_artist
+        if cloud=='django' or self.studio_database == 'django':
+            if new:
+                new_artist = artist()
+            else:
+                new_artist = self
+            for key in keys:
+                if key=='username':
+                    setattr(new_artist, 'nik_name', keys[key])
+                elif key=='is_active':
+                    if keys[key]:
+                        d='active'
+                    else:
+                        d='none'
+                    setattr(new_artist, key, d)
+                else:
+                    setattr(new_artist, key, keys[key])
+
+            self.cloud=cloud # на случай когда студия ещё не определена.
+            if new:
+                return new_artist
+            else:
+                return(True, 'Ok!')
         else:
-            for key in self.artists_keys:
-                exec('self.%s = keys.get("%s")' % (key, key))
-            #self.asset_path = keys.get('asset_path')
-            return(True, 'Ok')
+            if new:
+                new_artist = artist()
+                for key in self.artists_keys:
+                    exec('new_artist.%s = keys.get("%s")' % (key, key))
+                return new_artist
+            else:
+                for key in self.artists_keys:
+                    exec('self.%s = keys.get("%s")' % (key, key))
+                #self.asset_path = keys.get('asset_path')
+                return(True, 'Ok')
 
     def test_unicum(self, name, studio_database='django'):
         """
@@ -9577,6 +9617,8 @@ class artist(studio):
     def is_member(self):
         """
         Проверка является ли данный юзер, в составе данной студии. Для случая смены студии или перелогинивания пользователя.
+
+        .. attention:: Пустая процедура.
 
         Returns
         -------
@@ -9845,12 +9887,9 @@ class artist(studio):
             b,r = djc.get_user_data(self)
             if not b:
                 return(b,r)
-            for key in r:
-                if key=='username':
-                    setattr(self, 'nik_name', r[key])
-                else:
-                    setattr(self, key, r[key])
-            self.cloud=cloud # на случай когда студия ещё не определена.
+            b,r=self.init_by_keys(r, new = False, cloud=cloud)
+            if not b:
+                return(b,r)
             return(True, 'Ok!')
 
         else:
