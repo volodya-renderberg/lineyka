@@ -19,5 +19,5 @@ Contents:
    specifications/help_links
    specifications/hooks
    specifications/additional_activities
-   specifications/server
    specifications/season_episode_sequence_shot
+   specifications/django

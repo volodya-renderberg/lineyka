@@ -80,18 +80,18 @@ def _write_user_data(studio, user_data):
             f.write(json.dumps(user_data))
 
 def _input_data_converter(type_dict, data):
-    """Преобразует данные полученные от ``django`` согласно типу.
+    """Преобразует данные полученные от ``django`` согласно типу из ``type_dict``.
 
     Преобразует:
 
     * дату время из ``iso``.
-    * строки в ``json``.
-    * hex в ``uuid`` (для *id*)
+    * строки в ``json.dumps``(если тип данных в ``type_dict`` - ``json``).
+    * hex в ``uuid`` (для *id*).
 
     Parameters
     ----------
     type_dict : dict
-        Словарь типа данных данного объекта в Линейке.
+        Словарь типа данных данного объекта в Линейке (например :attr:`edit_db.studio.workroom_keys`).
     data : dict
         Словарь объекта полученного от ``django``.
 
@@ -116,14 +116,14 @@ def _output_data_converter(type_dict, inst, from_dict=False):
     Преобразует:
 
     * дату время в ``iso``.
-    * ``json`` в строки.
-    * ``uuid`` в hex (для *id*)
-    * добавляет ``studio_name``
+    * Итерируемые объекты в строки (если тип данных в ``type_dict`` - ``json``).
+    * ``uuid`` в hex (для *id*).
+    * добавляет ``studio_name``.
 
     Parameters
     ----------
     type_dict : dict
-        Словарь типа данных данного объекта в Линейке.
+        Словарь типа данных данного объекта в Линейке (например :attr:`edit_db.studio.workroom_keys`).
     inst : объект линейки, dict
         Объект линейки, преобразуемый в словарь для передачи в линейку или уже словарь (если ``from_dict`` = *True*).
     from_dict : bool
