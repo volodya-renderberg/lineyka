@@ -1,4 +1,0 @@
-.. membership-page:
-
-Membership
-==========

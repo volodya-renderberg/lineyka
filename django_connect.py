@@ -85,7 +85,7 @@ def _input_data_converter(type_dict, data):
     Преобразует:
 
     * дату время из ``iso``.
-    * строки в ``json.dumps``(если тип данных в ``type_dict`` - ``json``).
+    * строки в ``json.dumps`` (если тип данных в ``type_dict`` = ``json``).
     * hex в ``uuid`` (для *id*).
 
     Parameters
@@ -116,7 +116,7 @@ def _output_data_converter(type_dict, inst, from_dict=False):
     Преобразует:
 
     * дату время в ``iso``.
-    * Итерируемые объекты в строки (если тип данных в ``type_dict`` - ``json``).
+    * Итерируемые объекты в строки (если тип данных в ``type_dict`` = ``json``).
     * ``uuid`` в hex (для *id*).
     * добавляет ``studio_name``.
 

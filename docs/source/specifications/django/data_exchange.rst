@@ -24,6 +24,7 @@ Data to Lineyka
 * :func:`edit_db.shortcuts.inst_to_json` 
 	* объект джанго в словарь,
 	* удаление лишних полей,
+	* ``uuid`` в ``hex`` (для ``id``).
 	* дату/время из *utc* в местное время пользователя. ``!!!! сделать``
 	* преобразование словаря в строку.
 
@@ -31,5 +32,21 @@ Data to Lineyka
 ~~~~~~~~~~~~~~~~~~
 
 * :func:`django_connect._input_data_converter`
-	* ццц
+	* подробности в описалово.
 
+Data to django
+--------------
+
+На стороне Lineyka
+~~~~~~~~~~~~~~~~~~
+
+* :func:`django_connect._output_data_converter`
+	* подробности в описалово.
+
+На стороне django
+~~~~~~~~~~~~~~~~~
+
+* :func:`edit_db.shortcuts.json_to_inst` 
+	* строку в словарь *json.loads()*,
+	* ``hex`` в ``uuid`` (для ``id``),
+	* дату/время из местного пользовательского в *utc* . ``!!!! сделать``.

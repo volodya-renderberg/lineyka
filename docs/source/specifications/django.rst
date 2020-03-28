@@ -11,4 +11,4 @@ Contents:
    django/levels
    django/studio_create
    django/data_exchange
-   django/membership
+   django/memberships
