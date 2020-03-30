@@ -5,7 +5,7 @@ Levels
 
 .. image:: images/django_levels.png
 
-.. _super_head:
+.. _super_head_level:
 
 Super Head
 ----------
@@ -19,6 +19,8 @@ Super Head
 ~~~~~~~
 
 Для всех моделей: ``add``, ``change``, ``delete``, ``view``
+
+.. _head_level:
 
 Head
 ----
@@ -53,6 +55,8 @@ Head
 
 * **Chat** : ``add``, ``change``, ``delete``, ``view``.
 
+.. _manager_level:
+
 Manager
 -------
 
@@ -73,6 +77,8 @@ Manager
 * **Task** : ``add``, ``change``, ``delete``, ``view``.
 
 * **Chat** : ``add``, ``change``, ``delete``, ``view``.
+
+.. _user_level:
 
 User
 -------
