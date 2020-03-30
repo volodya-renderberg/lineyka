@@ -34,18 +34,18 @@ Studio memberships
     * При одобрении - добавление юзера на уровень :ref:`user_level`.
     * Проверки:
         * Проверка на аутентификацию пользователя.
-        * Проверка разрешения ``artis_add`` (только :ref:`super_head_level` или :ref:`head_level`).
+        * Проверка разрешения ``artist_add`` (только :ref:`super_head_level` или :ref:`head_level`).
 
 * :func:`edit_db.views.user_request_get_list`
-    * Получение списка запросов от данного аутентифицированного пользователя.
+    * Получение списка существующих запросов от данного аутентифицированного пользователя (пользовательполучает свои запросы в различные студии).
     * Проверки:
         * Проверка на аутентификацию пользователя.
 
 * :func:`edit_db.views.studio_request_get_list`
-    * Получение списка запросов в данную студию.
+    * Получение списка существующих запросов в данную студию.
     * Проверки:
         * Проверка на аутентификацию пользователя.
-        * Проверка разрешения ``artis_view`` (только :ref:`super_head_level` или :ref:`head_level`).
+        * Проверка разрешения ``artist_view`` (только :ref:`super_head_level` или :ref:`head_level`).
 
 
 Приглашения от студии
@@ -63,13 +63,13 @@ Studio memberships
     * Создание приглашения пользователю от студии по ``username``.
     * Проверки:
         * Проверка на аутентификацию пользователя.
-        * Проверка разрешения ``artis_add`` (только :ref:`super_head_level` или :ref:`head_level`).
+        * Проверка разрешения ``artist_add`` (только :ref:`super_head_level` или :ref:`head_level`).
 
-* :func:`edit_db.views.user_invitation_create`
-    * Удаление приглашения пользователю.
+* :func:`edit_db.views.user_invitation_remove`
+    * Удаление (со стороны студии) приглашения пользователю.
     * Проверки:
         * Проверка на аутентификацию пользователя.
-        * Проверка разрешения ``artis_add`` (только :ref:`super_head_level` или :ref:`head_level`).
+        * Проверка разрешения ``artist_add`` (только :ref:`super_head_level` или :ref:`head_level`).
 
 * :func:`edit_db.views.user_invitation_accept`
 * :func:`edit_db.views.user_invitation_refuse`
@@ -80,18 +80,54 @@ Studio memberships
         * Проверка на то что это приглашение именно этому пользователю.
 
 * :func:`edit_db.views.user_invitation_get_list`
-    * Получение списка запросов от данного аутентифицированного пользователя.
+    * Получение списка существующих приглашений данному аутентифицированному пользователю (список приглашений себе).
     * Проверки:
         * Проверка на аутентификацию пользователя.
 
 * :func:`edit_db.views.studio_invitation_get_list`
-    * Получение списка запросов в данную студию.
+    * Получение списка существующих приглашений от данной студии.
     * Проверки:
         * Проверка на аутентификацию пользователя.
-        * Проверка разрешения ``artis_view`` (только :ref:`super_head_level` или :ref:`head_level`).
+        * Проверка разрешения ``artist_view`` (только :ref:`super_head_level` или :ref:`head_level`).
 
 Workroom memberships
 --------------------
 
+Добавление и удаление пользователей
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Модель
+******
+
+**WrMembers**
+
+Методы в Views.py
+*****************
+
+* :func:`edit_db.views.workroom_add_artist`
+* :func:`edit_db.views.workroom_remove_artist`
+    * Добавление или удаление артистов.
+    * Проверки:
+        * Проверка на аутентификацию пользователя.
+        * Проверка разрешения ``workroom_change`` (только :ref:`super_head_level` или :ref:`head_level`).
+
 Group memberships
 -----------------
+
+Добавление и удаление пользователей
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Модель
+******
+
+**auth.models.Group**
+
+Методы в Views.py
+*****************
+
+* :func:`edit_db.views.group_add_artist`
+* :func:`edit_db.views.group_remove_artist`
+    * Добавление или удаление артистов.
+    * Проверки:
+        * Проверка на аутентификацию пользователя.
+        * Проверка разрешения ``artist_change`` (только :ref:`super_head_level` или :ref:`head_level`).
