@@ -35,11 +35,11 @@ Head
 
 * **workroom** : ``add``, ``change``, ``delete``, ``view``.
 
-* **Artist** : ``add``, ``change``, ``delete``, ``view`` 
+* **Artist** : ``add``, ``change``, ``delete``, ``view`` .
 
     .. note:: 
 
-        * Только на поля моелей ``Studiomembers``, ``Wrmembers`` и на ``auth.models.Group``.
+        * Только на поля моелей ``StudioMembers``, ``WrMembers`` и на ``auth.models.Group``.
         * Ставить проверку всем приложениям меняющим эти модели: членство в студии, отделе, в группе.
         * Изменение членства в группе `Super Head`_ может только член этой группы. ``????`` Проработать.
 
@@ -68,6 +68,10 @@ Manager
 Доступы
 ~~~~~~~
 
+* **Artist** : ``view`` .
+
+* **Project** : ``view``.
+
 * **SetOfTasks** : ``add``, ``change``, ``delete``, ``view``.
 
 * **Group** : ``add``, ``change``, ``delete``, ``view``.
@@ -91,6 +95,12 @@ User
 Доступы
 ~~~~~~~
 
+* **Artist** : ``view`` .
+
+* **Project** : ``view``.
+
+* **Asset** : ``view``.
+
 * **Task** : ``add``, ``change``, ``delete``, ``view``.
 
 * **Chat** : ``add``, ``change``, ``delete``, ``view``.
@@ -99,4 +109,4 @@ User
 
     * Структура ``codename`` доступа состоит из имени студии, модели и разрешения: *<studio_name>_<model_name.lower>_<perm>*.\
      Например ``codename`` для добавления ассета в студии *disney* будет таким: *disney_asset_add*
-    * Параметр ``code`` передаваемый в :func:`edit_db.permissions.permission_required` должен иметь структуру: *<model_name.lower>_<perm>*, например *asset_add*.
+    * Параметр ``code`` передаваемый в :func:`edit_db.permissions.permission_required` должен иметь структуру: *<model_name.lower>_<perm>*, например: *asset_add*.
