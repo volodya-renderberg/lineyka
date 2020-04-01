@@ -9501,7 +9501,7 @@ class artist(studio):
         #studio.__init__(self)
         pass
 
-    def init(self, nik_name, new = True, cloud=False):
+    def init(self, nik_name, new = True, cloud=False): # django
         """Инициализация по имени, возвращает новый, или инициализирует текущий экземпляр.
         
         Parameters
@@ -9512,7 +9512,7 @@ class artist(studio):
             Если *True* - возвращает новый инициализированный экземпляр, если *False* то инициализирует текущий экземпляр.
         cloud : bool, str
             Определяет используемый интерфейс хранения данных. Если *False* то - локальная схема ``sqlite3``.
-            
+
         Returns
         -------
         :obj:`edit_db.artist`, tuple
@@ -9521,24 +9521,22 @@ class artist(studio):
         """
         pass
         # get keys
-        if cloud=='django' or self.studio_database == 'django':
-            return (False, '"artist.init" procedure not defined for cloud!')
+        bool_, artists = self.read_artist({'nik_name': nik_name})
+        if not bool_:
+            return(bool_, artists)
+                
+        # fill fields
+        if new:
+            return artists[0]
         else:
-            bool_, artists = self.read_artist({'nik_name': nik_name})
-            if not bool_:
-                return(bool_, artists)
-                    
-            # fill fields
-            if new:
-                return artists[0]
-            else:
-                for key in self.artists_keys:
-                    #exec('self.%s = keys[0].get("%s")' % (key, key))
-                    setattr(self, key, getattr(artists[0], key))
-                #self.asset_path = keys.get('asset_path')
-                return(True, 'Ok')
+            self = artists[0]
+            '''
+            for key in self.artists_keys:
+                setattr(self, key, getattr(artists[0], key))
+            '''
+            return(True, 'Ok')
         
-    def init_by_keys(self, keys, new = True, cloud=False):
+    def init_by_keys(self, keys, new = True, cloud=False): # django
         """Инициализация по словарю (без чтения БД), возвращает новый, или инициализирует текущий экземпляр.
         
         Parameters
@@ -9571,7 +9569,9 @@ class artist(studio):
                         d='active'
                     else:
                         d='none'
-                    setattr(new_artist, key, d)
+                    setattr(new_artist, 'status', d)
+                elif key=='date_joined_to_studio':
+                    setattr(new_artist, 'date_time', keys[key])
                 else:
                     setattr(new_artist, key, keys[key])
 
@@ -9592,7 +9592,7 @@ class artist(studio):
                 #self.asset_path = keys.get('asset_path')
                 return(True, 'Ok')
 
-    def test_unicum(self, name, studio_database='django'):
+    def test_unicum(self, name, cloud='django'): # django
         """
         Проверка уникальности имени. Применяется при выборе имени для регистрации нового пользователя.
 
@@ -9600,7 +9600,7 @@ class artist(studio):
         ----------
         name : str
             Проверяемое имя.
-        studio_database : str
+        cloud : str
             Тип облака.
 
         Returns
@@ -9609,12 +9609,12 @@ class artist(studio):
             Если имя уникально: (*True, comment*)
             или: (*False, comment*)
         """
-        if self.studio_database=='django' or studio_database=='django':
+        if self.studio_database=='django' or cloud=='django':
             return djc.test_exists_object(self, 'User', 'username', name)
         else:
             return (False, 'No verification for this type of cloud!')
 
-    def is_member(self):
+    def is_member(self): # django
         """
         Проверка является ли данный юзер, в составе данной студии. Для случая смены студии или перелогинивания пользователя.
 
@@ -9627,7 +9627,7 @@ class artist(studio):
         """
         pass
 
-    def add_artist(self, keys, registration = True, cloud=False):
+    def add_artist(self, keys, registration = True, cloud=False): # django
         """Добавление нового пользователя.
         
         Parameters
@@ -9709,7 +9709,7 @@ class artist(studio):
                         exec(com)
                 return(True, 'ok')
         
-    def read_artist(self, keys, objects=True):
+    def read_artist(self, keys, objects=True): # django
         """Чтение списка данных артистов.
         
         Parameters
@@ -9724,18 +9724,26 @@ class artist(studio):
         tuple
             (*True*, [артисты - словари или экземпляры]) или (*False, comment*)
         """
-        if keys == 'all':
-            keys = False
-        bool_, r_data = database().read('studio', self, self.artists_t, self.artists_keys, where=keys)
-        if not bool_:
-            return(bool_, r_data)
-        if not objects:
-            return(bool_, r_data)
+        if self.studio_database == 'django':
+            b,r = djc.user_get(self, keys.get('nik_name'))
+            if not b or not objects:
+                return(b,r)
+            else:
+                ob = self.init_by_keys(r)
+                return(True, [ob])
         else:
-            objects = []
-            for data in r_data:
-                objects.append(self.init_by_keys(data))
-            return(True, objects)
+            if keys == 'all':
+                keys = False
+            bool_, r_data = database().read('studio', self, self.artists_t, self.artists_keys, where=keys)
+            if not bool_:
+                return(bool_, r_data)
+            if not objects:
+                return(bool_, r_data)
+            else:
+                objects = []
+                for data in r_data:
+                    objects.append(self.init_by_keys(data))
+                return(True, objects)
             
     def read_artist_of_workroom(self, workroom_id, objects=True):
         """Чтение списка артистов отдела.
@@ -9866,7 +9874,7 @@ class artist(studio):
                 exec(com)
             return(True, (nik_name, user_name))
 
-    def get_user(self, outsource = False, cloud=False):
+    def get_user(self, outsource = False, cloud=False): # django
         """Определение текущего пользователя, инициализация текущего экземпляра.
         В случае ``sqlite3`` происходит чтение БД, в случае ``django`` - чтение файла :attr:`edit_db.studio.USER_DATA_FILE_NAME`.
         

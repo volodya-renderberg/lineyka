@@ -145,7 +145,8 @@ def _output_data_converter(type_dict, inst, from_dict=False):
         elif type_dict.get(key)=='json':
             data[key]=json.dumps(data[key])
         elif type_dict.get(key)=='timestamp':
-            data[key]=datetime.datetime.isoformat(data[key])
+            if data[key]:
+                data[key]=datetime.datetime.isoformat(data[key])
 
     r_data = json.dumps(data)
     del data
@@ -266,6 +267,42 @@ def user_registration(studio, username, email, password, login=False):
         _write_user_data(studio, r2.text)
     # 
     return (True, json.loads(r2.text))
+
+def user_get(artist, username):
+    """
+    Чтение данных артиста для текущей студии.
+
+    Parameters
+    ----------
+    artist : :obj:`edit_db.artist`
+        Экземпляр объетка :obj:`edit_db.artist`.
+    username : str
+        ``username`` читаемого артиста.
+
+    Returns
+    -------
+    tuple
+        (*True*, {User.__dict__}) или (*False, comment*)
+    """
+    url=f'{artist.HOST}db/user/get/{username}/'
+    cookie=_read_cookie(artist)
+    
+    # (1) session
+    sess = requests.Session()
+    cj=requests.utils.cookiejar_from_dict(cookie)
+    sess.cookies=cj
+    # (1) get to login
+    r1=sess.get(url, cookies = cookie)
+    # (2) post to login
+    csrf_token = r1.cookies.get('csrftoken')
+    inst=_output_data_converter(artist.artists_keys, artist)
+    r2 = sess.post(url, data=dict(inst=inst, csrfmiddlewaretoken=csrf_token))
+        
+    if not r2.ok:
+        return(False, r2.text)
+    #
+    r_data = _input_data_converter(artist.artists_keys, r2.json())
+    return (True, r_data)
 
 def login(studio, username, password):
     '''
