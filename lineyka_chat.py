@@ -54,7 +54,7 @@ class lineyka_chat:
 		
 		# fill meta data
 		window.setWindowTitle('Lineyka Chat')
-		window.chat_nik_name_label.setText(self.db_artist.nik_name)
+		window.chat_nik_name_label.setText(self.db_artist.username)
 		window.chat_asset_name_label.setText(self.db_chat.task.asset.name)
 		window.chat_task_name_label.setText(self.db_chat.task.task_name.split(':')[1])
 		
@@ -106,7 +106,7 @@ class lineyka_chat:
 		'''
 		# edit read_status
 		if self.chat_status == 'manager':
-			result = self.db_chat.task_edit_rid_status_read(project, task_data, nik_name)
+			result = self.db_chat.task_edit_rid_status_read(project, task_data, username)
 			if not result[0]:
 				self.message(result[1], 2)
 				return
@@ -230,7 +230,7 @@ class lineyka_chat:
 				#self.changeable_message = topic
 				
 				#
-				if topic['author'] == self.db_artist.nik_name:
+				if topic['author'] == self.db_artist.username:
 					topic_widget.setContextMenuPolicy( QtCore.Qt.ActionsContextMenu )
 					addgrup_action = QtWidgets.QAction( 'Edit messege', window)
 					addgrup_action.triggered.connect(partial(self.chat_edit_topic_ui, topic_widget))
@@ -451,7 +451,7 @@ class lineyka_chat:
 		add_window.line_data[str(num)] = (button, text_field)
 		
 	def chat_new_topic_action(self, add_window, status, message_id=False):
-		nik_name = self.db_artist.nik_name
+		username = self.db_artist.username
 		if not self.db_chat.convert_exe:
 			self.message('Convert_exe is not defined!\nLook: MainWindow menu/setting/set studio', 3)
 			return
@@ -507,7 +507,7 @@ class lineyka_chat:
 		
 		# save message 
 		chat_keys = {
-		'author':nik_name,
+		'author':username,
 		'color':color,
 		'topic':message,
 		'status':status,

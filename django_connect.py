@@ -101,10 +101,14 @@ def _input_data_converter(type_dict, data):
         Словарь объекта с преобразованными данными.
     """
     for key in data.keys():
-        if key=='id' and data.get(key) and isinstance(data[key], str) and len(data[key])==32:
+        if key=='id' and data.get(key) and isinstance(data[key], str) and len(data[key])>=32:
             data[key]=uuid.UUID(data[key])
         if type_dict.get(key)=='json':
-            data[key]=json.loads(data[key])
+            try:
+                data[key]=json.loads(data[key])
+            except:
+                print(data[key])
+                data[key]='Except'
         elif type_dict.get(key)=='timestamp':
             data[key]=datetime.datetime.fromisoformat(data[key])
 
@@ -151,6 +155,26 @@ def _output_data_converter(type_dict, inst, from_dict=False):
     r_data = json.dumps(data)
     del data
     return r_data
+
+def _make_sess(lnk_object):
+    """
+    Создаёт сессию с куком сессии авторизованного пользователя. Чтение файла ``cookie``.
+
+    Parameters
+    ----------
+    lnk_object : :obj:`edit_db.studio`
+        Объект студии, или любого из его потомков.
+
+    Returns
+    -------
+    :obj:`requests.Session`
+        Сессия
+    """
+    cookie=_read_cookie(lnk_object)
+    sess = requests.Session()
+    cj=requests.utils.cookiejar_from_dict(cookie)
+    sess.cookies=cj
+    return cookie, sess 
 
 def get_user_data(studio):
     '''
@@ -564,3 +588,36 @@ def workroom_edit_type(workroom, new_type):
         return(False, r2.text)
     #
     return(True, _input_data_converter(workroom.workroom_keys, r2.json()) )
+
+def workroom_get_artists(workroom):
+    """
+    Получение списка артистов отдела.
+
+    .. note:: *params['studio_name']* передаётся для ``permission_required``.
+
+    Parameters
+    ----------
+    workroom : :obj:`edit_db.workroom`
+        Экземпляр читаемого объетка :obj:`edit_db.workroom`.
+
+    Returns
+    -------
+    tuple
+        (*True, [список словарей артистов]*) или (*False, comment*)
+    """
+    url=f'{workroom.HOST}db/workroom/get_artists/'
+    cookie, sess =_make_sess(workroom)
+    # (2) GET
+    params=dict(studio_name=workroom.studio_name, wr_id=workroom.id)
+    r1=sess.get(url, cookies = cookie, params=params)
+    #
+    if not r1.ok:
+        return(False, r1.text)
+    # (3) make return data
+    r_data=list()
+    i_data=r1.json()
+    for user in i_data:
+        r_data.append(_input_data_converter(workroom.artists_keys, user))
+    #
+    del i_data
+    return (True, r_data)

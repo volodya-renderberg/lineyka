@@ -1139,10 +1139,10 @@ class MainWindow(QtGui.QMainWindow):
 		print('login ui')
     
 	def user_login_action(self):
-		nik_name = self.loginWindow.login_nik_name_field.text()
+		username = self.loginWindow.login_nik_name_field.text()
 		password = self.loginWindow.login_password_field.text()
 
-		login = self.db_artist.login_user(nik_name, password)
+		login = self.db_artist.login_user(username, password)
     
 		if login[0]:
 			self.loginWindow.close()
@@ -1183,7 +1183,7 @@ class MainWindow(QtGui.QMainWindow):
 	def user_registration_action(self):
 		# get Data
 		data = {
-		'nik_name' : self.myWidget.registrWindow.nik_name_field.text(),
+		'username' : self.myWidget.registrWindow.nik_name_field.text(),
 		'password' : self.myWidget.registrWindow.password_field.text(),
 		'email' : self.myWidget.registrWindow.email_field.text(),
 		'phone' : self.myWidget.registrWindow.phone_field.text(),
@@ -1227,17 +1227,17 @@ class MainWindow(QtGui.QMainWindow):
 		self.myWidget.project_box.addItems(enum_list)
 	
 	def load_nik_name(self):
-		if not self.db_artist.nik_name:
+		if not self.db_artist.username:
 			result = self.db_artist.get_user()
 			if not result[0]:
 				self.message(result[1], 2)
 
-		if not self.db_artist.nik_name:
+		if not self.db_artist.username:
 			self.setWindowTitle('Lineyka Not User')
 			self.myWidget.nik_name.setText('Not User')
 		else:
-			self.setWindowTitle('Lineyka %s' % self.db_artist.nik_name)
-			self.myWidget.nik_name.setText(self.db_artist.nik_name)
+			self.setWindowTitle('Lineyka %s' % self.db_artist.username)
+			self.myWidget.nik_name.setText(self.db_artist.username)
 	
 	def close_window(self, window):
 		window.close()

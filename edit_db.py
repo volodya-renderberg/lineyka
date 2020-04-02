@@ -255,7 +255,7 @@ class studio:
     'artist': 'text',
     'level': 'text',        # пользовательский уровень сложности задачи.
     'planned_time': 'real',
-    'time':  'json',        # словарь: ключи - nik_name, значения - ссумарное время атриста по этой задаче (ед. измерения - секунда).
+    'time':  'json',        # словарь: ключи - username, значения - ссумарное время атриста по этой задаче (ед. измерения - секунда).
     'full_time': 'real',    # ссумарное время всех атристов по этой задаче (ед. измерения - секунда).
     'deadline': 'timestamp',# расчётная дата окончания работ
     'start': 'timestamp',
@@ -292,13 +292,17 @@ class studio:
     """(tuple) ``?`` """
     
     artists_keys = {
-    'nik_name': 'text',
+    'username': 'text',
     'user_name': 'text',
     'password': 'text',
-    'date_time': 'timestamp',
+    'first_name': 'text',
+    'last_name': 'text',
+    'date_joined': 'timestamp',
+    'date_joined_to_studio' : 'timestamp',
     'email': 'text',
     'phone': 'text',
     'specialty': 'text',
+    'profile': 'json',
     'outsource': 'integer',
     'workroom': 'json',# список id отделов
     'level': 'text',
@@ -469,12 +473,12 @@ class studio:
     artists_logs_db = '.artists_logs.db'
     """str: Имя файла ДБ (для Sqlite3) где содержится таблица данных логов \`артистов, :obj:`edit_db.log`.
     
-    Имя таблицы - '[nik_name]_tasks_logs'
+    Имя таблицы - '[username]_tasks_logs'
     """
     artists_time_logs_db = '.artists_time_logs.db'
     """str: Имя файла ДБ (для Sqlite3) где содержится таблица данных тайм логов \`артистов, :obj:`edit_db.log`.
     
-    Имя таблицы - '[nik_name]_time_logs'
+    Имя таблицы - '[username]_time_logs'
     """
     chats_db = '.chats.db'
     """str: Имя файла ДБ (для Sqlite3) где содержится таблица данных :obj:`edit_db.chat` """
@@ -1316,6 +1320,21 @@ class database():
             'project': 'project_database',
             }
 
+    def get_use_db_data(self, level, read_ob):
+        attr = self.use_db_attr.get(level)
+        if not attr:
+            raise Exception('database.get()', 'Unknown Level : %s' % level)
+        
+        db = getattr(read_ob, attr)
+        if db=='django':
+            db_name = db
+            db_data=None
+        elif db[0]=='sqlite3':
+            db_name = db[0]
+            db_data = db[1]
+        
+        return db_name, db_data
+
     # level - studio or project; or: studio, project, season, group, asset, task, chat, log, statistic ...
     # read_ob - object of studio or project;
     # table_root - assets, chats - те случаи когда имя файла ДБ не соответствует имени таблицы, если есть table_root - имя файла ДБ будет определяться по нему.
@@ -1343,13 +1362,8 @@ class database():
         """
         
         # get use_db
-        attr = self.use_db_attr.get(level)
-        if not attr:
-            raise Exception('database.get()', 'Unknown Level : %s' % level)
-        
-        db_name, db_data = eval('read_ob.%s' % attr)
-        #return(db_name, db_data)
-        
+        db_name, db_data = self.get_use_db_data(level, read_ob)
+                
         if db_name == 'sqlite3':
             return_data = self.__sqlite3_get(level, read_ob, table_name, com, table_root)
             return(return_data)
@@ -1380,12 +1394,7 @@ class database():
         """
         pass
         # get use_db
-        attr = self.use_db_attr.get(level)
-        if not attr:
-            raise Exception('database.set_db()', 'Unknown Level : %s' % level)
-        
-        db_name, db_data = eval('read_ob.%s' % attr)
-        #return(db_name, db_data)
+        db_name, db_data = self.get_use_db_data(level, read_ob)
         
         if db_name == 'sqlite3':
             return_data = self.__sqlite3_set(level, read_ob, table_name, com, data_com, table_root)
@@ -1413,16 +1422,13 @@ class database():
         tuple
             (*True*, 'Ok!') или (*False*, comment)
         """
-        attr = self.use_db_attr.get(level)
-        if not attr:
-            raise Exception('database.write()', 'Unknown Level : %s' % level)
-        
-        db_name, db_data = eval('read_ob.%s' % attr)
-        #return(db_name, db_data)
+        db_name, db_data = self.get_use_db_data(level, read_ob)
         
         if db_name == 'sqlite3':
             return_data = self.__sqlite3_create_table(level, read_ob, table_name, keys, table_root)
             return(return_data)
+        elif db_name == 'django':
+            return(True, 'Ok!')
         
     # write_data - словарь по ключам keys, также может быть списком словарей, для записи нескольких строк.
     # keys - это: tasks_keys, projects_keys итд.
@@ -1450,12 +1456,7 @@ class database():
         tuple
             (*True*, 'Ok!') или (*False*, comment)
         """
-        attr = self.use_db_attr.get(level)
-        if not attr:
-            raise Exception('database.insert()', 'Unknown Level : %s' % level)
-        
-        db_name, db_data = eval('read_ob.%s' % attr)
-        #return(db_name, db_data)
+        db_name, db_data = self.get_use_db_data(level, read_ob)
         
         if db_name == 'sqlite3':
             # create table
@@ -1466,8 +1467,6 @@ class database():
             return_data = self.__sqlite3_insert(level, read_ob, table_name, keys, write_data, table_root)
             return(return_data)
 
-    # where - 1) строка условия, 2) словарь по keys, 3) False - значит выделяется всё.
-    # columns - False - означает все столбцы если не False - то список столбцов.
     def read(self, level, read_ob, table_name, keys, columns = False, where=False, table_root=False):
         """Чтение БД, используя условие.
         
@@ -1494,12 +1493,7 @@ class database():
         tuple
             (*True*, [строки-словари]) или (*False*, comment)
         """
-        attr = self.use_db_attr.get(level)
-        if not attr:
-            raise Exception('database.read()', 'Unknown Level : %s' % level)
-        
-        db_name, db_data = eval('read_ob.%s' % attr)
-        #return(db_name, db_data)
+        db_name, db_data = self.get_use_db_data(level, read_ob)
         
         if db_name == 'sqlite3':
             b, r = self.__sqlite3_read(level, read_ob, table_name, keys, columns, where, table_root)
@@ -1533,12 +1527,7 @@ class database():
         tuple
             (*True*, 'Ok!') или (*False*, comment)
         """
-        attr = self.use_db_attr.get(level)
-        if not attr:
-            raise Exception('database.update()', 'Unknown Level : %s' % level)
-        
-        db_name, db_data = eval('read_ob.%s' % attr)
-        #return(db_name, db_data)
+        db_name, db_data = self.get_use_db_data(level, read_ob)
         
         if db_name == 'sqlite3':
             return_data = self.__sqlite3_update(level, read_ob, table_name, keys, update_data, where, table_root)
@@ -1568,12 +1557,7 @@ class database():
         tuple
             (*True*, 'Ok!') или (*False*, comment)
         """
-        attr = self.use_db_attr.get(level)
-        if not attr:
-            raise Exception('database.update()', 'Unknown Level : %s' % level)
-        
-        db_name, db_data = eval('read_ob.%s' % attr)
-        #return(db_name, db_data)
+        db_name, db_data = self.get_use_db_data(level, read_ob)
         
         if db_name == 'sqlite3':
             return_data = self.__sqlite3_delete(level, read_ob, table_name, where, table_root)
@@ -3533,11 +3517,11 @@ class task(studio):
         'input': 'json',
         'status': 'text',
         'outsource': 'integer',
-        'artist': 'text',           # nik_name
+        'artist': 'text',           # username
         'level': 'text',            # пользовательский уровень сложности задачи.
         'planned_time': 'real',
         'price': 'real',
-        'time': 'json',             # словарь: ключи - nik_name, значения - ссумарное время атриста по этой задаче (ед. измерения - секунда).
+        'time': 'json',             # словарь: ключи - username, значения - ссумарное время атриста по этой задаче (ед. измерения - секунда).
         'full_time': 'real',        # ссумарное время всех атристов по этой задаче (ед. измерения - секунда).
         'deadline': 'timestamp',    # расчётная дата окончания работ.
         'start': 'timestamp',
@@ -3546,7 +3530,7 @@ class task(studio):
         'chat_local': 'json',
         'web_chat': 'text',
         'supervisor': 'text',
-        'readers': 'json',          # словарь: ключ - nik_name, значение - 0 или 1 (статус проверки),  плюс одна запись: ключ - 'first_reader', значение - nik_name - это первый проверяющий - пока он не проверит даннаня задача не будет видна у других проверяющих в списке на проверку.
+        'readers': 'json',          # словарь: ключ - username, значение - 0 или 1 (статус проверки),  плюс одна запись: ключ - 'first_reader', значение - username - это первый проверяющий - пока он не проверит даннаня задача не будет видна у других проверяющих в списке на проверку.
         'output': 'json',
         'priority':'integer',
         'extension': 'text',
@@ -3584,7 +3568,7 @@ class task(studio):
     outsource : int
         Значение из ``[0, 1]`` если = ``1`` - задача на аутсорсе.
     artist : str
-        ``nik_name`` исполнителя.
+        ``username`` исполнителя.
     level : text
         Пользовательский уровень сложности задачи.
     planned_time : float
@@ -3592,7 +3576,7 @@ class task(studio):
     price : float
         Стоимость работ по задаче (ед. измерения - юнит).
     time : dict
-        Словарь: ключи - ``nik_name``, значения - ссумарное время атриста по этой задаче (ед. измерения - секунда).
+        Словарь: ключи - ``username``, значения - ссумарное время атриста по этой задаче (ед. измерения - секунда).
     full_time : real
         Ссумарное время всех атристов по этой задаче (ед. измерения - секунда).
     deadline : timestamp
@@ -3610,8 +3594,8 @@ class task(studio):
     supervisor : str
         ``?``
     readers : dict
-        Словарь: ключ - ``nik_name``, значение - ``0`` или ``1`` (статус проверки),  \
-        плюс одна запись: ключ - ``first_reader``, значение - ``nik_name`` - это первый проверяющий - пока он не проверит даннаня задача не будет видна у других проверяющих в списке на проверку.
+        Словарь: ключ - ``username``, значение - ``0`` или ``1`` (статус проверки),  \
+        плюс одна запись: ключ - ``first_reader``, значение - ``username`` - это первый проверяющий - пока он не проверит даннаня задача не будет видна у других проверяющих в списке на проверку.
     output : list
         Список имён исходящих задач.
     priority : int
@@ -5288,12 +5272,12 @@ class task(studio):
             return(False, result[1])
         # (5.3)
         if not self.time:
-            self.time = {artist_ob.nik_name:delta_seconds}
-        elif not artist_ob.nik_name in self.time:
-            self.time[artist_ob.nik_name] = delta_seconds
+            self.time = {artist_ob.username:delta_seconds}
+        elif not artist_ob.username in self.time:
+            self.time[artist_ob.username] = delta_seconds
         else:
-            old_time = self.time[artist_ob.nik_name]
-            self.time[artist_ob.nik_name] = old_time + delta_seconds
+            old_time = self.time[artist_ob.username]
+            self.time[artist_ob.username] = old_time + delta_seconds
         b, r = self.changes_without_a_change_of_status('time', self.time)
         if not b:
             return(b, r)
@@ -5500,11 +5484,11 @@ class task(studio):
                 
                 # readers
                 if self.readers:
-                    for nik_name in self.readers:
-                        if nik_name == 'first_reader':
+                    for username in self.readers:
+                        if username == 'first_reader':
                             continue
                         else:
-                            self.readers[nik_name] = 0
+                            self.readers[username] = 0
                     
                     # edit db	
                     table_name = '"%s:%s"' % (self.asset.id, self.tasks_t)
@@ -5942,7 +5926,7 @@ class task(studio):
         'version': os.path.basename(new_dir_path),
         }
         
-        #print(logs_keys, current_artist.nik_name)
+        #print(logs_keys, current_artist.username)
         
         result = log(self).write_log(logs_keys, current_artist)
         if not result[0]:
@@ -6236,7 +6220,7 @@ class task(studio):
         outsource = None
         artist_name = task_key_data['artist']
         if artist_name:
-            artist_data = artist().read_artist({'nik_name':artist_name})
+            artist_data = artist().read_artist({'username':artist_name})
             if artist_data[0]:
                 if artist_data[1][0]['outsource'] == '1':
                     outsource = True
@@ -6374,7 +6358,7 @@ class task(studio):
         except:
             artist_name = current_task_data['artist']
         if artist_name:
-            artist_data = artist().read_artist({'nik_name':artist_name})
+            artist_data = artist().read_artist({'username':artist_name})
             if artist_data[0]:
                 if artist_data[1][0]['outsource'] == 1:
                     outsource = True
@@ -6500,12 +6484,12 @@ class task(studio):
             #print row['task_name']
             # get artist_status
             '''
-            if int(artist().read_artist({'nik_name':row['artist']})[1][0]['outsource']):
+            if int(artist().read_artist({'username':row['artist']})[1][0]['outsource']):
                 print '###########################################', row['artist']
             '''
             if not new_status:
                 if row['status'] == 'null':
-                    if artist().read_artist({'nik_name':row['artist']})[1][0]['outsource'] == 1:
+                    if artist().read_artist({'username':row['artist']})[1][0]['outsource'] == 1:
                         string2 = 'UPDATE ' +  table + ' SET status = \"ready_to_send\" WHERE task_name = \"' + row['task_name'] + '\"'
                     else:	
                         string2 = 'UPDATE ' +  table + ' SET status = \"ready\" WHERE task_name = \"' + row['task_name'] + '\"'
@@ -6960,7 +6944,7 @@ class task(studio):
         task_status : str, optional
             Фильтр по статусам задач. Значение из :attr:`edit_db.studio.task_status`.
         artist : str
-            Фильтр по ``nik_name`` артиста.
+            Фильтр по ``username`` артиста.
             
         Returns
         -------
@@ -7265,14 +7249,14 @@ class task(studio):
         
         return(True, readers_dict, change_status)
 
-    def make_first_reader(self, nik_name): # v2
+    def make_first_reader(self, username): # v2
         """обозначение превого проверяющего, только после его проверки есть смысл проверять остальным проверяющим,\
         и только после его приёма данная задача появится в списке на проверку у остальных читателей.\
         Предполагается что это технический проверяющий от отдела, где идёт работа.
         
         Parameters
         ----------
-        nik_name : str
+        username : str
             Никнейм.
         
         Returns
@@ -7293,7 +7277,7 @@ class task(studio):
                 
         # (2)
         readers_dict = self.readers
-        readers_dict['first_reader'] = nik_name
+        readers_dict['first_reader'] = username
         
         # (3)
         self.readers = readers_dict
@@ -7311,7 +7295,7 @@ class task(studio):
             return(bool_, r_data)
         
         # (5)
-        artist_ob = artist().init(nik_name)
+        artist_ob = artist().init(username)
         if not artist_ob.checking_tasks:
             artist_ob.checking_tasks = {}
         if not self.asset.project.name in artist_ob.checking_tasks.keys():
@@ -7456,7 +7440,7 @@ class task(studio):
             old_artist_ob = artist().init(self.artist)
         # -- new artist
         if new_artist and (isinstance(new_artist, str)):
-            result = artist().read_artist({'nik_name':new_artist})
+            result = artist().read_artist({'username':new_artist})
             if not result[0]:
                 return(False, result[1])
             else:
@@ -7466,12 +7450,12 @@ class task(studio):
         elif new_artist and isinstance(new_artist, artist):
             new_artist_ob = new_artist
             artist_outsource = new_artist_ob.outsource
-            new_artist = new_artist_ob.nik_name
+            new_artist = new_artist_ob.username
         else:
             new_artist = ''
         # тест на совпадение нового и старого артиста
-        if old_artist_ob and new_artist_ob and old_artist_ob.nik_name == new_artist_ob.nik_name:
-            return(False, 'This artist "%s" has already been assigned to this task.' % new_artist_ob.nik_name)
+        if old_artist_ob and new_artist_ob and old_artist_ob.username == new_artist_ob.username:
+            return(False, 'This artist "%s" has already been assigned to this task.' % new_artist_ob.username)
         
         # затыка
         if artist_outsource is None:
@@ -7736,8 +7720,8 @@ class task(studio):
         # (1)
         change_status = True
         readers = self.readers
-        if current_artist.nik_name in readers:
-            readers[current_artist.nik_name] = 1
+        if current_artist.username in readers:
+            readers[current_artist.username] = 1
         else:
             return(False, 'Current user is not a reader of this task!')
         #
@@ -7875,7 +7859,7 @@ class task(studio):
             delta = datetime.timedelta(minutes = 45)
             now_time = datetime.datetime.now()
             for topic in result[1]:
-                if topic['author'] == current_user.nik_name:
+                if topic['author'] == current_user.username:
                     if (now_time - topic['date_time']) <= delta:
                         exists_chat = True
                         break
@@ -7885,10 +7869,10 @@ class task(studio):
         
         # (2)
         if self.readers:
-            for nik_name in self.readers:
-                if nik_name == 'first_reader':
+            for username in self.readers:
+                if username == 'first_reader':
                     continue
-                self.readers[nik_name] = 0
+                self.readers[username] = 0
         
         # (3)
         read_ob = self.asset.project
@@ -8616,8 +8600,8 @@ class task(studio):
         task_data = dict(c.fetchone())
         try:
             readers = json.loads(task_data['readers'])
-            for nik_name in readers:
-                readers[nik_name] = 0
+            for username in readers:
+                readers[username] = 0
             task_data['chat_local'] = json.dumps(readers)
         except:
             task_data['chat_local'] = json.dumps({})
@@ -8634,7 +8618,7 @@ class task(studio):
 
     # заменяет все рид статусы задачи на 1
     # self.task - должен быть инициализирован
-    def task_edit_read_status_read(self, project_name, task_data, nik_name): # УСТАРЕЛО!!!!!!!!!!!!! 
+    def task_edit_read_status_read(self, project_name, task_data, username): # УСТАРЕЛО!!!!!!!!!!!!! 
         pass
         # test project
         result = self.get_project(project_name)
@@ -8660,9 +8644,9 @@ class task(studio):
         readers2 = {}
         try:
             readers2 = json.loads(task_data['chat_local'])
-            readers2[nik_name] = 1
+            readers2[username] = 1
         except:
-            readers2[nik_name] = 1
+            readers2[username] = 1
         task_data['chat_local'] = json.dumps(readers2)
         
         # write data
@@ -8690,7 +8674,7 @@ class log(studio):
         'activity': 'text',             # ативити задачи
         'task_name': 'text',            # имя задачи
         'action': 'text',               # тип записи из log.log_actions
-        'artist': 'text',               # nik_name артиста, кто делает запись
+        'artist': 'text',               # username артиста, кто делает запись
         'description': 'text',          # коментарий
         'source': 'json',               # для push - версия коммита источника (в случае sketch - список версий по всем веткам, порядок совпадает с порядком записи веток в branch), для publish - версия push источника.
         'branch' : 'text',              # ветка - в случае push, publish (для sketch - список веток).
@@ -8842,7 +8826,7 @@ class log(studio):
         if not logs_keys.get('date_time'):
             logs_keys['date_time'] = datetime.datetime.now()
         #
-        logs_keys['artist'] = artist_ob.nik_name
+        logs_keys['artist'] = artist_ob.username
         #
         logs_keys['activity'] = self.task.activity
         
@@ -9006,7 +8990,7 @@ class log(studio):
             'task_name': self.task.task_name,
             'start': start_time,
             }
-        table_name = '%s_tasks_logs' % artist_ob.nik_name
+        table_name = '%s_tasks_logs' % artist_ob.username
         b, r = database().insert('studio', self, table_name, self.artists_logs_keys, write_data, table_root=self.artists_logs_db)
         if not b:
             return(b, r)
@@ -9045,7 +9029,7 @@ class log(studio):
             where=False
         else:
             where = {'project_name': self.task.asset.project.name, 'task_name': self.task.task_name}
-        b,r = database().read('studio', self, '%s_tasks_logs' % artist_ob.nik_name, self.artists_logs_keys, where=where, table_root=self.artists_logs_db)
+        b,r = database().read('studio', self, '%s_tasks_logs' % artist_ob.username, self.artists_logs_keys, where=where, table_root=self.artists_logs_db)
         if not b:
             return(b, r)
         if all:
@@ -9099,7 +9083,7 @@ class log(studio):
             return(False, 'No found data to update! (%s)' % str(keys))
                 
         where = {'project_name': self.task.asset.project.name, 'task_name': self.task.task_name}
-        table_name = '%s_tasks_logs' % artist_ob.nik_name
+        table_name = '%s_tasks_logs' % artist_ob.username
         b, r = database().update('studio', self, table_name, self.artists_logs_keys, update_data, where=where, table_root=self.artists_logs_db)
         if not b:
             return(b, r)
@@ -9146,7 +9130,7 @@ class log(studio):
         else:
             update_data = {'full_time' : time}
         where = {'project_name': self.task.asset.project.name, 'task_name': self.task.task_name}
-        table_name = '%s_tasks_logs' % artist_ob.nik_name
+        table_name = '%s_tasks_logs' % artist_ob.username
         b, r = database().update('studio', self, table_name, self.artists_logs_keys, update_data, where=where, table_root=self.artists_logs_db)
         if not b:
             return(b, r)
@@ -9184,7 +9168,7 @@ class log(studio):
         # (0)
         if not isinstance(artist_ob, artist):
             return(False, 'in log.camera_write_log() - "artist_ob" parameter is not an instance of "artist" class')
-        if not artist_ob.nik_name:
+        if not artist_ob.username:
             return(False, 'in log.camera_write_log() - required login!')
         
         # (1)
@@ -9212,7 +9196,7 @@ class log(studio):
         logs_keys['action'] = 'push_camera'
         logs_keys['date_time'] = datetime.datetime.now().strftime("%d-%m-%Y %H:%M:%S")
         logs_keys['version'] = str_version
-        logs_keys['artist'] = artist_ob.nik_name
+        logs_keys['artist'] = artist_ob.username
         
         # (4)
         path = os.path.join(task_data['asset_path'], self.task.asset.ADDITIONAL_FOLDERS['meta_data'], self.camera_log_file_name)
@@ -9320,7 +9304,7 @@ class log(studio):
         # (0)
         if not isinstance(artist_ob, artist):
             return(False, 'in log.playblast_write_log() - "artist_ob" parameter is not an instance of "artist" class')
-        if not artist_ob.nik_name:
+        if not artist_ob.username:
             return(False, 'in log.playblast_write_log() - required login!')
         
         # (1)
@@ -9348,7 +9332,7 @@ class log(studio):
         logs_keys['action'] = 'playblast'
         logs_keys['date_time'] = datetime.datetime.now().strftime("%d-%m-%Y %H:%M:%S")
         logs_keys['version'] = str_version
-        logs_keys['artist'] = artist_ob.nik_name
+        logs_keys['artist'] = artist_ob.username
         
         path = os.path.join(task_data['asset_path'], self.task.asset.ADDITIONAL_FOLDERS['meta_data'], self.playblast_log_file_name)
         path = NormPath(path)
@@ -9435,20 +9419,24 @@ class artist(studio):
     .. code-block:: python
 
         artists_keys = {
-        'nik_name': 'text',
+        'username': 'text',
         'user_name': 'text',
         'password': 'text',
-        'date_time': 'timestamp',
+        'first_name': 'text',
+        'last_name': 'text',
+        'date_joined': 'timestamp',
+        'date_joined_to_studio' : 'timestamp',
         'email': 'text',
         'phone': 'text',
         'specialty': 'text',
+        'profile': 'json',
         'outsource': 'integer',
-        'workroom': 'json', # список id отделов
+        'workroom': 'json',# список id отделов
         'level': 'text',
         'share_dir': 'text',
         'status': 'text',
-        'working_tasks': 'json',# словарь списков имён назначенных задач, по именам отделов.
-        'checking_tasks': 'json',# словарь списков имён назначенных на проверку задач, по именам отделов.
+        'working_tasks': 'json',# список имён назначенных в работу задач
+        'checking_tasks': 'json',# список имён назначенных на проверку задач
         }
         
     Examples
@@ -9463,13 +9451,19 @@ class artist(studio):
         
     Attributes
     ----------
-    nik_name : str
+    username : str
         Никнейм (уникально).
     user_name : str
         Юзернейм в текущей системе, откуда сделан вход.
     password : str
         Пароль в текстовом виде.
-    date_time : timestamp
+    first_name : str
+        Имя.
+    last_name : str
+        Фамилия.
+    date_joined : timestamp
+        Дата и время регистрации.
+    date_joined_to_studio : timestamp
         Дата и время регистрации в студии.
     email : str
         Email
@@ -9477,6 +9471,8 @@ class artist(studio):
         Номер телефона
     specialty : str
         Специализация.
+    profile : dict
+        Словарь специфичных данных, как ссылки на портфолио и прочее.
     outsource : int
         Статус аутсорса: 0 или 1
     workroom : list
@@ -9501,12 +9497,12 @@ class artist(studio):
         #studio.__init__(self)
         pass
 
-    def init(self, nik_name, new = True, cloud=False): # django
+    def init(self, username, new = True, cloud=False): # django
         """Инициализация по имени, возвращает новый, или инициализирует текущий экземпляр.
         
         Parameters
         ----------
-        nik_name : str
+        username : str
             Ник нейм артиста.
         new : bool
             Если *True* - возвращает новый инициализированный экземпляр, если *False* то инициализирует текущий экземпляр.
@@ -9521,7 +9517,7 @@ class artist(studio):
         """
         pass
         # get keys
-        bool_, artists = self.read_artist({'nik_name': nik_name})
+        bool_, artists = self.read_artist({'username': username})
         if not bool_:
             return(bool_, artists)
                 
@@ -9561,20 +9557,17 @@ class artist(studio):
                 new_artist = artist()
             else:
                 new_artist = self
-            for key in keys:
-                if key=='username':
-                    setattr(new_artist, 'nik_name', keys[key])
-                elif key=='is_active':
-                    if keys[key]:
+            #
+            for key in self.artists_keys:
+                if key=='status':
+                    if keys.get('is_active'):
                         d='active'
                     else:
                         d='none'
                     setattr(new_artist, 'status', d)
-                elif key=='date_joined_to_studio':
-                    setattr(new_artist, 'date_time', keys[key])
                 else:
-                    setattr(new_artist, key, keys[key])
-
+                    setattr(new_artist, key, keys.get(key))
+            #
             self.cloud=cloud # на случай когда студия ещё не определена.
             if new:
                 return new_artist
@@ -9633,7 +9626,7 @@ class artist(studio):
         Parameters
         ----------
         keys : dict
-            Словарь по ключам :attr:`edit_db.studio.artists_keys`, обязательные поля - ``nik_name`` и ``password``.
+            Словарь по ключам :attr:`edit_db.studio.artists_keys`, обязательные поля - ``username`` и ``password``.
         registration : bool, optional
             * Если =*True* - произойдёт заполнение полей :attr:`edit_db.studio.artists_keys` экземпляра класса, поле ``user_name`` будет заполнено.
             * Если =*False* - поля заполняться не будут, поле ``user_name`` - останется пустым.
@@ -9645,7 +9638,7 @@ class artist(studio):
         """
         pass
         # test required fields.
-        if not keys.get('nik_name'):
+        if not keys.get('username'):
             return(False, '\"Nik Name\" not specified!')
         if not keys.get('password'):
             return(False, '\"Password\" not specified!')
@@ -9653,7 +9646,7 @@ class artist(studio):
             return(False, '\"Email\" not specified!')
         #
         if cloud=='django' or self.studio_database == 'django':
-            return djc.user_registration(self, keys['nik_name'], keys['email'], keys['password'], login=registration)
+            return djc.user_registration(self, keys['username'], keys['email'], keys['password'], login=registration)
         else:
             if not keys.get('outsource'):
                 keys['outsource'] = 0
@@ -9680,16 +9673,16 @@ class artist(studio):
                 if not keys.get('level'):
                     keys['level'] = 'user'
             # -- date_time
-            keys['date_time'] = datetime.datetime.now()
+            keys['date_joined'] = keys['date_joined_to_studio'] = datetime.datetime.now()
             # -- test exist name, user_name
             if registration:
                 keys['user_name'] = getpass.getuser()
             else:
                 keys['user_name'] = ''
             for item in return_data:
-                # test nik_name
-                if item.get('nik_name') == keys['nik_name']:
-                    return(False, 'User "%s" Already Exists!' % keys['nik_name'])
+                # test username
+                if item.get('username') == keys['username']:
+                    return(False, 'User "%s" Already Exists!' % keys['username'])
                 # test user_name
                 if registration:
                     if item.get('user_name') == keys['user_name']:
@@ -9725,7 +9718,7 @@ class artist(studio):
             (*True*, [артисты - словари или экземпляры]) или (*False, comment*)
         """
         if self.studio_database == 'django':
-            b,r = djc.user_get(self, keys.get('nik_name'))
+            b,r = djc.user_get(self, keys.get('username'))
             if not b or not objects:
                 return(b,r)
             else:
@@ -9745,36 +9738,63 @@ class artist(studio):
                     objects.append(self.init_by_keys(data))
                 return(True, objects)
             
-    def read_artist_of_workroom(self, workroom_id, objects=True):
+    def read_artist_of_workroom(self, wr, objects=True):
         """Чтение списка артистов отдела.
         
         Parameters
         ----------
-        workroom_id : str
-            ``id`` отдела.
+        wr : str, :obj:`uuid.UUID`, :obj:`edit_db.workroom`
+            ``id`` отдела или экземпляр объекта отдела.
         objects : bool, optional
             Если *True* - вернёт экземпляры :obj:`edit_db.artist`, если *False* - словари по :attr:`edit_db.studio.artists_keys`.
         
         Returns
         -------
         tuple
-            (*True*, [артисты - словари или экземпляры]) или (*False, comment*).
+            (*True*, {ключи - ``username``, значения - артисты (словари или экземпляры)}) или (*False, comment*).
         """
-        bool_, return_data = database().read('studio', self, self.artists_t, self.artists_keys)
-        if not bool_:
-            return(bool_, return_data)
-        #
-        artists_dict = {}
-        for row in return_data:
-            try:
-                workrooms = row['workroom']
-            except:
-                continue
-            if workrooms and workroom_id in workrooms:
-                if objects:
-                    artists_dict[row['nik_name']] = self.init_by_keys(row)
+        if self.studio_database == 'django':
+            if isinstance(wr, workroom):
+                b,r = djc.workroom_get_artists(wr)
+            else:
+                if not workroom.dict_by_id:
+                    workroom().get_list()
+                wr_ob = workroom.dict_by_id.get(wr)
+                if wr_ob:
+                    b,r = djc.workroom_get_artists(wr_ob)
                 else:
-                    artists_dict[row['nik_name']] = row
+                    return(False, f"Workroom with id {wr} not found")
+            #
+            if not b:
+                return(b,r)
+            #
+            artists_dict = {}
+            for art in r:
+                if objects:
+                    artists_dict[art['username']] = self.init_by_keys(art)
+                else:
+                    artists_dict[art['username']] = art
+        else:
+            if isinstance(wr, workroom):
+                workroom_id = wr.id
+            else:
+                workroom_id = wr
+            bool_, return_data = database().read('studio', self, self.artists_t, self.artists_keys)
+            if not bool_:
+                return(bool_, return_data)
+            #
+            artists_dict = {}
+            for row in return_data:
+                try:
+                    workrooms = row['workroom']
+                except:
+                    continue
+                if workrooms and workroom_id in workrooms:
+                    if objects:
+                        artists_dict[row['username']] = self.init_by_keys(row)
+                    else:
+                        artists_dict[row['username']] = row
+        #
         return(True, artists_dict)
 
     def get_artists_for_task_type(self, task_type, workroom_ob):
@@ -9797,7 +9817,7 @@ class artist(studio):
         active_artists_list = []
         for wr in workroom_ob.list_workroom:
             if task_type in wr.type:
-                b, r_data = self.read_artist_of_workroom(wr.id)
+                b, r_data = self.read_artist_of_workroom(wr)
                 if not b:
                     print('*** problem in workroom.read_artist_of_workroom() by "%s"' % wr.name)
                     print(r_data)
@@ -9813,7 +9833,7 @@ class artist(studio):
 
         return(True, active_artists_list, artists_dict)
         
-    def login_user(self, nik_name, password, cloud=False):
+    def login_user(self, username, password, cloud=False):
         """Логин юзера.
 
         Если ``cloud`` =*False*:\
@@ -9826,7 +9846,7 @@ class artist(studio):
         
         Parameters
         ----------
-        nik_name : str
+        username : str
             Никнейм.
         password : str
             Пароль
@@ -9836,11 +9856,11 @@ class artist(studio):
         Returns
         -------
         tuple
-            Если ``cloud`` =*False*: (*True*, (``nik_name``, ``user_name``))  или (*False, comment*).
+            Если ``cloud`` =*False*: (*True*, (``username``, ``user_name``))  или (*False, comment*).
             Если ``cloud`` =*django* или :attr:`edit_db.studio.studio_database` = *django*: (*True*, {user_data}) или (*False, comment*).
         """
         if cloud=='django' or self.studio_database == 'django':
-            return djc.login(self, nik_name, password)
+            return djc.login(self, username, password)
         else:
             pass
             # проверка наличия юзера
@@ -9848,7 +9868,7 @@ class artist(studio):
             # очистка данного юзернейма
             # присвоение данного юзернейма пользователю
             user_name = getpass.getuser()
-            bool_, user_data = database().read('studio', self, self.artists_t, self.artists_keys, where = {'nik_name': nik_name})
+            bool_, user_data = database().read('studio', self, self.artists_t, self.artists_keys, where = {'username': username})
             if not bool_:
                 return(bool_, user_data)
             # test exists user
@@ -9863,7 +9883,7 @@ class artist(studio):
             if not bool_:
                 return(bool_, return_data)
             # set user_name
-            bool_, return_data = database().update('studio', self, self.artists_t, self.artists_keys, {'user_name': user_name}, {'nik_name': nik_name})
+            bool_, return_data = database().update('studio', self, self.artists_t, self.artists_keys, {'user_name': user_name}, {'username': username})
             if not bool_:
                 return(bool_, return_data)
             
@@ -9872,7 +9892,7 @@ class artist(studio):
                 com = 'self.%s = user_data[0].get("%s")' % (key, key)
                 #print('#'*3, item[0], com)
                 exec(com)
-            return(True, (nik_name, user_name))
+            return(True, (username, user_name))
 
     def get_user(self, outsource = False, cloud=False): # django
         """Определение текущего пользователя, инициализация текущего экземпляра.
@@ -9888,7 +9908,7 @@ class artist(studio):
         Returns
         -------
         tuple
-            если ``cloud`` = *False*: (*True*, (``nik_name``, ``user_name``, ``outsource`` (bool), {``данные артиста - словарь``})) или (*False, comment*).
+            если ``cloud`` = *False*: (*True*, (``username``, ``user_name``, ``outsource`` (bool), {``данные артиста - словарь``})) или (*False, comment*).
             если ``cloud`` = ``django``: (*True, 'ok!'*) или (*False, comment*).
         """
         if cloud=='django' or self.studio_database == 'django':
@@ -9918,13 +9938,13 @@ class artist(studio):
                     #com = 'self.%s = rows[0].get("%s")' % (key, key)
                     #exec(com)
                 if not outsource:
-                    return True, (rows[0]['nik_name'], rows[0]['user_name'], None, rows[0])
+                    return True, (rows[0]['username'], rows[0]['user_name'], None, rows[0])
                 else:
                     if rows[0]['outsource']:
                         out_source = bool(rows[0]['outsource'])
                     else:
                         out_source = False
-                    return True, (rows[0]['nik_name'], rows[0]['user_name'], out_source, rows[0])
+                    return True, (rows[0]['username'], rows[0]['user_name'], out_source, rows[0])
 
     def edit_artist(self, keys, current_user=False):
         """Редактирование данного (инициализированного) экземпляра артиста.
@@ -9932,7 +9952,7 @@ class artist(studio):
         Parameters
         ----------
         keys : dict
-            данные на замену - ``nik_name`` - не редактируется, не зависимо от того передан или нет.
+            данные на замену - ``username`` - не редактируется, не зависимо от того передан или нет.
         current_user : :obj:`edit_db.artist`, str, optional
             редактор - залогиненный пользователь, если *False* - то будет создан новый экземпляр и произведено :func:`edit_db.artist.get_user` (лишнее обращени е к БД) . если передать ``'force'`` - проверки уровней и доступов не выполняются.
             
@@ -9975,9 +9995,9 @@ class artist(studio):
         
         # (4)
         # update
-        if 'nik_name' in keys:
-            del keys['nik_name']
-        bool_, return_data = database().update('studio', self, self.artists_t, self.artists_keys, keys, where = {'nik_name': self.nik_name}, table_root=self.artists_db)
+        if 'username' in keys:
+            del keys['username']
+        bool_, return_data = database().update('studio', self, self.artists_t, self.artists_keys, keys, where = {'username': self.username}, table_root=self.artists_db)
         if not bool_:
             return(bool_, return_data)
         
@@ -10454,7 +10474,7 @@ class chat(studio):
     date_time_of_edit : timestamp
         Время и дата изменения записи.
     author : str
-        ``nik_name`` автора записи.
+        ``username`` автора записи.
     topic : dict
         Словарь данных сообщения, ключи - номера строк в ковычках, значения - список из трёх значений: путь к изображению, путь к иконке изображения, сообщение.\
         {``'num_line'`` : [``path_to_img``, ``path_to_icon``, ``message``], ...}
@@ -10500,15 +10520,15 @@ class chat(studio):
         if artist_ob and not isinstance(artist_ob, artist):
             return(False, 'in chat.record_messages() - Wrong type of "artist_ob"! - "%s"' % artist_ob.__class__.__name__)
         elif artist_ob:
-            if not artist_ob.nik_name:
+            if not artist_ob.username:
                 return(False, 'in chat.record_messages() - User is not logged in!')
-            input_keys['author'] = artist_ob.nik_name
+            input_keys['author'] = artist_ob.username
         elif not artist_ob:
             artist_ob = artist()
             bool_, r_data = artist_ob.get_user()
             if not bool_:
                 return(bool_, r_data)
-            input_keys['author'] = artist_ob.nik_name
+            input_keys['author'] = artist_ob.username
             
         # (2)
         for item in ['topic','color','status', 'reading_status']:
@@ -10623,7 +10643,7 @@ class chat(studio):
         # (1)
         if artist_ob and not isinstance(artist_ob, artist):
             return(False, 'in chat.record_messages() - Wrong type of "artist_ob"! - "%s"' % artist_ob.__class__.__name__)
-        elif artist_ob and not artist_ob.nik_name:
+        elif artist_ob and not artist_ob.username:
             return(False, 'in chat.record_messages() - User is not logged in!')
         elif not artist_ob:
             artist_ob = artist()
@@ -10636,7 +10656,7 @@ class chat(studio):
         if not bool_:
             return(bool_, r_data)
         message = r_data[0]
-        if message['author'] != artist_ob.nik_name:
+        if message['author'] != artist_ob.username:
             return(False, 'Only author can edit messages!')
             
         # (3)

@@ -140,7 +140,7 @@ class MainWindow(QtWidgets.QMainWindow):
         # CONSTANTS
         self.SEASON_COLUMNS = ['name', 'status']
         self.GROUP_COLUMNS = ['name', 'type', 'description', 'season']
-        self.look_keys = ['nik_name','specialty','outsource','level']
+        self.look_keys = ['username','specialty','outsource','level']
         self.REQUIRED_KEYS = ['task_name', 'activity', 'workroom', 'task_type', 'extension'] # обязательные параметры при создании одной задачи для ассета.
         
         #self.current_project = False # удаляем.
@@ -347,7 +347,7 @@ class MainWindow(QtWidgets.QMainWindow):
            
         # get table data
         look_keys = [
-            'nik_name',
+            'username',
             'level',
             'status',
             'user_name',
@@ -385,7 +385,7 @@ class MainWindow(QtWidgets.QMainWindow):
                             wr_list.append(self.db_workroom.dict_by_id[wr_id].name)
                         item_text = ','.join(wr_list).replace(',', ',\n')
                         newItem.setText(item_text)
-                elif key == 'nik_name':
+                elif key == 'username':
                     color = self.artist_color
                     brush = QtGui.QBrush(color)
                     newItem.setBackground(brush)
@@ -500,7 +500,7 @@ class MainWindow(QtWidgets.QMainWindow):
             
         # get Data
         data = {
-        'nik_name' : self.newArtistDialog.nik_name_field.text(),
+        'username' : self.newArtistDialog.nik_name_field.text(),
         'password' : self.newArtistDialog.password_field.text(),
         'email' : self.newArtistDialog.email_field.text(),
         'phone' : self.newArtistDialog.phone_field.text(),
@@ -527,7 +527,7 @@ class MainWindow(QtWidgets.QMainWindow):
             data['outsource'] = False
             
         # get NikName Password
-        if data['nik_name'] == '' or data['password'] == '':
+        if data['username'] == '' or data['password'] == '':
             self.message('Not Nik_Name or Password', 2)
             return
         
@@ -585,7 +585,7 @@ class MainWindow(QtWidgets.QMainWindow):
         # edit widget
         window.setWindowTitle('Edit Artist Data')
         window.nik_name_field.setEnabled(False)
-        window.nik_name_field.setText(self.selected_artist.nik_name)
+        window.nik_name_field.setText(self.selected_artist.username)
         window.workroom_field.setEnabled(False)
         window.workroom_field.setText(json.dumps(wr_name_list))
         window.share_dir_field.setEnabled(False)
@@ -631,9 +631,9 @@ class MainWindow(QtWidgets.QMainWindow):
         wr_id_list=r_data
         
         # -- fill table
-        nik_name = window.nik_name_field.text()
+        username = window.nik_name_field.text()
         data = {
-        'nik_name' : nik_name,
+        'username' : username,
         'password' : window.password_field.text(),
         'email' : window.email_field.text(),
         'phone' : window.phone_field.text(),
@@ -658,8 +658,8 @@ class MainWindow(QtWidgets.QMainWindow):
             return
         
         # get artist data
-        #print('*'*5, self.current_user, nik_name)
-        if self.artist.nik_name == nik_name:
+        #print('*'*5, self.current_user, username)
+        if self.artist.username == username:
             self.get_artist_data()
             
         # finish
@@ -818,7 +818,7 @@ class MainWindow(QtWidgets.QMainWindow):
         file.close()
         
         # set window texts
-        window.setWindowTitle('Logs of: %s' % self.selected_artist.nik_name)
+        window.setWindowTitle('Logs of: %s' % self.selected_artist.username)
         window.select_from_list_cansel_button.setText('Close')
         window.label_1.setText('For all time')
         window.dialog_comboBox_1.addItems(self.date_choice_variants + ['Choice dates'])
@@ -1494,7 +1494,7 @@ class MainWindow(QtWidgets.QMainWindow):
                 else:
                     newItem.setText(getattr(artist, key))
                 newItem.artist = artist
-                if key == 'nik_name':
+                if key == 'username':
                     color = self.artist_color
                     brush = QtGui.QBrush(color)
                     newItem.setBackground(brush)                
@@ -1516,13 +1516,13 @@ class MainWindow(QtWidgets.QMainWindow):
             self.clear_table(window.select_from_list_data_list_table)
             for artist in artists[1]:
                 if artist.status == 'active' and wr_id in artist.workroom:
-                    if not filter_ or filter_ in artist.nik_name:
+                    if not filter_ or filter_ in artist.username:
                         active_artists.append(artist)
         elif not wr_name or wr_name == '-- all --':
             # get active list
             for artist in artists[1]:
                 if artist.status == 'active':
-                    if not filter_ or filter_ in artist.nik_name:
+                    if not filter_ or filter_ in artist.username:
                         active_artists.append(artist)
                 
         # get table data
@@ -1549,7 +1549,7 @@ class MainWindow(QtWidgets.QMainWindow):
                 else:
                     newItem.setText(getattr(artist, key))
                 newItem.artist = artist
-                if key == 'nik_name' and not self.workroom.id in wr_list:
+                if key == 'username' and not self.workroom.id in wr_list:
                     color = self.artist_color
                     brush = QtGui.QBrush(color)
                     newItem.setBackground(brush)
@@ -1569,7 +1569,7 @@ class MainWindow(QtWidgets.QMainWindow):
         name_column = None # номер колонки с именем
         for i in range(0, column):
             head_item = table.horizontalHeaderItem(i)
-            if head_item.text() == 'nik_name':
+            if head_item.text() == 'username':
                 name_column = i
                 break
         
@@ -1589,8 +1589,8 @@ class MainWindow(QtWidgets.QMainWindow):
             
             if not self.workroom.id in workrooms:
                 workrooms.append(self.workroom.id)
-                #keys = {'nik_name': artist_, 'workroom' : json.dumps(workrooms)}
-                keys = {'nik_name': artist.nik_name, 'workroom' : workrooms}
+                #keys = {'username': artist_, 'workroom' : json.dumps(workrooms)}
+                keys = {'username': artist.username, 'workroom' : workrooms}
                 bool_, return_data = artist.edit_artist(keys, self.artist)
                 if not bool_:
                     self.message(return_data, 2)
@@ -1612,7 +1612,7 @@ class MainWindow(QtWidgets.QMainWindow):
         name_column = None
         for i in range(0, column):
             head_item = table.horizontalHeaderItem(i)
-            if head_item.text() == 'nik_name':
+            if head_item.text() == 'username':
                 name_column = i
                 break
         
@@ -1633,7 +1633,7 @@ class MainWindow(QtWidgets.QMainWindow):
             
             if self.workroom.id in workrooms:
                 workrooms.remove(self.workroom.id)
-                keys = {'nik_name': artist.nik_name, 'workroom' : workrooms}
+                keys = {'username': artist.username, 'workroom' : workrooms}
                 bool_, return_data = artist.edit_artist(keys, self.artist)
                 if not bool_:
                     self.message('Look the terminal!', 2)
@@ -6457,7 +6457,7 @@ class MainWindow(QtWidgets.QMainWindow):
         table = self.editReadersDialog.select_from_list_data_list_table
         
         # load table
-        headers = ['nik_name']
+        headers = ['username']
         num_column = len(headers)
         num_row = 0
         
@@ -6475,7 +6475,7 @@ class MainWindow(QtWidgets.QMainWindow):
                     continue
                 for j,key in enumerate(headers):
                     newItem = QtWidgets.QTableWidgetItem()
-                    if key == 'nik_name':
+                    if key == 'username':
                         if self.selected_task.readers.get('first_reader') == reader_name:
                             newItem.setText('%s (***)' % reader_name)
                         else:
@@ -6532,7 +6532,7 @@ class MainWindow(QtWidgets.QMainWindow):
         #workroom_dict = self.selectReadersDialog.workroom_dict
         
         self.clear_table(table)
-        result = self.artist.read_artist_of_workroom(self.db_workroom.dict_by_name[workrom_name].id)
+        result = self.artist.read_artist_of_workroom(self.db_workroom.dict_by_name[workrom_name])
         if not result[0]:
             self.message(result[1], 2)
             
@@ -6540,7 +6540,7 @@ class MainWindow(QtWidgets.QMainWindow):
         #print(artirs_dict)
         
         # load table
-        headers = ['nik_name', 'level', 'outsource']
+        headers = ['username', 'level', 'outsource']
         num_column = len(headers)
         num_row = 0
         if artirs_dict:
@@ -6558,7 +6558,7 @@ class MainWindow(QtWidgets.QMainWindow):
                     #newItem.reader_name = reader_name
                     newItem.reader = artirs_dict[reader_name]
                     
-                    if key == 'nik_name':
+                    if key == 'username':
                         color = self.artist_color
                         brush = QtGui.QBrush(color)
                         newItem.setBackground(brush)
@@ -6576,7 +6576,7 @@ class MainWindow(QtWidgets.QMainWindow):
         readers = []
         items = table.selectedItems()
         for item in items:
-            name = item.reader.nik_name
+            name = item.reader.username
             if not name in readers:
                 if self.selected_task.readers:
                     if not name in self.selected_task.readers.keys():
@@ -6981,7 +6981,7 @@ class MainWindow(QtWidgets.QMainWindow):
         
         # accept task
         result = None
-        if self.artist.nik_name in readers:
+        if self.artist.username in readers:
             result = self.selected_task.readers_accept_task(self.artist)
         else:
             result = self.selected_task.accept_task()
@@ -8134,14 +8134,14 @@ class MainWindow(QtWidgets.QMainWindow):
         pass
         #copy = db.artist()
 
-        nik_name = self.loginWindow.login_nik_name_field.text()
+        username = self.loginWindow.login_nik_name_field.text()
         password = self.loginWindow.login_password_field.text()
         
         cloud=False
         if self.loginWindow.check_box.isChecked():
             cloud=self.cloud
 
-        login = self.artist.login_user(nik_name, password, cloud=cloud)
+        login = self.artist.login_user(username, password, cloud=cloud)
     
         if login[0]:
             self.loginWindow.accept()
@@ -8196,7 +8196,7 @@ class MainWindow(QtWidgets.QMainWindow):
         pass
         # get Data
         data = {
-        'nik_name' : self.registrWindow.nik_name_field.text(),
+        'username' : self.registrWindow.nik_name_field.text(),
         'password' : self.registrWindow.password_field.text(),
         'email' : self.registrWindow.email_field.text(),
         'phone' : self.registrWindow.phone_field.text(),
@@ -8231,8 +8231,8 @@ class MainWindow(QtWidgets.QMainWindow):
         if not self.db_studio.studio_folder or not os.path.exists(self.db_studio.studio_folder):
             self.login_or_registration_ui(message='Path to the studio directory is not specified or not correct!')
             return
-        elif not self.artist.nik_name:
-            self.login_or_registration_ui(message='Nikname is: "%s"' % self.artist.nik_name)
+        elif not self.artist.username:
+            self.login_or_registration_ui(message='Nikname is: "%s"' % self.artist.username)
             return
 
         # ---- self.WORKROOM ---- 
@@ -8319,10 +8319,10 @@ class MainWindow(QtWidgets.QMainWindow):
                 self.message(r, 2)
                 self.setWindowTitle(f'Lineyka : {studio} : Undefined User')
             else:
-                self.setWindowTitle(f'Lineyka : {studio} : {self.artist.nik_name}')
+                self.setWindowTitle(f'Lineyka : {studio} : {self.artist.username}')
                 
         else:
-            self.setWindowTitle(f'Lineyka : {studio} : {self.artist.nik_name}')
+            self.setWindowTitle(f'Lineyka : {studio} : {self.artist.username}')
     
     def close_window(self, window):
         if window:
