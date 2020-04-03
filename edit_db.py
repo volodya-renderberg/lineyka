@@ -10440,6 +10440,41 @@ class workroom(studio):
         self.type = new_type_list
         return(True, 'Ok!')
 
+    def remove_artists(self, artists):
+        """
+        Удаление списка артистов из отдела
+
+        Parameters
+        ----------
+        artists : list
+            Список удаляемых из отдела `артистов (объекты :obj:`edit_db.artist`).
+
+        Returns
+        -------
+        tuple
+            (*True, 'ok!'*) или (*False, comment*)
+        """
+
+        if self.studio_database == 'django':
+            b,r=djc.workroom_remove_artists(self, artists)
+            if not b:
+                return(b,r)
+            else:
+                return(True, 'Ok!')
+        else:
+            for art in artists:
+                workrooms = []
+                if art.workroom:
+                    workrooms = art.workroom
+                
+                if self.id in workrooms:
+                    workrooms.remove(self.id)
+                    keys = {'username': art.username, 'workroom' : workrooms}
+                    b,r = art.edit_artist(keys, self.art)
+                    if not b:
+                        return(b,r)
+                    return(True, 'Ok!')
+
 class chat(studio):
     '''**level** = 'project'
 

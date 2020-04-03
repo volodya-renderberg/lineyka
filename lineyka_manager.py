@@ -1619,21 +1619,11 @@ class MainWindow(QtWidgets.QMainWindow):
         #wr_id = self.workroom.get('id')
         
         # remove artist from workroom
-        for artist in artists:
-            workrooms = []
-            if artist.workroom:
-                workrooms = artist.workroom
-            
-            if self.workroom.id in workrooms:
-                workrooms.remove(self.workroom.id)
-                keys = {'username': artist.username, 'workroom' : workrooms}
-                bool_, return_data = artist.edit_artist(keys, self.artist)
-                if not bool_:
-                    self.message('Look the terminal!', 2)
-                    #print(return_data)
-                    return
-                
-        
+        b,r=self.workroom.remove_artists(artists)
+        if not b:
+            self.message(f'{r}\n Look the terminal!', 2)
+            return
+               
         # get artist data
         self.get_artist_data()
                 

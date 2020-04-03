@@ -621,3 +621,42 @@ def workroom_get_artists(workroom):
     #
     del i_data
     return (True, r_data)
+
+def workroom_remove_artists(workroom, artists):
+    """
+    Удаление списка артистов из отдела
+
+    Parameters
+    ----------
+    workroom : :obj:`edit_db.workroom`
+        Объект отдела из которого удаляются `артисты.
+    artists : list
+        Список удаляемых из отдела `артистов (объекты :obj:`edit_db.artist`).
+
+    Returns
+    -------
+    tuple
+        (*True, 'ok!'*) или (*False, comment*)
+    """
+    url=f'{workroom.HOST}db/workroom/remove_artists/'
+    cookie, sess =_make_sess(workroom)
+
+    # (1)
+    art_list=list()
+    for art in artists:
+        art_list.append(art.username)
+    # print(art_list); return (True, 'Ok!') # debug
+    # (2) GET
+    params=dict(studio_name=workroom.studio_name) # для верификации
+    r1=sess.get(url, cookies = cookie, params=params)
+
+    # (3) POST
+    csrf_token = r1.cookies.get('csrftoken')
+    wr_dict=_output_data_converter(workroom.workroom_keys, workroom)
+    r2=sess.post(url, data=dict(csrfmiddlewaretoken=csrf_token, cookies=cookie, art_list=json.dumps(art_list), inst=wr_dict))
+    
+    if not r2.ok:
+        return(False, r2.text)
+
+
+    return (True, 'Ok!')
