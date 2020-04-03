@@ -123,6 +123,7 @@ def _output_data_converter(type_dict, inst, from_dict=False):
     * Итерируемые объекты в строки (если тип данных в ``type_dict`` = ``json``).
     * ``uuid`` в hex (для *id*).
     * добавляет ``studio_name``.
+    * меняет ключ ``'status'`` на ``'is_active'`` (только для статусов со значениями: *active* и *none*, тоесть для задач такой замены не будет).
 
     Parameters
     ----------
@@ -146,6 +147,13 @@ def _output_data_converter(type_dict, inst, from_dict=False):
     for key in data.keys():
         if key=='id' and isinstance(data[key], uuid.UUID):
             data[key]=data[key].hex
+        elif key=='status':
+            if data[key] == 'active':
+                data['is_active'] = True
+                del data[key]
+            elif data[key] == 'none':
+                data['is_active'] = False
+                del data[key]
         elif type_dict.get(key)=='json':
             data[key]=json.dumps(data[key])
         elif type_dict.get(key)=='timestamp':
@@ -326,6 +334,43 @@ def user_get(artist, username):
         return(False, r2.text)
     #
     r_data = _input_data_converter(artist.artists_keys, r2.json())
+    return (True, r_data)
+
+def user_read_artists(studio, keys):
+    """
+    Чтение данных артиста для текущей студии.
+
+    Parameters
+    ----------
+    studio : :obj:`edit_db.studio`
+        Экземпляр объетка :obj:`edit_db.studio` или любого из его потомков.
+    keys : dict
+        Словарь условий для фильтра по параметрам :attr:`edit_db.studio.artists_keys`.
+
+    Returns
+    -------
+    tuple
+        (*True*, {User.__dict__}) или (*False, comment*)
+    """
+    url=f'{studio.HOST}db/studio/get_artists/'
+    cookie, sess =_make_sess(studio)
+    # (2) GET
+    if isinstance(keys, dict):
+        keys=_output_data_converter(studio.artists_keys, keys, from_dict=True)
+    else:
+        keys=json.dumps(keys)
+    params=dict(studio_name=studio.studio_name, keys=keys)
+    r1=sess.get(url, cookies = cookie, params=params)
+    #
+    if not r1.ok:
+        return(False, r1.text)
+    # (3) make return data
+    r_data=list()
+    i_data=r1.json()
+    for user in i_data:
+        r_data.append(_input_data_converter(studio.artists_keys, user))
+    #
+    del i_data
     return (True, r_data)
 
 def login(studio, username, password):
@@ -622,23 +667,28 @@ def workroom_get_artists(workroom):
     del i_data
     return (True, r_data)
 
-def workroom_remove_artists(workroom, artists):
+def workroom_edit_artists(workroom, artists, action):
     """
-    Удаление списка артистов из отдела
+    Удаление из отдела или добавление в отдел списка артистов.
 
     Parameters
     ----------
     workroom : :obj:`edit_db.workroom`
-        Объект отдела из которого удаляются `артисты.
+        Объект изменяемого отдела `артисты.
     artists : list
-        Список удаляемых из отдела `артистов (объекты :obj:`edit_db.artist`).
+        Список удаляемых или добавляемых `артистов (объекты :obj:`edit_db.artist`).
+    action : str
+        Совершаемое действие ``'remove'`` или ``'add'``.
 
     Returns
     -------
     tuple
         (*True, 'ok!'*) или (*False, comment*)
     """
-    url=f'{workroom.HOST}db/workroom/remove_artists/'
+    if action=='remove':
+        url=f'{workroom.HOST}db/workroom/remove_artists/'
+    else:
+        url=f'{workroom.HOST}db/workroom/add_artists/'
     cookie, sess =_make_sess(workroom)
 
     # (1)

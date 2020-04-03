@@ -326,9 +326,10 @@ class MainWindow(QtWidgets.QMainWindow):
     def fill_artist_table(self):
         pass
         #copy = self.db_artist
-        artists = self.artist.read_artist('all')
+        artists = self.artist.read_artists({'status': 'active'})
         
         if not artists[0]:
+            self.message(artists[1], 2)
             return
         
         # get workroom data
@@ -1425,10 +1426,7 @@ class MainWindow(QtWidgets.QMainWindow):
         file.close()
         
         # get wr_name_list
-        wr_name_list = []
-        for id in self.db_workroom.dict_by_id:
-            wr_name_list.append(self.db_workroom.dict_by_id[id].name)
-        wr_name_list = ['-- all --'] + sorted(wr_name_list)
+        wr_name_list = ['-- all --'] + sorted(list(self.db_workroom.dict_by_name.keys()))
         
         # edit widget
         window.setWindowTitle(('Add Artist To \"' + self.workroom.name + '\"'))
@@ -1460,7 +1458,7 @@ class MainWindow(QtWidgets.QMainWindow):
         
     def fill_active_artist_table_at_workroom(self):
         print(self.workroom.id)
-        b,r = self.artist.read_artist_of_workroom(self.workroom)
+        b,r = self.artist.read_artists_of_workroom(self.workroom)
         if not b:
             self.message(r, 2)
             return
@@ -1496,7 +1494,7 @@ class MainWindow(QtWidgets.QMainWindow):
         print('fill active artist table')
         
     def fill_active_artist_table_for_workroom(self, window, arg=False):
-        artists = self.artist.read_artist('all')
+        artists = self.artist.read_artists('all')
         if not artists[0]:
             return
         filter_ = window.name_filter.text().lower()
@@ -6515,7 +6513,7 @@ class MainWindow(QtWidgets.QMainWindow):
         #workroom_dict = self.selectReadersDialog.workroom_dict
         
         self.clear_table(table)
-        result = self.artist.read_artist_of_workroom(self.db_workroom.dict_by_name[workrom_name])
+        result = self.artist.read_artists_of_workroom(self.db_workroom.dict_by_name[workrom_name])
         if not result[0]:
             self.message(result[1], 2)
             

@@ -6220,7 +6220,7 @@ class task(studio):
         outsource = None
         artist_name = task_key_data['artist']
         if artist_name:
-            artist_data = artist().read_artist({'username':artist_name})
+            artist_data = artist().read_artists({'username':artist_name})
             if artist_data[0]:
                 if artist_data[1][0]['outsource'] == '1':
                     outsource = True
@@ -6358,7 +6358,7 @@ class task(studio):
         except:
             artist_name = current_task_data['artist']
         if artist_name:
-            artist_data = artist().read_artist({'username':artist_name})
+            artist_data = artist().read_artists({'username':artist_name})
             if artist_data[0]:
                 if artist_data[1][0]['outsource'] == 1:
                     outsource = True
@@ -6484,12 +6484,12 @@ class task(studio):
             #print row['task_name']
             # get artist_status
             '''
-            if int(artist().read_artist({'username':row['artist']})[1][0]['outsource']):
+            if int(artist().read_artists({'username':row['artist']})[1][0]['outsource']):
                 print '###########################################', row['artist']
             '''
             if not new_status:
                 if row['status'] == 'null':
-                    if artist().read_artist({'username':row['artist']})[1][0]['outsource'] == 1:
+                    if artist().read_artists({'username':row['artist']})[1][0]['outsource'] == 1:
                         string2 = 'UPDATE ' +  table + ' SET status = \"ready_to_send\" WHERE task_name = \"' + row['task_name'] + '\"'
                     else:	
                         string2 = 'UPDATE ' +  table + ' SET status = \"ready\" WHERE task_name = \"' + row['task_name'] + '\"'
@@ -7440,7 +7440,7 @@ class task(studio):
             old_artist_ob = artist().init(self.artist)
         # -- new artist
         if new_artist and (isinstance(new_artist, str)):
-            result = artist().read_artist({'username':new_artist})
+            result = artist().read_artists({'username':new_artist})
             if not result[0]:
                 return(False, result[1])
             else:
@@ -9517,7 +9517,7 @@ class artist(studio):
         """
         pass
         # get keys
-        bool_, artists = self.read_artist({'username': username})
+        bool_, artists = self.read_artists({'username': username})
         if not bool_:
             return(bool_, artists)
                 
@@ -9702,7 +9702,7 @@ class artist(studio):
                         exec(com)
                 return(True, 'ok')
         
-    def read_artist(self, keys, objects=True): # django
+    def read_artists(self, keys, objects=True): # django
         """Чтение списка данных артистов.
         
         Parameters
@@ -9718,12 +9718,15 @@ class artist(studio):
             (*True*, [артисты - словари или экземпляры]) или (*False, comment*)
         """
         if self.studio_database == 'django':
-            b,r = djc.user_get(self, keys.get('username'))
+            # b,r = djc.user_get(self, keys.get('username'))
+            b,r = djc.user_read_artists(self, keys)
             if not b or not objects:
                 return(b,r)
             else:
-                ob = self.init_by_keys(r)
-                return(True, [ob])
+                r_data=list()
+                for data in r:
+                    r_data.append(self.init_by_keys(data))
+                return(True, r_data)
         else:
             if keys == 'all':
                 keys = False
@@ -9738,7 +9741,7 @@ class artist(studio):
                     objects.append(self.init_by_keys(data))
                 return(True, objects)
             
-    def read_artist_of_workroom(self, wr, active=True, objects=True): # django
+    def read_artists_of_workroom(self, wr, active=True, objects=True): # django
         """Чтение списка артистов отдела.
         
         Parameters
@@ -9825,9 +9828,9 @@ class artist(studio):
         active_artists_list = []
         for wr in workroom_ob.list_workroom:
             if task_type in wr.type:
-                b, r_data = self.read_artist_of_workroom(wr)
+                b, r_data = self.read_artists_of_workroom(wr)
                 if not b:
-                    print('*** problem in workroom.read_artist_of_workroom() by "%s"' % wr.name)
+                    print('*** problem in workroom.read_artists_of_workroom() by "%s"' % wr.name)
                     print(r_data)
                     continue
                 else:
@@ -10456,7 +10459,7 @@ class workroom(studio):
         """
 
         if self.studio_database == 'django':
-            b,r=djc.workroom_remove_artists(self, artists)
+            b,r=djc.workroom_edit_artists(self, artists, 'remove')
             if not b:
                 return(b,r)
             else:
@@ -10474,6 +10477,30 @@ class workroom(studio):
                     if not b:
                         return(b,r)
                     return(True, 'Ok!')
+
+    def add_artists(self, artists):
+        """
+        Добавление списка артистов в отдел.
+
+        Parameters
+        ----------
+        artists : list
+            Список добавляемых в отдел `артистов (объекты :obj:`edit_db.artist`).
+
+        Returns
+        -------
+        tuple
+            (*True, 'ok!'*) или (*False, comment*)
+        """
+
+        if self.studio_database == 'django':
+            b,r=djc.workroom_edit_artists(self, artists, 'add')
+            if not b:
+                return(b,r)
+            else:
+                return(True, 'Ok!')
+        else:
+            return(True, 'Ok!')
 
 class chat(studio):
     '''**level** = 'project'
