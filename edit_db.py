@@ -9738,13 +9738,15 @@ class artist(studio):
                     objects.append(self.init_by_keys(data))
                 return(True, objects)
             
-    def read_artist_of_workroom(self, wr, objects=True):
+    def read_artist_of_workroom(self, wr, active=True, objects=True): # django
         """Чтение списка артистов отдела.
         
         Parameters
         ----------
         wr : str, :obj:`uuid.UUID`, :obj:`edit_db.workroom`
             ``id`` отдела или экземпляр объекта отдела.
+        active : bool, optional
+            Если *True* то вернётся список только активных атристов.
         objects : bool, optional
             Если *True* - вернёт экземпляры :obj:`edit_db.artist`, если *False* - словари по :attr:`edit_db.studio.artists_keys`.
         
@@ -9758,7 +9760,9 @@ class artist(studio):
                 b,r = djc.workroom_get_artists(wr)
             else:
                 if not workroom.dict_by_id:
-                    workroom().get_list()
+                    b,r=workroom().get_list()
+                    if not b:
+                        return(b,r)
                 wr_ob = workroom.dict_by_id.get(wr)
                 if wr_ob:
                     b,r = djc.workroom_get_artists(wr_ob)
@@ -9770,6 +9774,8 @@ class artist(studio):
             #
             artists_dict = {}
             for art in r:
+                if active and not art.get('is_active'):
+                    continue
                 if objects:
                     artists_dict[art['username']] = self.init_by_keys(art)
                 else:
@@ -9790,6 +9796,8 @@ class artist(studio):
                 except:
                     continue
                 if workrooms and workroom_id in workrooms:
+                    if active and not row.get('status')=='active':
+                        continue
                     if objects:
                         artists_dict[row['username']] = self.init_by_keys(row)
                     else:

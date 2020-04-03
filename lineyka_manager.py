@@ -1459,19 +1459,12 @@ class MainWindow(QtWidgets.QMainWindow):
         print('add artist to workroom dialog')
         
     def fill_active_artist_table_at_workroom(self):
-        bool_, artists = self.artist.read_artist('all')
-    
-        if not bool_:
-            self.message(artists, 2)
+        print(self.workroom.id)
+        b,r = self.artist.read_artist_of_workroom(self.workroom)
+        if not b:
+            self.message(r, 2)
             return
-            
-        # get artist list
-        active_artists = []
-        for artist in artists:
-            # get workroom
-            wr_list = []
-            if self.workroom.id in artist.workroom and artist.status == 'active':
-                active_artists.append(artist)
+        active_artists=list(r.values())
     
         # get table data
         num_row = len(active_artists)
