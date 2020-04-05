@@ -107,10 +107,14 @@ def _input_data_converter(type_dict, data):
             try:
                 data[key]=json.loads(data[key])
             except:
-                print(data[key])
-                data[key]='Except'
+                print(f'Exception of {key} : {data[key]}')
         elif type_dict.get(key)=='timestamp':
             data[key]=datetime.datetime.fromisoformat(data[key])
+        # (workroom for artist)
+        if key=='workroom':
+            if data.get('workroom'):
+                for i, wr_id in enumerate(data['workroom']):
+                    data['workroom'][i]=uuid.UUID(wr_id)
 
     return data
 
@@ -123,8 +127,7 @@ def _output_data_converter(type_dict, inst, from_dict=False):
     * Итерируемые объекты в строки (если тип данных в ``type_dict`` = ``json``).
     * ``uuid`` в hex (для *id*).
     * добавляет ``studio_name``.
-    * меняет ключ ``'status'`` на ``'is_active'`` (только для статусов со значениями: *active* и *none*, тоесть для задач такой замены не будет).
-
+    
     Parameters
     ----------
     type_dict : dict
@@ -147,13 +150,6 @@ def _output_data_converter(type_dict, inst, from_dict=False):
     for key in data.keys():
         if key=='id' and isinstance(data[key], uuid.UUID):
             data[key]=data[key].hex
-        elif key=='status':
-            if data[key] == 'active':
-                data['is_active'] = True
-                del data[key]
-            elif data[key] == 'none':
-                data['is_active'] = False
-                del data[key]
         elif type_dict.get(key)=='json':
             data[key]=json.dumps(data[key])
         elif type_dict.get(key)=='timestamp':
