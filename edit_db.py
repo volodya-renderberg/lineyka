@@ -9559,6 +9559,7 @@ class artist(studio):
                 new_artist = self
             #
             for key in self.artists_keys:
+                '''
                 if key=='status':
                     if keys.get('is_active'):
                         d='active'
@@ -9567,6 +9568,8 @@ class artist(studio):
                     setattr(new_artist, 'status', d)
                 else:
                     setattr(new_artist, key, keys.get(key))
+                '''
+                setattr(new_artist, key, keys.get(key))
             #
             self.cloud=cloud # на случай когда студия ещё не определена.
             if new:

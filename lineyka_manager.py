@@ -354,7 +354,7 @@ class MainWindow(QtWidgets.QMainWindow):
             'user_name',
             'specialty',
             'workroom',
-            'date_time',
+            'date_joined_to_studio',
             'email',
             'phone',
             'outsource',
@@ -376,8 +376,8 @@ class MainWindow(QtWidgets.QMainWindow):
         for i, artist in enumerate(artists[1]):
             for j,key in enumerate(headers):
                 newItem = QtWidgets.QTableWidgetItem()
-                if key == 'date_time':
-                    newItem.setText(getattr(artist, key).strftime("%d-%m-%Y %H:%M:%S"))
+                if key == 'date_joined_to_studio':
+                    newItem.setText(getattr(artist, key).strftime("%d-%m-%Y"))
                     #newItem.setText('time')
                 elif key == 'workroom':
                     if getattr(artist, key):
