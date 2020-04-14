@@ -57,10 +57,14 @@ class studio:
     """str: Директория студии. """
     STUDIO_SETTINGS_FILE = 'settings.py'
     """str: Файл студийных настроек, хранится в директории студии."""
+    CACHE = '.lineyka_cache'
+    """str: Имя директории для хранения кеш файлов. """
     tmp_folder = False
     """str: *tmp* директория пользователя, в неё копируются открываемые сцены. """
     work_folder = False
     """str: Директория для локального хранения ассетов пользователя. Создаётся вся файловая структура ``project/assets/asset/activity/version_dir/file``. Определяе методом :func:`edit_db.studio.set_work_folder`. """
+    cache_folder = False
+    """str: Путь до директории кеш файлов ``tmp_folder/CACHE``. Заполняется в :func:`edit_db.studio.get_studio` """
     convert_exe = False
     """str: Путь к исполняемому файлу *convert* приложения 'Imagemagick' """
     studio_database = ['sqlite3', False]
@@ -594,6 +598,7 @@ class studio:
         * :attr:`edit_db.studio.work_folder`
         * :attr:`edit_db.studio.convert_exe`
         * :attr:`edit_db.studio.tmp_folder`
+        * :attr:`edit_db.studio.cache_folder`
         * :attr:`edit_db.studio.studio_database`
         * :attr:`edit_db.studio.EXTENSIONS`
         * :attr:`edit_db.studio.SOFT_DATA`
@@ -618,7 +623,10 @@ class studio:
         #
         for key in data:
             setattr(self, key, data.get(key))
-            
+        # () cache_folder
+        self.cache_folder = NormPath(os.path.join(self.tmp_folder, self.CACHE))
+        if not os.path.exists(self.cache_folder):
+            os.makedirs(self.cache_folder)
         #print('artist path: ', self.artists_path)
             
         # fill self.EXTENSIONS
@@ -758,6 +766,10 @@ class studio:
             return "****** init file  can not be read"
 
         self.tmp_folder = path
+        # cache_folder
+        self.cache_folder = NormPath(os.path.join(self.tmp_folder, self.CACHE))
+        if not os.path.exists(self.cache_folder):
+            os.makedirs(self.cache_folder)
                 
         return(True, 'Ok')
 

@@ -13,6 +13,8 @@ import random
 import subprocess
 import uuid
 import datetime
+from urllib import parse
+import requests
 
 # from lineyka 
 #import ui
@@ -162,6 +164,7 @@ class MainWindow(QtWidgets.QMainWindow):
         self.myWidget.actionLogin.triggered.connect(self.user_login_ui)
         self.myWidget.actionRegistration.triggered.connect(self.user_registration_ui)
         self.myWidget.actionUser_manual.triggered.connect(self.help_user_manual)
+        self.myWidget.action_edit_profile.triggered.connect(self.edit_profile_ui)
 
                 
         # at studio 
@@ -348,17 +351,17 @@ class MainWindow(QtWidgets.QMainWindow):
            
         # get table data
         look_keys = [
+            'icon',
             'username',
             'level',
             'status',
-            'user_name',
             'specialty',
             'workroom',
             'date_joined_to_studio',
             'email',
             'phone',
             'outsource',
-            'share_dir',
+            # 'share_dir',
             ]
         num_row = len(artists[1])
         num_column = len(look_keys)
@@ -373,6 +376,8 @@ class MainWindow(QtWidgets.QMainWindow):
         self.myWidget.studio_editor_table.setHorizontalHeaderLabels(headers)
     
         # fill table
+        table = self.myWidget.studio_editor_table
+        #
         for i, artist in enumerate(artists[1]):
             for j,key in enumerate(headers):
                 newItem = QtWidgets.QTableWidgetItem()
@@ -391,12 +396,30 @@ class MainWindow(QtWidgets.QMainWindow):
                     brush = QtGui.QBrush(color)
                     newItem.setBackground(brush)
                     newItem.setText(str(getattr(artist, key)))
+                elif key == 'icon':
+                    # label
+                    label = QtWidgets.QLabel()
+                    #
+                    if db.studio.studio_database=='django':
+                        # img
+                        icon_path = self.get_cache_path_from_url(artist.profile.get('image'))
+                        if icon_path:
+                            image = QtGui.QImage(icon_path)
+                            pix = QtGui.QPixmap(image)
+                            #
+                            label.setPixmap(pix)
+                            label.show()
+                        else:
+                            label.setText('no image')
+                    else:
+                        label.setText('no image')
+                    
+                    label.artist = artist
+                    table.setCellWidget(i, j, label)
                 else:
                     newItem.setText(str(getattr(artist, key)))
                 newItem.artist = artist
-                self.myWidget.studio_editor_table.setItem(i, j, newItem)
-                
-        table = self.myWidget.studio_editor_table
+                table.setItem(i, j, newItem)
                 
         table.resizeRowsToContents()
         table.resizeColumnsToContents()
@@ -7699,7 +7722,9 @@ class MainWindow(QtWidgets.QMainWindow):
     
     def help_user_manual(self):
         webbrowser.open_new_tab('http://www.lineyka.org.ru/')
-        #print("go to user manual!")
+
+    def edit_profile_ui(self):
+        webbrowser.open_new_tab(parse.urljoin(self.studio.HOST, '/user/profile/edit/'))
 
     def set_studio_ui(self):
         loader = QtUiTools.QUiLoader()
@@ -8207,6 +8232,36 @@ class MainWindow(QtWidgets.QMainWindow):
         self.launcher()
     
     #*********************** UTILITS *******************************************
+    def get_cache_path_from_url(self, url, r_cashe=False):
+        """
+        Сохраняет файл в директорию :attr:`edit_db.studio.cache_folder`. Возвращает путь до кешфайла, или *None*.
+
+        Parameters
+        ----------
+        url : str
+            Url до файла.
+        r_cashe : bool
+            Если *True* - то кеш файл перезаписывается, если *False* - то при наличии кеш файла перезаписи не будет.
+
+        Returns
+        -------
+        str
+            Путь до кеш файла или *None*.
+        """
+        if not url:
+            return None
+        #
+        url=parse.urljoin(self.studio.HOST, url)
+        icon_path = os.path.join(self.studio.cache_folder, os.path.basename(url))
+        if not os.path.exists(icon_path) or r_cashe:
+            response = requests.get(url)
+            if not response.ok:
+                return None
+            with open(icon_path, 'wb') as f:
+                f.write(response.content)
+        #
+        return icon_path
+
     def launcher(self):
         # return # debug
         if not self.db_studio.studio_folder or not os.path.exists(self.db_studio.studio_folder):
