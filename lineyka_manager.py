@@ -7724,7 +7724,7 @@ class MainWindow(QtWidgets.QMainWindow):
         webbrowser.open_new_tab('http://www.lineyka.org.ru/')
 
     def edit_profile_ui(self):
-        webbrowser.open_new_tab(parse.urljoin(self.studio.HOST, '/user/profile/edit/'))
+        webbrowser.open_new_tab(parse.urljoin(self.studio.HOST, '/users/profile/edit/'))
 
     def set_studio_ui(self):
         loader = QtUiTools.QUiLoader()

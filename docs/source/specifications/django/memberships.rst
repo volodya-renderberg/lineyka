@@ -104,8 +104,8 @@ Workroom memberships
 Методы в Views.py
 *****************
 
-* :func:`edit_db.views.workroom_add_artist`
-* :func:`edit_db.views.workroom_remove_artist`
+* :func:`edit_db.views.workroom_add_artists`
+* :func:`edit_db.views.workroom_remove_artists`
     * Добавление или удаление артистов.
     * Проверки:
         * Проверка на аутентификацию пользователя.
@@ -125,8 +125,8 @@ Group memberships
 Методы в Views.py
 *****************
 
-* :func:`edit_db.views.group_add_artist`
-* :func:`edit_db.views.group_remove_artist`
+* :func:`edit_db.views.group_add_artists`
+* :func:`edit_db.views.group_remove_artists`
     * Добавление или удаление артистов.
     * Проверки:
         * Проверка на аутентификацию пользователя.
