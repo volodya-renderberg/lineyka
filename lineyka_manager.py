@@ -142,7 +142,7 @@ class MainWindow(QtWidgets.QMainWindow):
         # CONSTANTS
         self.SEASON_COLUMNS = ['name', 'status']
         self.GROUP_COLUMNS = ['name', 'type', 'description', 'season']
-        self.look_keys = ['username','specialty','outsource','level']
+        self.look_keys = ['icon', 'username','specialty','outsource','level']
         self.REQUIRED_KEYS = ['task_name', 'activity', 'workroom', 'task_type', 'extension'] # обязательные параметры при создании одной задачи для ассета.
         
         #self.current_project = False # удаляем.
@@ -1511,6 +1511,26 @@ class MainWindow(QtWidgets.QMainWindow):
                 newItem = QtWidgets.QTableWidgetItem()
                 if key in ['outsource']:
                     newItem.setText(str(getattr(artist, key)))
+                elif key == 'icon':
+                    # label
+                    label = QtWidgets.QLabel()
+                    #
+                    if db.studio.studio_database=='django':
+                        # img
+                        icon_path = self.get_cache_path_from_url(artist.profile.get('image'))
+                        if icon_path:
+                            image = QtGui.QImage(icon_path)
+                            pix = QtGui.QPixmap(image)
+                            #
+                            label.setPixmap(pix)
+                            label.show()
+                        else:
+                            label.setText('no image')
+                    else:
+                        label.setText('no image')
+                    
+                    label.artist = artist
+                    self.myWidget.studio_editor_table.setCellWidget(i, j, label)
                 else:
                     newItem.setText(getattr(artist, key))
                 newItem.artist = artist
@@ -1519,6 +1539,9 @@ class MainWindow(QtWidgets.QMainWindow):
                     brush = QtGui.QBrush(color)
                     newItem.setBackground(brush)                
                 self.myWidget.studio_editor_table.setItem(i, j, newItem)
+
+        self.myWidget.studio_editor_table.resizeRowsToContents()
+        self.myWidget.studio_editor_table.resizeColumnsToContents()
         
         print('fill active artist table')
         
@@ -1566,6 +1589,26 @@ class MainWindow(QtWidgets.QMainWindow):
                 newItem = QtWidgets.QTableWidgetItem()
                 if key=='outsource':
                     newItem.setText(str(getattr(artist, key)))
+                elif key == 'icon':
+                    # label
+                    label = QtWidgets.QLabel()
+                    #
+                    if db.studio.studio_database=='django':
+                        # img
+                        icon_path = self.get_cache_path_from_url(artist.profile.get('image'))
+                        if icon_path:
+                            image = QtGui.QImage(icon_path)
+                            pix = QtGui.QPixmap(image)
+                            #
+                            label.setPixmap(pix)
+                            label.show()
+                        else:
+                            label.setText('no image')
+                    else:
+                        label.setText('no image')
+                    
+                    label.artist = artist
+                    window.select_from_list_data_list_table.setCellWidget(i, j, label)
                 else:
                     newItem.setText(getattr(artist, key))
                 newItem.artist = artist
@@ -1579,6 +1622,9 @@ class MainWindow(QtWidgets.QMainWindow):
                     newItem.setBackground(brush)
                 
                 window.select_from_list_data_list_table.setItem(i, j, newItem)
+
+        window.select_from_list_data_list_table.resizeRowsToContents()
+        window.select_from_list_data_list_table.resizeColumnsToContents()
         
         print('fill active artist table')
         
@@ -7933,7 +7979,14 @@ class MainWindow(QtWidgets.QMainWindow):
         if hasattr(self, 'cache_cloud_studio_path'):
             dialog.path.setText(self.cache_cloud_studio_path)
 
-        # buttons 
+        #
+        def select_folder(dialog):
+            home = os.path.expanduser('~')
+            folder = QtWidgets.QFileDialog.getExistingDirectory(self, dir = home)
+            if folder:
+                dialog.path.setText(str(folder))
+        # buttons
+        dialog.select_button.clicked.connect(partial(select_folder, dialog))
         dialog.button_box.rejected.connect(partial(self.close_window, dialog))
         dialog.button_box.accepted.connect(partial(self.set_dir_cloud_studio_action, dialog))
 
