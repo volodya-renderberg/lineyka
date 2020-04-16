@@ -158,9 +158,19 @@ class MainWindow(QtWidgets.QMainWindow):
         
         # ---- get artist data
         self.get_artist_data() # debug
+
+        # setWindowIcon
+        if hasattr(self.studio, 'image'):
+            icon_path = self.get_cache_path_from_url(self.studio.image)
+            if icon_path:
+                # self.myWidget.setWindowIcon(QtGui.QIcon(QtGui.QPixmap(icon_path)))
+                self.myWidget.menu_set_studio.setIcon(QtGui.QIcon(QtGui.QPixmap(icon_path)))
         
-        # menu
-        self.myWidget.actionSet_studio.triggered.connect(self.set_studio_ui)
+        # menu Studio
+        self.myWidget.action_set_studio.triggered.connect(self.set_studio_ui)
+        self.myWidget.action_go_to_web_page.triggered.connect(self.go_to_studio_web_page)
+
+        # menu User
         self.myWidget.actionLogin.triggered.connect(self.user_login_ui)
         self.myWidget.actionRegistration.triggered.connect(self.user_registration_ui)
         self.myWidget.actionUser_manual.triggered.connect(self.help_user_manual)
@@ -211,10 +221,6 @@ class MainWindow(QtWidgets.QMainWindow):
         addgrup_action = QtWidgets.QAction( 'change Task', self.myWidget)
         addgrup_action.triggered.connect(partial(self.loc_change_input_task_ui))
         self.myWidget.studio_editor_table_2.addAction( addgrup_action )
-        
-        # ---- List Active Projects
-        #self.get_list_active_projects()
-        #self.list_active_projects = self.db_studio.list_active_projects
         
         self.launcher()
         
@@ -7726,12 +7732,17 @@ class MainWindow(QtWidgets.QMainWindow):
     def edit_profile_ui(self):
         webbrowser.open_new_tab(parse.urljoin(self.studio.HOST, '/users/profile/edit/'))
 
+    def go_to_studio_web_page(self):
+        webbrowser.open_new_tab(parse.urljoin(self.studio.HOST, f'/studios/{self.studio.studio_name}/'))
+
     def set_studio_ui(self):
         loader = QtUiTools.QUiLoader()
         file = QtCore.QFile(self.set_window_path)
         #file.open(QtCore.QFile.ReadOnly)
         self.setWindow = loader.load(file, self)
         file.close()
+
+        self.setWindow.setWindowTitle('Studio Settings')
         
         # add line
         # -- get extension_dict

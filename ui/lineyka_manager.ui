@@ -18,10 +18,9 @@
     <widget class="QMenuBar" name="menubar">
      <widget class="QMenu" name="menuSetting">
       <property name="title">
-       <string>setting</string>
+       <string>User</string>
       </property>
       <addaction name="separator"/>
-      <addaction name="actionSet_studio"/>
       <addaction name="actionLogin"/>
       <addaction name="actionRegistration"/>
       <addaction name="action_edit_profile"/>
@@ -32,6 +31,14 @@
       </property>
       <addaction name="actionUser_manual"/>
      </widget>
+     <widget class="QMenu" name="menu_set_studio">
+      <property name="title">
+       <string>Studio</string>
+      </property>
+      <addaction name="action_set_studio"/>
+      <addaction name="action_go_to_web_page"/>
+     </widget>
+     <addaction name="menu_set_studio"/>
      <addaction name="menuSetting"/>
      <addaction name="menuHelp"/>
     </widget>
@@ -1055,22 +1062,32 @@
   </action>
   <action name="actionLogin">
    <property name="text">
-    <string>login</string>
+    <string>Login</string>
    </property>
   </action>
   <action name="actionUser_manual">
    <property name="text">
-    <string>user manual</string>
+    <string>User manual</string>
    </property>
   </action>
   <action name="actionRegistration">
    <property name="text">
-    <string>registration</string>
+    <string>Registration</string>
    </property>
   </action>
   <action name="action_edit_profile">
    <property name="text">
-    <string>edit profile</string>
+    <string>Edit profile</string>
+   </property>
+  </action>
+  <action name="action_set_studio">
+   <property name="text">
+    <string>Studio settings</string>
+   </property>
+  </action>
+  <action name="action_go_to_web_page">
+   <property name="text">
+    <string>Go to web page</string>
    </property>
   </action>
  </widget>
