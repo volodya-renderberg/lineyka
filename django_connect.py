@@ -334,7 +334,7 @@ def user_get(artist, username):
 
 def user_read_artists(studio, keys):
     """
-    Чтение данных артиста для текущей студии.
+    Возвращает список словарей `артистов удовлетворяющих **keys.
 
     Parameters
     ----------
@@ -346,7 +346,7 @@ def user_read_artists(studio, keys):
     Returns
     -------
     tuple
-        (*True*, {User.__dict__}) или (*False, comment*)
+        (*True*, [{User.__dict__}, ...]) или (*False, comment*)
     """
     url=f'{studio.HOST}db/studio/get_artists/'
     cookie, sess =_make_sess(studio)
