@@ -9867,8 +9867,9 @@ class artist(studio):
          данное имя пользователя из под других ник-неймов.\
         Произойдёт заполнение полей :obj:`edit_db.artist.artists_keys` экземпляра класса.
         
-        Если ``cloud`` =*django* или :attr:`edit_db.studio.studio_database` = *django*:\
-        логинится через сайт, записывая файлы ``cookie`` и ``user_data``.
+        Если ``cloud`` =*django* или :attr:`edit_db.studio.studio_database` = *django*:
+        * логинится через сайт, записывая файлы ``cookie`` и ``user_data``.
+        * заполнит поля текущего экземпляра.
         
         Parameters
         ----------
@@ -9886,7 +9887,11 @@ class artist(studio):
             Если ``cloud`` =*django* или :attr:`edit_db.studio.studio_database` = *django*: (*True*, {user_data}) или (*False, comment*).
         """
         if cloud=='django' or self.studio_database == 'django':
-            return djc.login(self, username, password)
+            b,r= djc.login(self, username, password)
+            if not b:
+                return(b,r)
+            self.init_by_keys(r, new=False, cloud='django')
+            return(True, r)
         else:
             pass
             # проверка наличия юзера
@@ -9941,7 +9946,7 @@ class artist(studio):
             b,r = djc.get_user_data(self)
             if not b:
                 return(b,r)
-            b,r=self.init_by_keys(r, new = False, cloud=cloud)
+            b,r=self.init_by_keys(r, new = False, cloud='django')
             if not b:
                 return(b,r)
             return(True, 'Ok!')
