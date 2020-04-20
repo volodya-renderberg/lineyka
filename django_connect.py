@@ -154,7 +154,11 @@ def _output_data_converter(type_dict, inst, from_dict=False):
             data[key]=json.dumps(data[key])
         elif type_dict.get(key)=='timestamp':
             if data[key]:
-                data[key]=datetime.datetime.isoformat(data[key])
+                try:
+                    data[key]=datetime.datetime.isoformat(data[key])
+                except Exception as e:
+                    print(e)
+                    print(data[key])
 
     r_data = json.dumps(data)
     del data
@@ -180,20 +184,25 @@ def _make_sess(lnk_object):
     sess.cookies=cj
     return cookie, sess 
 
-def get_user_data(studio):
+def get_user_data(artist):
     '''
     Чтение словаря данных залогиненного пользователя из локального файла.
 
     Parameters
     ----------
-    studio : :obj:`edit_db.studio`
-        Экземпляр объетка :obj:`edit_db.studio` или любого из его потомков.
+    artist : :obj:`edit_db.artist`
+        Экземпляр объетка :obj:`edit_db.artist`.
     '''
-    path=_get_user_data_path(studio)
+    path=_get_user_data_path(artist)
     if not os.path.exists(path):
         return(False, 'User data file not found!')
     with open(path, 'r') as f:
-        user_data=json.load(f)
+        user_data=_input_data_converter(artist.artists_keys, json.load(f))
+    # if not user_data.get('level') and artist.studio_database == 'django':
+    #     # print(artist.HOST*50)
+    #     b, user_data=user_get(artist, user_data.get('username'), write_data=True)
+    #     if not b:
+    #         return(b, user_data)
     return (True, user_data)
 
 def is_member(studio, username):
@@ -296,9 +305,11 @@ def user_registration(studio, username, email, password, login=False):
     # 
     return (True, json.loads(r2.text))
 
-def user_get(artist, username):
+def user_get(artist, username, write_data=False):
     """
     Чтение данных артиста для текущей студии.
+
+    .. attention :: Глюченная, требует переработки если понадобиться (оставить только *GET*).
 
     Parameters
     ----------
@@ -306,6 +317,8 @@ def user_get(artist, username):
         Экземпляр объетка :obj:`edit_db.artist`.
     username : str
         ``username`` читаемого артиста.
+    write_data : bool, optional
+        Если *True* то данные артиста будут записаны в файл :attr:`edit_db.studio.USER_DATA_FILE_NAME`, как при выполении :func:`django_connect.login`.
 
     Returns
     -------
@@ -313,14 +326,13 @@ def user_get(artist, username):
         (*True*, {User.__dict__}) или (*False, comment*)
     """
     url=f'{artist.HOST}db/user/get/{username}/'
-    cookie=_read_cookie(artist)
-    
-    # (1) session
-    sess = requests.Session()
-    cj=requests.utils.cookiejar_from_dict(cookie)
-    sess.cookies=cj
+    cookie, sess =_make_sess(artist)
+
     # (1) get to login
     r1=sess.get(url, cookies = cookie)
+    if not r1.ok:
+        return(False, r1.text)
+
     # (2) post to login
     csrf_token = r1.cookies.get('csrftoken')
     inst=_output_data_converter(artist.artists_keys, artist)
@@ -328,6 +340,9 @@ def user_get(artist, username):
         
     if not r2.ok:
         return(False, r2.text)
+
+    if write_data:
+        _write_user_data(artist, r2.text)
     #
     r_data = _input_data_converter(artist.artists_keys, r2.json())
     return (True, r_data)
@@ -393,8 +408,9 @@ def login(studio, username, password):
     # (1) get to login
     r1=sess.get(login_url)
     # (2) post to login
+    inst=_output_data_converter(studio.artists_keys, studio)
     csrf_token = r1.cookies.get('csrftoken')
-    r2 = sess.post(login_url, data=dict(username=username, password=password, csrfmiddlewaretoken=csrf_token))
+    r2 = sess.post(login_url, data=dict(username=username, password=password, csrfmiddlewaretoken=csrf_token, inst=inst))
         
     if not r2.ok:
         return(False, r2.text)
