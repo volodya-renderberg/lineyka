@@ -1438,7 +1438,7 @@ class MainWindow(QtWidgets.QMainWindow):
             self.myWidget.studio_butt_1.clicked.disconnect()
         except:
             pass
-        #self.myWidget.studio_butt_1.clicked.connect(self.reload_workroom_list)
+        self.myWidget.studio_butt_1.clicked.connect(self.fill_active_artist_table_at_workroom)
         self.myWidget.studio_butt_2.setVisible(True)
         self.myWidget.studio_butt_2.setText('Add Artists')
         try:
@@ -1454,7 +1454,7 @@ class MainWindow(QtWidgets.QMainWindow):
             pass
         self.myWidget.studio_butt_3.clicked.connect(partial(self.remove_artists_from_workroom_action, self.myWidget.studio_editor_table))
         self.myWidget.studio_butt_4.setVisible(True)
-        self.myWidget.studio_butt_4.setText('Back')
+        self.myWidget.studio_butt_4.setText('<< Back')
         try:
             self.myWidget.studio_butt_4.clicked.disconnect()
         except:
@@ -1530,7 +1530,7 @@ class MainWindow(QtWidgets.QMainWindow):
         print('add artist to workroom dialog')
         
     def fill_active_artist_table_at_workroom(self):
-        print(self.workroom.id)
+        # print(self.workroom.id)
         b,r = self.artist.read_artists_of_workroom(self.workroom)
         if not b:
             self.message(r, 2)
@@ -1685,27 +1685,30 @@ class MainWindow(QtWidgets.QMainWindow):
         
         # get selected rows
         selected = table.selectedItems()
-        artists = []
+        artists = list()
         for item in selected:
             if item.column() == name_column:
                 artists.append(item.artist)
         
         #wr_id = self.workroom.get('id')
         
-        for artist in artists:
-            workrooms = []
-            if artist.workroom:
-                workrooms = artist.workroom
-            
-            if not self.workroom.id in workrooms:
-                workrooms.append(self.workroom.id)
-                #keys = {'username': artist_, 'workroom' : json.dumps(workrooms)}
-                keys = {'username': artist.username, 'workroom' : workrooms}
-                bool_, return_data = artist.edit_artist(keys, self.artist)
-                if not bool_:
-                    self.message(return_data, 2)
+        if self.studio.studio_database == 'django':
+            self.workroom.add_artists(artists)
+        else:
+            for artist in artists:
+                workrooms = []
+                if artist.workroom:
+                    workrooms = artist.workroom
                 
-            #print(self.workroom.id, workrooms)
+                if not self.workroom.id in workrooms:
+                    workrooms.append(self.workroom.id)
+                    #keys = {'username': artist_, 'workroom' : json.dumps(workrooms)}
+                    keys = {'username': artist.username, 'workroom' : workrooms}
+                    bool_, return_data = artist.edit_artist(keys, self.artist)
+                    if not bool_:
+                        self.message(return_data, 2)
+                    
+                #print(self.workroom.id, workrooms)
                 
         self.fill_active_artist_table_for_workroom(window)
         self.fill_active_artist_table_at_workroom()
@@ -8382,7 +8385,7 @@ class MainWindow(QtWidgets.QMainWindow):
         # ---- self.WORKROOM ---- 
         b,r = self.db_workroom.get_list() # загрузка списка отделов с проверкой на причастность юзера к данной студии.
         if not b:
-            self.login_or_registration_ui(message=r)
+            self.login_or_registration_ui(message=f'* {r}')
 
         ''' # debug
         elif not self.artist.level or not self.artist.level in self.db_studio.MANAGER_LEVELS:
