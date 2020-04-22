@@ -150,8 +150,18 @@ def _output_data_converter(type_dict, inst, from_dict=False):
     for key in data.keys():
         if key=='id' and isinstance(data[key], uuid.UUID):
             data[key]=data[key].hex
+        elif key=='workroom':
+            if data[key]:
+                workrooms=list()
+                for wr_id in data[key]:
+                    workrooms.append(str(wr_id))
+                data[key]=workrooms
         elif type_dict.get(key)=='json':
-            data[key]=json.dumps(data[key])
+            try:
+                data[key]=json.dumps(data[key])
+            except Exception as e:
+                print(f'*** {key} : {data[key]}')
+                raise e
         elif type_dict.get(key)=='timestamp':
             if data[key]:
                 try:
@@ -384,6 +394,46 @@ def user_read_artists(studio, keys):
     del i_data
     return (True, r_data)
 
+def studio_member_edit(artist, new_data):
+    """
+    Редактирование праметров модели StudioMemder, и смена группы (передаётся как ``new_data['level']``).
+
+    Parameters
+    ----------
+    artist : :obj:`edit_db.artist`
+        Экземпляр класса :obj:`edit_db.artist`.
+    new_data : dict
+        Словарь данных на замену.
+
+    Returns
+    -------
+    tuple
+        (*True, 'ok'*) или (*False, comment*)
+    """
+    # (1)
+    url=f'{artist.HOST}db/user/studio_member_edit/'
+    cookie, sess =_make_sess(artist)
+
+    # (2) GET
+    params=dict(studio_name=artist.studio_name)
+    r1=sess.get(url, cookies = cookie, params=params)
+
+    if not r1.ok:
+        return(False, r1.text)
+        # return(False, 'GET')
+
+    # (3) POST
+    csrf_token = r1.cookies.get('csrftoken')
+    inst=_output_data_converter(artist.artists_keys, artist)
+    output_data=_output_data_converter(artist.artists_keys, new_data, from_dict=True)
+    r2=sess.post(url, data=dict(csrfmiddlewaretoken=csrf_token, cookies=cookie, inst=inst, new_data=output_data))
+    
+    if not r2.ok:
+        return(False, r2.text)
+
+
+    return (True, 'Ok!')
+
 def login(studio, username, password):
     '''
     Логин, запись файлов :attr:`edit_db.studio.COOKIE_NAME` и :attr:`edit_db.studio.USER_DATA_FILE_NAME`.
@@ -486,6 +536,33 @@ def studio_get_list(studio):
     if not r1.ok:
         return(False, r1.text)
 
+    return (True, r1.json())
+
+def studio_get_groups(studio):
+    """
+    Получение списка групп (уровни) студии.
+
+    .. note:: *params['studio_name']* передаётся и для ``permission_required`` и для чтения списка групп.
+
+    Parameters
+    ----------
+    studio : :obj:`edit_db.studio`
+        Экземпляр читаемого объетка :obj:`edit_db.studio`.
+
+    Returns
+    -------
+    tuple
+        (*True, [список имён групп]*) или (*False, comment*)
+    """
+    url=f'{studio.HOST}db/studio/get_groups/'
+    cookie, sess =_make_sess(studio)
+    # (2) GET
+    params=dict(studio_name=studio.studio_name)
+    r1=sess.get(url, cookies = cookie, params=params)
+    #
+    if not r1.ok:
+        return(False, r1.text)
+    # (3) make return data
     return (True, r1.json())
 
 def workroom_add(workroom, wr_name, wr_type):

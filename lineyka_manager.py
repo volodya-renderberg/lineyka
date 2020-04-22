@@ -50,6 +50,7 @@ class MainWindow(QtWidgets.QMainWindow):
         self.new_dialog_4_path = os.path.join(path, 'new_dialog_four_field.ui')
         self.new_dialog_4_2_path = os.path.join(path, 'new_dialog_four_field_2.ui')
         self.artist_dialog_path = os.path.join(path, "artist_dialog.ui")
+        self.artist_dialog_cloud_path = os.path.join(path, "artist_dialog_cloud.ui")
         self.select_from_list_dialog_path = os.path.join(path, "select_from_list_dialog.ui")
         self.select_from_list_dialog_combobox_path = os.path.join(path, "select_from_list_dialog_combobox.ui")
         self.select_from_list_dialog_combobox_line_path = os.path.join(path, "select_from_list_dialog_combobox_line.ui")
@@ -588,9 +589,12 @@ class MainWindow(QtWidgets.QMainWindow):
         
         level = getattr(self.selected_artist, 'level')
         
-        if self.artist.level not in self.artist.MANAGER_LEVELS:
-            self.message('No Access! your level: "%s"' % self.artist.level, 3)
-            return
+        if self.studio.studio_database == 'django':
+            pass
+        else:
+            if self.artist.level not in self.artist.MANAGER_LEVELS:
+                self.message('No Access! your level: "%s"' % self.artist.level, 3)
+                return
         
         # get levels
         levels = []
@@ -601,7 +605,10 @@ class MainWindow(QtWidgets.QMainWindow):
             
         # widget
         loader = QtUiTools.QUiLoader()
-        file = QtCore.QFile(self.artist_dialog_path)
+        if self.studio.studio_database == 'django':
+            file = QtCore.QFile(self.artist_dialog_cloud_path)
+        else:
+            file = QtCore.QFile(self.artist_dialog_path)
         #file.open(QtCore.QFile.ReadOnly)
         window = self.editArtistDialog = loader.load(file, self)
         file.close()
@@ -613,28 +620,49 @@ class MainWindow(QtWidgets.QMainWindow):
                 wr_name_list.append(self.db_workroom.dict_by_id[wr_id].name)
         
         # edit widget
-        window.setWindowTitle('Edit Artist Data')
-        window.nik_name_field.setEnabled(False)
-        window.nik_name_field.setText(self.selected_artist.username)
-        window.workroom_field.setEnabled(False)
-        window.workroom_field.setText(json.dumps(wr_name_list))
-        window.share_dir_field.setEnabled(False)
-        window.share_dir_field.setText(self.selected_artist.share_dir)
-        window.password_field.setText(self.selected_artist.password)
-        window.email_field.setText(self.selected_artist.email)
-        window.phone_field.setText(self.selected_artist.phone)
-        window.specialty_field.setText(self.selected_artist.specialty)
-        
-        window.level_combobox.addItems(levels)
-        window.level_combobox.setCurrentIndex(window.level_combobox.findText(self.selected_artist.level))
-        
-        if self.selected_artist.outsource == 1:
-            window.autsource_check_box.setCheckState(QtCore.Qt.CheckState.Checked)
+        if self.studio.studio_database == 'django':
+            window.setWindowTitle(f'Edit Artist Data of "{self.selected_artist.username}"')
+            window.share_dir_field.setEnabled(False)
+            window.share_dir_field.setText(self.selected_artist.share_dir)
+            window.specialty_field.setText(self.selected_artist.specialty)
+            
+            b,r=self.studio.get_groups()
+            if not b:
+                self.message(r, 2)
+                return
+            window.level_combobox.addItems(r)
+            window.level_combobox.setCurrentIndex(window.level_combobox.findText(self.selected_artist.level))
+            
+            if self.selected_artist.outsource:
+                window.autsource_check_box.setCheckState(QtCore.Qt.CheckState.Checked)
+            if self.selected_artist.status == 'active':
+                window.status_check_box.setCheckState(QtCore.Qt.CheckState.Checked)
+        else:
+            window.setWindowTitle('Edit Artist Data')
+            window.nik_name_field.setEnabled(False)
+            window.nik_name_field.setText(self.selected_artist.username)
+            window.workroom_field.setEnabled(False)
+            window.workroom_field.setText(json.dumps(wr_name_list))
+            window.share_dir_field.setEnabled(False)
+            window.share_dir_field.setText(self.selected_artist.share_dir)
+            window.password_field.setText(self.selected_artist.password)
+            window.email_field.setText(self.selected_artist.email)
+            window.phone_field.setText(self.selected_artist.phone)
+            window.specialty_field.setText(self.selected_artist.specialty)
+            
+            window.level_combobox.addItems(levels)
+            window.level_combobox.setCurrentIndex(window.level_combobox.findText(self.selected_artist.level))
+            
+            if self.selected_artist.outsource == 1:
+                window.autsource_check_box.setCheckState(QtCore.Qt.CheckState.Checked)
             
         # button connect
         window.get_share_dir_button.clicked.connect(partial(self.get_share_dir, window.share_dir_field))
-        window.artist_edit_workroom_button.clicked.connect(partial(self.artist_edit_workroom2_ui, window))
-        window.artist_dialog_ok.clicked.connect(partial(self.edit_artist_action))
+        if self.studio.studio_database == 'django':
+            pass
+        else:
+            window.artist_edit_workroom_button.clicked.connect(partial(self.artist_edit_workroom2_ui, window))
+        window.artist_dialog_ok.clicked.connect(partial(self.edit_artist_action, window))
         window.artist_dialog_cancel.clicked.connect(partial(self.close_window, window))
         
         # set modal window
@@ -647,39 +675,55 @@ class MainWindow(QtWidgets.QMainWindow):
         print('edit artist ui')
         
     
-    def edit_artist_action(self):
-        window = self.editArtistDialog
+    def edit_artist_action(self, window):
         # get data
         # -- get workroom id list
-        wr_name_list = json.loads(window.workroom_field.text())
-        wr_id_list = []
-        
-        bool_, r_data = self.db_workroom.name_list_to_id_list(wr_name_list)
-        if not bool_:
-            self.message(r_data, 2)
-            return
-        wr_id_list=r_data
+        if self.studio.studio_database == 'django':
+            pass
+        else:
+            wr_name_list = json.loads(window.workroom_field.text())
+            wr_id_list = []
+            
+            bool_, r_data = self.db_workroom.name_list_to_id_list(wr_name_list)
+            if not bool_:
+                self.message(r_data, 2)
+                return
+            wr_id_list=r_data
         
         # -- fill table
-        username = window.nik_name_field.text()
-        data = {
-        'username' : username,
-        'password' : window.password_field.text(),
-        'email' : window.email_field.text(),
-        'phone' : window.phone_field.text(),
-        'outsource' : window.autsource_check_box.checkState(),
-        'specialty' : window.specialty_field.text(),
-        'workroom' : wr_id_list,
-        'share_dir' : window.share_dir_field.text(),
-        'level' : window.level_combobox.itemText(window.level_combobox.currentIndex()),
-        }
+        if self.studio.studio_database == 'django':
+            data = {
+            'username' : self.selected_artist.username,
+            'status': window.status_check_box.checkState(),
+            'outsource' : window.autsource_check_box.checkState(),
+            'specialty' : window.specialty_field.text(),
+            # 'workroom' : wr_id_list,
+            'share_dir' : window.share_dir_field.text(),
+            'level' : window.level_combobox.itemText(window.level_combobox.currentIndex()),
+            }
+            if data['status'] == QtCore.Qt.CheckState.Checked:
+                data['status'] = 'active'
+            else:
+                data['status'] = 'none'
+        else:
+            data = {
+            'username' : self.selected_artist.username,
+            'password' : window.password_field.text(),
+            'email' : window.email_field.text(),
+            'phone' : window.phone_field.text(),
+            'outsource' : window.autsource_check_box.checkState(),
+            'specialty' : window.specialty_field.text(),
+            'workroom' : wr_id_list,
+            'share_dir' : window.share_dir_field.text(),
+            'level' : window.level_combobox.itemText(window.level_combobox.currentIndex()),
+            }
         
         # get Outsource
         if data['outsource'] == QtCore.Qt.CheckState.Checked:
             data['outsource'] = True
         else:
             data['outsource'] = False
-        
+
         # save artist data
         result = self.selected_artist.edit_artist(data, current_user = self.artist)
         
@@ -689,7 +733,7 @@ class MainWindow(QtWidgets.QMainWindow):
         
         # get artist data
         #print('*'*5, self.current_user, username)
-        if self.artist.username == username:
+        if self.artist.username == self.selected_artist.username:
             self.get_artist_data()
             
         # finish

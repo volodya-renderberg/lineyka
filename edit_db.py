@@ -870,6 +870,12 @@ class studio:
             return djc.studio_get_list(self)
         return(False, f'Getting a list of studios is not available for the type of database used: \"{self.studio_database}\"')
 
+    def get_groups(self):
+        if self.studio_database=='django':
+            return djc.studio_get_groups(self)
+        else:
+            return(False, 'The local studio has no groups of levels')
+
     def test_unicum(self, name, studio_database='django'):
         """
         Проверка уникальности имени. Применяется при выборе имени для создания новой студии.
@@ -9979,6 +9985,8 @@ class artist(studio):
 
     def edit_artist(self, keys, current_user=False):
         """Редактирование данного (инициализированного) экземпляра артиста.
+
+        .. note:: Для *django* редактирует только параметры модели :obj:`edit_db.models.StudioMember` и группы данной студии (:obj:`django.contrib.auth.models.Group`).
         
         Parameters
         ----------
@@ -10004,40 +10012,55 @@ class artist(studio):
             return(False, 'No data to write!')
         
         # (2)
-        if current_user != 'force':
-            if current_user and not isinstance(current_user, artist):
-                return(False, 'In artist.edit_artist() - wrong type of "current_user" - %s' % current_user.__class__.__name__)
-            elif not current_user:
-                current_user = artist()
-                bool_, return_data = current_user.get_user()
-                if not bool_:
-                    return(bool_, return_data)
-            
-            # (3)
-            # -- user не менеджер
-            if not current_user.level in self.MANAGER_LEVELS:
-                return(False, 'Not Access! (your level does not allow you to make similar changes)')
-            # -- попытка возвести в ранг выше себя
-            elif keys.get("level") and self.USER_LEVELS.index(current_user.level) < self.USER_LEVELS.index(keys.get("level")):
-                return(False, 'Not Access! (attempt to assign a level higher than yourself)')
-            # -- попытка сделать изменения пользователя с более высоким уровнем.
-            elif self.USER_LEVELS.index(current_user.level) < self.USER_LEVELS.index(self.level):
-                return(False, 'Not Access! (attempt to change a user with a higher level)')
+        if self.studio_database == 'django':
+            pass
+        else:
+            if current_user != 'force':
+                if current_user and not isinstance(current_user, artist):
+                    return(False, 'In artist.edit_artist() - wrong type of "current_user" - %s' % current_user.__class__.__name__)
+                elif not current_user:
+                    current_user = artist()
+                    bool_, return_data = current_user.get_user()
+                    if not bool_:
+                        return(bool_, return_data)
+                
+                # (3)
+                # -- user не менеджер
+                if not current_user.level in self.MANAGER_LEVELS:
+                    return(False, 'Not Access! (your level does not allow you to make similar changes)')
+                # -- попытка возвести в ранг выше себя
+                elif keys.get("level") and self.USER_LEVELS.index(current_user.level) < self.USER_LEVELS.index(keys.get("level")):
+                    return(False, 'Not Access! (attempt to assign a level higher than yourself)')
+                # -- попытка сделать изменения пользователя с более высоким уровнем.
+                elif self.USER_LEVELS.index(current_user.level) < self.USER_LEVELS.index(self.level):
+                    return(False, 'Not Access! (attempt to change a user with a higher level)')
         
         # (4)
-        # update
-        if 'username' in keys:
-            del keys['username']
-        bool_, return_data = database().update('studio', self, self.artists_t, self.artists_keys, keys, where = {'username': self.username}, table_root=self.artists_db)
-        if not bool_:
-            return(bool_, return_data)
+        if self.studio_database == 'django':
+            change=False
+            for key in ['status', 'outsource', 'specialty', 'share_dir', 'level']:
+                if key in keys and keys.get(key) != getattr(self, key):
+                    change=True
+            if not change:
+                return(False, 'No change!')
+            #
+            b,r=djc.studio_member_edit(self, keys)
+            if not b:
+                return(b,r)
+        else:
+            if 'username' in keys:
+                del keys['username']
+            bool_, return_data = database().update('studio', self, self.artists_t, self.artists_keys, keys, where = {'username': self.username}, table_root=self.artists_db)
+            if not bool_:
+                return(bool_, return_data)
         
         # (5)
         for key in self.artists_keys:
             if key in keys:
-                exec('self.%s = keys.get("%s")' % (key, key))
+                setattr(self, key, keys.get(key))
+                # exec('self.%s = keys.get("%s")' % (key, key))
         
-        return True, 'ok'
+        return True, 'Data Saved!'
 
     def get_working_tasks(self, project_ob, statuses = False):
         """Получение словаря задач (по именам) назначенных на артиста.
