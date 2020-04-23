@@ -257,6 +257,8 @@ def test_exists_object(studio, model, field, value, translit=True):
     sess = requests.Session()
     # (1) GET
     r1=sess.get(url)
+    if not r1.ok:
+        return(False, r1.text)
     # (2) POST
     csrf_token = r1.cookies.get('csrftoken')
     r2 = sess.post(url, data=dict(model=model, field=field, value=value, translit=translit, csrfmiddlewaretoken=csrf_token))
@@ -294,6 +296,9 @@ def user_registration(studio, username, email, password, login=False):
     sess = requests.Session()
     # (1) get to login
     r1=sess.get(url)
+    if not r1.ok:
+        return(False, r1.text)
+
     # (2) post to login
     csrf_token = r1.cookies.get('csrftoken')
     r2 = sess.post(url, data=dict(username=username, password=password, email=email, csrfmiddlewaretoken=csrf_token))
@@ -457,6 +462,10 @@ def login(studio, username, password):
     sess = requests.Session()
     # (1) get to login
     r1=sess.get(login_url)
+
+    if not r1.ok:
+        return(False, r1.text)
+
     # (2) post to login
     inst=_output_data_converter(studio.artists_keys, studio)
     csrf_token = r1.cookies.get('csrftoken')
@@ -495,14 +504,14 @@ def studio_create(studio, studio_name, studio_label):
         (*True*, {studio_dict}) или (*False, comment*).
     """
     url=f'{studio.HOST}db/studio/create/'
-    cookie=_read_cookie(studio)
-    
-    # (1) session
-    sess = requests.Session()
-    cj=requests.utils.cookiejar_from_dict(cookie)
-    sess.cookies=cj
+    cookie, sess =_make_sess(studio)
+
     # (2) get to create
     r1=sess.get(url, cookies = cookie)
+
+    if not r1.ok:
+        return(False, r1.text)
+
     # (3) post to create
     csrf_token = r1.cookies.get('csrftoken')
     r2=sess.post(url, data=dict(csrfmiddlewaretoken=csrf_token, cookies=cookie, studio_label=studio_label, studio_name=studio_name))
@@ -524,12 +533,8 @@ def studio_get_list(studio):
         (*True*, [список словарей]) или (*False, comment*)
     '''
     url=f'{studio.HOST}db/studio/get_list/'
-    cookie=_read_cookie(studio)
-    
-    # (1) session
-    sess = requests.Session()
-    cj=requests.utils.cookiejar_from_dict(cookie)
-    sess.cookies=cj
+    cookie, sess =_make_sess(studio)
+
     # (2) get to create
     r1=sess.get(url, cookies = cookie)
     
@@ -556,6 +561,7 @@ def studio_get_groups(studio):
     """
     url=f'{studio.HOST}db/studio/get_groups/'
     cookie, sess =_make_sess(studio)
+
     # (2) GET
     params=dict(studio_name=studio.studio_name)
     r1=sess.get(url, cookies = cookie, params=params)
@@ -582,12 +588,8 @@ def workroom_add(workroom, wr_name, wr_type):
         (*True*, {Словарь созданного отдела}) или (*False, comment*)
     '''
     url=f'{workroom.HOST}db/workroom/add/'
-    cookie=_read_cookie(workroom)
+    cookie, sess =_make_sess(workroom)
 
-    # (1) session
-    sess = requests.Session()
-    cj=requests.utils.cookiejar_from_dict(cookie)
-    sess.cookies=cj
     # (2) GET
     params=dict(studio_name=workroom.studio_name)
     r1=sess.get(url, cookies = cookie, params=params)
@@ -624,12 +626,8 @@ def workroom_get_list(studio):
         (*True*, [список словарей]) или (*False, comment*)
     '''
     url=f'{studio.HOST}db/workroom/get_list/{studio.studio_name}'
-    cookie=_read_cookie(studio)
+    cookie, sess =_make_sess(studio)
 
-    # (1) session
-    sess = requests.Session()
-    cj=requests.utils.cookiejar_from_dict(cookie)
-    sess.cookies=cj
     # (2) GET
     r1=sess.get(url, cookies = cookie)
     
@@ -658,12 +656,8 @@ def workroom_rename(workroom, new_name):
         (*True*, {словарь отдела}) или (*False, comment*)
     '''
     url=f'{workroom.HOST}db/workroom/rename/'
-    cookie=_read_cookie(workroom)
-    
-    # (1) session
-    sess = requests.Session()
-    cj=requests.utils.cookiejar_from_dict(cookie)
-    sess.cookies=cj
+    cookie, sess =_make_sess(workroom)
+
     # (2) GET
     params=dict(studio_name=workroom.studio_name)
     r1=sess.get(url, cookies = cookie, params=params)
@@ -698,12 +692,8 @@ def workroom_edit_type(workroom, new_type):
         (*True*, {словарь отдела}) или (*False, comment*)
     '''
     url=f'{workroom.HOST}db/workroom/edit_type/'
-    cookie=_read_cookie(workroom)
-    
-    # (1) session
-    sess = requests.Session()
-    cj=requests.utils.cookiejar_from_dict(cookie)
-    sess.cookies=cj
+    cookie, sess =_make_sess(workroom)
+
     # (2) GET
     params=dict(studio_name=workroom.studio_name)
     r1=sess.get(url, cookies = cookie, params=params)
@@ -741,6 +731,7 @@ def workroom_get_artists(workroom):
     """
     url=f'{workroom.HOST}db/workroom/get_artists/'
     cookie, sess =_make_sess(workroom)
+    
     # (2) GET
     params=dict(studio_name=workroom.studio_name, wr_id=workroom.id)
     r1=sess.get(url, cookies = cookie, params=params)
