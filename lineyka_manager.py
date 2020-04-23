@@ -1356,9 +1356,10 @@ class MainWindow(QtWidgets.QMainWindow):
             if obj.checkState() == QtCore.Qt.CheckState.Checked:
                 data.append(obj.text())
         # set data
-        bool_, return_data = self.workroom.edit_type(data)
-        if not bool_:
-            return(False, return_data)
+        b, r = self.workroom.edit_type(data)
+        if not b:
+            self.message(r, 2)
+            return
         
         self.close_window(window)
         self.fill_workroom_table(self.myWidget.studio_editor_table)
@@ -1693,7 +1694,10 @@ class MainWindow(QtWidgets.QMainWindow):
         #wr_id = self.workroom.get('id')
         
         if self.studio.studio_database == 'django':
-            self.workroom.add_artists(artists)
+            b,r = self.workroom.add_artists(artists)
+            if not b:
+                self.message(r, 2)
+                return
         else:
             for artist in artists:
                 workrooms = []
@@ -1741,7 +1745,7 @@ class MainWindow(QtWidgets.QMainWindow):
         # remove artist from workroom
         b,r=self.workroom.remove_artists(artists)
         if not b:
-            self.message(f'{r}\n Look the terminal!', 2)
+            self.message(f'{r}', 2)
             return
                
         # get artist data

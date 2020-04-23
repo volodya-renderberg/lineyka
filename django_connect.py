@@ -789,6 +789,9 @@ def workroom_edit_artists(workroom, artists, action):
     params=dict(studio_name=workroom.studio_name) # для верификации
     r1=sess.get(url, cookies = cookie, params=params)
 
+    if not r1.ok:
+        return(False, r1.text)
+
     # (3) POST
     csrf_token = r1.cookies.get('csrftoken')
     wr_dict=_output_data_converter(workroom.workroom_keys, workroom)
