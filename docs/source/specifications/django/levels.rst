@@ -33,7 +33,9 @@ Head
 Доступы
 ~~~~~~~
 
-* **workroom** : ``add``, ``change``, ``delete``, ``view``.
+* **Studio** : ``view``.
+
+* **Project** : ``change``, ``view``.
 
 * **Artist** : ``add``, ``change``, ``delete``, ``view`` .
 
@@ -43,7 +45,7 @@ Head
         * Ставить проверку всем приложениям меняющим эти модели: членство в студии, отделе, в группе.
         * Изменение членства в группе `Super Head`_ может только член этой группы. ``????`` Проработать.
 
-* **Project** : ``change``, ``view``.
+* **Workroom** : ``add``, ``change``, ``delete``, ``view``.
 
 * **SetOfTasks** : ``add``, ``change``, ``delete``, ``view``.
 
@@ -68,9 +70,13 @@ Manager
 Доступы
 ~~~~~~~
 
-* **Artist** : ``view`` .
+* **Studio** : ``view``.
 
 * **Project** : ``view``.
+
+* **Artist** : ``view`` .
+
+* **Workroom** : ``view``.
 
 * **SetOfTasks** : ``add``, ``change``, ``delete``, ``view``.
 
@@ -95,9 +101,17 @@ User
 Доступы
 ~~~~~~~
 
-* **Artist** : ``view`` .
+* **Studio** : ``view``.
 
 * **Project** : ``view``.
+
+* **Artist** : ``view`` .
+
+* **Workroom** : ``view``.
+
+* **SetOfTasks** :  ``view``.
+
+* **Group** : ``view``.
 
 * **Asset** : ``view``.
 
