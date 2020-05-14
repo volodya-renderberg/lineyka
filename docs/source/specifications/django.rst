@@ -8,7 +8,7 @@ Contents:
 .. toctree::
    :maxdepth: 1
 
-   django/site_map
+   django/web_or_standalone
    django/levels
    django/studio_create
    django/data_exchange
