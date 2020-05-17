@@ -24,7 +24,12 @@ Studio
 Artist
 ------
 
+.. csv-table:: Standalone
+	:file: tables/artist_standalone.csv
+	:header-rows: 1
+	:widths: 50, 50, 50
+
 .. csv-table:: Web
-	:file: /home/developer/lineyka/docs/source/specifications/django/tables/artist_web.csv
+	:file: tables/artist_web.csv
 	:header-rows: 1
 	:widths: 50, 50, 50
