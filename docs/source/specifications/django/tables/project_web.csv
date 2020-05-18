@@ -1,0 +1,8 @@
+функционал,доступ,прим,статус
+создание проекта,:ref:`super_head_level`,,
+архивирование,:ref:`super_head_level`,,
+удаление проекта,:ref:`super_head_level`,,
+,,,
+**редактирование профиля:**,,,
+"rename, status, img",:ref:`super_head_level`,,
+open/close,:ref:`super_head_level`,:ref:`open_project-page`,

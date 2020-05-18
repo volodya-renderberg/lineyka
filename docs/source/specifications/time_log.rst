@@ -36,6 +36,8 @@ artist_task_log (studio-level)
     * **price** - вносится по принятию задачи (*task.accept_task()*).
     * **finish** - вносится по принятию задачи (*task.accept_task()*) (Время принятия, чтобы не было проблем с оплатой за период).
     
+.. _artist_time_log:
+
 artist_time_log (studio-level)
 ------------------------------
 

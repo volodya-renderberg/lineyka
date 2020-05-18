@@ -1,0 +1,4 @@
+функционал,доступ,прим,статус
+создание отдела,:ref:`head_level`,,ok
+редактирование отдела,:ref:`head_level`,"имя, тип",ok
+членство в отделах студий,:ref:`head_level`,:ref:`workroom_memberships`,ok

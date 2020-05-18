@@ -13,7 +13,7 @@ Super Head
 Имя группы
 ~~~~~~~~~~
 
-**<studio_name>_super_head**
+**<studio_name>_superhead**
 
 Доступы
 ~~~~~~~

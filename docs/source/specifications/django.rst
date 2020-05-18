@@ -13,3 +13,4 @@ Contents:
    django/studio_create
    django/data_exchange
    django/memberships
+   django/open_project
