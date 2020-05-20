@@ -7826,8 +7826,12 @@ class MainWindow(QtWidgets.QMainWindow):
     def help_user_manual(self):
         webbrowser.open_new_tab('http://www.lineyka.org.ru/')
 
+    def user_registration_web(self):
+        webbrowser.open_new_tab(parse.urljoin(self.studio.HOST, '/users/register/'))
+
     def edit_profile_ui(self):
-        webbrowser.open_new_tab(parse.urljoin(self.studio.HOST, '/users/profile/edit/'))
+        # webbrowser.open_new_tab(parse.urljoin(self.studio.HOST, '/users/profile/edit/'))
+        webbrowser.open_new_tab(parse.urljoin(self.studio.HOST, '/users/profile/'))
 
     def go_to_studio_web_page(self):
         webbrowser.open_new_tab(parse.urljoin(self.studio.HOST, f'/studios/{self.studio.studio_name}/'))
@@ -7939,7 +7943,8 @@ class MainWindow(QtWidgets.QMainWindow):
 
         # connect button
         self.setWindow.set_studio_button.clicked.connect(self.set_studio_action)
-        self.setWindow.cloud_button_01.clicked.connect(self.create_cloud_studio_ui)
+        self.setWindow.cloud_button_01.setVisible(False)
+        # self.setWindow.cloud_button_01.clicked.connect(self.create_cloud_studio_ui)
         self.setWindow.cloud_button_02.clicked.connect(self.set_dir_cloud_studio_ui)
         self.setWindow.set_tmp_button.clicked.connect(self.set_tmp_path_action)
         self.setWindow.set_convert_button.clicked.connect(self.set_convert_path_action)
@@ -8280,6 +8285,9 @@ class MainWindow(QtWidgets.QMainWindow):
         self.launcher()
     
     def user_registration_ui(self):
+        if self.studio.studio_database=='django':
+            self.user_registration_web()
+            return
         loader = QtUiTools.QUiLoader()
         f = QtCore.QFile(self.user_registr_window_path)
         #file.open(QtCore.QFile.ReadOnly)
