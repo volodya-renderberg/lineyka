@@ -5,3 +5,5 @@
 просмотр своей статистики,self,ссыль на web,
 ,,,
 **studio:**,,,
+членство в группах студий (level),:ref:`head_level`,:ref:`group_memberships`,ok
++ редактирование студийного профиля,:ref:`head_level`,:ref:`studio_memberships`,ok

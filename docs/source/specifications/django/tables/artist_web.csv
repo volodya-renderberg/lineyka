@@ -15,6 +15,7 @@
 приглашения/запросы,:ref:`head_level`,:ref:`studio_memberships`,ok
 ,,,
 членство в студиях,:ref:`head_level`,:ref:`studio_memberships`,ok
-членство в группах студий (level),:ref:`head_level`,:ref:`group_memberships`,
+членство в группах студий (level),:ref:`head_level`,:ref:`group_memberships`,ok
++ редактирование студийного профиля,:ref:`head_level`,:ref:`studio_memberships`,ok
 ,,,
 статистика артистов,:ref:`head_level`,возможен экспорт таблиц,
