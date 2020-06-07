@@ -8465,7 +8465,7 @@ class MainWindow(QtWidgets.QMainWindow):
     def get_artist_data(self, read = True, cloud=False):
         # get studio data $ 
         studio = 'Undefined Studio'
-        if os.path.exists(self.studio.studio_folder):
+        if not self.studio.studio_folder is None and os.path.exists(self.studio.studio_folder):
             if self.studio.studio_database[0] == 'sqlite3':
                 studio = 'Local Studio'
             elif self.studio.studio_label:
