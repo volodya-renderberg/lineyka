@@ -199,7 +199,11 @@ class studio:
     'render',
     'composition',
     )
-    """tuple: Список используемых типов задач. """
+    """tuple: Список используемых типов задач.
+
+    .. attention:: Надо дублировать в :mod:`django.edit_db.forms`.
+
+    """
 
     MULTI_PUBLISH_TASK_TYPES = ('sketch',)
     """tuple: Список задач, для которых возможен паблиш всех существующих веток, подробнее тут :ref:`branch-page` и тут :ref:`commit-push-publish-page`. """
