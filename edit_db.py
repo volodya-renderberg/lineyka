@@ -16,10 +16,18 @@ import subprocess
 
 try:
     from .lineyka_publish import publish
-    from . import django_connect as djc
 except:
     from lineyka_publish import publish
+
+try:
+    from . import django_connect as djc
+except:
     import django_connect as djc
+
+try:
+    from . import lineyka_settings as settings
+except:
+    import lineyka_settings as settings
 
 def NormPath(input_path):
     if not input_path:
@@ -45,19 +53,19 @@ class studio:
     Создание экземпляра обязательно, прежде всего.
     """
 
-    HOST = "http://localhost:8000/"
+    HOST = settings.HOST
     """str: интернет адрес облака. """
-    COOKIE_NAME = '.cookie'
+    COOKIE_NAME = settings.COOKIE_NAME
     """str: Наименование файла куки. """
-    USER_DATA_FILE_NAME = '.user_data.json'
+    USER_DATA_FILE_NAME = settings.USER_DATA_FILE_NAME
     """str: Наименование текстового файла гдехранятся данные текущего пользователя (для облака). """
-    FARME_OFFSET = 100
+    FARME_OFFSET = settings.FARME_OFFSET
     """int: Номер кадра, который будет считаться стартовым для сцен анимации. """
     studio_folder = False
     """str: Директория студии. """
-    STUDIO_SETTINGS_FILE = 'settings.py'
+    STUDIO_SETTINGS_FILE = settings.STUDIO_SETTINGS_FILE
     """str: Файл студийных настроек, хранится в директории студии."""
-    CACHE = '.lineyka_cache'
+    CACHE = settings.CACHE
     """str: Имя директории для хранения кеш файлов. """
     tmp_folder = False
     """str: *tmp* директория пользователя, в неё копируются открываемые сцены. """
