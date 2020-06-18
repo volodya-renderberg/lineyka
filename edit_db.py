@@ -91,27 +91,14 @@ class studio:
     """list: ``?`` """
     # list_active_projects = []
     """list: ``?`` """
-    EXTENSIONS = ['.blend', '.ma', '.tiff', '.ntp']
+    EXTENSIONS = settings.EXTENSIONS
     """list: Список возможных расширений для рабочих файлов, которым будет сопоставляться приложение. 
     
     Заполняется в :func:`edit_db.studio.get_studio`
     
     .. note:: Возможно совершенно бесполезный атрибут, так как эти значения есть :attr:`edit_db.studio.SETTING_DATA` ['extension'].keys()
     """
-    SETTING_DATA = {
-    'extension': {
-        '.tiff':'krita',
-        '.blend': 'blender',
-        '.ntp': 'natron',
-        '.ma': 'maya',
-        '.ods':'libreoffice',
-        },
-    'task_visible_fields':[
-        'activity',
-        'task_type',
-        'artist',
-        'priority',
-        'extension',]}
+    SETTING_DATA = settings.SETTING_DATA
     """dict: словарь пользовательский настроек. Хранится в *json* файле :attr:`edit_db.studio.set_file`
     
     :Значения по ключам: * **extension** (dict): ключи - расширения файлов, значения - приложение которое им соответствует (имя экзешника или путь к нему).
@@ -119,11 +106,11 @@ class studio:
     
     .. note:: А возможно наоборот превратить этот словарь в два атрибута, соответсвующих его ключам.
     """
-    LOOK_EXTENSION = '.jpg'
+    LOOK_EXTENSION = settings.LOOK_EXTENSION
     """str: расширение файла изображения, которое используется в просмотре. """
-    PREVIEW_EXTENSION = '.png'
+    PREVIEW_EXTENSION = settings.PREVIEW_EXTENSION
     """str: расширение файла изображения, которое используется при создании превью изображения. """
-    PUBLISH_FOLDER_NAME = 'publish'
+    PUBLISH_FOLDER_NAME = settings.PUBLISH_FOLDER_NAME
     """str: имя паблиш директории """
     SOFT_DATA = None
     """ ``?`` """
@@ -132,25 +119,25 @@ class studio:
     
     .. note:: Возможно устарело, так как мы перешли просто на множество натуральных чисел (от 0 до бесконечности).
     """
-    USER_LEVELS = ('user', 'extend_user', 'manager', 'root')
+    USER_LEVELS = settings.USER_LEVELS
     """tuple: Список существующих пользователей
     
     .. note:: Возможно стоит добавить ``superroot`` - который будет всего один, когда root`ов может быть сколько угодно.
     """
-    MANAGER_LEVELS = ('manager', 'root')
+    MANAGER_LEVELS = settings.MANAGER_LEVELS
     """tuple: Список пользовательских уровней, обладающих функцией менеджера. """
-    task_status = ('null','ready', 'ready_to_send', 'work', 'work_to_outsorce', 'pause', 'recast', 'checking', 'done', 'close')
+    task_status = settings.task_status
     """tuple: список существующих статусов задач. """
-    WORKING_STATUSES = ('ready', 'ready_to_send', 'work', 'work_to_outsorce', 'pause', 'recast')
+    WORKING_STATUSES = settings.WORKING_STATUSES
     """tuple: Список статусов задач, не выполненного состояния.
     
     .. note:: Возможно тупость, достаточно просто проверять, находится ли статуc в :attr:`edit_db.studio.END_STATUSES`
     """
-    END_STATUSES = ('done', 'close')
+    END_STATUSES = settings.END_STATUSES
     """tuple: Статусы задач завершённого состояния. """
 
     #NOT_USED_EXTENSIONS = ['.blend','.tiff', '.ods', '.xcf', '.svg']
-    EMPTY_FILES_DIR_NAME = 'empty_files'
+    EMPTY_FILES_DIR_NAME = settings.EMPTY_FILES_DIR_NAME
     """str: имя директории для хранения пользовательских заготовок файлов, для тех приложений, которые не могут создавать пустой файл при открытии по несуществующему пути.
     
     Создаётся в :func:`edit_db.studio.make_init_file`
@@ -158,83 +145,32 @@ class studio:
     Расположение в директории: ``~/.lineyka/``
     """
 
-    COLOR_STATUS = {
-    'null':(0.451000005, 0.451000005, 0.451000005),
-    #'ready':(0.7627863884, 0, 1),
-    'ready':(0.826, 0.249, 1),
-    'ready_to_send':(0.9367088675, 0.2608556151, 0.4905878305),
-    'work':(0.520749867, 0.7143493295, 0.8227847815),
-    'work_to_outsorce':(0.2161512673, 0.5213058591, 0.8987341523),
-    #'pause':(0.3417721391, 0.2282493114, 0.1557442695),
-    'pause':(0.670, 0.539, 0.827),
-    'recast':(0.8481012583, 0.1967110634, 0.1502964497),
-    'checking':(1, 0.5872552395, 0.2531645298),
-    'done':(0.175, 0.752, 0.113),
-    #'close':(0.1645569652, 0.08450711519, 0.02499599569)
-    'close':(0.613, 0.373, 0.195)
-    }
+    COLOR_STATUS = settings.COLOR_STATUS
     """dict: ключ - название статуса задачи, значение - соответствующий ему ``rgb`` (0 - 1) """
 
-    PROJECTS_UNITS = ('m', 'cm', 'mm')
+    PROJECTS_UNITS = settings.PROJECTS_UNITS
     """tuple: Список возможных размерностей юнита 3d сцен. """
     
-    PROJECTS_STATUSES = ('active', 'none')
+    PROJECTS_STATUSES = settings.PROJECTS_STATUSES
     """tuple: Список возможных статусов для проектов. """
 
-    task_types = (
-    # -- film
-    'animatic',
-    'film',
-    #
-    'sketch',
-    'textures',
-    # -- model
-    'sculpt',
-    'model',
-    # -- rig
-    'rig',
-    'test_animation', # анимация для проверки рига - активити test_animation
-    # -- location,
-    'specification',
-    'location',
-    #'location_full',
-    #'location_for_anim',
-    # -- animation
-    'animation_shot',
-    'tech_anim',
-    'simulation_din',
-    #'simulation_fluid',
-    'render',
-    'composition',
-    )
+    task_types = settings.TASK_TYPES
     """tuple: Список используемых типов задач.
 
     .. attention:: Надо дублировать в :mod:`django.edit_db.forms`.
 
     """
 
-    MULTI_PUBLISH_TASK_TYPES = ('sketch',)
+    MULTI_PUBLISH_TASK_TYPES = settings.MULTI_PUBLISH_TASK_TYPES
     """tuple: Список задач, для которых возможен паблиш всех существующих веток, подробнее тут :ref:`branch-page` и тут :ref:`commit-push-publish-page`. """
 
-    service_tasks = ('all', 'pre')
+    service_tasks = settings.SERVICE_TASKS
     """tuple: Префиксы сервисных задач. """
 
-    asset_types = (
-    'object',
-    'location',
-    'shot_animation',
-    'film'
-    )
+    asset_types = settings.ASSET_TYPES
     """tuple: Список используемых типов ассетов. """
 
-    asset_types_with_season = (
-    'animatic',
-    'shot_animation',
-    'camera',
-    'shot_render',
-    'shot_composition',
-    'film'
-    )
+    asset_types_with_season = settings.ASSET_TYPES_WITH_SEASON
     """tuple: Список ассетов для которых имеет значение сезон.
     
     .. attention:: Совсем устаревшее, возможно надо полностью удалить.
@@ -256,7 +192,7 @@ class studio:
     }
     """dict: Обозначение данных хранимых в БД для объектов :obj:`edit_db.asset` . Ключи - заголовки, значения - тип данных БД. """
 
-    loading_types = ('mesh', 'group', 'rig')
+    loading_types = settings.LOADING_TYPES
     """tuple: Типы загрузок ассетов в сцену. """
 
     # constants (0 - 3 required parameters)
@@ -423,31 +359,31 @@ class studio:
     }
     """dict: Обозначение данных хранимых в БД для тайм лога *артиста*. Заполнение вручную по дням, для корректировки автозаполнения. Строка - задача/день. Ключи - заголовки, значения - тип данных БД. Спецификация :ref:`time-log-page`"""
 
-    INIT_FOLDER = '.lineyka'
+    INIT_FOLDER = settings.INIT_FOLDER
     """str: Имя домашней директории линейки с файлами пользовательской конфигурации. Расположение в ``~/`` """
-    INIT_FILE = 'lineyka_init.json'
+    INIT_FILE = settings.INIT_FILE
     """str: Имя *json* файла конфигурации. Содержит пути. 
     
     Создаётся в :func:`edit_db.studio.make_init_file`
     
     Расположение в ~/:attr:`edit_db.studio.INIT_FOLDER`/
     """
-    set_file = 'user_setting.json'
+    set_file = settings.SET_FILE
     """str: Имя *json* файла конфигурации пользователя. Содержит словарь :attr:`edit_db.studio.SETTING_DATA`
     
     Создаётся в :func:`edit_db.studio.make_init_file`
     
     Расположение в ~/:attr:`edit_db.studio.INIT_FOLDER`/
     """
-    location_position_file = 'location_content_position.json'
+    location_position_file = settings.LOCATION_POSITION_FILE
     """str: ``?`` """
-    user_registr_file_name = 'user_registr.json'
+    user_registr_file_name = settings.USER_REGISTR_FILE_NAME
     """str: ``?`` """
     recycle_bin_name = '-Recycle_Bin-'
     """str: Имя группы корзины удаляемых ассетов. """
-    list_of_assets_name = '.list_of_assets.json'
+    list_of_assets_name = settings.LIST_OF_ASSETS_NAME
     """str: ``?`` """
-    PROJECT_SETTING = '.project_setting.json'
+    PROJECT_SETTING = settings.PROJECT_SETTING
     """str: имя *json* файла c параметрами проекта, дублируются из базы данных. Применяются к проекту при его повторном добавлении в студию. """
 
     #database files
@@ -506,10 +442,7 @@ class studio:
     """str: Имя *json* файла с метадатой шота. Хранение в ``asset_folder/common/`` """
     
     # blender
-    blend_service_images = {
-        'preview_img_name' : 'Lineyka_Preview_Image',
-        'bg_image_name' : 'Lineyka_BG_Image',
-        }
+    blend_service_images = settings.BLEND_SERVICE_IMAGES
     """dict: Имена служебных файлов графических изображений, которые не сохраняются в ``asset_folder/textures/`` при выполнении процедуры ``Save Images`` в блендер аддоне. """
         
     def __init__(self):
