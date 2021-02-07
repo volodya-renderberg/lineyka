@@ -609,7 +609,10 @@ class MainWindow(QtGui.QMainWindow):
 		# open file
 		soft = self.db_studio.soft_data[task_data['extension']]
 		#cmd = soft + " \"" + tmp_file_path + "\""
-		cmd = "\"" + soft + "\"  \"" + G.current_file + "\""
+		if "flatpak" in soft:
+			cmd = "%s \"%s\"" % (soft, G.current_file)
+		else:
+			cmd = "\"" + soft + "\"  \"" + G.current_file + "\""
 		subprocess.Popen(cmd, shell = True)
 		
 		# ****** edit widget visible

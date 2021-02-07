@@ -6060,7 +6060,10 @@ class MainWindow(QtGui.QMainWindow):
 				
 		# open file
 		soft = self.db_studio.soft_data[task_data['extension']]
-		cmd = '\"%s\" \"%s\"' % (soft, tmp_file_path)
+		if "flatpak" in soft:
+			cmd = "%s \"%s\"" % (soft, tmp_file_path)
+		else:
+			cmd = '\"%s\" \"%s\"' % (soft, tmp_file_path)
 		print(cmd)
 		print('$PATH:', os.environ['PATH'])
 		
@@ -6168,7 +6171,10 @@ class MainWindow(QtGui.QMainWindow):
 		# open file
 		soft = self.db_studio.soft_data[task_data['extension']]
 		#cmd = soft + " \"" + tmp_file_path + "\""
-		cmd = "\"" + soft + "\"  \"" + tmp_file_path + "\""
+		if "flatpak" in soft:
+			cmd = "%s \"%s\"" % (soft, tmp_file_path)
+		else:
+			cmd = "\"" + soft + "\"  \"" + tmp_file_path + "\""
 		subprocess.Popen(cmd, shell = True)
 
 		
